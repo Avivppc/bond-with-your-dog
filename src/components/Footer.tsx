@@ -1,147 +1,56 @@
 import Link from "next/link";
 
-const programLinks = [
-  "Foundations",
-  "Advanced Choreography",
-  "Mini-Courses",
-  "Growth Tracks",
-];
-const academyLinks = ["About Roni", "Success Stories", "Blog", "Instagram"];
-const supportLinks = [
-  "Contact Us",
-  "Privacy Policy",
-  "Terms of Service",
-  "Newsletter Signup",
-];
-
 export default function Footer() {
   return (
-    <footer
-      className="w-full mt-20 text-sm leading-relaxed"
-      style={{
-        fontFamily: "var(--font-body), Be Vietnam Pro, sans-serif",
-        borderRadius: "2rem 2rem 0 0",
-        backgroundColor: "#f5f0eb",
-      }}
-    >
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-12 px-6 md:px-12 py-12 md:py-16 max-w-7xl mx-auto">
-        {/* Brand */}
-        <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
-          <div
-            className="text-xl font-bold"
-            style={{
-              fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif",
-              color: "#7c3900",
-            }}
-          >
-            bond with your dog
+    <footer className="w-full mt-20 bg-surface-container-low border-t border-outline-variant/20">
+      <div className="max-w-7xl mx-auto px-6 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+          <div className="col-span-1">
+            <div className="text-2xl font-black tracking-tighter text-orange-900 mb-6">Keta Tov</div>
+            <p className="text-sm text-on-surface-variant leading-relaxed">
+              Empowering dog and handler duets through the art of flow, rhythm, and deep connection.
+            </p>
           </div>
-          <p className="text-stone-500">
-            Professional Dog Dance Academy teaching connection through
-            choreography.
+          <div>
+            <h4 className="font-bold text-on-surface mb-6 uppercase text-xs tracking-widest">Learning</h4>
+            <ul className="space-y-4">
+              <li><Link href="/courses" className="text-sm text-on-surface-variant hover:text-primary transition-colors">All Courses</Link></li>
+              <li><Link href="/#membership" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Membership Plans</Link></li>
+              <li><a href="#" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Free Resources</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-on-surface mb-6 uppercase text-xs tracking-widest">Support</h4>
+            <ul className="space-y-4">
+              <li><a href="#" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Contact Us</a></li>
+              <li><a href="#" className="text-sm text-on-surface-variant hover:text-primary transition-colors">Instructor Login</a></li>
+              <li><a href="#" className="text-sm text-on-surface-variant hover:text-primary transition-colors">FAQ</a></li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-bold text-on-surface mb-6 uppercase text-xs tracking-widest">Follow the Beat</h4>
+            <div className="flex space-x-4">
+              <a href="#" className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all">
+                <span className="material-symbols-outlined text-xl">camera</span>
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center text-secondary hover:bg-secondary hover:text-on-secondary transition-all">
+                <span className="material-symbols-outlined text-xl">video_library</span>
+              </a>
+              <a href="#" className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary hover:bg-primary hover:text-on-primary transition-all">
+                <span className="material-symbols-outlined text-xl">play_circle</span>
+              </a>
+            </div>
+            <p className="mt-4 text-[10px] text-on-surface-variant font-bold uppercase tracking-widest">Instagram • TikTok • YouTube</p>
+          </div>
+        </div>
+        <div className="pt-8 border-t border-outline-variant/30 flex flex-col md:flex-row justify-between items-center gap-6">
+          <p className="text-xs text-on-surface-variant font-medium uppercase tracking-widest">
+            © 2024 Keta Tov Academy. Master the Kinetic Duet.
           </p>
-          <div className="flex gap-4 mt-2">
-            <a
-              href="#"
-              className="text-stone-400 hover:text-orange-600 transition-colors"
-            >
-              <span className="material-symbols-outlined">star</span>
-            </a>
-            <a
-              href="#"
-              className="text-stone-400 hover:text-orange-600 transition-colors"
-            >
-              <span className="material-symbols-outlined">play_circle</span>
-            </a>
-            <a
-              href="#"
-              className="text-stone-400 hover:text-orange-600 transition-colors"
-            >
-              <span className="material-symbols-outlined">mail</span>
-            </a>
+          <div className="flex space-x-8">
+            <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Privacy Policy</a>
+            <a href="#" className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant hover:text-primary transition-colors">Terms of Service</a>
           </div>
-        </div>
-
-        {/* Programs */}
-        <div>
-          <h5
-            className="font-bold mb-5 uppercase tracking-widest text-xs"
-            style={{ color: "#0e666a" }}
-          >
-            Programs
-          </h5>
-          <ul className="space-y-3">
-            {programLinks.map((l) => (
-              <li key={l}>
-                <Link
-                  href="/courses"
-                  className="text-stone-500 hover:text-orange-600 transition-colors underline-offset-4 hover:underline"
-                  style={{ textDecorationColor: "rgba(14,102,106,0.3)" }}
-                >
-                  {l}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Academy */}
-        <div>
-          <h5
-            className="font-bold mb-5 uppercase tracking-widest text-xs"
-            style={{ color: "#0e666a" }}
-          >
-            Academy
-          </h5>
-          <ul className="space-y-3">
-            {academyLinks.map((l) => (
-              <li key={l}>
-                <a
-                  href="#"
-                  className="text-stone-500 hover:text-orange-600 transition-colors underline-offset-4 hover:underline"
-                  style={{ textDecorationColor: "rgba(14,102,106,0.3)" }}
-                >
-                  {l}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Support */}
-        <div>
-          <h5
-            className="font-bold mb-5 uppercase tracking-widest text-xs"
-            style={{ color: "#0e666a" }}
-          >
-            Support
-          </h5>
-          <ul className="space-y-3">
-            {supportLinks.map((l) => (
-              <li key={l}>
-                <a
-                  href="#"
-                  className="text-stone-500 hover:text-orange-600 transition-colors underline-offset-4 hover:underline"
-                  style={{ textDecorationColor: "rgba(14,102,106,0.3)" }}
-                >
-                  {l}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
-      <div
-        className="max-w-7xl mx-auto px-6 md:px-12 py-6 flex flex-col md:flex-row justify-between items-center gap-2 text-xs text-stone-400"
-        style={{ borderTop: "1px solid rgba(0,0,0,0.08)" }}
-      >
-        <p>© 2024 Keta Tov Dog Dance Academy. All rights reserved.</p>
-        <div className="flex items-center gap-2">
-          <span style={{ color: "#0e666a", fontWeight: 600 }}>
-            Ready to dance?
-          </span>
-          <span className="material-symbols-outlined text-sm">pets</span>
         </div>
       </div>
     </footer>

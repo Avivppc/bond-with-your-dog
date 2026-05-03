@@ -9,7 +9,7 @@ import { courses, type Course } from "@/lib/data";
 
 type Level = Course["level"] | "All";
 type Category = Course["category"] | "All Courses";
-type SortKey = "Newest" | "Popular" | "Price: Low" | "Price: High";
+type SortKey = "Newest" | "Popular" | "Skill Level" | "Price: Low" | "Price: High";
 
 const LEVEL_COLOR: Record<Course["level"], { color: string; icon: string }> = {
   Beginner: { color: "#6d5a00", icon: "signal_cellular_alt" },
@@ -48,7 +48,11 @@ export default function CoursesPage() {
 
     if (sort === "Price: Low") list.sort((a, b) => a.price - b.price);
     else if (sort === "Price: High") list.sort((a, b) => b.price - a.price);
-    else if (sort === "Popular") list.sort((a, b) => b.price - a.price); // proxy
+    else if (sort === "Popular") list.sort((a, b) => b.price - a.price);
+    else if (sort === "Skill Level") {
+      const order = { Beginner: 0, Intermediate: 1, Advanced: 2 };
+      list.sort((a, b) => order[a.level] - order[b.level]);
+    }
     // "Newest" = original order
 
     return list;
@@ -104,8 +108,13 @@ export default function CoursesPage() {
               />
             </div>
 
-            {/* Category pills */}
-            <div className="flex flex-wrap items-center gap-2">
+            {/* Filters button + divider */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button className="flex items-center gap-2 px-4 py-2 bg-surface-container-high rounded-full text-sm font-semibold text-on-surface hover:bg-surface-bright transition-colors">
+                <span className="material-symbols-outlined text-[20px]">tune</span>
+                Filters
+              </button>
+              <div className="h-6 w-px bg-outline-variant/30 hidden md:block"></div>
               {categories.map((cat) => (
                 <button
                   key={cat}
@@ -123,6 +132,7 @@ export default function CoursesPage() {
             </div>
 
             {/* Sort */}
+
             <div className="flex items-center gap-2 md:ml-auto shrink-0">
               <span className="text-xs font-bold uppercase tracking-wider" style={{ color: "#a2afb6" }}>Sort:</span>
               <select
@@ -133,6 +143,7 @@ export default function CoursesPage() {
               >
                 <option>Newest</option>
                 <option>Popular</option>
+                <option>Skill Level</option>
                 <option>Price: Low</option>
                 <option>Price: High</option>
               </select>
@@ -166,11 +177,8 @@ export default function CoursesPage() {
               return (
                 <article
                   key={course.id}
-                  className="group relative rounded-xl overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02] cursor-pointer"
-                  style={{
-                    backgroundColor: "#ffffff",
-                    marginTop: isOffset ? undefined : undefined,
-                  }}
+                  className={`group relative rounded-xl overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02] cursor-pointer${isOffset ? " lg:translate-y-8" : ""}`}
+                  style={{ backgroundColor: "#ffffff" }}
                 >
                   {/* Image */}
                   <div className="relative h-56 overflow-hidden">
@@ -192,7 +200,7 @@ export default function CoursesPage() {
                   </div>
 
                   {/* Content */}
-                  <div className="p-6 md:p-7 flex flex-col flex-grow">
+                  <div className="p-8 flex flex-col flex-grow">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-1 font-bold text-xs" style={{ color: levelInfo.color }}>
                         <span className="material-symbols-outlined fill-icon text-base">{levelInfo.icon}</span>
@@ -201,7 +209,7 @@ export default function CoursesPage() {
                       {course.badge && (
                         <span className="font-extrabold text-xs" style={{
                           fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif",
-                          color: course.badge === "Mastery Series" ? "#0e666a" : "#8b4b00",
+                          color: (course.badge === "Mastery Series" || course.badge === "Best Value") ? "#0e666a" : "#8b4b00",
                         }}>
                           {course.badge}
                         </span>
