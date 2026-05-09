@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 const navLinks = [
   { href: "/courses", label: "Courses" },
@@ -13,6 +14,16 @@ const navLinks = [
 export default function Navbar() {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data }) => setIsAuthed(Boolean(data.user)));
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsAuthed(Boolean(session?.user));
+    });
+    return () => sub.subscription.unsubscribe();
+  }, []);
 
   return (
     <nav
@@ -49,12 +60,32 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <button
-            className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-bold text-sm hover:scale-95 active:scale-90 transition-transform"
-            style={{ fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif" }}
-          >
-            Join the Dance
-          </button>
+          {isAuthed ? (
+            <Link
+              href="/dashboard"
+              className="kinetic-gradient px-6 py-2.5 rounded-full font-bold text-sm hover:scale-95 active:scale-90 transition-transform"
+              style={{ fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif", color: "#fff0e6" }}
+            >
+              My Learning
+            </Link>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="hidden md:inline px-4 py-2.5 rounded-full font-bold text-sm text-slate-700 hover:text-orange-700 transition-colors"
+                style={{ fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif" }}
+              >
+                Sign in
+              </Link>
+              <Link
+                href="/signup"
+                className="kinetic-gradient px-6 py-2.5 rounded-full font-bold text-sm hover:scale-95 active:scale-90 transition-transform"
+                style={{ fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif", color: "#fff0e6" }}
+              >
+                Join the Dance
+              </Link>
+            </>
+          )}
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-surface-container transition-colors"
             onClick={() => setMenuOpen((o) => !o)}

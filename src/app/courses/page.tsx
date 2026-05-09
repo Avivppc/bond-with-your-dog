@@ -175,7 +175,8 @@ export default function CoursesPage() {
               const isOffset = i % 3 === 1;
 
               return (
-                <article
+                <Link
+                  href={`/learn/${course.id}`}
                   key={course.id}
                   className={`group relative rounded-xl overflow-hidden flex flex-col transition-all duration-300 hover:scale-[1.02] cursor-pointer${isOffset ? " lg:translate-y-8" : ""}`}
                   style={{ backgroundColor: "#ffffff" }}
@@ -234,16 +235,16 @@ export default function CoursesPage() {
                       >
                         ${course.price.toFixed(2)}
                       </span>
-                      <button
-                        className="kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-1.5 shadow-md active:scale-95 transition-transform group/btn"
+                      <span
+                        className="kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm flex items-center gap-1.5 shadow-md transition-transform group/btn"
                         style={{ color: "#fff0e6", boxShadow: "0 6px 20px rgba(139,75,0,0.22)" }}
                       >
                         Start Learning
                         <span className="material-symbols-outlined text-base transition-transform group-hover/btn:translate-x-1">play_circle</span>
-                      </button>
+                      </span>
                     </div>
                   </div>
-                </article>
+                </Link>
               );
             })}
           </div>

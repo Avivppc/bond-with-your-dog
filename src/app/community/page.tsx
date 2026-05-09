@@ -1,8 +1,22 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/server";
+import StudentVideoCard from "@/components/member/StudentVideoCard";
 
-export default function CommunityPage() {
+export const dynamic = "force-dynamic";
+
+export default async function CommunityPage() {
+  const supabase = await createClient();
+  const { data: spotlight } = await supabase
+    .from("student_videos")
+    .select("id, title, description, mux_playback_id, status, created_at, duration_seconds")
+    .eq("is_public", true)
+    .eq("approved", true)
+    .eq("status", "ready")
+    .order("created_at", { ascending: false })
+    .limit(12);
+  const videos = spotlight ?? [];
   return (
     <>
       <Navbar />
@@ -169,6 +183,67 @@ export default function CommunityPage() {
               </button>
               <p className="text-on-secondary/60 text-center text-sm font-medium">Cancel anytime. Professional support guaranteed.</p>
             </div>
+          </div>
+        </section>
+        {/* Member Spotlight */}
+        <section className="px-8 pb-16">
+          <div className="max-w-7xl mx-auto">
+            <header className="flex items-center justify-between mb-8">
+              <div>
+                <span
+                  className="inline-block py-1 px-4 rounded-full text-sm font-bold tracking-wider uppercase mb-3"
+                  style={{ backgroundColor: "#a6eff3", color: "#005b5f" }}
+                >
+                  Member Spotlight
+                </span>
+                <h2
+                  className="text-4xl md:text-5xl font-extrabold tracking-tight"
+                  style={{ fontFamily: "var(--font-headline)", color: "#243036" }}
+                >
+                  Routines from our handlers
+                </h2>
+                <p className="text-lg max-w-2xl mt-2" style={{ color: "#515d64" }}>
+                  Real videos uploaded by Keta Tov members. Want to be featured? Upload from your profile.
+                </p>
+              </div>
+              <Link
+                href="/profile"
+                className="hidden md:inline-block kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm shadow-md"
+                style={{ color: "#fff0e6" }}
+              >
+                Submit yours
+              </Link>
+            </header>
+
+            {videos.length === 0 ? (
+              <div className="bg-white rounded-[2rem] p-12 text-center shadow-sm">
+                <span
+                  className="material-symbols-outlined text-5xl block mb-3"
+                  style={{ color: "#a2afb6" }}
+                >
+                  movie_filter
+                </span>
+                <p className="font-bold mb-2" style={{ color: "#243036" }}>
+                  Spotlight is just getting started
+                </p>
+                <p className="text-sm mb-6" style={{ color: "#515d64" }}>
+                  Be the first to share your routine.
+                </p>
+                <Link
+                  href="/profile"
+                  className="inline-block kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm"
+                  style={{ color: "#fff0e6" }}
+                >
+                  Upload your routine
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {videos.map((v) => (
+                  <StudentVideoCard key={v.id} video={v} />
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
