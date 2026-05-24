@@ -118,7 +118,7 @@ export default function HomePage() {
               <div className="aspect-video rounded-md overflow-hidden mb-6 relative">
                 <img
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2qNU5-M8_HzKmXyFkpebGwHxfnIsaBKYV60GPiuQjMVPd4KOKsFVmhHRvGoI8TqasWoFQbpvsgAYguf0Hq6Rzl_qObycemoP1rnGjS2741xvEaHzLMIaJekxYS941nJ3pAdD06KJ8_7_qPI7nb_lyatV0FsogISeRzzxgmnNlUMdekwDDX1bQRFsF3yCvuhYnUZVrhqFedC_3K0M-5aWCPoLBgGiJNaVjUScTRXVI-Jq_t5PH25GN_50ZPCpjSpuhIXUwVHBCU35u"
+                  src="htthttps://static.wixstatic.com/media/4da84e_c31b57ea3f544c65b80f89227da062d3~mv2.jpg/v1/fill/w_698,h_526,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/1E1A9746.jpg"
                   alt="Close up of a dog's paws and trainer's feet in sync during a complex trick move"
                 />
               </div>
@@ -171,7 +171,7 @@ export default function HomePage() {
               <div className="bg-white p-4 rounded-lg shadow-2xl rotate-2 relative z-10">
                 <img
                   className="w-full h-auto rounded"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWYakPRWRAzLv6DwU0EuoDV2tyvOoJ6j2bAxkpJNfpITv43-MnFntqHoKisYJO52ANDQPc4YK6SkbMOCDc7cf3BNnNmarNNjXFAkQnIBpuZToeMFP_zfQGxz5xzS8POq0CQfKf2n_x8B1JWkiHjadcQE62KcEMiOVO2VTCyGtqDbADQnrA8A5d56lBNLU1JHqNISgGq6xt6xkQe0GmGPViDQ8623y4ULgRjhRytd3mn4nK0uN8zxwxxQ0kn0bq6TbHTkwt1ialQ2mD"
+                  src="https://static.wixstatic.com/media/4da84e_329430c4ba7a4fceaed03233d4672603~mv2.jpg/v1/fill/w_519,h_590,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/1E1A9651.jpg"
                   alt="Roni Sagi smiling with her dog"
                 />
               </div>
