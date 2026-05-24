@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 const navLinks = [
   { href: "/courses", label: "Courses" },
   { href: "/#membership", label: "Membership" },
+  { href: "/about", label: "About Roni" },
   { href: "/community", label: "Community" },
 ];
 
@@ -46,7 +47,7 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center space-x-8 text-sm tracking-tight" style={{ fontFamily: "var(--font-headline), Plus Jakarta Sans, sans-serif" }}>
           {navLinks.map(({ href, label }) => {
-            const active = href === "/courses" ? pathname === "/courses" : href === "/community" ? pathname === "/community" : false;
+            const active = href.startsWith("/") && !href.includes("#") ? pathname === href : false;
             return (
               <Link
                 key={href}

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import Link from "next/link";
 
 export default function HomePage() {
   const [email, setEmail] = useState("");
@@ -16,20 +17,35 @@ export default function HomePage() {
         {/* Hero */}
         <section className="relative px-8 py-12 md:py-24 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
           <div className="md:col-span-7 z-10">
-            <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.1] tracking-tight mb-6">
-              Train. Connect. <span className="text-primary italic">Dance.</span>
+            <span className="inline-block mb-6 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase tracking-[0.18em]">
+              A relationship-first academy
+            </span>
+            <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.05] tracking-tight mb-6">
+              Learn the secret <br />
+              <span className="text-primary italic">language</span> of your dog.
             </h1>
-            <p className="text-lg md:text-xl text-on-surface-variant max-w-xl mb-10 leading-relaxed">
-              Unlock a deeper bond with your dog through the magic of creative movement. Professional choreography meets heart-centered training for every skill level.
+            <p className="text-lg md:text-xl text-on-surface-variant max-w-xl mb-4 leading-relaxed">
+              We don&apos;t teach dogs to dance. We teach humans and dogs to choose each other.
+            </p>
+            <p className="text-base text-on-surface-variant/80 max-w-xl mb-10 leading-relaxed">
+              Online courses and a community from Roni Sagi — trainer since 2017, AGT finalist. The work is movement but the point is connection.
             </p>
             <div className="flex flex-wrap gap-4">
-              <button className="kinetic-gradient text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg shadow-xl flex items-center gap-2 group">
-                Try a Free Lesson
+              <Link
+                href="/courses"
+                className="kinetic-gradient text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/30 inline-flex items-center gap-2 group"
+                style={{ textDecoration: "none" }}
+              >
+                Try a free mini-class
                 <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-              </button>
-              <button className="bg-surface-container-high text-on-surface-variant px-8 py-4 rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors">
-                View Curriculum
-              </button>
+              </Link>
+              <Link
+                href="/courses"
+                className="bg-surface-container-high text-on-surface-variant px-8 py-4 rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors inline-block"
+                style={{ textDecoration: "none" }}
+              >
+                Browse the library
+              </Link>
             </div>
           </div>
           <div className="md:col-span-5 relative">
@@ -37,8 +53,8 @@ export default function HomePage() {
             <div className="relative rounded-xl overflow-visible aspect-[4/5] bg-surface-container-low">
               <img
                 className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-2xl scale-110 -rotate-3 hover:rotate-0 transition-transform duration-700"
-                src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSkba9npVM471qL_2rdh3r-dFcajGIBtJRGdg&s"
-                alt="Dynamic shot of a Border Collie and trainer performing a dance move in a sunlit studio"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqMuKcwj0nyOQWPPU6wc5JX566d3LiexdZFllSVePhCTmiwDBnDFNQKsdmzcjHrhlTOmWHzQk4xc5uTw3Mlf5eQkEaNYspMrg8dXX6iK8iV1VqSWPGQISpoByQ_Oi4WdddWCDOmN8e01UYYacq7x-Js6zLZEqawn8Vmr6uVfQkEoLGYV875Fe0DHIu6vjbPPGZrrqwzdA3ZoK-hmEdn1pckA5l1wn0oWsFSiLLafc4omf8jashLT4PsNuypxA9QMsx7tjgSvTZJKNP"
+                alt="Dynamic shot of a Border Collie and trainer Roni Sagi performing a dance move in a sunlit studio"
               />
             </div>
           </div>
@@ -49,11 +65,9 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-8">
             <p className="text-center font-label text-xs uppercase tracking-[0.2em] text-outline mb-10 font-bold">As Seen On &amp; Featured In</p>
             <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-              <span className="font-headline text-2xl font-black">AGT</span>
-              <span className="font-headline text-2xl font-bold">DOG SHOW</span>
-              <span className="font-headline text-2xl font-black">NBC</span>
-              <span className="font-headline text-2xl font-bold">K9 STYLE</span>
-              <span className="font-headline text-2xl font-black">PETS PLUS</span>
+              <span className="font-headline text-2xl font-black">AMERICA&apos;S GOT TALENT</span>
+              <span className="font-headline text-2xl font-bold">NBC</span>
+              <span className="font-headline text-2xl font-black">FINALIST · TOP 10</span>
             </div>
           </div>
         </section>
@@ -62,19 +76,33 @@ export default function HomePage() {
         <section className="px-8 max-w-7xl mx-auto mb-32">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
             <div>
-              <h2 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-4">Master Every Move</h2>
-              <p className="text-on-surface-variant max-w-md">Structured learning paths designed by world-class dog dance finalists.</p>
+              <h2 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-4">
+                A shared <span className="italic text-primary">language</span>, one lesson at a time.
+              </h2>
+              <p className="text-on-surface-variant max-w-md">
+                Three pathways into the work. Pick where you are, not where you think you should be.
+              </p>
             </div>
-            <span className="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-full text-sm font-bold self-start md:self-auto">New Courses Weekly</span>
+            <div className="flex gap-2">
+              <span className="bg-secondary-container text-on-secondary-container px-4 py-2 rounded-full text-sm font-bold">Our Courses</span>
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Card 1 */}
             <div className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 flex flex-col h-full">
               <div className="aspect-video rounded-md overflow-hidden mb-6 relative">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWOgbk8odkZzkr8eKug_CAPKV-svhMt6uGDPcWec7tABMDoyT2BkylzFa9cQS8MJA3EYTTqu27veOTpLElPgt-ySXZDkD79juGhgmHLmfbi_F7QYSRqGcwtf88-ZQ3Ape6nz7IzbNisIuEwKVSJSS_UMm9RfLvsgefSYDn0GXFLz_KUQ-9slQaHZRRj99yQlECNXU6Ysi-sVKOgGe0CaGVGRaJrbFWZYJ6_Ln5hGvqiAjRHNsjALrIM4gMGHdl-osZLcxaabTiILlM" alt="A golden retriever sitting attentively during a training session" />
+                <img
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWOgbk8odkZzkr8eKug_CAPKV-svhMt6uGDPcWec7tABMDoyT2BkylzFa9cQS8MJA3EYTTqu27veOTpLElPgt-ySXZDkD79juGhgmHLmfbi_F7QYSRqGcwtf88-ZQ3Ape6nz7IzbNisIuEwKVSJSS_UMm9RfLvsgefSYDn0GXFLz_KUQ-9slQaHZRRj99yQlECNXU6Ysi-sVKOgGe0CaGVGRaJrbFWZYJ6_Ln5hGvqiAjRHNsjALrIM4gMGHdl-osZLcxaabTiILlM"
+                  alt="A golden retriever sitting attentively during a training session"
+                />
                 <span className="absolute top-4 right-4 bg-primary text-on-primary text-xs font-bold px-3 py-1 rounded-full">Bestseller</span>
               </div>
+              <span className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Where everyone starts</span>
               <h3 className="font-headline text-2xl font-bold mb-2">Foundations</h3>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow">The essential building blocks of connection, focus, and basic footwork for any breed.</p>
+              <p className="text-on-surface-variant text-sm mb-6 flex-grow">
+                The basics most trainers skip — eye contact, engagement, and reading your dog. Before any movement, before any music.
+              </p>
               <div className="flex justify-between items-center pt-6 border-t border-surface-container-high">
                 <div>
                   <span className="block text-xs font-label text-outline uppercase font-bold">12 Lessons</span>
@@ -85,28 +113,44 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
+            {/* Card 2 */}
             <div className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 md:translate-y-8 flex flex-col h-full">
-              <div className="aspect-video rounded-md overflow-hidden mb-6">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2qNU5-M8_HzKmXyFkpebGwHxfnIsaBKYV60GPiuQjMVPd4KOKsFVmhHRvGoI8TqasWoFQbpvsgAYguf0Hq6Rzl_qObycemoP1rnGjS2741xvEaHzLMIaJekxYS941nJ3pAdD06KJ8_7_qPI7nb_lyatV0FsogISeRzzxgmnNlUMdekwDDX1bQRFsF3yCvuhYnUZVrhqFedC_3K0M-5aWCPoLBgGiJNaVjUScTRXVI-Jq_t5PH25GN_50ZPCpjSpuhIXUwVHBCU35u" alt="Close up of a dog and trainer feet in sync during a complex trick" />
+              <div className="aspect-video rounded-md overflow-hidden mb-6 relative">
+                <img
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB2qNU5-M8_HzKmXyFkpebGwHxfnIsaBKYV60GPiuQjMVPd4KOKsFVmhHRvGoI8TqasWoFQbpvsgAYguf0Hq6Rzl_qObycemoP1rnGjS2741xvEaHzLMIaJekxYS941nJ3pAdD06KJ8_7_qPI7nb_lyatV0FsogISeRzzxgmnNlUMdekwDDX1bQRFsF3yCvuhYnUZVrhqFedC_3K0M-5aWCPoLBgGiJNaVjUScTRXVI-Jq_t5PH25GN_50ZPCpjSpuhIXUwVHBCU35u"
+                  alt="Close up of a dog's paws and trainer's feet in sync during a complex trick move"
+                />
               </div>
-              <h3 className="font-headline text-2xl font-bold mb-2">Precision &amp; Flow</h3>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow">Laser-focused deep dives into specific tricks like backing up, weaving, and leg circles.</p>
+              <span className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Build a vocabulary</span>
+              <h3 className="font-headline text-2xl font-bold mb-2">Trick courses</h3>
+              <p className="text-on-surface-variant text-sm mb-6 flex-grow">
+                Jumping Tricks, Photo Tricks, Human Movement. Short, focused courses that each end in a single, clear &ldquo;yes we did it&rdquo; moment.
+              </p>
               <div className="flex justify-between items-center pt-6 border-t border-surface-container-high">
                 <div>
                   <span className="block text-xs font-label text-outline uppercase font-bold">5 Lessons</span>
-                  <span className="text-xl font-headline font-extrabold text-secondary">$29</span>
+                  <span className="text-xl font-headline font-extrabold text-secondary">$129</span>
                 </div>
                 <button className="text-primary font-bold flex items-center gap-1 group/btn">
                   Enroll <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">chevron_right</span>
                 </button>
               </div>
             </div>
+            {/* Card 3 */}
             <div className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 flex flex-col h-full">
-              <div className="aspect-video rounded-md overflow-hidden mb-6">
-                <img className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAShQgUCFYClDx5Gtnp8kziitAOUcAEcQjhoTIrHcBNZpAcwJPIlhjRY6zuabCDHTYzDjwj-E8IQqcucJh58jSNpQ6DTs4mX49CBaO4G9_cyrct3IgI46dDLQq7M86YlVpZSepG10BSWYmxtYZUheJ4D3lBHhY21DAyhWrUROoVJ0LZ1UrUCn_MNee6Ie_8jkQh6kKbtG1fGT-Pswo9fUZ5QY-DtANCh6AXqvOgmB-3kBFG1zatGDAYXFqr_TPkj0PoxRpHEv0dWe91" alt="Border collie jumping over a trainer's back in a theatrical stage setting" />
+              <div className="aspect-video rounded-md overflow-hidden mb-6 relative">
+                <img
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAShQgUCFYClDx5Gtnp8kziitAOUcAEcQjhoTIrHcBNZpAcwJPIlhjRY6zuabCDHTYzDjwj-E8IQqcucJh58jSNpQ6DTs4mX49CBaO4G9_cyrct3IgI46dDLQq7M86YlVpZSepG10BSWYmxtYZUheJ4D3lBHhY21DAyhWrUROoVJ0LZ1UrUCn_MNee6Ie_8jkQh6kKbtG1fGT-Pswo9fUZ5QY-DtANCh6AXqvOgmB-3kBFG1zatGDAYXFqr_TPkj0PoxRpHEv0dWe91"
+                  alt="Border collie jumping over a trainer's back in a theatrical stage setting"
+                />
               </div>
-              <h3 className="font-headline text-2xl font-bold mb-2">The Masterpiece</h3>
-              <p className="text-on-surface-variant text-sm mb-6 flex-grow">Put it all together into a show-stopping routine with music and narrative flow.</p>
+              <span className="text-xs font-bold uppercase tracking-widest text-secondary mb-2">Put it together</span>
+              <h3 className="font-headline text-2xl font-bold mb-2">Technical Dance</h3>
+              <p className="text-on-surface-variant text-sm mb-6 flex-grow">
+                Choreography is the side effect of a real conversation. Music, narrative, and the freedom to play together.
+              </p>
               <div className="flex justify-between items-center pt-6 border-t border-surface-container-high">
                 <div>
                   <span className="block text-xs font-label text-outline uppercase font-bold">20 Lessons</span>
@@ -121,33 +165,42 @@ export default function HomePage() {
         </section>
 
         {/* About Roni */}
-        <section className="bg-surface-container-high py-24 mt-20">
+        <section id="about" className="bg-surface-container-high py-24 mt-20">
           <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div className="relative order-2 md:order-1">
               <div className="bg-white p-4 rounded-lg shadow-2xl rotate-2 relative z-10">
-                <img className="w-full h-auto rounded" src="https://static.wixstatic.com/media/4da84e_b3eaefd5248241eaa3b1905ff9ba6fea~mv2.jpg/v1/fill/w_865,h_737,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/4da84e_b3eaefd5248241eaa3b1905ff9ba6fea~mv2.jpg" alt="Roni Sagi smiling with her dog" />
+                <img
+                  className="w-full h-auto rounded"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWYakPRWRAzLv6DwU0EuoDV2tyvOoJ6j2bAxkpJNfpITv43-MnFntqHoKisYJO52ANDQPc4YK6SkbMOCDc7cf3BNnNmarNNjXFAkQnIBpuZToeMFP_zfQGxz5xzS8POq0CQfKf2n_x8B1JWkiHjadcQE62KcEMiOVO2VTCyGtqDbADQnrA8A5d56lBNLU1JHqNISgGq6xt6xkQe0GmGPViDQ8623y4ULgRjhRytd3mn4nK0uN8zxwxxQ0kn0bq6TbHTkwt1ialQ2mD"
+                  alt="Roni Sagi smiling with her dog"
+                />
               </div>
               <div className="absolute -bottom-8 -left-8 bg-secondary-container p-6 rounded-lg shadow-xl z-20 max-w-[240px]">
-                <p className="font-headline font-bold text-on-secondary-container italic">&ldquo;It&apos;s not about the tricks; it&apos;s about the conversation you have with your dog.&rdquo;</p>
+                <p className="font-headline font-bold text-on-secondary-container italic">
+                  &ldquo;If you&apos;re not having fun, you&apos;re doing it wrong.&rdquo;
+                </p>
               </div>
             </div>
             <div className="order-1 md:order-2">
               <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">Meet Your Coach</span>
-              <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-6">Roni Sagi: The Art of Partnership</h2>
+              <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-6">
+                Roni Sagi.<br />
+                <span className="text-primary italic">Trainer. Performer. &ldquo;Translator&rdquo;.</span>
+              </h2>
               <p className="text-on-surface-variant text-lg leading-relaxed mb-6">
-                From the world stage of <strong>America&apos;s Got Talent</strong> to your living room, Roni brings a revolutionary approach to dog training. Her philosophy centers on &ldquo;The Kinetic Duet&rdquo;&mdash;a method where handler and dog move as one.
+                Dog trainer since 2017, and an America&apos;s Got Talent finalist. Roni&apos;s work isn&apos;t only about turning dogs into performers — it&apos;s about teaching humans to listen so dogs feel safe enough to play.
               </p>
               <p className="text-on-surface-variant text-lg leading-relaxed mb-8">
-                With over a decade of competitive experience, Roni focuses on positive reinforcement, body awareness, and the pure joy of performance.
+                Every lesson is built on positive reinforcement, body awareness, and the radical idea that your dog doesn&apos;t need to be &ldquo;fixed.&rdquo; They need to be heard.
               </p>
               <div className="grid grid-cols-2 gap-6">
                 <div>
-                  <p className="text-3xl font-headline font-black text-primary">Top 10</p>
-                  <p className="text-sm text-outline font-bold">AGT Finalist</p>
+                  <p className="text-3xl font-headline font-black text-primary">AGT</p>
+                  <p className="text-sm text-outline font-bold">Top-10 Finalist</p>
                 </div>
                 <div>
                   <p className="text-3xl font-headline font-black text-primary">5,000+</p>
-                  <p className="text-sm text-outline font-bold">Students Globally</p>
+                  <p className="text-sm text-outline font-bold">Handlers Worldwide</p>
                 </div>
               </div>
             </div>
@@ -157,50 +210,98 @@ export default function HomePage() {
         {/* Membership Tiers */}
         <section id="membership" className="py-24 max-w-7xl mx-auto px-8">
           <div className="text-center mb-16">
-            <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-4">Dance Together, Always</h2>
-            <p className="text-on-surface-variant max-w-xl mx-auto">Get unlimited access to every course, live sessions, and our exclusive community.</p>
+            <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-4">Membership, not just access.</h2>
+            <p className="text-on-surface-variant max-w-xl mx-auto">
+              A weekly rhythm of new lessons, live coaching with Roni, and a community of people who get it. Cancel anytime.
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Monthly */}
             <div className="bg-surface-container-low p-8 rounded-lg flex flex-col">
               <h3 className="font-headline text-xl font-bold mb-2">Monthly</h3>
               <div className="flex items-baseline gap-1 mb-6">
                 <span className="text-4xl font-headline font-black text-on-surface">$49</span>
-                <span className="text-on-surface-variant">/mo</span>
+                <span className="text-on-surface-variant">/month</span>
               </div>
+              <p className="text-sm text-on-surface-variant mb-6">Month-to-month. Try the work, cancel any time.</p>
               <ul className="space-y-4 mb-10 flex-grow">
-                <li className="flex items-center gap-3 text-sm"><span className="material-symbols-outlined text-secondary text-sm">check_circle</span> All basic courses</li>
-                <li className="flex items-center gap-3 text-sm"><span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Community Forum access</li>
-                <li className="flex items-center gap-3 text-sm"><span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Monthly Q&amp;A</li>
+                <li className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Full course library
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Private community
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Monthly Webinar
+                </li>
               </ul>
-              <button className="w-full border-2 border-primary text-primary py-3 rounded-full font-bold hover:bg-primary hover:text-on-primary transition-all">Get Started</button>
+              <Link
+                href="/enroll"
+                className="w-full text-center inline-block border-2 border-primary text-primary py-3 rounded-full font-bold hover:bg-primary hover:text-on-primary transition-all"
+                style={{ textDecoration: "none" }}
+              >
+                Start Monthly
+              </Link>
             </div>
+            {/* Yearly (highlighted) */}
             <div className="bg-secondary-container p-8 rounded-lg shadow-2xl relative scale-105 flex flex-col border-4 border-secondary/20">
-              <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">Most Popular</span>
-              <h3 className="font-headline text-xl font-bold mb-2">Yearly Academy</h3>
-              <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-4xl font-headline font-black text-on-secondary-container">$480</span>
-                <span className="text-on-secondary-container/70">/yr</span>
+              <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-secondary text-on-secondary px-4 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
+                Best value
+              </span>
+              <h3 className="font-headline text-xl font-bold mb-2">Yearly</h3>
+              <div className="flex items-baseline gap-1 mb-2">
+                <span className="text-4xl font-headline font-black text-on-secondary-container">$380</span>
+                <span className="text-on-secondary-container/70">/year</span>
               </div>
+              <p className="text-sm text-on-secondary-container/80 mb-6">That&apos;s $31.67 a month. Two months free vs. monthly.</p>
               <ul className="space-y-4 mb-10 flex-grow">
-                <li className="flex items-center gap-3 text-sm font-medium"><span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> All Premium Content</li>
-                <li className="flex items-center gap-3 text-sm font-medium"><span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Personal Video Feedback</li>
-                <li className="flex items-center gap-3 text-sm font-medium"><span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Live Performance Reviews</li>
-                <li className="flex items-center gap-3 text-sm font-medium"><span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Expert Workshop Library</li>
+                <li className="flex items-center gap-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Everything in Monthly
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Personal video feedback from Roni
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Every new course as it drops
+                </li>
+                <li className="flex items-center gap-3 text-sm font-medium">
+                  <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>stars</span> Workshop archive
+                </li>
               </ul>
-              <button className="w-full bg-secondary text-on-secondary py-4 rounded-full font-bold shadow-lg">Join the Academy</button>
+              <Link
+                href="/enroll"
+                className="w-full text-center inline-block bg-secondary text-on-secondary py-4 rounded-full font-bold shadow-lg shadow-secondary/30"
+                style={{ textDecoration: "none" }}
+              >
+                Start Yearly
+              </Link>
             </div>
+            {/* 3-Month Sprint */}
             <div className="bg-surface-container-low p-8 rounded-lg flex flex-col">
               <h3 className="font-headline text-xl font-bold mb-2">3-Month Sprint</h3>
               <div className="flex items-baseline gap-1 mb-6">
-                <span className="text-4xl font-headline font-black text-on-surface">$99</span>
+                <span className="text-4xl font-headline font-black text-on-surface">$109</span>
                 <span className="text-on-surface-variant">/quarter</span>
               </div>
+              <p className="text-sm text-on-surface-variant mb-6">A focused 12-week window. Save vs. month-to-month.</p>
               <ul className="space-y-4 mb-10 flex-grow">
-                <li className="flex items-center gap-3 text-sm"><span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Intensive foundations</li>
-                <li className="flex items-center gap-3 text-sm"><span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Access to 3 mini-courses</li>
-                <li className="flex items-center gap-3 text-sm"><span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Peer review groups</li>
+                <li className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Full library for 90 days
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-secondary text-sm">check_circle</span> 1 office hours call
+                </li>
+                <li className="flex items-center gap-3 text-sm">
+                  <span className="material-symbols-outlined text-secondary text-sm">check_circle</span> Pause anytime
+                </li>
               </ul>
-              <button className="w-full border-2 border-primary text-primary py-3 rounded-full font-bold hover:bg-primary hover:text-on-primary transition-all">Start Sprint</button>
+              <Link
+                href="/enroll"
+                className="w-full text-center inline-block border-2 border-primary text-primary py-3 rounded-full font-bold hover:bg-primary hover:text-on-primary transition-all"
+                style={{ textDecoration: "none" }}
+              >
+                Start Sprint
+              </Link>
             </div>
           </div>
         </section>
@@ -209,47 +310,52 @@ export default function HomePage() {
         <section className="py-24 bg-surface-container-low/30 overflow-hidden">
           <div className="max-w-7xl mx-auto px-8">
             <div className="mb-16">
-              <h2 className="font-headline text-4xl font-extrabold mb-4">Choose Your Track</h2>
-              <p className="text-on-surface-variant">Structured paths to take you from first steps to center stage.</p>
+              <h2 className="font-headline text-4xl font-extrabold mb-4">Pick a starting line.</h2>
+              <p className="text-on-surface-variant max-w-xl">
+                Three tracks, same destination: a dog who watches you because they want to, not because they have to.
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              {/* Track 1: Free */}
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <span className="bg-tertiary-container text-on-tertiary-container w-10 h-10 rounded-full flex items-center justify-center font-black">01</span>
-                  <h4 className="font-headline text-xl font-bold">Starter Track</h4>
+                  <h4 className="font-headline text-xl font-bold">Free</h4>
                 </div>
                 <div className="space-y-3">
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-tertiary">Intro to Rhythm</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Focus &amp; Eye Contact</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Luring Techniques</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">The First Spin</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Heel Work Essentials</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-tertiary">Free mini-class</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">PDF: 5 foundational moves</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Monthly community challenge</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">YouTube tutorials</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Newsletter from Roni</div>
                 </div>
               </div>
+              {/* Track 2: Membership */}
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <span className="bg-primary-container text-on-primary-container w-10 h-10 rounded-full flex items-center justify-center font-black">02</span>
-                  <h4 className="font-headline text-xl font-bold">Intermediate Track</h4>
+                  <h4 className="font-headline text-xl font-bold">Membership</h4>
                 </div>
                 <div className="space-y-3">
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-primary">Distance Work</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Reverse Weaving</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Cues at Speed</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Lateral Movement</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Prop Integration</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-primary">Foundations</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Dog Dance Foundations</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Jumping Tricks</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Human Movement</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Photo Tricks &amp; Mini-Courses</div>
                 </div>
               </div>
+              {/* Track 3: Inner Circle */}
               <div>
                 <div className="flex items-center gap-3 mb-6">
                   <span className="bg-secondary-container text-on-secondary-container w-10 h-10 rounded-full flex items-center justify-center font-black">03</span>
-                  <h4 className="font-headline text-xl font-bold">Expert Track</h4>
+                  <h4 className="font-headline text-xl font-bold">Inner Circle</h4>
                 </div>
                 <div className="space-y-3">
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-secondary">Narrative Staging</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Syncopated Rhythm</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Aerial Tricks</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Full Performance Flow</div>
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Showmanship Mastery</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-secondary">Technical Dance</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Live monthly office hours</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Personal video feedback</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Workshop archive</div>
+                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70">Private community</div>
                 </div>
               </div>
             </div>
@@ -260,10 +366,18 @@ export default function HomePage() {
         <section className="py-24 max-w-7xl mx-auto px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
             <div>
-              <span className="bg-tertiary-container text-on-tertiary-container text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-6 inline-block">Student Spotlight</span>
-              <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-8 leading-tight">&ldquo;The most clear, structured, and joyful training we&apos;ve ever done.&rdquo;</h2>
+              <span className="bg-tertiary-container text-on-tertiary-container text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full mb-6 inline-block">
+                Student Spotlight
+              </span>
+              <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-8 leading-tight">
+                &ldquo;Clear, structured, and my dog loves them. It reignited my passion for dog dancing.&rdquo;
+              </h2>
               <div className="flex items-center gap-4">
-                <img className="w-16 h-16 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDps2UDcOtJtPGT5UGKBffn_YtzUFxS7Q8hXx9RYig92kgX3WKspQaA86SJfyioqvAr3krjS2MKBMQSocu44WWiSc84O7u5zzbweC_biYhAqPzslWOPDeA_gcHSs-xzxh3rQMLNsXbjs4mgey9ZjjWzVfhVAiIV4H7_tpXQiV2r9IZwuu0KgSQjcxJLCx4yBe6E-fXA7DfZl5F_SGUnp87s60FWQ7mXCDL5-vJqxaXNy0JhvQeJcDTxDJJPZo0Scph8fkdo0lsMqoKI" alt="Portrait of a smiling young woman student" />
+                <img
+                  className="w-16 h-16 rounded-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDps2UDcOtJtPGT5UGKBffn_YtzUFxS7Q8hXx9RYig92kgX3WKspQaA86SJfyioqvAr3krjS2MKBMQSocu44WWiSc84O7u5zzbweC_biYhAqPzslWOPDeA_gcHSs-xzxh3rQMLNsXbjs4mgey9ZjjWzVfhVAiIV4H7_tpXQiV2r9IZwuu0KgSQjcxJLCx4yBe6E-fXA7DfZl5F_SGUnp87s60FWQ7mXCDL5-vJqxaXNy0JhvQeJcDTxDJJPZo0Scph8fkdo0lsMqoKI"
+                  alt="Portrait of a smiling young woman student"
+                />
                 <div>
                   <p className="font-bold">Sarah &amp; Bella</p>
                   <p className="text-sm text-outline font-medium">Foundations &amp; Expert Graduate</p>
@@ -272,12 +386,16 @@ export default function HomePage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-white p-6 rounded-lg shadow-sm mt-8">
-                <p className="text-sm italic mb-4">&ldquo;My dog literally waits by the laptop for Roni&apos;s voice. We&apos;ve built so much trust.&rdquo;</p>
-                <p className="font-bold text-xs">- Marcus &amp; Toby</p>
+                <p className="text-sm italic mb-4">
+                  &ldquo;The first time Toby looked up at me during a routine — not for the treat, for me — I cried. We&apos;ve never had that before.&rdquo;
+                </p>
+                <p className="font-bold text-xs">— Marcus &amp; Toby</p>
               </div>
               <div className="bg-white p-6 rounded-lg shadow-sm">
-                <p className="text-sm italic mb-4">&ldquo;I never thought my senior rescue dog could dance. These mini-courses are magic.&rdquo;</p>
-                <p className="font-bold text-xs">- Elena &amp; Luna</p>
+                <p className="text-sm italic mb-4">
+                  &ldquo;I never thought my senior rescue could dance. We&apos;re not winning competitions; we&apos;re winning evenings.&rdquo;
+                </p>
+                <p className="font-bold text-xs">— Elena &amp; Luna</p>
               </div>
             </div>
           </div>
@@ -290,8 +408,10 @@ export default function HomePage() {
               <span className="material-symbols-outlined text-[12rem]" style={{ fontVariationSettings: "'FILL' 1" }}>pets</span>
             </div>
             <div className="flex-grow z-10">
-              <h2 className="font-headline text-3xl md:text-5xl font-black mb-4">Start Your First Dance Today</h2>
-              <p className="text-lg text-on-primary/80 max-w-lg">Sign up for our &apos;Free Mini-Class&apos; and learn 3 foundational moves in under 15 minutes.</p>
+              <h2 className="font-headline text-3xl md:text-5xl font-black mb-4">Your first free lesson.</h2>
+              <p className="text-lg text-on-primary/80 max-w-lg">
+                Three foundational moves in under fifteen minutes. No credit card. You&apos;ll feel the shift on day one.
+              </p>
             </div>
             <div className="w-full md:w-auto z-10">
               {submitted ? (
@@ -308,7 +428,10 @@ export default function HomePage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
-                  <button className="bg-white text-primary px-8 py-3 rounded-full font-bold whitespace-nowrap hover:bg-orange-50 transition-colors" type="submit">
+                  <button
+                    className="bg-white text-primary px-8 py-3 rounded-full font-bold whitespace-nowrap hover:bg-orange-50 transition-colors"
+                    type="submit"
+                  >
                     Free Class
                   </button>
                 </form>
@@ -317,6 +440,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
       </main>
       <Footer />
     </>
