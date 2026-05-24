@@ -29,7 +29,7 @@ export default function AboutPage() {
               <img
                 className="w-full h-full object-cover"
                 alt="Roni Sagi with her dog"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCWYakPRWRAzLv6DwU0EuoDV2tyvOoJ6j2bAxkpJNfpITv43-MnFntqHoKisYJO52ANDQPc4YK6SkbMOCDc7cf3BNnNmarNNjXFAkQnIBpuZToeMFP_zfQGxz5xzS8POq0CQfKf2n_x8B1JWkiHjadcQE62KcEMiOVO2VTCyGtqDbADQnrA8A5d56lBNLU1JHqNISgGq6xt6xkQe0GmGPViDQ8623y4ULgRjhRytd3mn4nK0uN8zxwxxQ0kn0bq6TbHTkwt1ialQ2mD"
+                src="https://static.wixstatic.com/media/4da84e_3db2d7a75a0547adaec16edddd0c2a43~mv2.jpg/v1/fill/w_730,h_690,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%20536.jpg"
               />
             </div>
             <div className="absolute -bottom-8 -left-8 bg-secondary-container p-6 rounded-lg shadow-xl z-20 max-w-[280px]">

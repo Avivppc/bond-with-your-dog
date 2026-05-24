@@ -53,7 +53,7 @@ export default function HomePage() {
             <div className="relative rounded-xl overflow-visible aspect-[4/5] bg-surface-container-low">
               <img
                 className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-2xl scale-110 -rotate-3 hover:rotate-0 transition-transform duration-700"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqMuKcwj0nyOQWPPU6wc5JX566d3LiexdZFllSVePhCTmiwDBnDFNQKsdmzcjHrhlTOmWHzQk4xc5uTw3Mlf5eQkEaNYspMrg8dXX6iK8iV1VqSWPGQISpoByQ_Oi4WdddWCDOmN8e01UYYacq7x-Js6zLZEqawn8Vmr6uVfQkEoLGYV875Fe0DHIu6vjbPPGZrrqwzdA3ZoK-hmEdn1pckA5l1wn0oWsFSiLLafc4omf8jashLT4PsNuypxA9QMsx7tjgSvTZJKNP"
+                src="https://static.wixstatic.com/media/4da84e_d83277594941460ea2856398fe559225~mv2.jpg/v1/fill/w_580,h_360,al_c,q_80,usm_0.66_1.00_0.01,enc_avif,quality_auto/Keta%20Tov1030%20(1)-1.jpg"
                 alt="Dynamic shot of a Border Collie and trainer Roni Sagi performing a dance move in a sunlit studio"
               />
             </div>
@@ -93,7 +93,7 @@ export default function HomePage() {
               <div className="aspect-video rounded-md overflow-hidden mb-6 relative">
                 <img
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBWOgbk8odkZzkr8eKug_CAPKV-svhMt6uGDPcWec7tABMDoyT2BkylzFa9cQS8MJA3EYTTqu27veOTpLElPgt-ySXZDkD79juGhgmHLmfbi_F7QYSRqGcwtf88-ZQ3Ape6nz7IzbNisIuEwKVSJSS_UMm9RfLvsgefSYDn0GXFLz_KUQ-9slQaHZRRj99yQlECNXU6Ysi-sVKOgGe0CaGVGRaJrbFWZYJ6_Ln5hGvqiAjRHNsjALrIM4gMGHdl-osZLcxaabTiILlM"
+                  src="https://static.wixstatic.com/media/4da84e_c31b57ea3f544c65b80f89227da062d3~mv2.jpg/v1/fill/w_698,h_526,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/1E1A9746.jpg"
                   alt="A golden retriever sitting attentively during a training session"
                 />
                 <span className="absolute top-4 right-4 bg-primary text-on-primary text-xs font-bold px-3 py-1 rounded-full">Bestseller</span>
@@ -118,7 +118,7 @@ export default function HomePage() {
               <div className="aspect-video rounded-md overflow-hidden mb-6 relative">
                 <img
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  src="htthttps://static.wixstatic.com/media/4da84e_c31b57ea3f544c65b80f89227da062d3~mv2.jpg/v1/fill/w_698,h_526,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/1E1A9746.jpg"
+                  src="https://static.wixstatic.com/media/4da84e_b3eaefd5248241eaa3b1905ff9ba6fea~mv2.jpg/v1/fill/w_865,h_737,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/4da84e_b3eaefd5248241eaa3b1905ff9ba6fea~mv2.jpg"
                   alt="Close up of a dog's paws and trainer's feet in sync during a complex trick move"
                 />
               </div>
