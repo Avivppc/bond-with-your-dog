@@ -32,7 +32,7 @@ export default function Footer() {
           <h5 className="font-bold text-teal-700 mb-6 uppercase tracking-widest text-xs">Academy</h5>
           <ul className="space-y-3">
             <li><Link href="/about" className="text-stone-500 hover:text-orange-600 hover:underline decoration-teal-500/30 underline-offset-4 transition-all">About Roni</Link></li>
-            <li><a href="#" className="text-stone-500 hover:text-orange-600 hover:underline decoration-teal-500/30 underline-offset-4 transition-all">Success Stories</a></li>
+            <li><Link href="/stories" className="text-stone-500 hover:text-orange-600 hover:underline decoration-teal-500/30 underline-offset-4 transition-all">Student Stories</Link></li>
             <li><Link href="/community" className="text-stone-500 hover:text-orange-600 hover:underline decoration-teal-500/30 underline-offset-4 transition-all">Blog</Link></li>
             <li><a href="#" className="text-stone-500 hover:text-orange-600 hover:underline decoration-teal-500/30 underline-offset-4 transition-all">Instagram</a></li>
           </ul>
