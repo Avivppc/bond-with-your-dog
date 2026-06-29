@@ -1,227 +1,278 @@
-"use client";
-
-import React, { useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import Link from "next/link";
 
-const stories = [
+export const metadata = { title: "Stories | BONDED" };
+
+const storyCards = [
   {
-    id: 1,
-    tag: "Foundations graduate",
-    name: "Sarah & Bella",
-    quote: '"Clear, structured, and my dog loves them."',
-    body: "Sarah came in burnt out on training apps. Bella's a labrador who'd 'done it all' and learned to phone it in. They restarted on Foundations and Bella started watching her again.",
-    byline: "Sarah & Bella · Labrador · 4 years",
-    category: "First-time handlers",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDoIw8cItjvL8QlB6hX53kv165jiF0ItlXEcuPueo7359gyspPIUAauEXEFIaJdlc-JfDXT5j48ytAKHFOQ9EAOkOvOu5Y69OZ8MQ5rWywOKmi6OyuItZsFv2JqjvfI79J8swFva5IYgfO7bVCtzIxIIsenF3l-dMzOKk4NgjL0meiH2WlALeUpKW7ebYwyX1PDbBSlMwKPX80FQEU5Y01wI_AzQqN4zuS-2fHwpe-uWFbZzdawhnz2__jh9stYjkgQZpLf6XmYuwEx",
+    name: "Bella & Emma",
+    quote: '"She Chose Me"',
     offset: false,
   },
   {
-    id: 2,
-    tag: "First-time handler",
-    name: "Marcus & Toby",
-    quote: '"He looked up at me, not for the treat — for me."',
-    body: "Toby is a five-year-old shepherd mix Marcus rescued in lockdown. Marcus had never trained a dog before. Their first eye-contact moment, on camera, made him cry.",
-    byline: "Marcus & Toby · Shepherd mix · 5 years",
-    category: "First-time handlers",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAtCSGdfxIjmzObn4eQL8HnehAMUG4AfGrk3MQZZoDa-_sANKC36ueyKYkLRYTI3ZrJQkuc0p7swC8tkh4kMkASDFC9ycLxk-qIACF45QAEoD6IFtYIOCG74Y9VmBNGdIs73Dq8-skQHj23whNt76g8pJfNkkFzOQTisnMSNoYA09eS2oZ1TJmwyT9CfjWUXxbcwl6mOjRuqU18o6BmcWx1vvX2vy0jTsTB5xfnwmrvkfznh7qDRogQzfJHI4FaBoqWQp6DcXHrkbJ7",
+    name: "Max & Oliver",
+    quote: '"Our walks became our favorite part of the day."',
     offset: true,
   },
   {
-    id: 3,
-    tag: "Senior rescue",
-    name: "Elena & Luna",
-    quote: '"We\'re not winning competitions; we\'re winning evenings."',
-    body: "A nine-year-old rescue mix who flinched at hand cues. Now offers a spin without being asked. Thirty days of Foundations, mostly five minutes at a time.",
-    byline: "Elena & Luna · Rescue mix · 9 years",
-    category: "Senior dogs",
-    offset: false,
-  },
-  {
-    id: 4,
-    tag: "Reactive dog",
-    name: "Nina & Otis",
-    quote: '"He stopped lunging at bikes. Then he started spinning."',
-    body: "Otis is a border collie cross who reacted to everything that moved. Nina used the engagement work as a redirect. She didn't expect the dancing — but she got it.",
-    byline: "Nina & Otis · Border collie cross · 3 years",
-    category: "Reactive dogs",
-    offset: false,
-  },
-  {
-    id: 5,
-    tag: "Puppy",
-    name: "Marta & Pip",
-    quote: '"She picked up the cues faster than I could film them."',
-    body: "Pip is a fourteen-week-old cocker spaniel. Marta started Foundations the day she got her home. The hand-target lesson took one session. The video has 80k views.",
-    byline: "Marta & Pip · Cocker spaniel · 14 weeks",
-    category: "Puppies",
-    offset: true,
-  },
-  {
-    id: 6,
-    tag: "Big-dog handler",
-    name: "James & Goose",
-    quote: '"A 40-kilo dog who chooses to be quiet."',
-    body: "Goose is a Great Dane with the focus span of a hummingbird. James thought 'dancing' was for small dogs. The Human Movement course taught him he'd been the bouncy one all along.",
-    byline: "James & Goose · Great Dane · 2 years",
-    category: "Rescue dogs",
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuD-iZTHky_UDAzXdVHlI_KFhJmyvJ83b6usZPchI7CYPPsySosK1rUkotFNeh5hRtaQdGsKD_QglOw7Jytgyuwb-4YA3qCd4yqjjcPSeYFlDwt4lTRBhI3iTq6rFdVvAB12Xu0jnjbygyzr-0mCVWsHKFy9aPhwzoFcVXPDuundoe2SzqKZ5xffhuJdf6JvrDzpeYFn1Yr52a_Ht8bjAapyJRbUbYwnVTMZoCkhfl51E7wLDg4S53mChzaFkPb-DOtwsBvDrAmJqvvM",
+    name: "Luna & Sarah",
+    quote: '"I never imagined we\'d dance together."',
     offset: false,
   },
 ];
 
-const filters = ["All stories", "Rescue dogs", "First-time handlers", "Senior dogs", "Reactive dogs", "Puppies"];
+const journeyCategories = [
+  { icon: "route", label: "Starting From Scratch", color: "text-primary", hover: "group-hover:bg-primary-container/20" },
+  { icon: "favorite", label: "Building Confidence", color: "text-secondary", hover: "group-hover:bg-secondary-container/50" },
+  { icon: "music_note", label: "Learning to Dance", color: "text-tertiary", hover: "group-hover:bg-tertiary-container/30" },
+  { icon: "home", label: "Rescue Stories", color: "text-primary", hover: "group-hover:bg-primary-container/20" },
+  { icon: "diversity_1", label: "Family Dogs", color: "text-secondary", hover: "group-hover:bg-secondary-container/50" },
+  { icon: "stars", label: "First Performance", color: "text-tertiary", hover: "group-hover:bg-tertiary-container/30" },
+];
 
-function Placeholder({ label, className = "", style }: { label: string; className?: string; style?: React.CSSProperties }) {
-  return (
-    <div
-      className={`flex items-center justify-center text-on-surface-variant ${className}`}
-      style={{
-        background: "repeating-linear-gradient(-45deg,#e4f3fc,#e4f3fc 12px,#d4e5ef 12px,#d4e5ef 24px)",
-        ...style,
-      }}
-    >
-      <span className="bg-white/90 px-3 py-1.5 rounded-full text-xs font-mono font-medium uppercase tracking-wide text-on-surface-variant">
-        {label}
-      </span>
-    </div>
-  );
-}
+const masonryItems = [
+  {
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuBgLN6Bo5hJPkXdsFcN_egWyRYcwiVxFVLAARvf4YdTI7x8JBu6Wvh-2-Yx3mZeJkAs9YUjuv19W6d12EiMSi2Rf8RE9dNzbMKWnKpDYtDtB1vM_-QUh2maN71GyCOnFOWBurW44aLKzSNnzoOmE4FETHTXO4Vw7bPGLnWKxIja2jlDLy2jU-Cg7FuqMXgYWuMFp_X5AdqEIe-c8gcP55mw1_SK70GGiXytVKxd-05am8yEzMZZ9nikR9lgJeDUteNIuhyYbi99uGRx4LE",
+    caption: '"She finally chose to look at me."',
+    alt: "Golden retriever making eye contact",
+  },
+  {
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAyNvlptDWzFGYcsyuVcQ-SgQPhHgpWwlLvtUDFt88PGayxjFm2gVKZdvawIxzdBBeAnCs-tsqmJhTozLg6U3P6JGPQbkiidsTWdoIxE0WtFFEWKgsjIADKvk9RcD3L0tf-uHkqoIERB0hWoF5QeFO0PUbo0aveg1n8sEDrXukjFgN3DQ_YfoisXATP7nE894MBOWhzrUxiwqUUwCM3m6m9a5buBMNMtkIg1NBeE2JMK6MwIugy5olGmfzJshIcbWkX9h1t2eGxFbio",
+    caption: '"The first time we moved together."',
+    alt: "Man and dog dancing joyfully",
+  },
+  {
+    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuD62o5QxYDXRlHLD2DM8Z6-72owsbkJJJZsYjrbYbXhuJCjAduEPR-tmswIp--K0lnI4i1W3bSS1Lee3iZVbufpZ7tZWBilyRzjnPNWuKHdxmvVBA3Z73_Jw5pVtTGXiPBREG21q-SRMqSHoCwgypH-vN0HBiZjXs7gz8d7cFG7ALRQOREJqx-JbVjRFBAwUrffijLWOhY7191Y8h8_IfHCl1GvcdIH98U1KXFqpdbhj8k-cK0iwOseXIMTVi-t4y1ok8-zAskdwHUO",
+    caption: '"We finally found peace."',
+    alt: "Woman and dog resting together",
+  },
+];
 
 export default function StoriesPage() {
-  const [activeFilter, setActiveFilter] = useState("All stories");
-
-  const filtered = activeFilter === "All stories"
-    ? stories
-    : stories.filter((s) => s.category === activeFilter);
-
   return (
     <>
       <Navbar />
-      <main className="pt-24 overflow-hidden">
+      <main className="pt-24 pb-20 overflow-hidden">
 
         {/* Hero */}
-        <section className="relative px-8 py-12 md:py-24 max-w-7xl mx-auto">
-          <div className="max-w-3xl">
-            <span className="inline-block mb-6 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase tracking-[0.18em]">
-              Student stories
-            </span>
-            <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.05] tracking-tight mb-6">
-              Real handlers.<br />Real dogs.<br /><span className="text-primary italic">Real moments.</span>
+        <section className="relative w-full min-h-[80vh] flex items-center justify-center px-6 lg:px-16 overflow-hidden">
+          <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 bg-gradient-to-t from-surface to-transparent z-10" />
+            <img
+              alt="People and dogs bonding"
+              className="w-full h-full object-cover opacity-80"
+              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtOt_OHATZLudIAQ28aG9eNi5TMUzSnfIchXQkzg-1Ayq4O9WRz5yfeCk-Z8clEkz_ut23yFPA1zDyd8UfuEc3JnE4JHeuBZvpveic9ANhezHQPQyF3NGyym0QlU42ap-mvH41ACgxyL570IGkApoouU9feIyaMEm78HhDHK3mYa6LN704O2tQZiWHro8k19o01trpb8kC5N0fmxdiwZLRwnxtW1CWHtyt_RKHF5uZt27v5XSsA0U91xEVlsmh5T7Me8h8-46AujC0"
+            />
+          </div>
+          <div className="relative z-20 max-w-4xl text-center flex flex-col items-center">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-display font-extrabold tracking-tight text-on-surface mb-6 drop-shadow-md">
+              Every bond has a story.
             </h1>
-            <p className="text-lg md:text-xl text-on-surface-variant max-w-xl leading-relaxed">
-              A wall of evidence that the work works — most of it filmed on phones, in living rooms, with dogs who very much did not start out ready for a stage.
+            <p className="text-xl md:text-2xl font-body text-on-surface-variant mb-10 max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
+              Real people. Real dogs. Real transformations. Discover the moments
+              that changed everything.
             </p>
+            <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg hover:scale-105 transition-transform duration-300 shadow-[0_10px_30px_rgba(139,75,0,0.3)] flex items-center gap-3">
+              Start Your Story
+              <span className="material-symbols-outlined">play_circle</span>
+            </button>
           </div>
         </section>
 
-        {/* Featured story */}
-        <section className="bg-surface-container-low py-24 mb-24">
-          <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
-            <div className="md:col-span-7 relative">
-              <Placeholder label="Featured video · Elena & Luna" className="aspect-video rounded-xl shadow-2xl" style={{ transform: "rotate(-1deg)" }} />
-              <div className="absolute -bottom-6 -right-6 bg-tertiary-container px-5 py-3 rounded-full shadow-lg">
-                <p className="text-on-tertiary-container font-bold text-sm">Senior rescue · 9 years old</p>
+        {/* Featured Stories */}
+        <section className="py-20 px-6 lg:px-16 bg-surface">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-on-surface mb-12 tracking-tight">
+              Stories that inspire.
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {storyCards.map(({ img, name, quote, offset }) => (
+                <div
+                  key={name}
+                  className={`group relative rounded-xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-500 cursor-pointer aspect-[3/4] bg-surface-container-lowest${offset ? " md:translate-y-12" : ""}`}
+                >
+                  <img
+                    alt={name}
+                    className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                    src={img}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-90 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute bottom-0 left-0 right-0 p-8 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <span className="text-tertiary-container font-label text-sm font-semibold tracking-wider uppercase mb-2 block">
+                      {name}
+                    </span>
+                    <h3 className="text-white text-2xl font-headline font-bold leading-tight mb-4">
+                      {quote}
+                    </h3>
+                    <div className="flex items-center text-white/80 opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                      <span className="material-symbols-outlined mr-2">play_arrow</span>
+                      <span className="font-label text-sm">Watch Story</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Browse by Journey */}
+        <section className="py-24 px-6 lg:px-16 bg-surface-container-low">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col md:flex-row justify-between items-end mb-12">
+              <div>
+                <h2 className="text-3xl md:text-4xl font-display font-bold text-on-surface tracking-tight mb-4">
+                  Find a story like yours.
+                </h2>
+                <p className="text-lg font-body text-on-surface-variant max-w-xl">
+                  Every partnership starts somewhere different. Explore journeys
+                  that mirror your own path.
+                </p>
               </div>
             </div>
-            <div className="md:col-span-5">
-              <span className="text-secondary font-bold uppercase tracking-widest text-sm mb-4 block">Featured story · 30 days</span>
-              <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
-                Elena thought Luna was too old. Luna disagreed.
-              </h2>
-              <p className="text-on-surface-variant text-lg leading-relaxed mb-6">
-                &ldquo;I never thought my senior rescue could dance. We&apos;re not winning competitions; we&apos;re winning evenings.&rdquo;
-              </p>
-              <p className="text-on-surface-variant leading-relaxed mb-6">
-                Luna came home at eight. Wary, food-driven, allergic to eye contact. Thirty days into the Foundations course Elena posted a clip of Luna offering a spin — unprompted, tail up, the whole thing. The comments under that clip is what made us put this page together.
-              </p>
-              <a href="#" className="inline-flex items-center gap-2 text-primary font-bold group/btn">
-                Read the full story{" "}
-                <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
-              </a>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {journeyCategories.map(({ icon, label, color, hover }) => (
+                <button
+                  key={label}
+                  className="group flex flex-col items-center p-6 bg-surface-container-lowest rounded-xl hover:bg-surface-bright transition-all duration-300 hover:-translate-y-1 shadow-sm"
+                >
+                  <div
+                    className={`w-16 h-16 rounded-full bg-surface-container flex items-center justify-center mb-4 ${hover} transition-colors`}
+                  >
+                    <span className={`material-symbols-outlined ${color} text-3xl`}>
+                      {icon}
+                    </span>
+                  </div>
+                  <span className="font-headline font-semibold text-center text-on-surface text-sm">
+                    {label}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         </section>
 
-        {/* Filter chips */}
-        <section className="max-w-7xl mx-auto px-8 mb-12">
-          <div className="flex flex-wrap gap-3 items-center">
-            <span className="text-xs font-bold uppercase tracking-widest text-outline mr-2">Filter</span>
-            {filters.map((f) => (
-              <button
-                key={f}
-                onClick={() => setActiveFilter(f)}
-                className={`px-4 py-2 rounded-full text-sm font-bold transition ${
-                  activeFilter === f
-                    ? "bg-primary text-on-primary"
-                    : "bg-surface-container-high text-on-surface font-medium hover:bg-surface-container-highest"
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Story grid */}
-        <section className="max-w-7xl mx-auto px-8 mb-32">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {filtered.map((story) => (
-              <article
-                key={story.id}
-                className={`bg-surface-container-lowest rounded-lg overflow-hidden shadow-sm group hover:scale-[1.02] transition-all duration-500 ${story.offset ? "md:translate-y-8" : ""}`}
-              >
-                <Placeholder label={story.name} className="aspect-[4/3]" />
-                <div className="p-6">
-                  <span className="text-xs font-bold uppercase tracking-widest text-secondary">{story.tag}</span>
-                  <h3 className="font-headline text-xl font-extrabold mt-2 mb-3">{story.quote}</h3>
-                  <p className="text-on-surface-variant text-sm leading-relaxed">{story.body}</p>
-                  <p className="text-xs text-outline font-bold mt-4">— {story.byline}</p>
+        {/* Transformation Gallery */}
+        <section className="py-24 px-6 lg:px-16 bg-surface">
+          <div className="max-w-7xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-display font-bold text-on-surface tracking-tight mb-16 text-center">
+              Small moments. Big transformations.
+            </h2>
+            <div className="masonry-grid">
+              {masonryItems.map(({ img, caption, alt }) => (
+                <div
+                  key={caption}
+                  className="masonry-item relative rounded-xl overflow-hidden group bg-surface-container-highest"
+                >
+                  <img alt={alt} className="w-full h-auto object-cover" src={img} />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-6">
+                    <p className="text-white font-headline font-medium text-lg">
+                      {caption}
+                    </p>
+                  </div>
                 </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {/* Quote wall */}
-        <section className="bg-surface-container py-24 mb-32">
-          <div className="max-w-7xl mx-auto px-8">
-            <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-16 text-center">Lines from the community</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <blockquote className="bg-surface-container-lowest p-8 rounded-lg">
-                <p className="text-base italic mb-4">&ldquo;I stopped caring whether the trick looked right. I started caring whether she enjoyed it. Everything got easier.&rdquo;</p>
-                <p className="text-xs font-bold text-outline">— Hila</p>
-              </blockquote>
-              <blockquote className="bg-surface-container-lowest p-8 rounded-lg md:translate-y-4">
-                <p className="text-base italic mb-4">&ldquo;Roni&apos;s office hours saved a relationship I thought I&apos;d ruined. He&apos;s a different dog. I&apos;m a different person.&rdquo;</p>
-                <p className="text-xs font-bold text-outline">— Andrés</p>
-              </blockquote>
-              <blockquote className="bg-surface-container-lowest p-8 rounded-lg">
-                <p className="text-base italic mb-4">&ldquo;Eight months in. We have not done a single &lsquo;routine.&rsquo; We are, however, having the best year.&rdquo;</p>
-                <p className="text-xs font-bold text-outline">— Priya</p>
-              </blockquote>
+              ))}
+              <div className="masonry-item relative rounded-xl overflow-hidden bg-surface-container-highest">
+                <div className="p-8 bg-secondary-container flex items-center justify-center text-center min-h-[200px]">
+                  <p className="text-on-secondary-container font-headline font-bold text-xl leading-relaxed">
+                    &ldquo;It wasn&apos;t about the tricks. It was about learning
+                    to speak his language.&rdquo;
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Submit your story */}
-        <section className="max-w-7xl mx-auto px-8 mb-20">
-          <div className="bg-secondary-container rounded-xl p-8 md:p-16 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-            <div>
-              <span className="text-secondary font-bold uppercase tracking-widest text-sm mb-4 block">Your turn</span>
-              <h2 className="font-headline text-3xl md:text-5xl font-extrabold text-on-secondary-container mb-4">Share a moment.</h2>
-              <p className="text-on-secondary-container/80 text-lg">
-                A short clip, a paragraph, a photo. Anything that shows what shifted. We feature one new story every week.
+        {/* Testimonials */}
+        <section className="py-20 px-6 lg:px-16 bg-surface-container-low">
+          <div className="max-w-4xl mx-auto text-center">
+            <h2 className="text-sm font-label uppercase tracking-widest text-primary mb-4 font-bold">
+              The Pack Speaks
+            </h2>
+            <h3 className="text-3xl md:text-4xl font-display font-bold text-on-surface mb-12">
+              Thousands of stronger relationships.
+            </h3>
+            <div className="grid md:grid-cols-2 gap-8 text-left">
+              {[
+                { quote: '"The best investment I\'ve ever made for my dog."', initial: "M", name: "Michael & Bruno" },
+                { quote: '"This completely changed how we communicate."', initial: "J", name: "Jessica & Daisy" },
+              ].map(({ quote, initial, name }) => (
+                <div key={name} className="bg-surface-container-lowest p-8 rounded-2xl shadow-sm border border-surface-container">
+                  <div className="flex gap-1 text-tertiary mb-4">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <span key={i} className="material-symbols-outlined" style={{ fontVariationSettings: '"FILL" 1' }}>
+                        star
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-lg font-body text-on-surface-variant mb-6">{quote}</p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant font-bold">
+                      {initial}
+                    </div>
+                    <span className="font-label text-on-surface font-medium">{name}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Become a Story */}
+        <section className="py-24 px-6 lg:px-16 bg-surface overflow-hidden">
+          <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+            <div className="lg:w-1/2 relative">
+              <div className="absolute -inset-4 bg-secondary-container rounded-full opacity-20 blur-3xl -z-10" />
+              <img
+                alt="Student practicing with dog"
+                className="w-full h-auto rounded-2xl shadow-2xl relative z-10"
+                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBbEu1nIiFH4-F21Z31HtLz9tv2ppTLtj-jdT6aTdvg8EengRrnvN-A8HDnt6R6aYF9UZKK_Vdpr4ESgQsZprHYFiS9GszCife6JAsXSPtuthNjrWIihPOgCTfS1bGkblnHQ4nozb4FaySxcGrobQfTdPNZQTTqGhiih6bOfY-3_BKO1Y1H4WEKHfjBSCSZR5RCHjZYvCeH8UL8AWBy7erLoGCyq_cwkqeUlB-UcKNfyEGfUjPXxrMluGrGfrqVdU5mjFKIR88Obn1A"
+              />
+              <div className="absolute -bottom-8 -right-8 bg-surface-container-lowest p-6 rounded-xl shadow-xl z-20 max-w-xs hidden md:block">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary-container">
+                    <span className="material-symbols-outlined">emoji_events</span>
+                  </div>
+                  <div>
+                    <p className="font-headline font-bold text-on-surface text-sm">Next Step</p>
+                    <p className="font-body text-on-surface-variant text-xs">Foundation Course</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="lg:w-1/2 flex flex-col items-start lg:pl-10">
+              <h2 className="text-4xl md:text-5xl font-display font-bold text-on-surface mb-6 tracking-tight">
+                Your story starts today.
+              </h2>
+              <p className="text-xl font-body text-on-surface-variant mb-10 leading-relaxed">
+                Every extraordinary relationship begins with a single step. Join
+                thousands of others who have transformed their bond through
+                understanding, movement, and trust.
               </p>
+              <button className="bg-primary text-on-primary px-8 py-4 rounded-full font-headline font-bold hover:bg-primary-dim transition-all duration-300 shadow-md hover:shadow-lg flex items-center gap-3">
+                Start with BONDED Foundations
+                <span className="material-symbols-outlined">arrow_forward</span>
+              </button>
             </div>
-            <div className="flex flex-col gap-3">
-              <a
-                href="#"
-                className="bg-secondary text-on-secondary px-8 py-4 rounded-full font-headline font-bold text-lg text-center"
-                style={{ textDecoration: "none" }}
-              >
-                Submit your story
-              </a>
-              <p className="text-xs text-on-secondary-container/70 text-center">Members &amp; non-members welcome. You keep your video.</p>
-            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-32 px-6 lg:px-16 bg-secondary text-on-secondary text-center relative overflow-hidden">
+          <div className="relative z-10 max-w-3xl mx-auto flex flex-col items-center">
+            <h2 className="text-5xl md:text-6xl font-display font-bold mb-6 tracking-tight">
+              The next story could be yours.
+            </h2>
+            <p className="text-xl md:text-2xl font-body mb-12 opacity-90">
+              Build the relationship you&apos;ve always dreamed of.
+            </p>
+            <button className="bg-primary-container text-on-primary-container px-10 py-5 rounded-full font-headline font-bold text-lg hover:scale-105 transition-transform duration-300 shadow-xl flex items-center gap-2">
+              Build Your Bond
+              <span className="material-symbols-outlined">pets</span>
+            </button>
           </div>
         </section>
 

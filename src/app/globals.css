@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --font-display: "Plus Jakarta Sans", sans-serif;
   --color-background: #edf8ff;
   --color-on-background: #243036;
   --color-surface: #edf8ff;
@@ -96,4 +97,42 @@ body {
 
 .fill-icon {
   font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+.image-reveal-wrapper {
+  position: relative;
+  overflow: hidden;
+  border-radius: 2rem;
+}
+.image-reveal-wrapper img {
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.image-reveal-wrapper:hover img {
+  transform: scale(1.05);
+}
+
+.kinetic-shadow {
+  box-shadow: 0 32px 64px -12px rgba(36, 48, 54, 0.06);
+}
+
+.masonry-grid {
+  column-count: 1;
+  column-gap: 1.5rem;
+}
+@media (min-width: 768px) {
+  .masonry-grid { column-count: 2; }
+}
+@media (min-width: 1024px) {
+  .masonry-grid { column-count: 3; }
+}
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1.5rem;
+}
+
+details > summary {
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
 }

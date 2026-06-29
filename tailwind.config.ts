@@ -63,6 +63,7 @@ const config: Config = {
       },
       fontFamily: {
         headline: ["Plus Jakarta Sans", "sans-serif"],
+        display: ["Plus Jakarta Sans", "sans-serif"],
         body: ["Be Vietnam Pro", "sans-serif"],
         label: ["Be Vietnam Pro", "sans-serif"],
       },

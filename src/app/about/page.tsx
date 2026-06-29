@@ -1,194 +1,256 @@
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import Link from "next/link";
 
-export const metadata = { title: "About Roni | Keta Tov" };
+export const metadata = { title: "About Roni | BONDED" };
 
 export default function AboutPage() {
   return (
     <>
       <Navbar />
-      <main className="pt-24 overflow-hidden">
+      <main className="pt-24 overflow-x-hidden">
 
         {/* Hero */}
-        <section className="relative px-8 py-12 md:py-24 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-end">
-          <div className="md:col-span-6 z-10">
-            <span className="inline-block mb-6 px-4 py-1.5 bg-secondary-container text-on-secondary-container rounded-full text-xs font-bold uppercase tracking-[0.18em]">
-              About Roni
-            </span>
-            <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.05] tracking-tight mb-6">
-              The trainer who doesn&apos;t &ldquo;fix&rdquo; dogs
-            </h1>
-            <p className="text-lg md:text-xl text-on-surface-variant max-w-xl leading-relaxed">
-              Roni Sagi has been training dogs since 2017, since then she stopped trying to make them perform and started teaching humans to listen instead.
-            </p>
-          </div>
-          <div className="md:col-span-6 relative">
-            <div className="absolute -top-12 -right-12 w-64 h-64 bg-tertiary-container rounded-full blur-3xl opacity-30"></div>
-            <div className="relative rounded-xl overflow-hidden aspect-[4/5] bg-surface-container-low rotate-2">
-              <img
-                className="w-full h-full object-cover"
-                alt="Roni Sagi with her dog"
-                src="https://static.wixstatic.com/media/4da84e_3db2d7a75a0547adaec16edddd0c2a43~mv2.jpg/v1/fill/w_730,h_690,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/Frame%20536.jpg"
-              />
-            </div>
-            <div className="absolute -bottom-8 -left-8 bg-secondary-container p-6 rounded-lg shadow-xl z-20 max-w-[280px]">
-              <p className="font-headline font-bold text-on-secondary-container italic leading-snug">
-                &ldquo;If you&apos;re not having fun, you&apos;re doing it wrong.&rdquo;
+        <section className="relative min-h-[90vh] flex items-center px-8 md:px-20 py-20">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-7xl mx-auto">
+            <div className="z-10">
+              <h1 className="font-display font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight leading-[0.9] mb-8">
+                It was never about{" "}
+                <span className="text-primary italic">teaching dogs</span> to dance.
+              </h1>
+              <p className="font-body text-xl md:text-2xl text-on-surface-variant leading-relaxed max-w-xl">
+                It was always about helping people build a relationship they never
+                thought was possible.
               </p>
             </div>
-          </div>
-        </section>
-
-        {/* Quick facts */}
-        <section className="bg-surface-container-low py-16 mb-24">
-          <div className="max-w-7xl mx-auto px-8 grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div>
-              <p className="text-4xl font-headline font-black text-primary mb-2">2017</p>
-              <p className="text-sm text-outline font-bold">Training since</p>
-            </div>
-            <div>
-              <p className="text-4xl font-headline font-black text-primary mb-2">2019</p>
-              <p className="text-sm text-outline font-bold">Dancing since</p>
-            </div>
-            <div>
-              <p className="text-4xl font-headline font-black text-primary mb-2">Top&nbsp;10</p>
-              <p className="text-sm text-outline font-bold">AGT finalist</p>
-            </div>
-            <div>
-              <p className="text-4xl font-headline font-black text-primary mb-2">5,000+</p>
-              <p className="text-sm text-outline font-bold">Handlers taught</p>
+            <div className="relative">
+              <div className="image-reveal-wrapper kinetic-shadow aspect-[4/5] md:aspect-square">
+                <img
+                  alt="Roni with River"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDf4lHpA98PPIK6lbQ-K40aO5tWSQEmq2mEYRjtfGLh1nmycPuLjAJTLvwHuKiVaXXla6biiyB3zG8CE9V6T10aWVEWl8Bqw30-njyiPVY_sdB8-Xio5vXkqJ9u-eIk21uYAa_z-xqrvc5msR2zfoSLjLSHca6iR5lGc6HvczU8vmZ69JQ2Ak2X-fkpsf0ye7BDms476vSq0vQ6d8ihTZ6QkV_pMI1PvK1yoDAX9cAdRkso9npNlyW_itYfRR2HlLDp-D4MuMA8uM0iYeU"
+                />
+              </div>
+              <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-tertiary-container rounded-full mix-blend-multiply opacity-20 animate-pulse" />
             </div>
           </div>
         </section>
 
-        {/* Origin story */}
-        <section className="max-w-7xl mx-auto px-8 mb-32 grid grid-cols-1 md:grid-cols-12 gap-12 items-start">
-          <div className="md:col-span-5 md:col-start-2 md:sticky md:top-32">
-            <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">The origin</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-extrabold leading-tight">
-              A trainer who fell in love with the wrong half of the job.
-            </h2>
-          </div>
-          <div className="md:col-span-6 space-y-6 text-on-surface-variant text-lg leading-relaxed">
-            <p>
-              Roni started where most trainers start: teaching obedience. Sit, stay, leave-it. And for a while it worked — dogs got &ldquo;well-behaved,&rdquo; owners got their evenings back, everyone went home happy.
-            </p>
-            <p>
-              But the dogs who came back for more advanced work weren&apos;t the obedient ones. They were the dogs who had figured out that <em>Roni was listening</em>. The relationship was the addictive part, not the commands.
-            </p>
-            <p>
-              By 2019 she&apos;d built a different kind of practice. Not obedience. <strong>Translation.</strong> Teaching humans to read the small signals their dog had been broadcasting all along — and to answer back.
-            </p>
-          </div>
-        </section>
-
-        {/* AGT moment */}
-        <section className="bg-secondary-container py-24 mb-32 overflow-hidden relative">
-          <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
-            <div className="md:order-2">
-              <span className="text-secondary font-bold uppercase tracking-widest text-sm mb-4 block">The AGT moment</span>
-              <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-6 text-on-secondary-container">
-                A stage 11 million people watched.
+        {/* The Beginning */}
+        <section className="bg-surface-container-low py-32 px-8 md:px-20">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div className="order-2 lg:order-1">
+              <div className="image-reveal-wrapper kinetic-shadow aspect-video">
+                <img
+                  alt="Training in nature"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8hHtMr6pyJa6z_c6eXXaAAmB_emy6jKLcIv5NnNHaKkjK9chk4VWdZYMm9JUo-GP7mg_iht43Cw_LFEw5DyQdiqoNFsBGquucV6DPge3OBI0PK9m_QNrn3EjcuLsUl1OyUa5ESBnwhyALhPfqn4VkNlsSuVpivX8HIk-JHD8M_Yl3gtKvK89P07YGQxMuHzmu1XaBSabVhs3l99DpntDWuoz-8tTn7fibqhmDXTSczjCFZr98pZG_7DMzIhRbjVfFABL5SdGuvgzNCvk"
+                />
+              </div>
+            </div>
+            <div className="order-1 lg:order-2">
+              <h2 className="font-display font-bold text-3xl md:text-5xl tracking-tight leading-tight mb-8">
+                I didn&apos;t fall in love with dog dancing. I fell in love with
+                what it{" "}
+                <span className="text-secondary">made possible</span>.
               </h2>
-              <p className="text-on-secondary-container/90 text-lg leading-relaxed mb-6">
-                On America&apos;s Got Talent, Roni and her dog made the Top 10 doing a routine no other act could replicate: not because the tricks were harder, but because the trust was visible. The judges felt it. The audience felt it. You can feel it on a phone screen.
-              </p>
-              <p className="text-on-secondary-container/90 text-lg leading-relaxed">
-                That visibility is what the academy is here to bottle and pass on. Not the stage. The trust.
-              </p>
-            </div>
-            <div className="md:order-1 relative">
-              <div
-                className="aspect-video rounded-xl shadow-xl"
-                style={{
-                  background: "repeating-linear-gradient(-45deg,#e4f3fc,#e4f3fc 12px,#d4e5ef 12px,#d4e5ef 24px)",
-                  transform: "rotate(-2deg)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  color: "#515d64",
-                  fontFamily: "ui-monospace, monospace",
-                  fontSize: 11,
-                  fontWeight: 500,
-                  letterSpacing: "0.05em",
-                  textTransform: "uppercase",
-                }}
-              >
-                <span className="bg-white/90 px-3 py-1.5 rounded-full">AGT performance clip / photo</span>
+              <div className="space-y-6 font-body text-lg text-on-surface-variant leading-relaxed">
+                <p>
+                  For years, I&apos;ve worked with dogs and their people, helping
+                  them discover something that goes far beyond tricks or routines.
+                </p>
+                <p>
+                  The most meaningful moments never happened on stage. They happened
+                  long before the music started. A glance. A choice. A shared
+                  understanding. That&apos;s when I realized… Dog dancing was never
+                  the goal. It was simply proof of an extraordinary relationship.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* Three principles */}
-        <section className="max-w-7xl mx-auto px-8 mb-32">
-          <div className="mb-16">
-            <span className="text-primary font-bold uppercase tracking-widest text-sm mb-4 block">The method</span>
-            <h2 className="font-headline text-4xl md:text-5xl font-extrabold leading-tight max-w-3xl">
-              Three things Roni won&apos;t compromise on.
+        {/* The Belief */}
+        <section className="py-32 px-8 md:px-20 bg-surface">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full font-label font-semibold text-sm mb-8 uppercase tracking-widest">
+              <span className="material-symbols-outlined text-sm">visibility</span>{" "}
+              Our Philosophy
+            </div>
+            <h2 className="font-display font-bold text-4xl md:text-6xl tracking-tight mb-12">
+              Every dog is already communicating. Most of us simply haven&apos;t
+              learned the <span className="text-primary">language</span> yet.
             </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-surface-container-lowest p-8 rounded-lg">
-              <span className="text-6xl font-headline font-black text-primary/20 block leading-none mb-4">01</span>
-              <h3 className="font-headline text-2xl font-bold mb-3">Positive reinforcement. Always.</h3>
-              <p className="text-on-surface-variant">
-                No corrections, no leash pops, no &ldquo;dominance.&rdquo; Every behavior we want, we shape. Every behavior we don&apos;t want, we redirect or ignore. Slower at first. Permanent in the end.
-              </p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-lg md:translate-y-8">
-              <span className="text-6xl font-headline font-black text-primary/20 block leading-none mb-4">02</span>
-              <h3 className="font-headline text-2xl font-bold mb-3">The human goes first.</h3>
-              <p className="text-on-surface-variant">
-                Most &ldquo;dog problems&rdquo; are signal problems. Your dog already speaks; we teach you to hear them. Then half the so-called problems aren&apos;t problems anymore.
-              </p>
-            </div>
-            <div className="bg-surface-container-lowest p-8 rounded-lg">
-              <span className="text-6xl font-headline font-black text-primary/20 block leading-none mb-4">03</span>
-              <h3 className="font-headline text-2xl font-bold mb-3">Fun is the metric.</h3>
-              <p className="text-on-surface-variant">
-                If your dog isn&apos;t wagging, we&apos;re doing it wrong. Same goes for you. Joyful sessions stick. Stressful ones backfire. That&apos;s the whole science of it.
-              </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left items-center">
+              <div className="image-reveal-wrapper kinetic-shadow aspect-square">
+                <img
+                  alt="Close-up eye contact between dog and owner"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuALuOqFY9xeeE8vXOlCUXbn0MkITA6DDaYJM_mD2mYbC4Mv_wZVVQLo_G1y5YmBrD9dho_j7VvmOUwu8piMHA6i6s1k17MLwg4_f9u73joGlYtOGloIUikz5EzSUsS6lV2SmxPQBuKZcWoemYbPpH1lodkAFbTCNsZSSVrhFN4CKlayki916asJYr44eqSoTaQ1YOa_np8uTJ7hd3-kg0ZbdNV_oWJ0cZ2essYYXdtihsbnnL0jZTOmBsK7xnSE9j7cWsJEURDJkxlWDsE"
+                />
+              </div>
+              <div className="space-y-6 font-body text-lg text-on-surface-variant leading-relaxed">
+                <p>
+                  I don&apos;t believe in forcing dogs to obey. I believe in
+                  creating a relationship where communication comes naturally. When
+                  trust comes first, everything else becomes easier.
+                </p>
+                <p>
+                  Learning becomes play. Training becomes quality time. Movement
+                  becomes conversation. And suddenly, you&apos;re no longer teaching
+                  your dog… You&apos;re growing together.
+                </p>
+              </div>
             </div>
           </div>
         </section>
 
-        {/* Featured quote */}
-        <section className="max-w-5xl mx-auto px-8 mb-32 text-center">
-          <p className="font-headline text-3xl md:text-5xl font-extrabold leading-tight text-on-surface">
-            &ldquo;We don&apos;t only teach dogs to dance. We teach humans and dogs to choose each other.&rdquo;
-          </p>
-          <p className="mt-8 text-sm font-bold uppercase tracking-widest text-outline">— Roni Sagi</p>
+        {/* Why BONDED Exists */}
+        <section className="bg-surface-container-highest py-32 px-8 md:px-20 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto flex flex-col items-center">
+            <h2 className="font-display font-extrabold text-4xl md:text-6xl text-center mb-16 tracking-tight">
+              I wanted everyone to{" "}
+              <span className="text-primary italic">experience</span> this feeling.
+            </h2>
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+              <div className="lg:col-span-5 space-y-8 font-body text-lg text-on-surface-variant">
+                <p className="text-xl font-medium text-on-surface italic">
+                  "How can I have the kind of relationship you have with your dogs?"
+                </p>
+                <p>
+                  Over the years, thousands of people asked me the same question.
+                  The answer was never one trick. Or one routine. It was a way of
+                  thinking. A way of communicating. A way of growing together.
+                </p>
+                <p>
+                  That&apos;s why I created BONDED. Not as another online course.
+                  But as a step-by-step method that helps people build extraordinary
+                  relationships with their dogs.
+                </p>
+              </div>
+              <div className="lg:col-span-7">
+                <div className="image-reveal-wrapper kinetic-shadow aspect-[16/9]">
+                  <img
+                    alt="Diverse student community"
+                    className="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida/AP1WRLvEm1PsMzO-ivUj-GHxD79lNdavsASqD1mNlBjNXGHFfjLzIWlpq__LT3H3tBsTez75WDSeyH9cGvhGFgPFeqydq46T6hbrNQjKLySjzMc47CGH0xVdYzjRShZqB3ZnnYsAr1BF9huDgiulcqXgt7OFvni4NyflGLpEZFwCDKFtG_KnpyZ5d-LZa6FZBCMV6Px7kfa2K1X7cflsjBBDHNOUltJdb7dqmwUYRWyT9aE71rxeu1SYqlTFEsfH"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        {/* CTA */}
-        <section className="max-w-7xl mx-auto px-8 mb-20">
-          <div className="kinetic-gradient rounded-xl p-8 md:p-16 flex flex-col md:flex-row items-center gap-12 text-on-primary overflow-hidden relative">
-            <div className="flex-grow z-10">
-              <h2 className="font-headline text-3xl md:text-5xl font-black mb-4">
-                Want to feel what they&apos;re talking about?
+        {/* AGT / Stage vs Real Life */}
+        <section className="py-32 px-8 md:px-20">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-20">
+              <h2 className="font-display font-bold text-4xl md:text-6xl tracking-tight mb-8">
+                Millions watched us dance. But that wasn&apos;t what they{" "}
+                <span className="text-secondary">remembered</span>.
               </h2>
-              <p className="text-lg text-on-primary/80 max-w-lg">
-                Start with the free mini-class. Fifteen minutes. One conversation with your dog you won&apos;t forget.
+              <p className="font-body text-xl text-on-surface-variant max-w-3xl mx-auto">
+                When River and I appeared on America&apos;s Got Talent, people
+                talked about the choreography. But what they truly connected
+                with… Was the relationship.
               </p>
             </div>
-            <div className="flex flex-wrap gap-4 z-10">
-              <Link
-                href="/enroll"
-                className="bg-white text-primary px-8 py-4 rounded-full font-headline font-bold text-lg inline-block"
-                style={{ textDecoration: "none" }}
-              >
-                Start the free class
-              </Link>
-              <Link
-                href="/courses"
-                className="border-2 border-white/40 text-white px-8 py-4 rounded-full font-headline font-bold text-lg inline-block"
-                style={{ textDecoration: "none" }}
-              >
-                See the full library
-              </Link>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
+              <div className="space-y-6">
+                <div className="image-reveal-wrapper kinetic-shadow aspect-video group">
+                  <img
+                    alt="AGT Performance"
+                    className="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida/AP1WRLvWCiTpe12vy2sIIEZYWr6EH7qmUb_8zOv7YtUSv41LQgTBi60VdLKrGdHACjwSqWaCLeXBOu1h1Bh6WG1hj3UFWIMSRJjuWqNy4KDJ8HsCKl06JcaMc8Garo34Ue56UUTwqk5ARrqgsBF-Aoe885GN8YAFQIi43LQ5kphpVrBgqfj1es9rHXkK1De85pfMVkq_mM3pB-7R0NkGFcnBm-hDraS7LJ719zEBEVaAzxXqFuhAEdNR_61MsUQ"
+                  />
+                  <div className="absolute bottom-4 left-4 bg-white/90 px-4 py-2 rounded-full font-label font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                    The Spotlight
+                  </div>
+                </div>
+                <p className="font-body text-on-surface-variant italic">
+                  The Performance: Choreography and spectacle.
+                </p>
+              </div>
+              <div className="space-y-6">
+                <div className="image-reveal-wrapper kinetic-shadow aspect-video group">
+                  <img
+                    alt="Quiet home moment"
+                    className="w-full h-full object-cover"
+                    src="https://lh3.googleusercontent.com/aida/AP1WRLsR2IhoRqm2IQzpEA5-03EUB1Wq_4VYDtcOxT5uMQwx7nmoIhiSaivl3aPxR60FvMafl8WLuqnhZMZg8hhvpKzuUra1P5SEMlJe0dh5UEPzWcoAATVhNB11P7OoDGKzb798Q28CkRWau2n1_2JyRjKz1bwJSKi2-DUmyql1it7twBOEF_Z-UtOnID03q_z8Q8Ty_sCqzaodjYyOPjcnTgy1M4MQ7C8bFGxvKn1bp6aNSGekAj1WbNzhqdWL"
+                  />
+                  <div className="absolute bottom-4 left-4 bg-white/90 px-4 py-2 rounded-full font-label font-bold text-xs uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+                    The Soul
+                  </div>
+                </div>
+                <p className="font-body text-on-surface-variant italic">
+                  Real Life: Genuine connection and quiet trust.
+                </p>
+              </div>
             </div>
+            <div className="mt-16 text-center max-w-2xl mx-auto">
+              <p className="font-body text-lg text-on-surface-variant">
+                That experience reminded me that what inspires people isn&apos;t
+                perfect performance. It&apos;s genuine connection. And that&apos;s
+                exactly what BONDED is built to teach.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Promise */}
+        <section className="bg-primary text-on-primary py-32 px-8 md:px-20 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-1/3 h-full bg-primary-dim opacity-10 -skew-x-12 translate-x-1/2" />
+          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+            <div>
+              <h2 className="font-display font-extrabold text-4xl md:text-6xl mb-8 tracking-tighter">
+                I want this journey to{" "}
+                <span className="italic text-tertiary-container">feel different</span>.
+              </h2>
+              <div className="space-y-8 font-body text-lg md:text-xl opacity-90 leading-relaxed">
+                <p>
+                  You&apos;ll never hear me talk about perfect dogs. Because
+                  that&apos;s not what I&apos;m here to help you create. I&apos;m
+                  here to help you build a relationship filled with trust, curiosity,
+                  confidence, and joy.
+                </p>
+                <p>
+                  One that grows stronger every single day. No matter your
+                  experience. No matter your dog&apos;s breed. No matter where
+                  you&apos;re starting today.
+                </p>
+              </div>
+            </div>
+            <div>
+              <div className="image-reveal-wrapper border-4 border-primary-container shadow-2xl aspect-square rotate-2 hover:rotate-0 transition-transform duration-700">
+                <img
+                  alt="Wins and smiles"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuA5flj39yr03KXRY3gPuYmstWTwDohlHI2hi4q_JsHT1GdgOfAqOxWlyGDHefjeaHE-N1RFZXq_D32zE50qb1ELphzumQ5ubMrfWGryT5Ak7WF8nlHpn8NLwq_1kZv_9WQsXmIS4kK8DN1Fztn41cW_57r5xPB7Hw_0xtSPWtbJrBybA4sRphDWrbgvEgNBl1jBuL77Au8PorY12in4wNx76QDOHwOIAqoM6B-6IcvfXV6Fp3mZqBgwXFtVQ5ArbJwXG43RIjxrW05mRaU"
+                />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Final CTA */}
+        <section className="py-40 px-8 text-center bg-surface-container-lowest">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="font-display font-black text-5xl md:text-7xl mb-8 tracking-tight">
+              Let&apos;s build something{" "}
+              <span className="text-primary italic underline decoration-tertiary-container decoration-8 underline-offset-8">
+                extraordinary
+              </span>{" "}
+              together.
+            </h2>
+            <p className="font-body text-xl md:text-2xl text-on-surface-variant mb-12">
+              Your dog is already speaking. I&apos;d love to help you learn the
+              language.
+            </p>
+            <button className="group bg-primary text-on-primary px-12 py-5 rounded-full font-headline font-bold text-xl hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 flex items-center gap-4 mx-auto">
+              Start with BONDED Foundations
+              <span className="material-symbols-outlined group-hover:translate-x-2 transition-transform">
+                arrow_forward
+              </span>
+            </button>
           </div>
         </section>
 
