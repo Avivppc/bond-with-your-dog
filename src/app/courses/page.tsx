@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
@@ -5,7 +6,7 @@ export const metadata = { title: "The BONDED Method" };
 
 const stages = [
   {
-    badge: "Stage 01",
+    badge: "Chapter One",
     badgeBg: "bg-primary-container/20 text-primary-dim",
     badgeIcon: "favorite",
     title: "Build the relationship everything else depends on.",
@@ -35,7 +36,7 @@ const stages = [
     reverse: false,
   },
   {
-    badge: "Stage 02",
+    badge: "Chapter Two",
     badgeBg: "bg-secondary-container/30 text-secondary-dim",
     badgeIcon: "directions_run",
     title: "Turn connection into movement.",
@@ -65,7 +66,7 @@ const stages = [
     reverse: true,
   },
   {
-    badge: "Stage 03",
+    badge: "Chapter Three",
     badgeBg: "bg-tertiary-container/30 text-tertiary-dim",
     badgeIcon: "stars",
     title: "Express everything you've built together.",
@@ -147,9 +148,12 @@ export default function CoursesPage() {
                   arrow_forward
                 </span>
               </button>
-              <button className="bg-surface-container text-on-surface font-label text-base font-semibold px-8 py-4 rounded-full hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+              <Link
+                href="/quiz"
+                className="bg-surface-container text-on-surface font-label text-base font-semibold px-8 py-4 rounded-full hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"
+              >
                 Find Your Journey
-              </button>
+              </Link>
             </div>
           </div>
           <div className="lg:w-1/2 relative">
@@ -214,7 +218,7 @@ export default function CoursesPage() {
                 {!reverse && (
                   <div className="absolute top-0 right-0 w-96 h-96 bg-secondary-container/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
                 )}
-                {badge === "Stage 03" && (
+                {badge === "Chapter Three" && (
                   <div className="absolute bottom-0 left-0 w-96 h-96 bg-tertiary-container/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
                 )}
                 <div className="lg:w-1/2 relative z-10">

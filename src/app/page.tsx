@@ -80,27 +80,36 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAgGWzFbpe-cssXTlsdfGk1Vp7tv9iyDaZij_ooOE2u0e-FZ_IIjHg3eJFJzltqe7fwXkK8ppFZMyHdrnCXknvuMLmzyLXxAum7mbYQ0KBW3DScBAIl5p9Atppk8HiYGxIOB9ZFDZS0VwIVpfVkEmz-15zVE-zheMv3IG3_3CwIizxDS3ZarU3wJ-Kt7g_59uwCPuSCo9lDB8ZwZHmfhFD9uPwmbBxUTjisb7NSyWlvy6Qa1B43_36VW1Tjyhquhf7mNj-R-jKmqHC76H0",
+                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnhwjT5qcMl47SxoJE886F_z34yY2lY5aGza7bldpCCOoOG8wT0KGuIYfBF-PRAIABL0x2FRVbczeJ-vDu1lTrIjx5wPo2rBX3awuL8ry18WzuMWsHqF8I-1x8HprmcrMZC2Cy83KePBsE-dwggfOx3wtlJwij4AeYehnrGjSylLPgdpQ1DSuOPTAwZPYAA_nnZO3CEovm7tp4bbDRi5cqg66yclvQFHMPJT9lv7q8IW5iFt5sGF7hshTe1WSYYrKvHfdcxIJkS-9yqVY",
+                chapter: "CHAPTER 01",
+                icon: "favorite",
+                badgeClass: "bg-primary text-on-primary",
                 title: "Foundations",
                 desc: "Build trust, communication and confidence.",
                 cta: "Start Here",
               },
               {
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDUk6eMzylZnCIklE0YplObwZifd4ZVe3Of-STCCuLEWXua2frIuSbDnvrKuEZCAPb7uc-3LivNab0xLa-EV9aJII3LsmiM_Or1LcfmB2FPEOR1NyRwyzqM2CjAi9Ms1oVZRbLavskAog-LsTvjiBOjbI7osykK3rZf0-H5DKAEfMBZI9KcJ6mQ2e6AUWWFN0-t4yqMLWCmObNsMFtg7Gh1fKWgvXTJ0IuBW4BvxRjsJztJjM2fzpOgKTjIIY5pdZeg3y9TRNX1H1R8Qno",
-                title: "Move Together",
+                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCeOV82TnwFEbpVF127JrtHzQeqzf-Y5hpt4iX2JeAgq9jz6JfQ7AxcrbF1gTQA5_3zKxD2K-R99VF75h5mRPtZriU7zXZ51tkiUaNwfTbwSVF5aOO1mRN0q_b7B2lr2typaErbuIM4Nb1fVrzM2U7iHg6PGQSFlLC9ZjZE8aQvxNUc6xkK6YVZlmi7LV_Cqx_NkuASrk0LSA_AyRPGb6GIvnKLu9RFLsCfiZdQPJBcROT83R4OnDC_0mtg2WTY9OUS5C66PpkiEgUkmW4",
+                chapter: "CHAPTER 02",
+                icon: "directions_run",
+                badgeClass: "bg-secondary-container text-on-secondary-container",
+                title: "Movement",
                 desc: "Discover movement, play and shared experiences.",
                 cta: "Explore",
               },
               {
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAbqgoK-nW5EecXYP6eqLsFhspygox_vTjTEExHlNs6qVf4SJnFLH3UIQV6HRWha_XBGpknQp1mz_jY6BBWrpwpXFDN4fDI0kysqI9ZS2O1zn1kap3OO5bAK398VIlUa8uc5Q7AliorXbmY94qogPv1lLr4N21kNz-6kwILXz2LusEPK_x9Y0Y1G8RTui0buvxG2YvJweJP6Awd3uQIhFOJRP7dcF20g86tQ3K11KM4gYmJXUK35gBPVT3zw_ai_SxV-cB8luUUd_GzY9o",
-                title: "The Masterpiece",
+                img: "https://lh3.googleusercontent.com/aida/AP1WRLuMxymK8kqjqrqr8B8Fe_ACuKQsgcTfA97Byb6HvYyEmz_kkSix5dkgfPZqth5Js-i8HJtYvTa8PsPrcOL2RVVrp6MNxYG-ZlQL4X7Js__1RTzLB6XZadAyT4jNm_xhV-FJeKf18QlsDsIKmxjtJC1JcBIQ7ObRtXzmIzJP-aK6iMjimapbQtb8jwaiwOtEz3yhs11KKSofUrf-AFJLOnjLcs_Nd-QasjJwCAtAUHmsaKjIIiPOdyykg5Bu",
+                chapter: "CHAPTER 03",
+                icon: "stars",
+                badgeClass: "bg-tertiary-container text-on-tertiary-container",
+                title: "Masterpiece",
                 desc: "Create beautiful routines built on real connection.",
                 cta: "Discover",
               },
-            ].map(({ img, title, desc, cta }) => (
+            ].map(({ img, chapter, icon, badgeClass, title, desc, cta }, i) => (
               <div
                 key={title}
-                className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 flex flex-col h-full"
+                className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 flex flex-col h-full relative"
               >
                 <div className="aspect-video rounded-md overflow-hidden mb-6 relative bg-surface-container-low">
                   <img
@@ -109,8 +118,21 @@ export default function HomePage() {
                     src={img}
                   />
                 </div>
+                <div className="absolute top-4 -left-2 z-20">
+                  <div
+                    className={`${badgeClass} font-label text-[10px] font-bold tracking-widest px-4 py-2 rounded-r-full shadow-lg relative -left-2 flex items-center gap-2`}
+                  >
+                    <span
+                      className="material-symbols-outlined text-xs"
+                      style={{ fontVariationSettings: '"FILL" 1' }}
+                    >
+                      {icon}
+                    </span>
+                    {chapter}
+                  </div>
+                </div>
                 <h3 className="font-headline text-2xl font-bold mb-2">{title}</h3>
-                <p className="text-on-surface-variant text-sm mb-6 flex-grow font-light">
+                <p className="text-on-surface-variant text-sm mb-6 flex-grow font-light font-body">
                   {desc}
                 </p>
                 <div className="flex justify-between items-center pt-6 border-t border-surface-container-high">
@@ -121,6 +143,13 @@ export default function HomePage() {
                     </span>
                   </button>
                 </div>
+                {i < 2 && (
+                  <div className="hidden md:block absolute -right-4 top-1/2 -translate-y-1/2 z-10">
+                    <span className="material-symbols-outlined text-outline-variant/30 text-3xl">
+                      chevron_right
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -164,7 +193,7 @@ export default function HomePage() {
           <div className="max-w-7xl mx-auto px-8">
             <div className="mb-16">
               <h2 className="font-headline text-4xl font-extrabold mb-4">
-                Choose Your Track
+                See Your Journey
               </h2>
               <p className="text-on-surface-variant">
                 Structured paths to take you from first steps to center stage.
@@ -201,7 +230,7 @@ export default function HomePage() {
                   <span className="bg-primary-container text-on-primary-container w-10 h-10 rounded-full flex items-center justify-center font-black">
                     02
                   </span>
-                  <h4 className="font-headline text-xl font-bold">Move Together</h4>
+                  <h4 className="font-headline text-xl font-bold">Movement</h4>
                 </div>
                 <div className="space-y-3">
                   <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-primary">
@@ -225,7 +254,7 @@ export default function HomePage() {
                   <span className="bg-secondary-container text-on-secondary-container w-10 h-10 rounded-full flex items-center justify-center font-black">
                     03
                   </span>
-                  <h4 className="font-headline text-xl font-bold">The Masterpiece</h4>
+                  <h4 className="font-headline text-xl font-bold">Masterpiece</h4>
                 </div>
                 <div className="space-y-3">
                   <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-secondary">
@@ -287,8 +316,8 @@ export default function HomePage() {
                   <p className="text-sm text-outline font-bold">Finalist</p>
                 </div>
                 <div>
-                  <p className="text-3xl font-headline font-black text-primary">Master</p>
-                  <p className="text-sm text-outline font-bold">Trainer</p>
+                  <p className="text-3xl font-headline font-black text-primary">+1M</p>
+                  <p className="text-sm text-outline font-bold">Social</p>
                 </div>
                 <div>
                   <p className="text-3xl font-headline font-black text-primary">Global</p>

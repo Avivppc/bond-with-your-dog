@@ -9,9 +9,10 @@ const LOGO_URL =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuD3L-iqQWhpdZBmaOwetfOjAsZ25lxP0wymy2PYSIDqUFIryq0AE29yJ4Yx-2lUCRQXgDe4HZTYlvZKWSCgWOe0GrDd7CNu-0DK2c3a78cwmDEHKS5xm8QUXqwas29sup62v7JsnsbH0ArUbA8sJVh_KMAdCtObqRqa_QYWwfySpNLg0BINuzYgd6eyJmBZgF5ihqGlGCFpA6QpxRRwGqvuhEOSRIpbDbl-igWna5OxI2E8rWgAtThxd9aEiGuTQWw-aRiJJu2lbihm";
 
 const navLinks = [
-  { href: "/courses", label: "Method" },
+  { href: "/courses", label: "Bonded Journey" },
   { href: "/stories", label: "Stories" },
   { href: "/about", label: "About Roni" },
+  { href: "/quiz", label: "Find Your Journey" },
 ];
 
 export default function Navbar() {
