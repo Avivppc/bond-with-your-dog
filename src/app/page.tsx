@@ -6,6 +6,51 @@ export const metadata = { title: "BONDED - Build Your Bond" };
 const COMMUNITY_BG =
   "https://lh3.googleusercontent.com/aida/AP1WRLuKfN_FAkzj-B8cFzyTUvYSYcgpUq2IgmA4kT4VCf0XYPyzBgOcE0Lzd1oDVuPdoVMeGMuzkYlvd_FsVNbA5lr2iDeTk4ozfPQICxFn2dMtCE32rYi0VXlUN3UiCmoGE10On2vMkf2w5F6i6s3EYFm9zDqckN93YfTlnuZH8BPq0BaZfIDuYNQvGhO-WUczxyP0wnehy4m9gtb1-VWnjvC1mikGjyPvbkk0X7Gnof_pc4KJ3q8PF8wKWOT3";
 
+const journeyTracks = [
+  {
+    num: "01",
+    title: "Foundations",
+    badgeClass: "bg-tertiary-container text-on-tertiary-container",
+    firstBorder: "border-tertiary",
+    iconClass: "bg-[#fdd400]/20 border border-[#edc600]",
+    lessons: [
+      { label: "Intro", slug: "intro" },
+      { label: "Basic Foundations", slug: "basic-foundations" },
+      { label: "Leash Walking", slug: "leash-walking" },
+      { label: "Basic Skills", slug: "basic-skills" },
+      { label: "Basic Tricks", slug: "basic-tricks" },
+    ],
+  },
+  {
+    num: "02",
+    title: "Movement",
+    badgeClass: "bg-primary-container text-on-primary-container",
+    firstBorder: "border-primary",
+    iconClass: "bg-[#ff8f00]/16 border border-[#eb8300]",
+    lessons: [
+      { label: "Fun Tricks", slug: "fun-tricks" },
+      { label: "Take A Selfie", slug: "take-a-selfie" },
+      { label: "Give A Hug", slug: "give-a-hug" },
+      { label: "Jump Basics", slug: "jump-basics" },
+      { label: "Hoop Jumps", slug: "hoop-jumps" },
+    ],
+  },
+  {
+    num: "03",
+    title: "Masterpiece",
+    badgeClass: "bg-secondary-container text-on-secondary-container",
+    firstBorder: "border-secondary",
+    iconClass: "bg-[#a6eff3]/40 border border-[#0e666a]",
+    lessons: [
+      { label: "Dancing Skills", slug: "dancing-skills" },
+      { label: "Adding Artistic Impressions", slug: "artistic-impressions" },
+      { label: "Moving Together", slug: "moving-together" },
+      { label: "Model Walk", slug: "model-walk" },
+      { label: "Drunk Bunny", slug: "drunk-bunny" },
+    ],
+  },
+];
+
 export default function HomePage() {
   return (
     <>
@@ -200,81 +245,41 @@ export default function HomePage() {
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              {/* Track 1 */}
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-tertiary-container text-on-tertiary-container w-10 h-10 rounded-full flex items-center justify-center font-black">
-                    01
-                  </span>
-                  <h4 className="font-headline text-xl font-bold">Foundations</h4>
-                </div>
-                <div className="space-y-3">
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-tertiary">
-                    Intro
-                  </div>
-                  {["Basic Foundations", "Leash Walking", "Basic Skills", "Basic Tricks"].map(
-                    (item) => (
-                      <div
-                        key={item}
-                        className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70"
-                      >
-                        {item}
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-              {/* Track 2 */}
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-primary-container text-on-primary-container w-10 h-10 rounded-full flex items-center justify-center font-black">
-                    02
-                  </span>
-                  <h4 className="font-headline text-xl font-bold">Movement</h4>
-                </div>
-                <div className="space-y-3">
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-primary">
-                    Fun Tricks
-                  </div>
-                  {["Take A Selfie", "Give A Hug", "Jump Basics", "Hoop Jumps"].map(
-                    (item) => (
-                      <div
-                        key={item}
-                        className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70"
-                      >
-                        {item}
-                      </div>
-                    )
-                  )}
-                </div>
-              </div>
-              {/* Track 3 */}
-              <div>
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="bg-secondary-container text-on-secondary-container w-10 h-10 rounded-full flex items-center justify-center font-black">
-                    03
-                  </span>
-                  <h4 className="font-headline text-xl font-bold">Masterpiece</h4>
-                </div>
-                <div className="space-y-3">
-                  <div className="p-4 bg-surface-container-lowest rounded-md shadow-sm border-l-4 border-secondary">
-                    Dancing Skills
-                  </div>
-                  {[
-                    "Adding Artistic Impressions",
-                    "Moving Together",
-                    "Model Walk",
-                    "Drunk Bunny",
-                  ].map((item) => (
-                    <div
-                      key={item}
-                      className="p-4 bg-surface-container-lowest rounded-md shadow-sm opacity-70"
+              {journeyTracks.map((track) => (
+                <div key={track.num}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <span
+                      className={`${track.badgeClass} w-10 h-10 rounded-full flex items-center justify-center font-black`}
                     >
-                      {item}
-                    </div>
-                  ))}
+                      {track.num}
+                    </span>
+                    <h4 className="font-headline text-xl font-bold">
+                      {track.title}
+                    </h4>
+                  </div>
+                  <div className="space-y-3">
+                    {track.lessons.map((lesson, i) => (
+                      <div
+                        key={lesson.slug}
+                        className={`flex items-center gap-4 p-3 bg-surface-container-lowest rounded-md shadow-sm ${
+                          i === 0 ? `border-l-4 ${track.firstBorder}` : ""
+                        }`}
+                      >
+                        <div
+                          className={`flex-shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${track.iconClass}`}
+                        >
+                          <img
+                            src={`/sketches/${lesson.slug}.jpg`}
+                            alt={lesson.label}
+                            className="w-[112%] h-[112%] object-contain mix-blend-multiply"
+                          />
+                        </div>
+                        <span className="font-medium">{lesson.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </section>
