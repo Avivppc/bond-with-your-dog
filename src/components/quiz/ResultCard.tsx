@@ -8,6 +8,15 @@ interface ResultCardProps {
 export default function ResultCard({ result }: ResultCardProps) {
   return (
     <div className="text-center">
+      <div className="image-reveal-wrapper kinetic-shadow mb-10 aspect-[16/9] w-full">
+        <img
+          src={result.imageUrl}
+          alt={result.imageAlt}
+          className="w-full h-full object-cover"
+          loading="eager"
+        />
+      </div>
+
       <p className="font-label text-sm font-semibold text-secondary uppercase tracking-widest mb-4">
         Based on your answers…
       </p>
@@ -21,6 +30,9 @@ export default function ResultCard({ result }: ResultCardProps) {
         {result.supporting}
       </p>
 
+      <p className="font-label text-xs font-bold uppercase tracking-widest text-on-surface-variant mb-4">
+        You&apos;ll learn
+      </p>
       <div className="flex flex-wrap justify-center gap-3 mb-10">
         {result.learn.map((item) => (
           <span

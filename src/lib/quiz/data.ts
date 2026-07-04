@@ -11,6 +11,9 @@ export interface QuizQuestion {
   id: number;
   question: string;
   options: QuizOption[];
+  /** Google Drive CDN URL (lh3.googleusercontent.com/d/{fileId}) for the mood image shown above this question. */
+  imageUrl: string;
+  imageAlt: string;
 }
 
 /**
@@ -18,6 +21,14 @@ export interface QuizQuestion {
  * "Never recommend skipping the foundation unless Masterpiece wins clearly."
  */
 export const TIER_ORDER: Tier[] = ["foundations", "movement", "masterpiece"];
+
+/**
+ * Hero image shown on the quiz intro screen.
+ * Format: https://lh3.googleusercontent.com/d/{Google Drive file ID}
+ * Replace file IDs here if you move images to different storage.
+ */
+export const QUIZ_INTRO_IMAGE_URL =
+  "https://lh3.googleusercontent.com/d/1cQG8_zSYk2N068onVoSROs2ZpeUvXt4n";
 
 /**
  * Scoring weights below come directly from the quiz brief. Two notes on
@@ -33,6 +44,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 1,
     question: "Which best describes your relationship today?",
+    imageUrl: "https://lh3.googleusercontent.com/d/1tFCYGrTsshred3-infIiT7pchd02-N31",
+    imageAlt: "Roni smiling together with her dog",
     options: [
       {
         id: "A",
@@ -54,6 +67,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 2,
     question: "What's your biggest goal?",
+    imageUrl: "https://lh3.googleusercontent.com/d/1ZrE_w9FJEVTpwrZ4cVcfU5BiydwrS7MQ",
+    imageAlt: "Dog leaping in the air while Roni sits calmly, full of aspiration",
     options: [
       {
         id: "A",
@@ -75,6 +90,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 3,
     question: "How would you describe your dog's training experience?",
+    imageUrl: "https://lh3.googleusercontent.com/d/1jVku7vQb2JshFrQyGs5PVuUDQKLpc5xh",
+    imageAlt: "Roni and her dog walking in perfect sync during training",
     options: [
       {
         id: "A",
@@ -96,6 +113,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 4,
     question: "What excites you the most?",
+    imageUrl: "https://lh3.googleusercontent.com/d/1i6arXkEWdk4UwFHoSf9oA7yeQQymr8LL",
+    imageAlt: "Dog flying joyfully mid-air facing Roni in a studio",
     options: [
       {
         id: "A",
@@ -117,6 +136,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 5,
     question: "How much time do you usually have to train?",
+    imageUrl: "https://lh3.googleusercontent.com/d/1sENoXEaV4_rDrJakRo_GLEXrbVDVj3YM",
+    imageAlt: "A dog gently resting its head on Roni's shoulder — an intimate bonding moment",
     options: [
       { id: "A", label: "10–15 minutes.", points: { foundations: 1 } },
       { id: "B", label: "15–30 minutes.", points: { movement: 1 } },
@@ -129,7 +150,9 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
   },
   {
     id: 6,
-    question: "Finish this sentence… “I'll know this journey was worth it when…”",
+    question: `Finish this sentence… "I’ll know this journey was worth it when…"`,
+    imageUrl: "https://lh3.googleusercontent.com/d/1WhV7ba1yeB56doITyJtbfw3UionAXA-F",
+    imageAlt: "Roni and her dog sharing a paw — the payoff moment of deep connection",
     options: [
       {
         id: "A",
@@ -161,6 +184,9 @@ export interface TierResultContent {
   /** Used by the lead-capture email — feel free to rewrite per tier. */
   firstLesson: string;
   welcomeOffer: string;
+  /** Hero image shown on the result screen for this tier. */
+  imageUrl: string;
+  imageAlt: string;
 }
 
 export const TIER_RESULTS: Record<Tier, TierResultContent> = {
@@ -176,6 +202,8 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     secondaryCta: { label: "Learn More", href: "/courses" },
     firstLesson: "Lesson 1: The First 5 Minutes — creating instant engagement with your dog.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
+    imageUrl: "https://lh3.googleusercontent.com/d/1tFCYGrTsshred3-infIiT7pchd02-N31",
+    imageAlt: "Roni and her dog side by side — a warm beginning",
   },
   movement: {
     tier: "movement",
@@ -188,6 +216,8 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     cta: { label: "Continue with Movement", href: "/chapter/movement" },
     firstLesson: "Lesson 1: Find Your Flow — a simple game to build joyful momentum together.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
+    imageUrl: "https://lh3.googleusercontent.com/d/1sBDACftU79WnLdnrOQIG6onf78HmiKVc",
+    imageAlt: "Dog leaping through golden afternoon light in the park",
   },
   masterpiece: {
     tier: "masterpiece",
@@ -200,5 +230,7 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     cta: { label: "Start Masterpiece", href: "/chapter/masterpiece" },
     firstLesson: "Lesson 1: Reading the Room — translating connection into choreography.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
+    imageUrl: "https://lh3.googleusercontent.com/d/1cQG8_zSYk2N068onVoSROs2ZpeUvXt4n",
+    imageAlt: "Roni embracing her dog in a dreamy purple lavender field at sunset",
   },
 };
