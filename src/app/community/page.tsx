@@ -6,6 +6,8 @@ import StudentVideoCard from "@/components/member/StudentVideoCard";
 
 export const dynamic = "force-dynamic";
 
+export const metadata = { title: "Community Spotlight", robots: { index: false, follow: false } };
+
 export default async function CommunityPage() {
   const supabase = await createClient();
   const { data: spotlight } = await supabase

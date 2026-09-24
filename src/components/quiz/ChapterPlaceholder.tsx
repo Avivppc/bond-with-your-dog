@@ -23,8 +23,9 @@ export default function ChapterPlaceholder({ tier }: ChapterPlaceholderProps) {
             {result.headline}
           </h1>
           <p className="font-body text-lg text-on-surface-variant max-w-xl mx-auto mb-10 leading-relaxed">
-            {result.supporting} This chapter page is being designed — for now,
-            explore the full BONDED Method or get in touch to enroll.
+            {result.supporting} Lessons are being filmed right now. Create a
+            free account and you&apos;ll be the first to know when this chapter
+            opens.
           </p>
           <div className="flex flex-wrap justify-center gap-3 mb-10">
             {result.learn.map((item) => (
@@ -38,16 +39,16 @@ export default function ChapterPlaceholder({ tier }: ChapterPlaceholderProps) {
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/enroll"
+              href="/signup"
               className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
             >
-              Enroll Now
+              Join the Waitlist
             </Link>
             <Link
               href="/courses"
               className="bg-surface-container text-on-surface font-label text-base font-semibold px-8 py-4 rounded-full hover:bg-surface-container-high transition-colors"
             >
-              Explore the Method
+              Explore the Journey
             </Link>
           </div>
         </div>

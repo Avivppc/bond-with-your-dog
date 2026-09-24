@@ -22,10 +22,10 @@ export default async function SignupPage({
             className="text-4xl font-extrabold mb-2 tracking-tighter"
             style={{ fontFamily: "var(--font-headline)", color: "#243036" }}
           >
-            Join the dance
+            Join BONDED
           </h1>
           <p className="text-sm mb-8" style={{ color: "#515d64" }}>
-            Create your account to start training.
+            Create your free account. You'll be the first to know when Bonded: Foundations opens.
           </p>
 
           {error && (

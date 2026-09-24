@@ -14,10 +14,34 @@ const beVietnamPro = Be_Vietnam_Pro({
   variable: "--font-body",
 });
 
+const SITE_URL = "https://www.bonded.dog";
+
 export const metadata: Metadata = {
-  title: "Keta Tov - Train. Connect. Dance.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "BONDED – Learn your dog's secret language",
+    template: "%s | BONDED",
+  },
   description:
-    "Professional Dog Dance Academy teaching connection through choreography.",
+    "Roni Sagi's step-by-step method for building trust, communication and joyful movement with your dog. From first steps to your first dance.",
+  openGraph: {
+    type: "website",
+    siteName: "BONDED",
+    title: "BONDED – Learn your dog's secret language",
+    description:
+      "Roni Sagi's step-by-step method for building trust, communication and joyful movement with your dog.",
+    images: [
+      {
+        url: "/images/photos/roni-serafina.jpg",
+        width: 1600,
+        height: 1067,
+        alt: "Roni and her dog playing together in a city square",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export default function RootLayout({
