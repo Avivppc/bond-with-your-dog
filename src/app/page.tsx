@@ -2,7 +2,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-export const metadata = { title: "BONDED - Build Your Bond" };
+export const metadata = { title: { absolute: "BONDED – Learn your dog's secret language" } };
 
 const AGT_FINALS_URL = "https://youtu.be/hNUWEknZ2xs";
 
@@ -82,6 +82,9 @@ const journeyTracks: JourneyTrack[] = [
   },
 ];
 
+/** Lessons shown per chapter on mobile before the "Show all" toggle. */
+const MOBILE_LESSON_PREVIEW = 4;
+
 const chapterCards = [
   {
     img: "/images/photos/borderonis-02.jpg",
@@ -136,6 +139,22 @@ const faqs = [
   {
     q: "How much time does it take?",
     a: "Just 10-15 minutes a day. Short, positive, and consistent sessions are far more effective for building a lasting bond than long, exhausting drills.",
+  },
+  {
+    q: "What age can my dog start?",
+    a: "Any age. Foundations works for puppies, adult dogs and seniors alike, because it starts with communication, not physical demands. Jumping and more athletic moves come later and are always adapted to your dog.",
+  },
+  {
+    q: "Do I need any equipment?",
+    a: "No. Some treats your dog loves, a favourite toy and a little space at home are all you need to begin.",
+  },
+  {
+    q: "What language are the lessons in?",
+    a: "All lessons are in English, with clear video demonstrations you can follow even if English isn't your first language.",
+  },
+  {
+    q: "Where can I ask a question?",
+    a: "Members ask Roni directly in the BONDED WhatsApp community and in her quarterly live Q&A. Before you join, email us at info.bonded@gmail.com and we'll get back to you.",
   },
 ];
 
@@ -193,15 +212,13 @@ export default function HomePage() {
         {/* Social Proof */}
         <section className="bg-surface-container-low/50 py-12 mb-20">
           <div className="max-w-7xl mx-auto px-8">
-            <p className="text-center font-label text-xs uppercase tracking-[0.2em] text-outline mb-10 font-bold">
-              As Seen On &amp; Featured In
+            <p className="text-center font-label text-xs uppercase tracking-[0.2em] text-outline mb-6 font-bold">
+              As seen on
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
-              <span className="font-headline text-2xl font-black">AGT</span>
-              <span className="font-headline text-2xl font-bold">DOG SHOW</span>
-              <span className="font-headline text-2xl font-black">NBC</span>
-              <span className="font-headline text-2xl font-bold">K9 STYLE</span>
-              <span className="font-headline text-2xl font-black">PETS PLUS</span>
+            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-12 opacity-70">
+              <span className="font-headline text-xl md:text-2xl font-black">America&apos;s Got Talent</span>
+              <span className="hidden md:inline text-outline-variant">•</span>
+              <span className="font-headline text-xl md:text-2xl font-black">NBC</span>
             </div>
           </div>
         </section>
@@ -284,22 +301,22 @@ export default function HomePage() {
               src="/images/photos/roni-serafina.jpg"
             />
           </div>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-4 max-w-5xl mx-auto">
+          <div className="flex flex-wrap md:flex-nowrap items-start justify-center gap-x-6 gap-y-8 md:gap-4 max-w-5xl mx-auto">
             {methodSteps.map(({ icon, label }, i) => (
               <div key={label} className="contents">
                 {i > 0 && (
                   <span
                     aria-hidden
-                    className="material-symbols-outlined text-outline rotate-90 md:rotate-0 md:mb-10"
+                    className="material-symbols-outlined text-outline hidden md:block md:mt-7"
                   >
                     arrow_forward
                   </span>
                 )}
-                <div className="flex flex-col items-center">
-                  <div className="w-20 h-20 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mb-4">
-                    <span className="material-symbols-outlined text-3xl">{icon}</span>
+                <div className="flex flex-col items-center w-24 md:w-auto">
+                  <div className="w-14 h-14 md:w-20 md:h-20 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mb-3 md:mb-4">
+                    <span className="material-symbols-outlined text-2xl md:text-3xl">{icon}</span>
                   </div>
-                  <span className="font-bold text-lg">{label}</span>
+                  <span className="font-bold text-sm md:text-lg text-center">{label}</span>
                 </div>
               </div>
             ))}
@@ -334,9 +351,9 @@ export default function HomePage() {
                     {track.lessons.map((lesson, i) => (
                       <div
                         key={lesson.label}
-                        className={`flex items-center gap-4 p-3 bg-surface-container-lowest rounded-md shadow-sm ${
+                        className={`items-center gap-4 p-3 bg-surface-container-lowest rounded-md shadow-sm ${
                           i === 0 ? `border-l-4 ${track.firstBorder}` : ""
-                        }`}
+                        } ${i < MOBILE_LESSON_PREVIEW ? "flex" : "hidden md:flex"}`}
                       >
                         <div
                           className={`flex-shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${track.iconClass}`}
@@ -356,6 +373,39 @@ export default function HomePage() {
                         <span className="font-medium">{lesson.label}</span>
                       </div>
                     ))}
+                    {track.lessons.length > MOBILE_LESSON_PREVIEW && (
+                      <details className="md:hidden group">
+                        <summary className="list-none cursor-pointer text-primary font-bold text-sm py-2 flex items-center gap-1 group-open:hidden">
+                          Show all {track.lessons.length} lessons
+                          <span className="material-symbols-outlined text-lg">expand_more</span>
+                        </summary>
+                        <div className="space-y-3">
+                          {track.lessons.slice(MOBILE_LESSON_PREVIEW).map((lesson, i) => (
+                            <div
+                              key={lesson.label}
+                              className="flex items-center gap-4 p-3 bg-surface-container-lowest rounded-md shadow-sm"
+                            >
+                              <div
+                                className={`flex-shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${track.iconClass}`}
+                              >
+                                {lesson.sketch ? (
+                                  <img
+                                    src={`/sketches/${lesson.sketch}.jpg`}
+                                    alt={lesson.label}
+                                    className="w-[112%] h-[112%] object-contain mix-blend-multiply"
+                                  />
+                                ) : (
+                                  <span className="font-headline font-bold text-sm text-on-surface-variant">
+                                    {MOBILE_LESSON_PREVIEW + i + 1}
+                                  </span>
+                                )}
+                              </div>
+                              <span className="font-medium">{lesson.label}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </details>
+                    )}
                   </div>
                 </div>
               ))}
@@ -427,7 +477,7 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="bg-surface p-12 rounded-2xl shadow-sm flex flex-col justify-between">
-              <p className="text-xl font-light leading-relaxed mb-8 italic">
+              <p className="text-lg md:text-xl font-light leading-relaxed mb-8 italic">
                 I love the program! I am very much a beginner and I worried that
                 the online format wouldn&apos;t work for me. I was WRONG. The
                 courses are well planned and the videos are clear.
@@ -438,14 +488,14 @@ export default function HomePage() {
               </div>
             </div>
             <div className="bg-surface p-12 rounded-2xl shadow-sm flex flex-col justify-between">
-              <p className="text-xl font-light leading-relaxed mb-8 italic">
+              <p className="text-lg md:text-xl font-light leading-relaxed mb-8 italic">
                 I was working on the first lesson from your site and couldn&apos;t
                 believe how quickly my dog responded. This method is unlike
                 anything I&apos;ve tried before.
               </p>
               <div>
                 <p className="font-bold text-lg text-primary">Marcus &amp; Toby</p>
-                <p className="text-sm text-outline">Move Together Alumni</p>
+                <p className="text-sm text-outline">BONDED student</p>
               </div>
             </div>
           </div>
@@ -481,7 +531,7 @@ export default function HomePage() {
         </section>
 
         {/* FAQ */}
-        <section className="py-24 max-w-3xl mx-auto px-8 mb-20">
+        <section id="faq" className="py-24 max-w-3xl mx-auto px-8 mb-20 scroll-mt-24">
           <div className="text-center mb-16">
             <h2 className="font-headline text-4xl font-extrabold">
               Frequently Asked Questions

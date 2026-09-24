@@ -2,7 +2,7 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-export const metadata = { title: "About Roni | BONDED" };
+export const metadata = { title: "About Roni" };
 
 const AGT_FINALS_URL = "https://www.youtube.com/watch?v=hNUWEknZ2xs";
 
@@ -268,7 +268,7 @@ export default function AboutPage() {
               href="/chapter/foundations"
               className="group bg-primary text-on-primary px-12 py-5 rounded-full font-headline font-bold text-xl hover:shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 inline-flex items-center gap-4 mx-auto"
             >
-              Start with Bonded: Foundations
+              Start with Foundations
               <span className="material-symbols-outlined group-hover:translate-x-2 transition-transform">
                 arrow_forward
               </span>

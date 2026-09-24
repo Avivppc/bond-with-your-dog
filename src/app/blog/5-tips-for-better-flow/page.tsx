@@ -2,6 +2,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 
+export const metadata = { title: "5 Tips for Better Flow", robots: { index: false, follow: false } };
+
 export default function BlogPost5TipsPage() {
   return (
     <>

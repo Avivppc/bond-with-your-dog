@@ -160,6 +160,19 @@ const principles = [
   },
 ];
 
+function PerfectForList({ items, color }: { items: PerfectFor[]; color: string }) {
+  return (
+    <ul className="space-y-3 font-body text-on-surface-variant">
+      {items.map(({ icon, label }) => (
+        <li key={label} className="flex items-start gap-2">
+          <span className={`material-symbols-outlined ${color} text-xl`}>{icon}</span>
+          {label}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export default function CoursesPage() {
   return (
     <>
@@ -293,19 +306,22 @@ export default function CoursesPage() {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="font-display text-lg font-bold text-on-surface mb-4">
+                      {/* Desktop: always visible. Mobile: collapsed behind a toggle. */}
+                      <h4 className="hidden md:block font-display text-lg font-bold text-on-surface mb-4">
                         Perfect For:
                       </h4>
-                      <ul className="space-y-3 font-body text-on-surface-variant">
-                        {perfectFor.map(({ icon, label }) => (
-                          <li key={label} className="flex items-start gap-2">
-                            <span className={`material-symbols-outlined ${perfectColor} text-xl`}>
-                              {icon}
-                            </span>
-                            {label}
-                          </li>
-                        ))}
-                      </ul>
+                      <details className="group md:hidden">
+                        <summary className="list-none cursor-pointer font-display text-lg font-bold text-on-surface mb-4 flex items-center justify-between">
+                          Perfect For:
+                          <span className="material-symbols-outlined text-xl group-open:rotate-180 transition-transform">
+                            expand_more
+                          </span>
+                        </summary>
+                        <PerfectForList items={perfectFor} color={perfectColor} />
+                      </details>
+                      <div className="hidden md:block">
+                        <PerfectForList items={perfectFor} color={perfectColor} />
+                      </div>
                     </div>
                   </div>
                   <div className={`${outcomeBg} p-6 rounded-2xl shadow-sm mb-8`}>
@@ -316,13 +332,13 @@ export default function CoursesPage() {
                   </div>
                   <Link
                     href={ctaHref}
-                    className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2`}
+                    className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2 w-full sm:w-auto`}
                   >
                     {ctaLabel}
                     <span className="material-symbols-outlined text-sm">arrow_forward</span>
                   </Link>
                 </div>
-                <div className="lg:w-1/2 relative h-full min-h-[500px] w-full">
+                <div className="lg:w-1/2 relative w-full h-64 sm:h-80 lg:h-auto lg:min-h-[500px] order-first lg:order-none">
                   {reverse && (
                     <div className="absolute -inset-4 bg-primary-container/20 rounded-2xl rotate-3 transform scale-105" />
                   )}
@@ -400,7 +416,7 @@ export default function CoursesPage() {
             Every great relationship starts with one step.
           </h2>
           <p className="font-body text-xl text-on-surface-variant mb-4">
-            Your dog is already speaking. Let&apos;s learn the language together.
+            Ready when you are.
           </p>
           {/* Roni's suggested addition ("maybe?") — pending her approval. */}
           <p className="font-body text-lg text-on-surface-variant mb-10">

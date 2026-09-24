@@ -122,11 +122,12 @@ export default function Navbar() {
             </Link>
           ) : (
             <Link
-              href="/signup"
-              className="bg-primary text-on-primary px-6 py-3 rounded-full font-headline font-bold text-base text-center mt-2"
+              href="/login"
+              className="text-slate-700 font-headline font-bold text-lg py-2 flex items-center gap-2"
               onClick={() => setMenuOpen(false)}
             >
-              Build Your Bond
+              <span className="material-symbols-outlined text-xl">login</span>
+              Member Login
             </Link>
           )}
         </div>
