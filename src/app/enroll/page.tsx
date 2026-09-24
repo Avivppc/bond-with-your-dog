@@ -128,7 +128,7 @@ export default function EnrollPage() {
             <div className="bg-surface-container-lowest p-10 rounded-lg shadow-sm border border-outline-variant/10 flex flex-col hover:scale-[1.02] transition-transform">
               <div className="mb-8">
                 <span className="bg-surface-container text-secondary px-4 py-1 rounded-full font-label text-xs font-bold uppercase tracking-wider">Mastery</span>
-                <h3 className="font-headline font-bold text-3xl mt-4 mb-2">The Masterpiece</h3>
+                <h3 className="font-headline font-bold text-3xl mt-4 mb-2">Let's Dance</h3>
                 <p className="text-on-surface-variant leading-relaxed">Artistry unleashed: focus on musicality, props, and performance.</p>
               </div>
               <div className="mb-8">

@@ -2,119 +2,161 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
-export const metadata = { title: "The BONDED Method" };
+export const metadata = { title: "The Bonded Journey" };
 
-const stages = [
+interface PerfectFor {
+  icon: string;
+  label: string;
+}
+
+interface Stage {
+  badge: string;
+  badgeBg: string;
+  badgeIcon: string;
+  title: string;
+  body: string;
+  learn: string[];
+  learnColor: string;
+  perfectFor: PerfectFor[];
+  perfectColor: string;
+  outcome: string;
+  outcomeColor: string;
+  outcomeBg: string;
+  ctaLabel: string;
+  ctaHref: string;
+  ctaBg: string;
+  img: string;
+  imgAlt: string;
+  sectionBg: string;
+  reverse: boolean;
+}
+
+// Copy per Roni's brief (Sept 2026).
+const stages: Stage[] = [
   {
-    badge: "Chapter One",
+    badge: "Chapter One · Foundations",
     badgeBg: "bg-primary-container/20 text-primary-dim",
     badgeIcon: "favorite",
-    title: "Build the relationship everything else depends on.",
-    body: "Every extraordinary partnership starts with trust. In Foundations, you'll learn how to communicate with your dog, build engagement, and create the confidence that makes everything else possible.",
+    title: "Build the foundation everything else grows from.",
+    body: "Foundations is where you and your dog learn how to learn together. You'll build trust, communication and engagement, then turn them into everyday skills, confident movement and your first experiences of dancing as one.",
     learn: [
-      "Understanding communication",
-      "Building trust & engagement",
-      "Positive reinforcement",
-      "Focus & attention",
-      "Everyday communication",
+      "A clear shared language",
+      "Engagement & focus",
+      "Calm, practical everyday skills",
+      "Understanding prey drive and how to play with your dog",
+      "Confident movement and body awareness",
+      "Tricks, the idea of sequences and mini dances",
     ],
     learnColor: "text-primary",
     perfectFor: [
-      { icon: "person", label: "First-time learners" },
-      { icon: "pets", label: "Dogs of every age/breed" },
-      { icon: "handshake", label: "Stronger everyday relationship" },
+      { icon: "pets", label: "New dogs and new partnerships" },
+      { icon: "diversity_1", label: "Dogs of every age and experience" },
+      { icon: "handshake", label: "Anyone ready to build a stronger bond" },
     ],
     perfectColor: "text-secondary",
-    outcome: "Your dog chooses to connect with you.",
+    outcome: "A dog who understands you, chooses you and is ready to learn with you.",
     outcomeColor: "text-primary",
     outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
     ctaLabel: "Start with Foundations",
+    ctaHref: "/chapter/foundations",
     ctaBg: "bg-primary text-on-primary shadow-lg",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDHyJiUzX8ER7NdiNymf4mETCdS4NFeR7yaGBcLcmlhWx7dXy0GNpP8EijGwky_Ow_lO49Y8bKJKXt9-o3sls5djDqLg0uZyD3kjXsSHveQuPD-sIiMtV8kD5wPMzoEWjW4AqC93iP9jle8O7gpYJaLI2EYhvNnlAB-0TTEbxbpjv4_JzX2wsclZ9AIDAhwB86wdkJqboInKaUW1QsRSGLVFCs68KfhwXip2nK7GBu12GyriEQmy0tdcKRgJByF-sfWYnRh6-8DVeXBGaM",
-    imgAlt: "Handler and puppy building eye contact",
+    img: "/images/photos/borderonis-02.jpg",
+    imgAlt: "Roni sitting on a staircase, her dog resting a paw on her knee",
     sectionBg: "bg-surface-container-low",
     reverse: false,
   },
   {
-    badge: "Chapter Two",
+    badge: "Chapter Two · Moves",
     badgeBg: "bg-secondary-container/30 text-secondary-dim",
     badgeIcon: "directions_run",
-    title: "Turn connection into movement.",
-    body: "Once trust is in place, movement becomes a powerful new way to communicate. Discover creative exercises, games, and techniques that help you and your dog move together with confidence and joy.",
+    title: "Discover how much your dog is capable of.",
+    body: "Moves expands the language you built in Foundations. You'll teach your dog a varied movement vocabulary, from expressive and contact tricks to backwards, sideways and jumping skills while building confidence, coordination and understanding.",
     learn: [
-      "Movement games",
-      "Body awareness",
-      "Trick foundations",
-      "Confidence building",
-      "Creative teamwork",
+      "How to break down complex tricks",
+      "Ground, balance and expressive tricks",
+      "Backwards and sideways movement",
+      "Contact tricks performed together",
+      "Confident and carefully prepared jumps",
     ],
     learnColor: "text-secondary",
     perfectFor: [
-      { icon: "school", label: "Graduates of Foundations" },
-      { icon: "explore", label: "Owners looking for shared activities" },
-      { icon: "group", label: "Teams ready for the next step" },
+      { icon: "school", label: "Teams who completed Bonded: Foundations" },
+      { icon: "explore", label: "Dogs ready to expand their movement vocabulary" },
+      { icon: "music_note", label: "Anyone preparing for the journey into dance" },
     ],
     perfectColor: "text-primary",
-    outcome: "Move together naturally and confidently.",
+    outcome: "A confident dog with a growing vocabulary of movements you can perform together.",
     outcomeColor: "text-secondary",
     outcomeBg: "bg-surface-container-low",
-    ctaLabel: "Start Your Journey",
+    ctaLabel: "Learn the Moves",
+    ctaHref: "/chapter/moves",
     ctaBg: "bg-secondary text-on-secondary shadow-lg",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuAg9cBnR3Vj5iXAGBDAc-skHIoikiOoUpn0GVEc2SMvrdQAAHB-mfo2PMSdR5PL0XukAug3bB4KgjhMOi3PWh_igv5g0Do6cgOGuko2CEdn916IY3eqw5ZJQboBRyrsJzMIYqkxI-oTesZS3j_uyv9xFUYPBaN73XTFtksX2j274On5GG7tKBFi8QMcJ-adqcwWOE3dlgNWeAkZhLxZT5kpvnd2KmN9Frly12jSHb_YJQhX7P9yXf9NQBHPTXVzDoeXCHAwzEalIEogZwM",
-    imgAlt: "Dog jumping with handler in golden hour",
+    img: "/images/photos/borderonis-06.jpg",
+    imgAlt: "Border collie standing on a stair rail, nose to nose with Roni",
     sectionBg: "bg-surface-container-lowest",
     reverse: true,
   },
   {
-    badge: "Chapter Three",
+    badge: "Chapter Three · Let's Dance",
     badgeBg: "bg-tertiary-container/30 text-tertiary-dim",
-    badgeIcon: "stars",
-    title: "Express everything you've built together.",
-    body: "Dog dance isn't the goal. It's the celebration. Bring together everything you've learned to create beautiful routines that reflect the trust, communication, and connection you've built along the way.",
+    badgeIcon: "music_note",
+    title: "Turn your movements into a dance.",
+    body: "Let's Dance brings the pieces together. You'll prepare your dog's tricks for performance, develop your own movement and learn how to combine both with flow, expression and music—without losing your dog's confidence or connection.",
     learn: [
-      "Musicality",
-      "Choreography",
-      "Creative expression",
-      "Advanced communication",
-      "Performance confidence",
+      "How to prepare tricks for dancing",
+      "Human movement and musical expression",
+      "How to move without distracting your dog",
+      "Distance, independence and delayed reward",
+      "Sequences that flow with the music",
     ],
     learnColor: "text-tertiary",
     perfectFor: [
-      { icon: "school", label: "Graduates of Movement" },
-      { icon: "music_note", label: "Dog dance enthusiasts" },
-      { icon: "celebration", label: "Teams ready for something extraordinary" },
+      { icon: "school", label: "Teams who completed Bonded: Moves" },
+      { icon: "person", label: "Handlers ready to become part of the movement" },
+      {
+        icon: "celebration",
+        label: "Anyone ready to build their first dance or take their dog dancing to the next level",
+      },
     ],
     perfectColor: "text-secondary",
-    outcome: "Create something unforgettable together.",
+    outcome: "A dance where you, your dog and the music move as one.",
     outcomeColor: "text-tertiary",
     outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
-    ctaLabel: "Begin Your Masterpiece",
+    ctaLabel: "Build Your Dance",
+    ctaHref: "/chapter/lets-dance",
     ctaBg: "bg-tertiary text-on-tertiary shadow-lg",
-    img: "https://lh3.googleusercontent.com/aida-public/AB6AXuDX2wtzMc15U__HtwlCpM-8FTHeqECkpwYk9MgmdiDJbqhLMLRis_yL9lBi-nqwsSVTk5B2otcRYOZnQS2aSa78iIzxBBneO-d2hsTz2v5VsGzgUUUNhNu8rnsDkd6pPnjyv3sKeZGzU9Qa-TpS7ISKfgKcNdOJnE8fR-DDKxxzDW1VApOs3fLFH_-lxkcZFgTOSXxQRVp4C1Y5x2CfcUnWfcwvW15iBLK5IK4SnpLsvYa5LkQ9sSbUP7BB5icTzK_JLRxggrb7ikh71qg",
-    imgAlt: "Woman and dog dancing in studio",
+    img: "/images/photos/borderonis-19.jpg",
+    imgAlt: "Roni in a dance pose with her border collie leaning on her leg",
     sectionBg: "bg-surface-container-low",
     reverse: false,
   },
 ];
 
+const overviewSteps = [
+  { icon: "pets", iconBg: "bg-primary-container", iconColor: "text-on-primary-container", label: "Foundations" },
+  { icon: "directions_run", iconBg: "bg-secondary-container", iconColor: "text-on-secondary-container", label: "Moves" },
+  { icon: "music_note", iconBg: "bg-tertiary-container", iconColor: "text-on-tertiary-container", label: "Let's Dance" },
+];
+
+// Sentences are Roni's draft suggestions — pending her final approval.
 const principles = [
   {
     icon: "handshake",
     iconBg: "bg-primary-container/20 text-primary",
     title: "1. Trust Comes First",
-    body: "Connection before correction. We build an unbreakable bond based on mutual understanding.",
+    body: "A dog who feels safe is ready to connect, explore and learn.",
   },
   {
     icon: "psychology",
     iconBg: "bg-secondary-container/20 text-secondary",
     title: "2. Learn Together",
-    body: "Lessons strengthen both ends of the leash, making you a better partner for your dog.",
+    body: "Training becomes a conversation where both ends of the leash take part.",
   },
   {
-    icon: "trending_up",
+    icon: "all_inclusive",
     iconBg: "bg-tertiary-container/20 text-tertiary",
-    title: "3. Progress That Lasts",
-    body: "Small moments become lifelong habits, ensuring sustainable and joyous results.",
+    title: "3. Bond Through It All",
+    body: "From everyday moments to new challenges, every experience becomes an opportunity to strengthen your bond.",
   },
 ];
 
@@ -139,7 +181,10 @@ export default function CoursesPage() {
               build trust, communication, and a lifelong bond with your dog.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform flex items-center justify-center gap-2">
+              <Link
+                href="/chapter/foundations"
+                className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform flex items-center justify-center gap-2"
+              >
                 Start with Foundations
                 <span
                   className="material-symbols-outlined text-sm"
@@ -147,7 +192,7 @@ export default function CoursesPage() {
                 >
                   arrow_forward
                 </span>
-              </button>
+              </Link>
               <Link
                 href="/quiz"
                 className="bg-surface-container text-on-surface font-label text-base font-semibold px-8 py-4 rounded-full hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"
@@ -159,9 +204,9 @@ export default function CoursesPage() {
           <div className="lg:w-1/2 relative">
             <div className="absolute -inset-4 bg-secondary-container/30 rounded-[3rem] -rotate-3 transform scale-105" />
             <img
-              className="relative z-10 w-full h-[600px] object-cover rounded-xl shadow-2xl"
-              alt="Woman and golden retriever in a sunlit living room"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpCqKqvd7rImrkJRY-yza3uxNGPUMw0mL6bjosRa8CREeU4gCBKBt1Uk3Vv5I2InEiqjwU49coEUofaTqd5soW3d04WEAm1Bvf5mRve0YWXGwXdl7ufYscOBdMUQ63Hgjhy1eRNgiv4abzvxAEb4hcAK8QOFbT20_zvAEMeYdoS03ZRGmjCSGuh6wgJNdkNjYFB6slw12JWeQfQEx0wA23VdGgRurNsmKB8ky679apPVFXbIqw9VQjmFPX6Fqo-JuwxOf5oR0QMyy8"
+              className="relative z-10 w-full h-[600px] object-cover object-top rounded-xl shadow-2xl"
+              alt="Roni's dog jumping up to greet her in a lit corridor"
+              src="/images/photos/borderonis-15.jpg"
             />
           </div>
         </section>
@@ -170,23 +215,19 @@ export default function CoursesPage() {
         <section className="max-w-7xl mx-auto px-6 py-24 text-center">
           <div className="max-w-3xl mx-auto mb-16 space-y-6">
             <h2 className="font-display text-4xl lg:text-5xl font-bold text-on-background">
-              One method. Three stages.{" "}
+              One journey. Three chapters.{" "}
               <br />
-              One incredible relationship.
+              A lifetime of possibilities.
             </h2>
             <p className="font-body text-lg text-on-surface-variant">
-              Every stage builds on the one before it, helping you create a
-              stronger connection with your dog through trust, movement, and
-              shared experiences.
+              Each chapter builds on the one before it—starting with
+              communication, expanding into movement, and bringing everything
+              together through dance.
             </p>
           </div>
           <div className="flex flex-col md:flex-row items-center justify-center gap-4 relative">
             <div className="hidden md:block absolute top-1/2 left-[10%] right-[10%] h-1 bg-surface-container -z-10 rounded-full" />
-            {[
-              { icon: "favorite", iconBg: "bg-primary-container", iconColor: "text-on-primary-container", label: "Foundation" },
-              { icon: "directions_run", iconBg: "bg-secondary-container", iconColor: "text-on-secondary-container", label: "Movement" },
-              { icon: "stars", iconBg: "bg-tertiary-container", iconColor: "text-on-tertiary-container", label: "Masterpiece" },
-            ].map(({ icon, iconBg, iconColor, label }) => (
+            {overviewSteps.map(({ icon, iconBg, iconColor, label }) => (
               <div
                 key={label}
                 className="flex-1 flex flex-col items-center gap-4 bg-surface-container-lowest p-8 rounded-xl hover:scale-[1.02] hover:bg-surface-bright transition-all duration-500 shadow-sm z-10 w-full md:w-auto mt-4 md:mt-0 first:mt-0"
@@ -205,20 +246,20 @@ export default function CoursesPage() {
           </div>
         </section>
 
-        {/* Three Stage Sections */}
+        {/* Three Chapter Sections */}
         {stages.map(
           ({
             badge, badgeBg, badgeIcon, title, body, learn, learnColor, perfectFor, perfectColor,
-            outcome, outcomeColor, outcomeBg, ctaLabel, ctaBg, img, imgAlt, sectionBg, reverse,
+            outcome, outcomeColor, outcomeBg, ctaLabel, ctaHref, ctaBg, img, imgAlt, sectionBg, reverse,
           }) => (
-            <section key={badge} className={`max-w-7xl mx-auto px-6 py-24`}>
+            <section key={badge} className="max-w-7xl mx-auto px-6 py-24">
               <div
                 className={`${sectionBg} rounded-[3rem] p-8 lg:p-16 flex flex-col ${reverse ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-16 relative overflow-hidden`}
               >
                 {!reverse && (
                   <div className="absolute top-0 right-0 w-96 h-96 bg-secondary-container/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
                 )}
-                {badge === "Chapter Three" && (
+                {badge.startsWith("Chapter Three") && (
                   <div className="absolute bottom-0 left-0 w-96 h-96 bg-tertiary-container/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
                 )}
                 <div className="lg:w-1/2 relative z-10">
@@ -273,12 +314,15 @@ export default function CoursesPage() {
                       {outcome}
                     </p>
                   </div>
-                  <button className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform flex items-center justify-center gap-2`}>
+                  <Link
+                    href={ctaHref}
+                    className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2`}
+                  >
                     {ctaLabel}
                     <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </button>
+                  </Link>
                 </div>
-                <div className="lg:w-1/2 relative h-full min-h-[500px]">
+                <div className="lg:w-1/2 relative h-full min-h-[500px] w-full">
                   {reverse && (
                     <div className="absolute -inset-4 bg-primary-container/20 rounded-2xl rotate-3 transform scale-105" />
                   )}
@@ -331,17 +375,20 @@ export default function CoursesPage() {
               </h2>
               <p className="font-body text-lg text-on-secondary-container/80 mb-8">
                 Answer a few quick questions and we&apos;ll recommend the best
-                stage for you and your dog.
+                chapter for you and your dog.
               </p>
-              <button className="bg-on-secondary-container text-secondary-container font-label text-base font-bold px-8 py-4 rounded-full w-max hover:bg-secondary transition-colors shadow-md">
+              <Link
+                href="/quiz"
+                className="bg-on-secondary-container text-secondary-container font-label text-base font-bold px-8 py-4 rounded-full w-max hover:bg-secondary transition-colors shadow-md"
+              >
                 Take the Quiz
-              </button>
+              </Link>
             </div>
             <div className="md:w-1/2 h-64 md:h-auto relative">
               <img
                 className="absolute inset-0 w-full h-full object-cover"
-                alt="Dog owner with tablet and dog"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCOgff1QCm6gC1Bhp-u12qqaWQ185Eg2VflcxmFIi36CJyticRFNHctHQmDihgK2BEzVFe793MBT_bnMQ8tz3i4AgRz89GsS-N3jcw_zniNRaNnAh0LwS7fB9APV0E0yNYC-nwnUDDK3LTkymnppydBzdTJqAtWLwdAgBrjwIGLqXh2FQT_waJGkkQj9aHDqtpGFG4b8zbDDGRL8uTGHBgGT4Z6ovAXE_-OnXeaJEIEV7xm2MsDDnNs8kZIVStadtb911CYbnc5ACyV"
+                alt="Roni kneeling with two of her dogs"
+                src="/images/photos/borderonis-10.jpg"
               />
             </div>
           </div>
@@ -352,12 +399,19 @@ export default function CoursesPage() {
           <h2 className="font-display text-5xl font-extrabold text-on-background mb-6">
             Every great relationship starts with one step.
           </h2>
-          <p className="font-body text-xl text-on-surface-variant mb-10">
+          <p className="font-body text-xl text-on-surface-variant mb-4">
             Your dog is already speaking. Let&apos;s learn the language together.
           </p>
-          <button className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-lg font-bold px-10 py-5 rounded-full shadow-xl hover:scale-105 transition-transform">
+          {/* Roni's suggested addition ("maybe?") — pending her approval. */}
+          <p className="font-body text-lg text-on-surface-variant mb-10">
+            Begin with Foundations and progress through the journey at your own pace.
+          </p>
+          <Link
+            href="/chapter/foundations"
+            className="inline-block bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-lg font-bold px-10 py-5 rounded-full shadow-xl hover:scale-105 transition-transform"
+          >
             Start with Foundations
-          </button>
+          </Link>
         </section>
 
       </main>

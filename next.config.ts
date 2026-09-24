@@ -17,6 +17,12 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/chapter/movement", destination: "/chapter/moves", permanent: true },
+      { source: "/chapter/masterpiece", destination: "/chapter/lets-dance", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

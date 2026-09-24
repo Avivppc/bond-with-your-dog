@@ -1,6 +1,6 @@
 import ChapterPlaceholder from "@/components/quiz/ChapterPlaceholder";
 
-export const metadata = { title: "BONDED Foundations" };
+export const metadata = { title: "Bonded: Foundations" };
 
 export default function FoundationsPage() {
   return <ChapterPlaceholder tier="foundations" />;
