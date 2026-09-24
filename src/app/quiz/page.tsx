@@ -31,7 +31,7 @@ export default function QuizPage() {
   }
 
   const scores = step === "result" ? scoreAnswers(answers) : null;
-  const tier = scores ? resolveTier(scores) : null;
+  const tier = step === "result" ? resolveTier(answers) : null;
   const result = tier ? TIER_RESULTS[tier] : null;
 
   return (
@@ -59,9 +59,12 @@ export default function QuizPage() {
               <h1 className="font-display font-extrabold text-4xl md:text-6xl tracking-tight leading-[1.05] mb-5">
                 Discover the BONDED path that fits you and your dog.
               </h1>
-              <p className="font-body text-lg text-on-surface-variant max-w-xl mx-auto mb-8 leading-relaxed">
+              <p className="font-body text-lg text-on-surface-variant max-w-xl mx-auto mb-4 leading-relaxed">
                 Six quick questions. No right or wrong answers — just a little guidance from
                 Roni on where your journey begins.
+              </p>
+              <p className="font-label text-sm font-semibold text-secondary uppercase tracking-widest mb-8">
+                10–15 minutes of training a day is all it takes.
               </p>
               <button
                 type="button"

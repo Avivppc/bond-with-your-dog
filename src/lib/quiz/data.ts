@@ -1,173 +1,122 @@
-export type Tier = "foundations" | "movement" | "masterpiece";
+export type Tier = "foundations" | "moves" | "letsDance";
+
+export type OptionId = "A" | "B" | "C";
 
 export interface QuizOption {
-  id: "A" | "B" | "C";
+  id: OptionId;
   label: string;
-  /** Points awarded per tier when this option is chosen. Edit freely to retune the quiz. */
-  points: Partial<Record<Tier, number>>;
 }
 
 export interface QuizQuestion {
   id: number;
+  /** Stable key used by the result rules in scoring.ts. */
+  key: "relationship" | "goal" | "experience" | "excites" | "independence" | "worthIt";
   question: string;
   options: QuizOption[];
-  /** Google Drive CDN URL (lh3.googleusercontent.com/d/{fileId}) for the mood image shown above this question. */
   imageUrl: string;
   imageAlt: string;
 }
 
-/**
- * Tier order matters for tie-breaking: earlier tiers in this array win ties.
- * "Never recommend skipping the foundation unless Masterpiece wins clearly."
- */
-export const TIER_ORDER: Tier[] = ["foundations", "movement", "masterpiece"];
+/** Order of the chapters. Used for tie-breaking and for "ceiling" comparisons. */
+export const TIER_ORDER: Tier[] = ["foundations", "moves", "letsDance"];
 
-/**
- * Hero image shown on the quiz intro screen.
- * Format: https://lh3.googleusercontent.com/d/{Google Drive file ID}
- * Replace file IDs here if you move images to different storage.
- */
+export const TIER_LABELS: Record<Tier, string> = {
+  foundations: "Bonded: Foundations",
+  moves: "Bonded: Moves",
+  letsDance: "Bonded: Let's Dance",
+};
+
+/** Hero image shown on the quiz intro screen. */
 export const QUIZ_INTRO_IMAGE_URL = "/images/quiz/lavender-field.jpg";
 
 /**
- * Scoring weights below come directly from the quiz brief. Two notes on
- * judgment calls made while encoding it (change here if these are wrong):
- *  - Q1 and Q3 option B splits points 2/1 between Movement and Foundations,
- *    exactly as specified ("2 Movement, 1 Foundations").
- *  - Q5 uses weight 1 per option (the brief calls this question's scoring
- *    weight "lower" and says it mainly personalizes the result).
- *  - Q6 uses full weight 3 per option, matching the unweighted pattern of
- *    Q2/Q4 (only Q5 was explicitly called out as lower-weight).
+ * Questions per Roni's feedback (Sept 2026). The options no longer carry
+ * points: the recommendation is computed by explicit rules in scoring.ts,
+ * where readiness (experience + independence) sets a ceiling and the
+ * preference questions choose a direction within it.
  */
 export const QUIZ_QUESTIONS: QuizQuestion[] = [
   {
     id: 1,
+    key: "relationship",
     question: "Which best describes your relationship today?",
     imageUrl: "/images/quiz/studio-portrait.jpg",
     imageAlt: "Roni smiling together with her dog",
     options: [
-      {
-        id: "A",
-        label: "We're just getting started.",
-        points: { foundations: 3 },
-      },
-      {
-        id: "B",
-        label: "We communicate well, but I know we can do more.",
-        points: { movement: 2, foundations: 1 },
-      },
-      {
-        id: "C",
-        label: "We're already a great team. I'm looking for our next challenge.",
-        points: { masterpiece: 3 },
-      },
+      { id: "A", label: "We're just getting started." },
+      { id: "B", label: "We communicate well, but I know we can do more." },
+      { id: "C", label: "We're already a great team. I'm looking for our next challenge." },
     ],
   },
   {
     id: 2,
+    key: "goal",
     question: "What's your biggest goal?",
     imageUrl: "/images/quiz/dog-leaping-aspiration.jpg",
     imageAlt: "Dog leaping in the air while Roni sits calmly, full of aspiration",
     options: [
-      {
-        id: "A",
-        label: "Build trust and better communication.",
-        points: { foundations: 3 },
-      },
-      {
-        id: "B",
-        label: "Find a fun activity we can enjoy together.",
-        points: { movement: 3 },
-      },
-      {
-        id: "C",
-        label: "Learn dog dance and create beautiful routines.",
-        points: { masterpiece: 3 },
-      },
+      { id: "A", label: "Build trust and better communication." },
+      { id: "B", label: "Learn new tricks and explore movement together." },
+      { id: "C", label: "Bring our skills together through music and dance." },
     ],
   },
   {
     id: 3,
-    question: "How would you describe your dog's training experience?",
+    key: "experience",
+    question: "Where are you and your dog in your training journey?",
     imageUrl: "/images/quiz/walking-in-sync.jpg",
     imageAlt: "Roni and her dog walking in perfect sync during training",
     options: [
-      {
-        id: "A",
-        label: "Little or none.",
-        points: { foundations: 3 },
-      },
-      {
-        id: "B",
-        label: "Knows the basics and enjoys learning.",
-        points: { movement: 2, foundations: 1 },
-      },
+      // Roni's draft for A duplicated the independence question; reworded so
+      // Q3 asks what the dog knows and Q5 asks how independently it works.
+      { id: "A", label: "We're still working on the basics." },
+      { id: "B", label: "My dog can perform the basic tricks." },
       {
         id: "C",
-        label: "Already knows many tricks and loves working with me.",
-        points: { masterpiece: 3 },
+        label: "My dog can perform sequences from known movements, but I need to get better in my dancing.",
       },
     ],
   },
   {
     id: 4,
+    key: "excites",
     question: "What excites you the most?",
     imageUrl: "/images/quiz/dog-flying-studio.jpg",
     imageAlt: "Dog flying joyfully mid-air facing Roni in a studio",
     options: [
-      {
-        id: "A",
-        label: "Understanding my dog better.",
-        points: { foundations: 3 },
-      },
-      {
-        id: "B",
-        label: "Learning new skills together.",
-        points: { movement: 3 },
-      },
-      {
-        id: "C",
-        label: "Creating something extraordinary together.",
-        points: { masterpiece: 3 },
-      },
+      { id: "A", label: "Building a stronger everyday connection." },
+      { id: "B", label: "Discovering new tricks and movements." },
+      { id: "C", label: "Turning our skills into a dance." },
     ],
   },
   {
     id: 5,
-    question: "How much time do you usually have to train?",
+    key: "independence",
+    question: "How independent are your dog's trained movements?",
     imageUrl: "/images/quiz/dog-resting-head.jpg",
-    imageAlt: "A dog gently resting its head on Roni's shoulder — an intimate bonding moment",
+    imageAlt: "A dog gently resting its head on Roni's shoulder",
     options: [
-      { id: "A", label: "10–15 minutes.", points: { foundations: 1 } },
-      { id: "B", label: "15–30 minutes.", points: { movement: 1 } },
+      { id: "A", label: "My dog still needs food and clear guidance from my hands." },
+      {
+        id: "B",
+        label: "My dog can perform basic tricks without any help, but is still learning more advanced movements.",
+      },
       {
         id: "C",
-        label: "I'm happy to dedicate regular practice.",
-        points: { masterpiece: 1 },
+        label: "My dog confidently performs many tricks without food or a toy in my hand, even in different environments.",
       },
     ],
   },
   {
     id: 6,
-    question: `Finish this sentence… "I’ll know this journey was worth it when…"`,
+    key: "worthIt",
+    question: `Finish this sentence… "I'll know this journey was worth it when…"`,
     imageUrl: "/images/quiz/holding-paw.jpg",
-    imageAlt: "Roni and her dog sharing a paw — the payoff moment of deep connection",
+    imageAlt: "Roni and her dog sharing a paw",
     options: [
-      {
-        id: "A",
-        label: "My dog understands me better.",
-        points: { foundations: 3 },
-      },
-      {
-        id: "B",
-        label: "We're having more fun together.",
-        points: { movement: 3 },
-      },
-      {
-        id: "C",
-        label: "People see the incredible bond we've built.",
-        points: { masterpiece: 3 },
-      },
+      { id: "A", label: "My dog understands me better." },
+      { id: "B", label: "We've discovered new things we love doing together." },
+      { id: "C", label: "We can express our connection through movement and music." },
     ],
   },
 ];
@@ -180,10 +129,9 @@ export interface TierResultContent {
   learn: string[];
   cta: { label: string; href: string };
   secondaryCta?: { label: string; href: string };
-  /** Used by the lead-capture email — feel free to rewrite per tier. */
+  /** Used by the lead-capture email. */
   firstLesson: string;
   welcomeOffer: string;
-  /** Hero image shown on the result screen for this tier. */
   imageUrl: string;
   imageAlt: string;
 }
@@ -193,41 +141,61 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     tier: "foundations",
     personalization:
       "Every extraordinary relationship starts with trust. You're in the perfect place.",
-    headline: "Your journey begins with BONDED Foundations.",
+    headline: "Your journey begins with Bonded: Foundations.",
     supporting:
       "The strongest relationships are built on trust and communication. This is where everything begins.",
-    learn: ["Engagement", "Communication", "Positive Reinforcement", "Focus", "Trust"],
+    learn: [
+      "Trust & communication",
+      "Engagement & focus",
+      "Everyday skills",
+      "Playing with a toy",
+      "Basic tricks and sequences",
+    ],
     cta: { label: "Start Foundations", href: "/chapter/foundations" },
     secondaryCta: { label: "Learn More", href: "/courses" },
-    firstLesson: "Lesson 1: The First 5 Minutes — creating instant engagement with your dog.",
+    firstLesson: "Lesson 1: The Bond — creating instant engagement with your dog.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
     imageUrl: "/images/quiz/studio-portrait.jpg",
     imageAlt: "Roni and her dog side by side — a warm beginning",
   },
-  movement: {
-    tier: "movement",
+  moves: {
+    tier: "moves",
     personalization:
       "You already have a wonderful connection. Let's help you take it to the next level.",
-    headline: "You're ready for BONDED Movement.",
+    headline: "You're ready for Bonded: Moves.",
     supporting:
-      "You already have a connection. Now it's time to grow together through movement, play and creativity.",
-    learn: ["Movement", "Confidence", "Creative Exercises", "Teamwork"],
-    cta: { label: "Continue with Movement", href: "/chapter/movement" },
-    firstLesson: "Lesson 1: Find Your Flow — a simple game to build joyful momentum together.",
+      "Your dog knows the basics. Now it's time to expand your movement vocabulary together.",
+    learn: [
+      "Jumping tricks",
+      "Expressive tricks",
+      "Directional movement",
+      "Contact tricks",
+      "Floor work",
+      "Balance & body awareness",
+    ],
+    cta: { label: "Continue with Moves", href: "/chapter/moves" },
+    firstLesson: "Lesson 1: Discovering Moves — how to break down a new trick.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
     imageUrl: "/images/quiz/golden-park-leap.jpg",
     imageAlt: "Dog leaping through golden afternoon light in the park",
   },
-  masterpiece: {
-    tier: "masterpiece",
+  letsDance: {
+    tier: "letsDance",
     personalization:
-      "You've built something rare together. Now it's time to turn that bond into art.",
-    headline: "You're ready for BONDED Masterpiece.",
+      "You've built something rare together. Now it's time to turn that bond into a dance.",
+    headline: "You're ready for Bonded: Let's Dance.",
     supporting:
-      "You've already built a strong relationship. Now it's time to express it through beautiful movement and dog dance.",
-    learn: ["Choreography", "Musicality", "Creative Expression", "Advanced Communication"],
-    cta: { label: "Start Masterpiece", href: "/chapter/masterpiece" },
-    firstLesson: "Lesson 1: Reading the Room — translating connection into choreography.",
+      "Your dog already works with confidence and independence. Now you'll bring it all together with music.",
+    learn: [
+      "Musicality",
+      "Human movement",
+      "Creating flow",
+      "Distance and independence",
+      "Delayed rewarding",
+      "Choreography",
+    ],
+    cta: { label: "Start Let's Dance", href: "/chapter/lets-dance" },
+    firstLesson: "Lesson 1: From Tricks To Dance — preparing your dog's tricks for performance.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
     imageUrl: "/images/quiz/lavender-field.jpg",
     imageAlt: "Roni embracing her dog in a dreamy purple lavender field at sunset",

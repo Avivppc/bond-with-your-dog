@@ -7,7 +7,7 @@ import { TIER_RESULTS } from "@/lib/quiz/data";
 const Body = z.object({
   firstName: z.string().min(1).max(100),
   email: z.string().email(),
-  tier: z.enum(["foundations", "movement", "masterpiece"]),
+  tier: z.enum(["foundations", "moves", "letsDance"]),
   scores: z.record(z.string(), z.number()),
   answers: z.record(z.string(), z.enum(["A", "B", "C"])),
 });

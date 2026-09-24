@@ -1,53 +1,141 @@
+import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata = { title: "BONDED - Build Your Bond" };
 
-const COMMUNITY_BG =
-  "https://lh3.googleusercontent.com/aida/AP1WRLuKfN_FAkzj-B8cFzyTUvYSYcgpUq2IgmA4kT4VCf0XYPyzBgOcE0Lzd1oDVuPdoVMeGMuzkYlvd_FsVNbA5lr2iDeTk4ozfPQICxFn2dMtCE32rYi0VXlUN3UiCmoGE10On2vMkf2w5F6i6s3EYFm9zDqckN93YfTlnuZH8BPq0BaZfIDuYNQvGhO-WUczxyP0wnehy4m9gtb1-VWnjvC1mikGjyPvbkk0X7Gnof_pc4KJ3q8PF8wKWOT3";
+const AGT_FINALS_URL = "https://youtu.be/hNUWEknZ2xs";
 
-const journeyTracks = [
+const COMMUNITY_BG = "/images/photos/borderonis-27.jpg";
+
+interface Lesson {
+  label: string;
+  /** Sketch file under /public/sketches, when one exists for this lesson. */
+  sketch?: string;
+}
+
+interface JourneyTrack {
+  num: string;
+  title: string;
+  badgeClass: string;
+  firstBorder: string;
+  iconClass: string;
+  lessons: Lesson[];
+}
+
+// Lesson lists per Roni (Sept 2026). Sketches are reused where an existing
+// drawing clearly matches; the rest fall back to a numbered marker until new
+// sketches are produced.
+const journeyTracks: JourneyTrack[] = [
   {
     num: "01",
-    title: "Foundations",
+    title: "Bonded: Foundations",
     badgeClass: "bg-tertiary-container text-on-tertiary-container",
     firstBorder: "border-tertiary",
     iconClass: "bg-[#fdd400]/20 border border-[#edc600]",
     lessons: [
-      { label: "Intro", slug: "intro" },
-      { label: "Basic Foundations", slug: "basic-foundations" },
-      { label: "Leash Walking", slug: "leash-walking" },
-      { label: "Basic Skills", slug: "basic-skills" },
-      { label: "Basic Tricks", slug: "basic-tricks" },
+      { label: "The Bond", sketch: "basic-foundations" },
+      { label: "Feeding Drive" },
+      { label: "Living Together", sketch: "basic-skills" },
+      { label: "Crate Training" },
+      { label: "Loose Leash Walk", sketch: "leash-walking" },
+      { label: "Platform Work" },
+      { label: "Prey Drive" },
+      { label: "World Of Tricks", sketch: "basic-tricks" },
+      { label: "Sequences" },
+      { label: "Bonding Time", sketch: "intro" },
     ],
   },
   {
     num: "02",
-    title: "Movement",
+    title: "Bonded: Moves",
     badgeClass: "bg-primary-container text-on-primary-container",
     firstBorder: "border-primary",
     iconClass: "bg-[#ff8f00]/16 border border-[#eb8300]",
     lessons: [
-      { label: "Fun Tricks", slug: "fun-tricks" },
-      { label: "Take A Selfie", slug: "take-a-selfie" },
-      { label: "Give A Hug", slug: "give-a-hug" },
-      { label: "Jump Basics", slug: "jump-basics" },
-      { label: "Hoop Jumps", slug: "hoop-jumps" },
+      { label: "Discovering Moves", sketch: "fun-tricks" },
+      { label: "Floor Tricks" },
+      { label: "Balance & Body Control" },
+      { label: "Directional Motion" },
+      { label: "Expressive Tricks", sketch: "take-a-selfie" },
+      { label: "Contact Tricks", sketch: "give-a-hug" },
+      { label: "Jumping Tricks", sketch: "hoop-jumps" },
     ],
   },
   {
     num: "03",
-    title: "Masterpiece",
+    title: "Bonded: Let's Dance",
     badgeClass: "bg-secondary-container text-on-secondary-container",
     firstBorder: "border-secondary",
     iconClass: "bg-[#a6eff3]/40 border border-[#0e666a]",
     lessons: [
-      { label: "Dancing Skills", slug: "dancing-skills" },
-      { label: "Adding Artistic Impressions", slug: "artistic-impressions" },
-      { label: "Moving Together", slug: "moving-together" },
-      { label: "Model Walk", slug: "model-walk" },
-      { label: "Drunk Bunny", slug: "drunk-bunny" },
+      { label: "From Tricks To Dance", sketch: "dancing-skills" },
+      { label: "Preparing The Moves" },
+      { label: "The Human Dancer", sketch: "artistic-impressions" },
+      { label: "When Two Dancers Meet" },
+      { label: "Moving Together", sketch: "moving-together" },
+      { label: "Distance & Independence" },
+      { label: "Delayed Reward" },
+      { label: "Advanced Sequences" },
+      { label: "Preparing Your First Dance" },
     ],
+  },
+];
+
+const chapterCards = [
+  {
+    img: "/images/photos/borderonis-02.jpg",
+    chapter: "CHAPTER 01",
+    icon: "favorite",
+    badgeClass: "bg-primary text-on-primary",
+    title: "Foundations",
+    // Draft wording from Roni — pending her final approval.
+    desc: "Build trust, communication, confidence and all the skills for all that will follow.",
+    cta: "Start Here",
+  },
+  {
+    img: "/images/photos/borderonis-11.jpg",
+    chapter: "CHAPTER 02",
+    icon: "directions_run",
+    badgeClass: "bg-secondary-container text-on-secondary-container",
+    title: "Moves",
+    // Derived from Roni's chapter description — pending her approval.
+    desc: "Expand your dog's movement vocabulary with expressive, contact and jumping tricks.",
+    cta: "Explore",
+  },
+  {
+    img: "/images/photos/borderonis-19.jpg",
+    chapter: "CHAPTER 03",
+    icon: "music_note",
+    badgeClass: "bg-tertiary-container text-on-tertiary-container",
+    title: "Let's Dance",
+    // Derived from Roni's chapter description — pending her approval.
+    desc: "Bring your tricks, your own movement and the music together into a dance.",
+    cta: "Discover",
+  },
+];
+
+// Order per Roni: Communication → Trust → Connection → Movement → Joy
+const methodSteps = [
+  { icon: "forum", label: "Communication" },
+  { icon: "handshake", label: "Trust" },
+  { icon: "all_inclusive", label: "Connection" },
+  { icon: "directions_run", label: "Movement" },
+  { icon: "sentiment_very_satisfied", label: "Joy" },
+];
+
+const faqs = [
+  {
+    q: "Can any dog learn?",
+    a: "Absolutely. The BONDED method is built on connection, not breed-specific traits. Whether you have a puppy or a senior rescue, the focus is on building trust at your dog's pace.",
+  },
+  {
+    q: "Do I need experience?",
+    a: "No prior training experience is required. Bonded: Foundations starts from the very beginning, teaching you the fundamental language of positive reinforcement.",
+  },
+  {
+    q: "How much time does it take?",
+    a: "Just 10-15 minutes a day. Short, positive, and consistent sessions are far more effective for building a lasting bond than long, exhausting drills.",
   },
 ];
 
@@ -68,18 +156,26 @@ export default function HomePage() {
               play and positive reinforcement.
             </p>
             <div className="flex flex-wrap gap-4 justify-center md:justify-start">
-              <button className="kinetic-gradient text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/30 flex items-center gap-2 group">
+              <Link
+                href="/courses"
+                className="kinetic-gradient text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/30 flex items-center gap-2 group"
+              >
                 Build Your Bond
                 <span className="material-symbols-outlined group-hover:translate-x-1 transition-transform">
                   arrow_forward
                 </span>
-              </button>
-              <button className="bg-surface-container-high text-on-surface-variant px-8 py-4 rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2">
+              </Link>
+              <a
+                href={AGT_FINALS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-surface-container-high text-on-surface-variant px-8 py-4 rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2"
+              >
                 <span className="material-symbols-outlined text-xl">
                   play_circle
                 </span>
-                Watch Roni &amp; River
-              </button>
+                Watch Rhythm &amp; Roni
+              </a>
             </div>
           </div>
           <div className="md:col-span-5 relative">
@@ -87,8 +183,8 @@ export default function HomePage() {
             <div className="relative rounded-xl overflow-visible aspect-square md:aspect-[4/5] bg-surface-container-low shadow-2xl">
               <img
                 className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-2xl scale-110 -rotate-3 hover:rotate-0 transition-transform duration-700"
-                alt="Woman and dog in a warm living room"
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBjBF_B1FWEqclU3JcKhgMvWbDkp4lbVbQwQyem4uGu0PVDEVZIfaYzfPSPlq4y74nSzQWKfTefjSoKNVZUItUOZUje3hRpNxsLc5h3PQpCR0cdfGo-M4VTQYX0JSZZsSHeLFCnKaLKDfy1FlgIwNp9I1bHm3KNxlJXhfPribXn4OvMbDzxKeLT2pQJv0upqPta4-eA-a2dOsYemMy69X8bLo65CZtUTCi_vKHzVdJZV_ft3Z8bANOH0YkxUdsqj42PY0jGU5w3CgkeJRE"
+                alt="Roni whispering to her dog on a staircase"
+                src="/images/photos/borderonis-01.jpg"
               />
             </div>
           </div>
@@ -117,41 +213,14 @@ export default function HomePage() {
               <h2 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface mb-4">
                 Start Your Journey
               </h2>
+              {/* Draft wording from Roni — she is choosing between two variants. */}
               <p className="text-on-surface-variant max-w-md font-light">
-                Start your path to a deeper connection.
+                Every journey starts with one little step.
               </p>
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnhwjT5qcMl47SxoJE886F_z34yY2lY5aGza7bldpCCOoOG8wT0KGuIYfBF-PRAIABL0x2FRVbczeJ-vDu1lTrIjx5wPo2rBX3awuL8ry18WzuMWsHqF8I-1x8HprmcrMZC2Cy83KePBsE-dwggfOx3wtlJwij4AeYehnrGjSylLPgdpQ1DSuOPTAwZPYAA_nnZO3CEovm7tp4bbDRi5cqg66yclvQFHMPJT9lv7q8IW5iFt5sGF7hshTe1WSYYrKvHfdcxIJkS-9yqVY",
-                chapter: "CHAPTER 01",
-                icon: "favorite",
-                badgeClass: "bg-primary text-on-primary",
-                title: "Foundations",
-                desc: "Build trust, communication and confidence.",
-                cta: "Start Here",
-              },
-              {
-                img: "https://lh3.googleusercontent.com/aida-public/AB6AXuCeOV82TnwFEbpVF127JrtHzQeqzf-Y5hpt4iX2JeAgq9jz6JfQ7AxcrbF1gTQA5_3zKxD2K-R99VF75h5mRPtZriU7zXZ51tkiUaNwfTbwSVF5aOO1mRN0q_b7B2lr2typaErbuIM4Nb1fVrzM2U7iHg6PGQSFlLC9ZjZE8aQvxNUc6xkK6YVZlmi7LV_Cqx_NkuASrk0LSA_AyRPGb6GIvnKLu9RFLsCfiZdQPJBcROT83R4OnDC_0mtg2WTY9OUS5C66PpkiEgUkmW4",
-                chapter: "CHAPTER 02",
-                icon: "directions_run",
-                badgeClass: "bg-secondary-container text-on-secondary-container",
-                title: "Movement",
-                desc: "Discover movement, play and shared experiences.",
-                cta: "Explore",
-              },
-              {
-                img: "https://lh3.googleusercontent.com/aida/AP1WRLuMxymK8kqjqrqr8B8Fe_ACuKQsgcTfA97Byb6HvYyEmz_kkSix5dkgfPZqth5Js-i8HJtYvTa8PsPrcOL2RVVrp6MNxYG-ZlQL4X7Js__1RTzLB6XZadAyT4jNm_xhV-FJeKf18QlsDsIKmxjtJC1JcBIQ7ObRtXzmIzJP-aK6iMjimapbQtb8jwaiwOtEz3yhs11KKSofUrf-AFJLOnjLcs_Nd-QasjJwCAtAUHmsaKjIIiPOdyykg5Bu",
-                chapter: "CHAPTER 03",
-                icon: "stars",
-                badgeClass: "bg-tertiary-container text-on-tertiary-container",
-                title: "Masterpiece",
-                desc: "Create beautiful routines built on real connection.",
-                cta: "Discover",
-              },
-            ].map(({ img, chapter, icon, badgeClass, title, desc, cta }, i) => (
+            {chapterCards.map(({ img, chapter, icon, badgeClass, title, desc, cta }, i) => (
               <div
                 key={title}
                 className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 flex flex-col h-full relative"
@@ -181,12 +250,15 @@ export default function HomePage() {
                   {desc}
                 </p>
                 <div className="flex justify-between items-center pt-6 border-t border-surface-container-high">
-                  <button className="text-primary font-bold flex items-center gap-1 group/btn w-fit">
+                  <Link
+                    href="/courses"
+                    className="text-primary font-bold flex items-center gap-1 group/btn w-fit"
+                  >
                     {cta}{" "}
                     <span className="material-symbols-outlined text-lg group-hover/btn:translate-x-1 transition-transform">
                       arrow_forward
                     </span>
-                  </button>
+                  </Link>
                 </div>
                 {i < 2 && (
                   <div className="hidden md:block absolute -right-4 top-1/2 -translate-y-1/2 z-10">
@@ -202,38 +274,39 @@ export default function HomePage() {
 
         {/* The Method */}
         <section className="py-24 max-w-7xl mx-auto px-8 text-center mb-16 bg-surface-container-low/30 rounded-3xl">
-          <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-16">
+          <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-10">
             A new way to grow together.
           </h2>
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 md:gap-8 max-w-4xl mx-auto">
-            {[
-              { icon: "handshake", label: "Trust" },
-              { icon: "forum", label: "Communication" },
-              { icon: "directions_run", label: "Movement" },
-              { icon: "all_inclusive", label: "Connection" },
-              { icon: "sentiment_very_satisfied", label: "Joy" },
-            ].map(({ icon, label }, i) => (
-              <div key={label} className="flex flex-col items-center">
+          <div className="max-w-4xl mx-auto mb-14 rounded-2xl overflow-hidden shadow-xl aspect-[21/9]">
+            <img
+              className="w-full h-full object-cover object-[50%_35%]"
+              alt="Roni and Serafina playing together in a city square"
+              src="/images/photos/roni-serafina.jpg"
+            />
+          </div>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-4 max-w-5xl mx-auto">
+            {methodSteps.map(({ icon, label }, i) => (
+              <div key={label} className="contents">
                 {i > 0 && (
-                  <>
-                    <span className="material-symbols-outlined text-outline hidden md:block">
-                      arrow_forward
-                    </span>
-                    <span className="material-symbols-outlined text-outline md:hidden rotate-90">
-                      arrow_forward
-                    </span>
-                  </>
+                  <span
+                    aria-hidden
+                    className="material-symbols-outlined text-outline rotate-90 md:rotate-0 md:mb-10"
+                  >
+                    arrow_forward
+                  </span>
                 )}
-                <div className="w-20 h-20 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mb-4">
-                  <span className="material-symbols-outlined text-3xl">{icon}</span>
+                <div className="flex flex-col items-center">
+                  <div className="w-20 h-20 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center mb-4">
+                    <span className="material-symbols-outlined text-3xl">{icon}</span>
+                  </div>
+                  <span className="font-bold text-lg">{label}</span>
                 </div>
-                <span className="font-bold text-lg">{label}</span>
               </div>
             ))}
           </div>
         </section>
 
-        {/* Choose Your Track */}
+        {/* See Your Journey */}
         <section className="py-24 bg-surface-container-low/30 overflow-hidden mb-20">
           <div className="max-w-7xl mx-auto px-8">
             <div className="mb-16">
@@ -260,7 +333,7 @@ export default function HomePage() {
                   <div className="space-y-3">
                     {track.lessons.map((lesson, i) => (
                       <div
-                        key={lesson.slug}
+                        key={lesson.label}
                         className={`flex items-center gap-4 p-3 bg-surface-container-lowest rounded-md shadow-sm ${
                           i === 0 ? `border-l-4 ${track.firstBorder}` : ""
                         }`}
@@ -268,11 +341,17 @@ export default function HomePage() {
                         <div
                           className={`flex-shrink-0 w-12 h-12 rounded-full overflow-hidden flex items-center justify-center ${track.iconClass}`}
                         >
-                          <img
-                            src={`/sketches/${lesson.slug}.jpg`}
-                            alt={lesson.label}
-                            className="w-[112%] h-[112%] object-contain mix-blend-multiply"
-                          />
+                          {lesson.sketch ? (
+                            <img
+                              src={`/sketches/${lesson.sketch}.jpg`}
+                              alt={lesson.label}
+                              className="w-[112%] h-[112%] object-contain mix-blend-multiply"
+                            />
+                          ) : (
+                            <span className="font-headline font-bold text-sm text-on-surface-variant">
+                              {i + 1}
+                            </span>
+                          )}
                         </div>
                         <span className="font-medium">{lesson.label}</span>
                       </div>
@@ -291,14 +370,14 @@ export default function HomePage() {
               <div className="bg-white p-4 rounded-lg shadow-2xl rotate-2 relative z-10">
                 <img
                   className="w-full h-auto rounded"
-                  alt="Roni Sagi with her dog"
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuBP5m4MCqFjtUz0LP9gHzPCK7bbYli879S8PeoltJn8TakNfnvhBPGO3qS6KAetKHmIvoZ0_VHpoTylbRdhdQsd4yc-WontJWDL3cuGHqTWmTgXts0BzvZdARHwTCTlE85VXPuTc7yCnB3QGkeX9OlN1zD6V0m-qgExYtAWdBr_l4BWmv7jK3vg_ZkLnRFwrDqZxTLP7BW42Czi_CeIUbZZiqIX-hpNLPfSG5D5QKYbdCK9eXlJjJEclUUs7xodqeBgOeTQX54z0Jd7yb0"
+                  alt="Roni Sagi with her dogs"
+                  src="/images/photos/borderonis-17.jpg"
                 />
               </div>
               <div className="absolute -bottom-8 -left-8 bg-secondary-container p-6 rounded-lg shadow-xl z-20 max-w-[240px]">
                 <p className="font-headline font-bold text-on-secondary-container italic">
-                  "It's not about the tricks; it's about the conversation you have
-                  with your dog."
+                  &ldquo;It&apos;s not about the tricks; it&apos;s about the conversation you have
+                  with your dog.&rdquo;
                 </p>
               </div>
             </div>
@@ -329,9 +408,12 @@ export default function HomePage() {
                   <p className="text-sm text-outline font-bold">Education</p>
                 </div>
               </div>
-              <button className="inline-flex items-center justify-center px-8 py-3 rounded-full border-2 border-primary text-primary font-headline font-bold text-sm hover:bg-primary hover:text-on-primary transition-all duration-300 mt-4">
+              <Link
+                href="/about"
+                className="inline-flex items-center justify-center px-8 py-3 rounded-full border-2 border-primary text-primary font-headline font-bold text-sm hover:bg-primary hover:text-on-primary transition-all duration-300 mt-4"
+              >
                 Get To Know Roni
-              </button>
+              </Link>
             </div>
           </div>
         </section>
@@ -374,7 +456,7 @@ export default function HomePage() {
           <div className="absolute inset-0 z-0">
             <img
               className="w-full h-full object-cover opacity-20"
-              alt="Community background"
+              alt="Roni's five border collies sitting in a row"
               src={COMMUNITY_BG}
             />
             <div className="absolute inset-0 bg-surface-container-lowest/80 backdrop-blur-sm" />
@@ -384,12 +466,17 @@ export default function HomePage() {
               You&apos;re building this bond together.
             </h2>
             <p className="text-xl text-on-surface-variant font-light mb-10 max-w-2xl mx-auto">
-              Join a global community of owners. Participate in challenges, live
-              Q&amp;As with Roni, and share your most beautiful connection moments.
+              Every BONDED member joins our private WhatsApp community. Share your
+              progress, ask questions, and take part in Roni&apos;s quarterly live
+              Q&amp;A.
             </p>
-            <button className="kinetic-gradient text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/30">
-              Join the Community
-            </button>
+            {/* The WhatsApp link itself lives inside the members area, not on the public site. */}
+            <Link
+              href="/signup"
+              className="inline-block kinetic-gradient text-on-primary px-8 py-4 rounded-full font-headline font-bold text-lg shadow-xl shadow-primary/30"
+            >
+              Become a Member
+            </Link>
           </div>
         </section>
 
@@ -401,20 +488,7 @@ export default function HomePage() {
             </h2>
           </div>
           <div className="space-y-4">
-            {[
-              {
-                q: "Can any dog learn?",
-                a: "Absolutely. The BONDED method is built on connection, not breed-specific traits. Whether you have a puppy or a senior rescue, the focus is on building trust at your dog's pace.",
-              },
-              {
-                q: "Do I need experience?",
-                a: "No prior training experience is required. Our Foundation path starts from the very beginning, teaching you the fundamental language of positive reinforcement.",
-              },
-              {
-                q: "How much time does it take?",
-                a: "Just 10-15 minutes a day. Short, positive, and consistent sessions are far more effective for building a lasting bond than long, exhausting drills.",
-              },
-            ].map(({ q, a }) => (
+            {faqs.map(({ q, a }) => (
               <details
                 key={q}
                 className="bg-surface-container-low p-6 rounded-2xl group cursor-pointer"
@@ -439,8 +513,8 @@ export default function HomePage() {
             <div className="absolute inset-0 z-0">
               <img
                 className="w-full h-full object-cover opacity-20 mix-blend-overlay"
-                alt="Background"
-                src={COMMUNITY_BG}
+                alt=""
+                src="/images/photos/borderonis-09.jpg"
               />
             </div>
             <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -458,9 +532,12 @@ export default function HomePage() {
               <p className="text-xl md:text-2xl text-on-primary/90 font-light mb-10">
                 It&apos;s time to learn the language.
               </p>
-              <button className="bg-white text-primary px-10 py-4 rounded-full font-headline font-bold text-lg hover:bg-orange-50 transition-colors shadow-xl">
+              <Link
+                href="/courses"
+                className="inline-block bg-white text-primary px-10 py-4 rounded-full font-headline font-bold text-lg hover:bg-orange-50 transition-colors shadow-xl"
+              >
                 Build Your Bond
-              </button>
+              </Link>
             </div>
           </div>
         </section>
