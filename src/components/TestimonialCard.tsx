@@ -7,7 +7,7 @@ interface TestimonialCardProps {
 }
 
 export default function TestimonialCard({ testimonial, variant = "card" }: TestimonialCardProps) {
-  const { name, country, quote, detail, videoUrl } = testimonial;
+  const { name, country, quote, detail, videoUrl, photoUrl } = testimonial;
   const isCard = variant === "card";
 
   return (
@@ -27,7 +27,15 @@ export default function TestimonialCard({ testimonial, variant = "card" }: Testi
       >
         &ldquo;{quote}&rdquo;
       </blockquote>
-      <figcaption>
+      <figcaption className={photoUrl ? "flex items-start gap-4" : undefined}>
+        {photoUrl && (
+          <img
+            src={photoUrl}
+            alt={name}
+            className="w-14 h-14 rounded-full object-cover shrink-0 border-2 border-surface-container-high"
+          />
+        )}
+        <div>
         <p className={isCard ? "font-bold text-lg text-primary" : "font-bold text-sm text-on-surface"}>
           {name}
           {country && (
@@ -46,6 +54,7 @@ export default function TestimonialCard({ testimonial, variant = "card" }: Testi
             Watch their video
           </a>
         )}
+        </div>
       </figcaption>
     </figure>
   );

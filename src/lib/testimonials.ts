@@ -18,6 +18,8 @@ export interface Testimonial {
   tier?: Tier;
   /** Public video the student shared with the quote. */
   videoUrl?: string;
+  /** Photo of the handler with their dog (under /public/images/students). TODO: collect from students. */
+  photoUrl?: string;
 }
 
 export const TESTIMONIALS: Testimonial[] = [
