@@ -1,11 +1,14 @@
 import Link from "next/link";
 import type { TierResultContent } from "@/lib/quiz/data";
+import TestimonialCard from "@/components/TestimonialCard";
+import { testimonialsFor } from "@/lib/testimonials";
 
 interface ResultCardProps {
   result: TierResultContent;
 }
 
 export default function ResultCard({ result }: ResultCardProps) {
+  const testimonial = testimonialsFor(result.tier)[0];
   return (
     <div className="text-center">
       <div className="image-reveal-wrapper kinetic-shadow mb-10 aspect-[16/9] w-full">
@@ -43,6 +46,12 @@ export default function ResultCard({ result }: ResultCardProps) {
           </span>
         ))}
       </div>
+
+      {testimonial && (
+        <div className="max-w-xl mx-auto mb-10 text-left">
+          <TestimonialCard testimonial={testimonial} variant="inline" />
+        </div>
+      )}
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
         <Link

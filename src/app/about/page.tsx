@@ -1,10 +1,14 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import VideoLightbox from "@/components/VideoLightbox";
+import TestimonialCard from "@/components/TestimonialCard";
+import { ABOUT_TESTIMONIALS } from "@/lib/testimonials";
 
 export const metadata = { title: "About Roni" };
 
-const AGT_FINALS_URL = "https://www.youtube.com/watch?v=hNUWEknZ2xs";
+const AGT_FINALS_YOUTUBE_ID = "hNUWEknZ2xs";
+const [maraOnRoni, maryOnAgt] = ABOUT_TESTIMONIALS;
 
 export default function AboutPage() {
   return (
@@ -78,6 +82,9 @@ export default function AboutPage() {
                   But everything I teach comes back to the same idea: the most
                   beautiful movements begin long before the music starts.
                 </p>
+              </div>
+              <div className="mt-10">
+                <TestimonialCard testimonial={maraOnRoni} variant="inline" />
               </div>
             </div>
           </div>
@@ -168,11 +175,10 @@ export default function AboutPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
               <div className="space-y-6">
-                <a
-                  href={AGT_FINALS_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="image-reveal-wrapper kinetic-shadow aspect-video group block"
+                <VideoLightbox
+                  youtubeId={AGT_FINALS_YOUTUBE_ID}
+                  title="Rhythm & Roni – America's Got Talent finals"
+                  className="image-reveal-wrapper kinetic-shadow aspect-video group block w-full text-left"
                 >
                   <img
                     alt="Roni Sagi and Rhythm performing in the America's Got Talent finals"
@@ -183,7 +189,7 @@ export default function AboutPage() {
                     <span className="material-symbols-outlined text-sm">play_circle</span>
                     Watch the AGT finals
                   </div>
-                </a>
+                </VideoLightbox>
                 <p className="font-body text-on-surface-variant">
                   <span className="font-label font-bold uppercase tracking-widest text-xs block mb-1">
                     The Performance
@@ -212,6 +218,9 @@ export default function AboutPage() {
                 A performance lasts only a few minutes. The relationship behind it
                 is built every day.
               </p>
+              <div className="mt-10 text-left">
+                <TestimonialCard testimonial={maryOnAgt} variant="inline" />
+              </div>
             </div>
           </div>
         </section>

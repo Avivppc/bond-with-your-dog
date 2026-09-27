@@ -1,10 +1,13 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import VideoLightbox from "@/components/VideoLightbox";
+import TestimonialCard from "@/components/TestimonialCard";
+import { testimonialById } from "@/lib/testimonials";
 
 export const metadata = { title: { absolute: "BONDED – Learn your dog's secret language" } };
 
-const AGT_FINALS_URL = "https://youtu.be/hNUWEknZ2xs";
+const AGT_FINALS_YOUTUBE_ID = "hNUWEknZ2xs";
 
 const COMMUNITY_BG = "/images/photos/borderonis-27.jpg";
 
@@ -82,6 +85,12 @@ const journeyTracks: JourneyTrack[] = [
   },
 ];
 
+const HOME_TESTIMONIALS = ["jessica", "lili"]
+  .map(testimonialById)
+  .filter((t): t is NonNullable<typeof t> => Boolean(t));
+
+const AS_SEEN_ON = ["AGT", "DOG SHOW", "NBC", "K9 STYLE", "PETS PLUS"];
+
 /** Lessons shown per chapter on mobile before the "Show all" toggle. */
 const MOBILE_LESSON_PREVIEW = 4;
 
@@ -142,7 +151,7 @@ const faqs = [
   },
   {
     q: "What age can my dog start?",
-    a: "Any age. Foundations works for puppies, adult dogs and seniors alike, because it starts with communication, not physical demands. Jumping and more athletic moves come later and are always adapted to your dog.",
+    a: "Any age. Foundations works for puppies, adult dogs and seniors alike, because it starts with communication, not physical demands. Magalí from Argentina started with Tina at almost 12 years old. Jumping and more athletic moves come later and are always adapted to your dog.",
   },
   {
     q: "Do I need any equipment?",
@@ -184,17 +193,16 @@ export default function HomePage() {
                   arrow_forward
                 </span>
               </Link>
-              <a
-                href={AGT_FINALS_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              <VideoLightbox
+                youtubeId={AGT_FINALS_YOUTUBE_ID}
+                title="Rhythm & Roni – America's Got Talent finals"
                 className="bg-surface-container-high text-on-surface-variant px-8 py-4 rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-xl">
                   play_circle
                 </span>
                 Watch Rhythm &amp; Roni
-              </a>
+              </VideoLightbox>
             </div>
           </div>
           <div className="md:col-span-5 relative">
@@ -212,13 +220,16 @@ export default function HomePage() {
         {/* Social Proof */}
         <section className="bg-surface-container-low/50 py-12 mb-20">
           <div className="max-w-7xl mx-auto px-8">
-            <p className="text-center font-label text-xs uppercase tracking-[0.2em] text-outline mb-6 font-bold">
-              As seen on
+            <p className="text-center font-label text-xs uppercase tracking-[0.2em] text-outline mb-8 font-bold">
+              As Seen On &amp; Featured In
             </p>
-            <div className="flex flex-wrap justify-center items-center gap-6 md:gap-12 opacity-70">
-              <span className="font-headline text-xl md:text-2xl font-black">America&apos;s Got Talent</span>
-              <span className="hidden md:inline text-outline-variant">•</span>
-              <span className="font-headline text-xl md:text-2xl font-black">NBC</span>
+            {/* TODO: replace text with logo files once received (AGT, NBC, Dog Show, K9 Style, Pets Plus). */}
+            <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-4 md:gap-16 opacity-60 grayscale hover:grayscale-0 transition-all duration-500">
+              {AS_SEEN_ON.map((outlet) => (
+                <span key={outlet} className="font-headline text-xl md:text-2xl font-black">
+                  {outlet}
+                </span>
+              ))}
             </div>
           </div>
         </section>
@@ -474,30 +485,20 @@ export default function HomePage() {
             <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-4">
               Bonded Stories
             </h2>
+            <p className="text-on-surface-variant text-lg font-light">
+              Students on three continents and counting.
+            </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-surface p-12 rounded-2xl shadow-sm flex flex-col justify-between">
-              <p className="text-lg md:text-xl font-light leading-relaxed mb-8 italic">
-                I love the program! I am very much a beginner and I worried that
-                the online format wouldn&apos;t work for me. I was WRONG. The
-                courses are well planned and the videos are clear.
-              </p>
-              <div>
-                <p className="font-bold text-lg text-primary">Shari Divone &amp; Linus</p>
-                <p className="text-sm text-outline">Foundations</p>
-              </div>
-            </div>
-            <div className="bg-surface p-12 rounded-2xl shadow-sm flex flex-col justify-between">
-              <p className="text-lg md:text-xl font-light leading-relaxed mb-8 italic">
-                I was working on the first lesson from your site and couldn&apos;t
-                believe how quickly my dog responded. This method is unlike
-                anything I&apos;ve tried before.
-              </p>
-              <div>
-                <p className="font-bold text-lg text-primary">Marcus &amp; Toby</p>
-                <p className="text-sm text-outline">BONDED student</p>
-              </div>
-            </div>
+            {HOME_TESTIMONIALS.map((testimonial) => (
+              <TestimonialCard key={testimonial.id} testimonial={testimonial} />
+            ))}
+          </div>
+          <div className="text-center mt-10">
+            <Link href="/stories" className="text-primary font-bold inline-flex items-center gap-1">
+              Read more stories
+              <span className="material-symbols-outlined text-lg">arrow_forward</span>
+            </Link>
           </div>
         </section>
 
