@@ -1,13 +1,16 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import VideoLightbox from "@/components/VideoLightbox";
-import TestimonialCard from "@/components/TestimonialCard";
-import { testimonialById } from "@/lib/testimonials";
+import InlineVideo from "@/components/InlineVideo";
+import PlayVideoButton from "@/components/PlayVideoButton";
+import TestimonialCarousel from "@/components/TestimonialCarousel";
+import { TESTIMONIALS } from "@/lib/testimonials";
 
 export const metadata = { title: { absolute: "BONDED – Learn your dog's secret language" } };
 
 const AGT_FINALS_YOUTUBE_ID = "hNUWEknZ2xs";
+const HERO_VIDEO_EVENT = "bonded:play-hero-video";
+const HERO_VIDEO_ID = "hero-video";
 
 const COMMUNITY_BG = "/images/photos/borderonis-27.jpg";
 
@@ -84,10 +87,6 @@ const journeyTracks: JourneyTrack[] = [
     ],
   },
 ];
-
-const HOME_TESTIMONIALS = ["jessica", "lili"]
-  .map(testimonialById)
-  .filter((t): t is NonNullable<typeof t> => Boolean(t));
 
 const AS_SEEN_ON = ["AGT", "DOG SHOW", "NBC", "K9 STYLE", "PETS PLUS"];
 
@@ -193,25 +192,30 @@ export default function HomePage() {
                   arrow_forward
                 </span>
               </Link>
-              <VideoLightbox
-                youtubeId={AGT_FINALS_YOUTUBE_ID}
-                title="Rhythm & Roni – America's Got Talent finals"
+              <PlayVideoButton
+                eventName={HERO_VIDEO_EVENT}
+                scrollToId={HERO_VIDEO_ID}
                 className="bg-surface-container-high text-on-surface-variant px-8 py-4 rounded-full font-headline font-bold text-lg hover:bg-surface-container-highest transition-colors flex items-center gap-2"
               >
                 <span className="material-symbols-outlined text-xl">
                   play_circle
                 </span>
                 Watch Rhythm &amp; Roni
-              </VideoLightbox>
+              </PlayVideoButton>
             </div>
           </div>
           <div className="md:col-span-5 relative">
             <div className="absolute -top-12 -right-12 w-64 h-64 bg-secondary-container rounded-full blur-3xl opacity-30 animate-pulse" />
-            <div className="relative rounded-xl overflow-visible aspect-square md:aspect-[4/5] bg-surface-container-low shadow-2xl">
-              <img
-                className="absolute inset-0 w-full h-full object-cover rounded-xl shadow-2xl scale-110 -rotate-3 hover:rotate-0 transition-transform duration-700"
-                alt="Roni whispering to her dog on a staircase"
-                src="/images/photos/borderonis-01.jpg"
+            <div className="relative scroll-mt-32">
+              <InlineVideo
+                id={HERO_VIDEO_ID}
+                youtubeId={AGT_FINALS_YOUTUBE_ID}
+                title="Rhythm & Roni – America's Got Talent finals"
+                posterSrc="/images/photos/borderonis-01.jpg"
+                posterAlt="Roni whispering to her dog on a staircase. Press play to watch Rhythm & Roni on AGT."
+                playEventName={HERO_VIDEO_EVENT}
+                posterFrameClassName="aspect-square md:aspect-[4/5] rounded-xl shadow-2xl bg-surface-container-low"
+                playingFrameClassName="aspect-video rounded-xl shadow-2xl"
               />
             </div>
           </div>
@@ -489,11 +493,7 @@ export default function HomePage() {
               Students on three continents and counting.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {HOME_TESTIMONIALS.map((testimonial) => (
-              <TestimonialCard key={testimonial.id} testimonial={testimonial} />
-            ))}
-          </div>
+          <TestimonialCarousel testimonials={TESTIMONIALS} />
           <div className="text-center mt-10">
             <Link href="/stories" className="text-primary font-bold inline-flex items-center gap-1">
               Read more stories

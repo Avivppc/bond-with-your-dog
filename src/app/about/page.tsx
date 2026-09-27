@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import VideoLightbox from "@/components/VideoLightbox";
+import InlineVideo from "@/components/InlineVideo";
 import TestimonialCard from "@/components/TestimonialCard";
 import { ABOUT_TESTIMONIALS } from "@/lib/testimonials";
 
@@ -175,21 +175,14 @@ export default function AboutPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-16">
               <div className="space-y-6">
-                <VideoLightbox
+                <InlineVideo
                   youtubeId={AGT_FINALS_YOUTUBE_ID}
                   title="Rhythm & Roni – America's Got Talent finals"
-                  className="image-reveal-wrapper kinetic-shadow aspect-video group block w-full text-left"
-                >
-                  <img
-                    alt="Roni Sagi and Rhythm performing in the America's Got Talent finals"
-                    className="w-full h-full object-cover"
-                    src="/images/photos/agt-spotlight.jpg"
-                  />
-                  <div className="absolute bottom-4 left-4 bg-white/90 px-4 py-2 rounded-full font-label font-bold text-xs uppercase tracking-widest flex items-center gap-2">
-                    <span className="material-symbols-outlined text-sm">play_circle</span>
-                    Watch the AGT finals
-                  </div>
-                </VideoLightbox>
+                  posterSrc="/images/photos/agt-spotlight.jpg"
+                  posterAlt="Roni Sagi and Rhythm performing in the America's Got Talent finals. Press play to watch."
+                  posterFrameClassName="aspect-video rounded-2xl kinetic-shadow"
+                  playingFrameClassName="aspect-video rounded-2xl kinetic-shadow"
+                />
                 <p className="font-body text-on-surface-variant">
                   <span className="font-label font-bold uppercase tracking-widest text-xs block mb-1">
                     The Performance

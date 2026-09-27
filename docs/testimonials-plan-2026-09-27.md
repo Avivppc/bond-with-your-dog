@@ -7,6 +7,13 @@
 - Quiz results: ציטוט תואם לכל tier.
 - Stories: 10 כרטיסים + רשימת מדינות + "Watch their video".
 - About: Mara ליד "fell in love", Mary Ohashi מתחת ל-AGT.
+- 27.9 (סבב שני): קרוסלה של כל 10 ההמלצות בבית; שדה `photoUrl` לכל תלמיד (תיקייה `public/images/students/`).
+
+## משימות פתוחות
+- [ ] **תמונות תלמידים עם הכלב** – לבקש מ-10 התלמידים תמונה (רצוי ריבועית, 800px+), לשמור ב-`public/images/students/<id>.jpg` ולמלא `photoUrl` ב-`src/lib/testimonials.ts`. הכרטיס כבר יודע להציג אווטאר.
+- [ ] **לוגואים אמיתיים ל-"As Seen On"** – קבצי SVG/PNG של AGT, NBC, Dog Show, K9 Style, Pets Plus → `public/images/press/`, ולהחליף את הטקסט ב-`AS_SEEN_ON` ב-`src/app/page.tsx` בתמונות.
+- [ ] ציטוט תוצאה (לא ציפייה) למתקדמים – לבקש מ-Sanna משפט עדכני.
+- [ ] קישורי Instagram / YouTube לפוטר.
 - בנוסף (בקשות אביב): OG = הלוגו (`/images/og.png`), לוגו מקומי, "Watch Rhythm & Roni" ו-"Watch the AGT finals" נפתחים ב-lightbox של YouTube בתוך האתר, רצועת "As Seen On" הוחזרה (ממתין לקובצי לוגו).
 
 
