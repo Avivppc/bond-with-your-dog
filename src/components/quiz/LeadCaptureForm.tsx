@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import type { Tier } from "@/lib/quiz/data";
 import type { TierScores } from "@/lib/quiz/scoring";
 import type { QuizAnswers } from "@/lib/quiz/scoring";
+import { EVENTS, identifyByEmail, track } from "@/lib/analytics";
 
 interface LeadCaptureFormProps {
   tier: Tier;
@@ -37,9 +38,15 @@ export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadC
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ firstName, email, tier, scores, answers }),
       });
-      if (!response.ok) throw new Error("Request failed");
+      if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      identifyByEmail(email, { name: firstName, quiz_tier: tier });
+      track(EVENTS.quizLeadSubmitted, { tier });
       onDone("sent");
-    } catch {
+    } catch (error) {
+      track(EVENTS.quizLeadFailed, {
+        tier,
+        error: error instanceof Error ? error.message : "unknown",
+      });
       setStatus("error");
     }
   }
@@ -98,7 +105,10 @@ export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadC
       </form>
       <button
         type="button"
-        onClick={() => onDone("skipped")}
+        onClick={() => {
+          track(EVENTS.quizLeadSkipped, { tier });
+          onDone("skipped");
+        }}
         className="mt-5 text-sm text-on-surface-variant hover:text-primary underline-offset-4 hover:underline"
       >
         Just show my result

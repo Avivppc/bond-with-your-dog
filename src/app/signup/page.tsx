@@ -2,6 +2,8 @@ import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { signup } from "./actions";
+import TrackOnMount from "@/components/analytics/TrackOnMount";
+import { EVENTS } from "@/lib/analytics-events";
 
 export default async function SignupPage({
   searchParams,
@@ -33,6 +35,7 @@ export default async function SignupPage({
               {decodeURIComponent(error)}
             </div>
           )}
+          {message && <TrackOnMount event={EVENTS.signupCompleted} />}
           {message && (
             <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">
               {decodeURIComponent(message)}

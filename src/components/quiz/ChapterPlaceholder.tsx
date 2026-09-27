@@ -3,6 +3,9 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import type { Tier } from "@/lib/quiz/data";
 import { TIER_RESULTS } from "@/lib/quiz/data";
+import TrackOnMount from "@/components/analytics/TrackOnMount";
+import TrackedLink from "@/components/analytics/TrackedLink";
+import { EVENTS } from "@/lib/analytics-events";
 
 interface ChapterPlaceholderProps {
   tier: Tier;
@@ -14,6 +17,7 @@ export default function ChapterPlaceholder({ tier }: ChapterPlaceholderProps) {
   return (
     <>
       <Navbar />
+      <TrackOnMount event={EVENTS.chapterPageViewed} props={{ plan: tier }} />
       <main className="pt-32 pb-24 px-6 md:px-8 min-h-screen">
         <div className="max-w-3xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-tertiary-container text-on-tertiary-container px-4 py-2 rounded-full font-label font-semibold text-sm mb-8 uppercase tracking-widest">
@@ -38,12 +42,14 @@ export default function ChapterPlaceholder({ tier }: ChapterPlaceholderProps) {
             ))}
           </div>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
+            <TrackedLink
               href="/signup"
+              event={EVENTS.waitlistClicked}
+              props={{ plan: tier }}
               className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
             >
               Join the Waitlist
-            </Link>
+            </TrackedLink>
             <Link
               href="/courses"
               className="bg-surface-container text-on-surface font-label text-base font-semibold px-8 py-4 rounded-full hover:bg-surface-container-high transition-colors"
