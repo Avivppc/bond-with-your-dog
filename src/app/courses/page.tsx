@@ -31,6 +31,8 @@ interface Stage {
   ctaBg: string;
   img: string;
   imgAlt: string;
+  /** Tailwind aspect class matching the photo's orientation. */
+  imgAspect: string;
   sectionBg: string;
   reverse: boolean;
 }
@@ -67,6 +69,7 @@ const stages: Stage[] = [
     ctaBg: "bg-primary text-on-primary shadow-lg",
     img: "/images/photos/borderonis-02.jpg",
     imgAlt: "Roni sitting on a staircase, her dog resting a paw on her knee",
+    imgAspect: "aspect-[4/5]",
     sectionBg: "bg-surface-container-low",
     reverse: false,
   },
@@ -99,6 +102,7 @@ const stages: Stage[] = [
     ctaBg: "bg-secondary text-on-secondary shadow-lg",
     img: "/images/photos/borderonis-06.jpg",
     imgAlt: "Border collie standing on a stair rail, nose to nose with Roni",
+    imgAspect: "aspect-[4/3]",
     sectionBg: "bg-surface-container-lowest",
     reverse: true,
   },
@@ -134,6 +138,7 @@ const stages: Stage[] = [
     ctaBg: "bg-tertiary text-on-tertiary shadow-lg",
     img: "/images/photos/borderonis-19.jpg",
     imgAlt: "Roni in a dance pose with her border collie leaning on her leg",
+    imgAspect: "aspect-[4/3]",
     sectionBg: "bg-surface-container-low",
     reverse: false,
   },
@@ -224,7 +229,7 @@ export default function CoursesPage() {
           <div className="lg:w-1/2 relative">
             <div className="absolute -inset-4 bg-secondary-container/30 rounded-[3rem] -rotate-3 transform scale-105" />
             <img
-              className="relative z-10 w-full h-[600px] object-cover object-top rounded-xl shadow-2xl"
+              className="relative z-10 w-full max-w-md mx-auto lg:max-w-none aspect-[3/4] object-cover object-top rounded-xl shadow-2xl"
               alt="Roni's dog jumping up to greet her in a lit corridor"
               src="/images/photos/borderonis-15.jpg"
             />
@@ -270,7 +275,7 @@ export default function CoursesPage() {
         {stages.map(
           ({
             badge, badgeBg, badgeIcon, title, body, learn, learnColor, perfectFor, perfectColor,
-            outcome, outcomeColor, outcomeBg, testimonialId, ctaLabel, ctaHref, ctaBg, img, imgAlt, sectionBg, reverse,
+            outcome, outcomeColor, outcomeBg, testimonialId, ctaLabel, ctaHref, ctaBg, img, imgAlt, imgAspect, sectionBg, reverse,
           }) => {
             const testimonial = testimonialById(testimonialId);
             return (
@@ -352,15 +357,17 @@ export default function CoursesPage() {
                     <span className="material-symbols-outlined text-sm">arrow_forward</span>
                   </Link>
                 </div>
-                <div className="lg:w-1/2 relative w-full h-64 sm:h-80 lg:h-auto lg:min-h-[500px] order-first lg:order-none">
-                  {reverse && (
-                    <div className="absolute -inset-4 bg-primary-container/20 rounded-2xl rotate-3 transform scale-105" />
-                  )}
-                  <img
-                    className="absolute inset-0 w-full h-full object-cover rounded-2xl shadow-xl z-10"
-                    alt={imgAlt}
-                    src={img}
-                  />
+                <div className="lg:w-1/2 w-full order-first lg:order-none lg:self-center">
+                  <div className={`relative w-full ${imgAspect} max-h-[640px]`}>
+                    {reverse && (
+                      <div className="absolute -inset-4 bg-primary-container/20 rounded-2xl rotate-3 transform scale-105" />
+                    )}
+                    <img
+                      className="absolute inset-0 w-full h-full object-cover object-top rounded-2xl shadow-xl z-10"
+                      alt={imgAlt}
+                      src={img}
+                    />
+                  </div>
                 </div>
               </div>
             </section>

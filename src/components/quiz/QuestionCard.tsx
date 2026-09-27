@@ -9,7 +9,7 @@ interface QuestionCardProps {
 export default function QuestionCard({ question, selectedId, onSelect }: QuestionCardProps) {
   return (
     <div>
-      <div className="image-reveal-wrapper kinetic-shadow mb-8 aspect-[16/9] w-full">
+      <div className="image-reveal-wrapper kinetic-shadow mb-8 aspect-[3/2] w-full">
         <img
           src={question.imageUrl}
           alt={question.imageAlt}

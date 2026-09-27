@@ -214,7 +214,7 @@ export default function HomePage() {
                 posterSrc="/images/photos/borderonis-01.jpg"
                 posterAlt="Roni whispering to her dog on a staircase. Press play to watch Rhythm & Roni on AGT."
                 playEventName={HERO_VIDEO_EVENT}
-                posterFrameClassName="aspect-square md:aspect-[4/5] rounded-xl shadow-2xl bg-surface-container-low"
+                posterFrameClassName="aspect-[4/5] rounded-xl shadow-2xl bg-surface-container-low"
                 playingFrameClassName="aspect-video rounded-xl shadow-2xl"
               />
             </div>
@@ -257,7 +257,7 @@ export default function HomePage() {
                 key={title}
                 className="group bg-surface-container-lowest p-6 rounded-lg shadow-sm hover:scale-[1.02] transition-all duration-500 flex flex-col h-full relative"
               >
-                <div className="aspect-video rounded-md overflow-hidden mb-6 relative bg-surface-container-low">
+                <div className="aspect-[4/3] rounded-md overflow-hidden mb-6 relative bg-surface-container-low">
                   <img
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                     alt={title}
@@ -309,9 +309,9 @@ export default function HomePage() {
           <h2 className="font-headline text-4xl md:text-5xl font-extrabold mb-10">
             A new way to grow together.
           </h2>
-          <div className="max-w-4xl mx-auto mb-14 rounded-2xl overflow-hidden shadow-xl aspect-[21/9]">
+          <div className="max-w-5xl mx-auto mb-14 rounded-2xl overflow-hidden shadow-xl aspect-[3/2] md:aspect-[16/9]">
             <img
-              className="w-full h-full object-cover object-[50%_35%]"
+              className="w-full h-full object-cover object-[50%_40%]"
               alt="Roni and Serafina playing together in a city square"
               src="/images/photos/roni-serafina.jpg"
             />
