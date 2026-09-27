@@ -3,7 +3,8 @@ import type { Tier } from "@/lib/quiz/data";
 /**
  * Student testimonials, curated from the BONDED students group (consent
  * confirmed by Roni, Sept 2026). Quotes are shortened, never reworded.
- * Source sheet: "Testimonials - Keta Tov - Jun 2026".
+ * Source sheet: "Testimonials" Google Sheet (June 2026 export). Every entry
+ * maps to a row there; do not add quotes that are not in the sheet.
  */
 export interface Testimonial {
   id: string;
@@ -115,12 +116,12 @@ export const TESTIMONIALS: Testimonial[] = [
   },
   {
     id: "shari",
-    name: "Shari & Linus",
-    dog: "Linus",
+    name: "Shari",
+    dog: "",
     quote:
-      "I am very much a beginner and I worried that the online format wouldn't work for me. I was WRONG. The courses are well planned and the videos are clear.",
+      "One of my biggest takeaways today was keep it short and keep it fun. I know this but I need to be reminded. Thank you!",
     tier: "foundations",
-    videoUrl: "https://youtu.be/4-uaGxXWKwg",
+    videoUrl: "https://youtu.be/yrD45NEyV8Y",
   },
 ];
 

@@ -11,7 +11,7 @@ export default function ResultCard({ result }: ResultCardProps) {
   const testimonial = testimonialsFor(result.tier)[0];
   return (
     <div className="text-center">
-      <div className="image-reveal-wrapper kinetic-shadow mb-10 aspect-[16/9] w-full">
+      <div className="image-reveal-wrapper kinetic-shadow mb-10 aspect-[3/2] w-full">
         <img
           src={result.imageUrl}
           alt={result.imageAlt}

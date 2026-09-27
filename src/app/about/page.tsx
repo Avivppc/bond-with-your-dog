@@ -30,7 +30,7 @@ export default function AboutPage() {
               </p>
             </div>
             <div className="relative">
-              <div className="image-reveal-wrapper kinetic-shadow aspect-[4/5] md:aspect-square">
+              <div className="image-reveal-wrapper kinetic-shadow aspect-[4/5]">
                 <img
                   alt="Roni hugging her border collie over her shoulder"
                   className="w-full h-full object-cover object-top"
@@ -59,7 +59,7 @@ export default function AboutPage() {
         <section className="bg-surface-container-low py-32 px-8 md:px-20">
           <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
             <div className="order-2 lg:order-1">
-              <div className="image-reveal-wrapper kinetic-shadow aspect-video">
+              <div className="image-reveal-wrapper kinetic-shadow aspect-[3/2]">
                 <img
                   alt="Roni sitting on a staircase surrounded by her five dogs"
                   className="w-full h-full object-cover"
@@ -102,7 +102,7 @@ export default function AboutPage() {
               learned the <span className="text-primary">language</span> yet.
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left items-center">
-              <div className="image-reveal-wrapper kinetic-shadow aspect-square">
+              <div className="image-reveal-wrapper kinetic-shadow aspect-[4/3]">
                 <img
                   alt="Roni kneeling in a corridor, two border collies watching her"
                   className="w-full h-full object-cover"
@@ -146,7 +146,7 @@ export default function AboutPage() {
                 <p>That is why I created Bonded.</p>
               </div>
               <div className="lg:col-span-7">
-                <div className="image-reveal-wrapper kinetic-shadow aspect-[16/9]">
+                <div className="image-reveal-wrapper kinetic-shadow aspect-[3/2]">
                   <img
                     alt="Roni kneeling and rewarding two border collies"
                     className="w-full h-full object-cover"
@@ -180,7 +180,7 @@ export default function AboutPage() {
                   title="Rhythm & Roni – America's Got Talent finals"
                   posterSrc="/images/photos/agt-spotlight.jpg"
                   posterAlt="Roni Sagi and Rhythm performing in the America's Got Talent finals. Press play to watch."
-                  posterFrameClassName="aspect-video rounded-2xl kinetic-shadow"
+                  posterFrameClassName="aspect-[3/2] rounded-2xl kinetic-shadow"
                   playingFrameClassName="aspect-video rounded-2xl kinetic-shadow"
                 />
                 <p className="font-body text-on-surface-variant">
@@ -191,7 +191,7 @@ export default function AboutPage() {
                 </p>
               </div>
               <div className="space-y-6">
-                <div className="image-reveal-wrapper kinetic-shadow aspect-video">
+                <div className="image-reveal-wrapper kinetic-shadow aspect-[3/2]">
                   <img
                     alt="Roni and her dog in a quiet everyday moment"
                     className="w-full h-full object-cover"
@@ -241,7 +241,7 @@ export default function AboutPage() {
               </div>
             </div>
             <div>
-              <div className="image-reveal-wrapper border-4 border-primary-container shadow-2xl aspect-square rotate-2 hover:rotate-0 transition-transform duration-700">
+              <div className="image-reveal-wrapper border-4 border-primary-container shadow-2xl aspect-[4/3] rotate-2 hover:rotate-0 transition-transform duration-700">
                 <img
                   alt="Roni sitting on a staircase with her dog resting beside her"
                   className="w-full h-full object-cover"

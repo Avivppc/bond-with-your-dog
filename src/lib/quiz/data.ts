@@ -27,7 +27,7 @@ export const TIER_LABELS: Record<Tier, string> = {
 };
 
 /** Hero image shown on the quiz intro screen. */
-export const QUIZ_INTRO_IMAGE_URL = "/images/quiz/lavender-field.jpg";
+export const QUIZ_INTRO_IMAGE_URL = "/images/photos/borderonis-10.jpg";
 
 /**
  * Questions per Roni's feedback (Sept 2026). The options no longer carry
@@ -40,8 +40,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 1,
     key: "relationship",
     question: "Which best describes your relationship today?",
-    imageUrl: "/images/quiz/studio-portrait.jpg",
-    imageAlt: "Roni smiling together with her dog",
+    imageUrl: "/images/photos/borderonis-03.jpg",
+    imageAlt: "Roni sitting on a staircase with her dog resting beside her",
     options: [
       { id: "A", label: "We're just getting started." },
       { id: "B", label: "We communicate well, but I know we can do more." },
@@ -52,8 +52,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 2,
     key: "goal",
     question: "What's your biggest goal?",
-    imageUrl: "/images/quiz/dog-leaping-aspiration.jpg",
-    imageAlt: "Dog leaping in the air while Roni sits calmly, full of aspiration",
+    imageUrl: "/images/photos/borderonis-19.jpg",
+    imageAlt: "Roni in a dance pose with her border collie leaning on her leg",
     options: [
       { id: "A", label: "Build trust and better communication." },
       { id: "B", label: "Learn new tricks and explore movement together." },
@@ -64,8 +64,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 3,
     key: "experience",
     question: "Where are you and your dog in your training journey?",
-    imageUrl: "/images/quiz/walking-in-sync.jpg",
-    imageAlt: "Roni and her dog walking in perfect sync during training",
+    imageUrl: "/images/photos/borderonis-12.jpg",
+    imageAlt: "Roni kneeling and rewarding two border collies",
     options: [
       // Roni's draft for A duplicated the independence question; reworded so
       // Q3 asks what the dog knows and Q5 asks how independently it works.
@@ -81,8 +81,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 4,
     key: "excites",
     question: "What excites you the most?",
-    imageUrl: "/images/quiz/dog-flying-studio.jpg",
-    imageAlt: "Dog flying joyfully mid-air facing Roni in a studio",
+    imageUrl: "/images/photos/borderonis-11.jpg",
+    imageAlt: "Two border collies standing on their hind legs in front of Roni",
     options: [
       { id: "A", label: "Building a stronger everyday connection." },
       { id: "B", label: "Discovering new tricks and movements." },
@@ -93,8 +93,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 5,
     key: "independence",
     question: "How independent are your dog's trained movements?",
-    imageUrl: "/images/quiz/dog-resting-head.jpg",
-    imageAlt: "A dog gently resting its head on Roni's shoulder",
+    imageUrl: "/images/photos/borderonis-04.jpg",
+    imageAlt: "A dog standing tall on its hind legs facing Roni, no treat in sight",
     options: [
       { id: "A", label: "My dog still needs food and clear guidance from my hands." },
       {
@@ -111,8 +111,8 @@ export const QUIZ_QUESTIONS: QuizQuestion[] = [
     id: 6,
     key: "worthIt",
     question: `Finish this sentence… "I'll know this journey was worth it when…"`,
-    imageUrl: "/images/quiz/holding-paw.jpg",
-    imageAlt: "Roni and her dog sharing a paw",
+    imageUrl: "/images/photos/borderonis-06.jpg",
+    imageAlt: "Border collie on a stair rail, nose to nose with Roni",
     options: [
       { id: "A", label: "My dog understands me better." },
       { id: "B", label: "We've discovered new things we love doing together." },
@@ -155,8 +155,8 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     secondaryCta: { label: "Learn More", href: "/courses" },
     firstLesson: "Lesson 1: The Bond — creating instant engagement with your dog.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
-    imageUrl: "/images/quiz/studio-portrait.jpg",
-    imageAlt: "Roni and her dog side by side — a warm beginning",
+    imageUrl: "/images/photos/borderonis-09.jpg",
+    imageAlt: "Roni walking through a corridor with a dog on each side",
   },
   moves: {
     tier: "moves",
@@ -176,8 +176,8 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     cta: { label: "Continue with Moves", href: "/chapter/moves" },
     firstLesson: "Lesson 1: Discovering Moves — how to break down a new trick.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
-    imageUrl: "/images/quiz/golden-park-leap.jpg",
-    imageAlt: "Dog leaping through golden afternoon light in the park",
+    imageUrl: "/images/photos/borderonis-08.jpg",
+    imageAlt: "Border collie reaching up to Roni against a wall",
   },
   letsDance: {
     tier: "letsDance",
@@ -197,7 +197,7 @@ export const TIER_RESULTS: Record<Tier, TierResultContent> = {
     cta: { label: "Start Let's Dance", href: "/chapter/lets-dance" },
     firstLesson: "Lesson 1: From Tricks To Dance — preparing your dog's tricks for performance.",
     welcomeOffer: "A free welcome call with our team to personalize your first week.",
-    imageUrl: "/images/quiz/lavender-field.jpg",
-    imageAlt: "Roni embracing her dog in a dreamy purple lavender field at sunset",
+    imageUrl: "/images/photos/borderonis-18.jpg",
+    imageAlt: "Roni dancing with her arms out while her dog moves beside her",
   },
 };
