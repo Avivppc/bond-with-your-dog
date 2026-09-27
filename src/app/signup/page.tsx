@@ -25,7 +25,7 @@ export default async function SignupPage({
             Join BONDED
           </h1>
           <p className="text-sm mb-8" style={{ color: "#515d64" }}>
-            Create your free account. You'll be the first to know when Bonded: Foundations opens.
+            Create your free account. You&apos;ll be the first to know when Bonded: Foundations opens.
           </p>
 
           {error && (

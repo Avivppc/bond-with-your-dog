@@ -1,27 +1,17 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer, { CONTACT_EMAIL } from "@/components/Footer";
+import TestimonialCard from "@/components/TestimonialCard";
+import { TESTIMONIALS } from "@/lib/testimonials";
 
 export const metadata = {
   title: "Student Stories",
-  description: "Real BONDED students, in their own words.",
+  description: "Real BONDED students on three continents, in their own words.",
 };
 
-// Only quotes we can stand behind. Add new ones here as students send them in.
-const stories = [
-  {
-    quote:
-      "I love the program! I am very much a beginner and I worried that the online format wouldn't work for me. I was WRONG. The courses are well planned and the videos are clear.",
-    name: "Shari Divone & Linus",
-    detail: "Bonded: Foundations",
-  },
-  {
-    quote:
-      "I was working on the first lesson from your site and couldn't believe how quickly my dog responded. This method is unlike anything I've tried before.",
-    name: "Marcus & Toby",
-    detail: "BONDED student",
-  },
-];
+const countries = Array.from(
+  new Set(TESTIMONIALS.map((t) => t.country).filter((c): c is string => Boolean(c)))
+);
 
 const shareMailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
   "Our BONDED story"
@@ -48,27 +38,36 @@ export default function StoriesPage() {
               Every bond has a story.
             </h1>
             <p className="font-body text-lg md:text-xl text-on-surface-variant max-w-xl mx-auto">
-              Real people, real dogs, in their own words.
+              Real students, real dogs, in their own words.
             </p>
           </div>
         </section>
 
-        {/* Quotes */}
-        <section className="max-w-5xl mx-auto px-6 py-20">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {stories.map(({ quote, name, detail }) => (
-              <figure
-                key={name}
-                className="bg-surface-container-lowest p-8 md:p-12 rounded-2xl shadow-sm flex flex-col justify-between"
+        {/* Where students are */}
+        <section className="max-w-5xl mx-auto px-6 pt-16 pb-4 text-center">
+          <p className="font-label text-xs uppercase tracking-[0.2em] text-outline font-bold mb-4">
+            Students on three continents
+          </p>
+          <ul className="flex flex-wrap justify-center gap-2">
+            {countries.map((country) => (
+              <li
+                key={country}
+                className="bg-surface-container-low text-on-surface font-label text-sm font-semibold px-4 py-2 rounded-full"
               >
-                <blockquote className="text-lg md:text-xl font-light leading-relaxed mb-8 italic">
-                  &ldquo;{quote}&rdquo;
-                </blockquote>
-                <figcaption>
-                  <p className="font-bold text-lg text-primary">{name}</p>
-                  <p className="text-sm text-outline">{detail}</p>
-                </figcaption>
-              </figure>
+                {country}
+              </li>
+            ))}
+            <li className="bg-surface-container-low text-on-surface-variant font-label text-sm font-semibold px-4 py-2 rounded-full">
+              and more
+            </li>
+          </ul>
+        </section>
+
+        {/* Quotes */}
+        <section className="max-w-6xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {TESTIMONIALS.map((testimonial) => (
+              <TestimonialCard key={testimonial.id} testimonial={testimonial} />
             ))}
           </div>
         </section>

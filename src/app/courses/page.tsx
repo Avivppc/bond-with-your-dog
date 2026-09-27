@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import TestimonialCard from "@/components/TestimonialCard";
+import { testimonialById } from "@/lib/testimonials";
 
 export const metadata = { title: "The Bonded Journey" };
 
@@ -22,6 +24,8 @@ interface Stage {
   outcome: string;
   outcomeColor: string;
   outcomeBg: string;
+  /** Id of the student quote shown under the outcome. */
+  testimonialId: string;
   ctaLabel: string;
   ctaHref: string;
   ctaBg: string;
@@ -57,6 +61,7 @@ const stages: Stage[] = [
     outcome: "A dog who understands you, chooses you and is ready to learn with you.",
     outcomeColor: "text-primary",
     outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
+    testimonialId: "jessica",
     ctaLabel: "Start with Foundations",
     ctaHref: "/chapter/foundations",
     ctaBg: "bg-primary text-on-primary shadow-lg",
@@ -88,6 +93,7 @@ const stages: Stage[] = [
     outcome: "A confident dog with a growing vocabulary of movements you can perform together.",
     outcomeColor: "text-secondary",
     outcomeBg: "bg-surface-container-low",
+    testimonialId: "mara",
     ctaLabel: "Learn the Moves",
     ctaHref: "/chapter/moves",
     ctaBg: "bg-secondary text-on-secondary shadow-lg",
@@ -122,6 +128,7 @@ const stages: Stage[] = [
     outcome: "A dance where you, your dog and the music move as one.",
     outcomeColor: "text-tertiary",
     outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
+    testimonialId: "sanna",
     ctaLabel: "Build Your Dance",
     ctaHref: "/chapter/lets-dance",
     ctaBg: "bg-tertiary text-on-tertiary shadow-lg",
@@ -263,8 +270,10 @@ export default function CoursesPage() {
         {stages.map(
           ({
             badge, badgeBg, badgeIcon, title, body, learn, learnColor, perfectFor, perfectColor,
-            outcome, outcomeColor, outcomeBg, ctaLabel, ctaHref, ctaBg, img, imgAlt, sectionBg, reverse,
-          }) => (
+            outcome, outcomeColor, outcomeBg, testimonialId, ctaLabel, ctaHref, ctaBg, img, imgAlt, sectionBg, reverse,
+          }) => {
+            const testimonial = testimonialById(testimonialId);
+            return (
             <section key={badge} className="max-w-7xl mx-auto px-6 py-24">
               <div
                 className={`${sectionBg} rounded-[3rem] p-8 lg:p-16 flex flex-col ${reverse ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-16 relative overflow-hidden`}
@@ -330,6 +339,11 @@ export default function CoursesPage() {
                       {outcome}
                     </p>
                   </div>
+                  {testimonial && (
+                    <div className="mb-8">
+                      <TestimonialCard testimonial={testimonial} variant="inline" />
+                    </div>
+                  )}
                   <Link
                     href={ctaHref}
                     className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2 w-full sm:w-auto`}
@@ -350,7 +364,8 @@ export default function CoursesPage() {
                 </div>
               </div>
             </section>
-          )
+            );
+          }
         )}
 
         {/* Why It Works */}

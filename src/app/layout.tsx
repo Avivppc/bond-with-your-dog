@@ -32,10 +32,10 @@ export const metadata: Metadata = {
       "Roni Sagi's step-by-step method for building trust, communication and joyful movement with your dog.",
     images: [
       {
-        url: "/images/photos/roni-serafina.jpg",
-        width: 1600,
-        height: 1067,
-        alt: "Roni and her dog playing together in a city square",
+        url: "/images/og.png",
+        width: 1200,
+        height: 630,
+        alt: "BONDED – Learn your dog's secret language",
       },
     ],
   },
