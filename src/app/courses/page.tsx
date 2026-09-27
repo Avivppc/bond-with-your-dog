@@ -3,6 +3,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import TestimonialCard from "@/components/TestimonialCard";
 import { testimonialById } from "@/lib/testimonials";
+import PlanCtaLink from "@/components/analytics/PlanCtaLink";
+import type { Tier } from "@/lib/quiz/data";
 
 export const metadata = { title: "The Bonded Journey" };
 
@@ -26,6 +28,8 @@ interface Stage {
   outcomeBg: string;
   /** Id of the student quote shown under the outcome. */
   testimonialId: string;
+  /** Which chapter this stage sells; reported with the CTA click. */
+  plan: Tier;
   ctaLabel: string;
   ctaHref: string;
   ctaBg: string;
@@ -64,6 +68,7 @@ const stages: Stage[] = [
     outcomeColor: "text-primary",
     outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
     testimonialId: "jessica",
+    plan: "foundations",
     ctaLabel: "Start with Foundations",
     ctaHref: "/chapter/foundations",
     ctaBg: "bg-primary text-on-primary shadow-lg",
@@ -97,6 +102,7 @@ const stages: Stage[] = [
     outcomeColor: "text-secondary",
     outcomeBg: "bg-surface-container-low",
     testimonialId: "mara",
+    plan: "moves",
     ctaLabel: "Learn the Moves",
     ctaHref: "/chapter/moves",
     ctaBg: "bg-secondary text-on-secondary shadow-lg",
@@ -133,6 +139,7 @@ const stages: Stage[] = [
     outcomeColor: "text-tertiary",
     outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
     testimonialId: "sanna",
+    plan: "letsDance",
     ctaLabel: "Build Your Dance",
     ctaHref: "/chapter/lets-dance",
     ctaBg: "bg-tertiary text-on-tertiary shadow-lg",
@@ -206,18 +213,20 @@ export default function CoursesPage() {
               build trust, communication, and a lifelong bond with your dog.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link
+              <PlanCtaLink
                 href="/chapter/foundations"
+                label="Start with Foundations"
+                plan="foundations"
+                location="courses_hero"
                 className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform flex items-center justify-center gap-2"
               >
-                Start with Foundations
                 <span
                   className="material-symbols-outlined text-sm"
                   style={{ fontVariationSettings: '"FILL" 1' }}
                 >
                   arrow_forward
                 </span>
-              </Link>
+              </PlanCtaLink>
               <Link
                 href="/quiz"
                 className="bg-surface-container text-on-surface font-label text-base font-semibold px-8 py-4 rounded-full hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2"
@@ -275,7 +284,7 @@ export default function CoursesPage() {
         {stages.map(
           ({
             badge, badgeBg, badgeIcon, title, body, learn, learnColor, perfectFor, perfectColor,
-            outcome, outcomeColor, outcomeBg, testimonialId, ctaLabel, ctaHref, ctaBg, img, imgAlt, imgAspect, sectionBg, reverse,
+            outcome, outcomeColor, outcomeBg, testimonialId, plan, ctaLabel, ctaHref, ctaBg, img, imgAlt, imgAspect, sectionBg, reverse,
           }) => {
             const testimonial = testimonialById(testimonialId);
             return (
@@ -349,13 +358,15 @@ export default function CoursesPage() {
                       <TestimonialCard testimonial={testimonial} variant="inline" />
                     </div>
                   )}
-                  <Link
+                  <PlanCtaLink
                     href={ctaHref}
+                    label={ctaLabel}
+                    plan={plan}
+                    location="courses_stage"
                     className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2 w-full sm:w-auto`}
                   >
-                    {ctaLabel}
                     <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </Link>
+                  </PlanCtaLink>
                 </div>
                 <div className="lg:w-1/2 w-full order-first lg:order-none lg:self-center">
                   <div className={`relative w-full ${imgAspect} max-h-[640px]`}>
@@ -444,12 +455,13 @@ export default function CoursesPage() {
           <p className="font-body text-lg text-on-surface-variant mb-10">
             Begin with Foundations and progress through the journey at your own pace.
           </p>
-          <Link
+          <PlanCtaLink
             href="/chapter/foundations"
+            label="Start with Foundations"
+            plan="foundations"
+            location="courses_final"
             className="inline-block bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-lg font-bold px-10 py-5 rounded-full shadow-xl hover:scale-105 transition-transform"
-          >
-            Start with Foundations
-          </Link>
+          />
         </section>
 
       </main>

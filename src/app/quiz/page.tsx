@@ -9,6 +9,7 @@ import ResultCard from "@/components/quiz/ResultCard";
 import LeadCaptureForm from "@/components/quiz/LeadCaptureForm";
 import { QUIZ_QUESTIONS, QUIZ_INTRO_IMAGE_URL, TIER_RESULTS, type OptionId } from "@/lib/quiz/data";
 import { resolveTier, scoreAnswers, type QuizAnswers } from "@/lib/quiz/scoring";
+import { EVENTS, track } from "@/lib/analytics";
 
 type Step = "intro" | number | "capture" | "result";
 
@@ -21,6 +22,11 @@ export default function QuizPage() {
 
   const totalQuestions = QUIZ_QUESTIONS.length;
 
+  function handleStart() {
+    track(EVENTS.quizStarted, { total_questions: totalQuestions });
+    setStep(0);
+  }
+
   function handleSelect(questionId: number, optionId: OptionId) {
     const nextAnswers = { ...answers, [questionId]: optionId };
     setAnswers(nextAnswers);
@@ -28,9 +34,33 @@ export default function QuizPage() {
     const currentIndex = QUIZ_QUESTIONS.findIndex((q) => q.id === questionId);
     const isLastQuestion = currentIndex === totalQuestions - 1;
 
+    track(EVENTS.quizQuestionAnswered, {
+      question_id: questionId,
+      question_number: currentIndex + 1,
+      total_questions: totalQuestions,
+      answer: optionId,
+      is_change: questionId in answers,
+    });
+    if (isLastQuestion) {
+      const scores = scoreAnswers(nextAnswers);
+      track(EVENTS.quizCompleted, {
+        tier: resolveTier(nextAnswers),
+        score_foundations: scores.foundations,
+        score_moves: scores.moves,
+        score_lets_dance: scores.letsDance,
+      });
+    }
+
     window.setTimeout(() => {
       setStep(isLastQuestion ? "capture" : currentIndex + 1);
     }, NEXT_QUESTION_DELAY_MS);
+  }
+
+  function handleBack(from: Step, to: number) {
+    track(EVENTS.quizBackClicked, {
+      from_step: from === "capture" ? "lead_capture" : `question_${Number(from) + 1}`,
+    });
+    setStep(to);
   }
 
   const isFinished = step === "capture" || step === "result";
@@ -70,7 +100,7 @@ export default function QuizPage() {
               </p>
               <button
                 type="button"
-                onClick={() => setStep(0)}
+                onClick={handleStart}
                 className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-10 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform w-full sm:w-auto"
               >
                 Begin the Quiz
@@ -91,7 +121,7 @@ export default function QuizPage() {
               {step > 0 && (
                 <button
                   type="button"
-                  onClick={() => setStep(step - 1)}
+                  onClick={() => handleBack(step, step - 1)}
                   className="mt-8 font-label text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
                 >
                   ← Back
@@ -110,13 +140,14 @@ export default function QuizPage() {
                 scores={scores}
                 answers={answers}
                 onDone={(outcome) => {
+                  track(EVENTS.quizResultViewed, { tier, lead_outcome: outcome });
                   setLeadOutcome(outcome);
                   setStep("result");
                 }}
               />
               <button
                 type="button"
-                onClick={() => setStep(totalQuestions - 1)}
+                onClick={() => handleBack("capture", totalQuestions - 1)}
                 className="mt-8 font-label text-sm font-semibold text-on-surface-variant hover:text-primary transition-colors"
               >
                 ← Back
