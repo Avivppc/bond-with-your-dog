@@ -17,7 +17,7 @@ export default function AboutPage() {
       <main className="pt-24 overflow-x-hidden">
 
         {/* Hero */}
-        <section className="relative min-h-[90vh] flex items-center px-8 md:px-20 py-20">
+        <section className="relative flex items-center px-8 md:px-20 pt-8 pb-16 md:pt-12 md:pb-24">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center max-w-7xl mx-auto">
             <div className="z-10">
               <h1 className="font-display font-extrabold text-5xl md:text-7xl lg:text-8xl tracking-tight leading-[0.9] mb-8">

@@ -10,6 +10,7 @@ const Schema = z.object({
   full_name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
+  marketing_opt_in: z.boolean(),
 });
 
 export async function signup(formData: FormData) {
@@ -17,6 +18,7 @@ export async function signup(formData: FormData) {
     full_name: formData.get("full_name"),
     email: formData.get("email"),
     password: formData.get("password"),
+    marketing_opt_in: formData.get("marketing_opt_in") === "yes",
   });
 
   if (!parsed.success) {
@@ -34,7 +36,11 @@ export async function signup(formData: FormData) {
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
-      data: { full_name: parsed.data.full_name },
+      // Copied into public.profiles by the handle_new_user trigger.
+      data: {
+        full_name: parsed.data.full_name,
+        marketing_opt_in: parsed.data.marketing_opt_in,
+      },
       emailRedirectTo: `${origin}/auth/callback`,
     },
   });

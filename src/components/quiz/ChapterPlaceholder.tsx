@@ -23,7 +23,7 @@ export default function ChapterPlaceholder({ tier }: ChapterPlaceholderProps) {
             {result.headline}
           </h1>
           <p className="font-body text-lg text-on-surface-variant max-w-xl mx-auto mb-10 leading-relaxed">
-            {result.supporting} Lessons are being filmed right now. Create a
+            {result.supporting}{" "}Lessons are being filmed right now. Create a
             free account and you&apos;ll be the first to know when this chapter
             opens.
           </p>

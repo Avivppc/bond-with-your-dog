@@ -173,7 +173,7 @@ export default function HomePage() {
       <main className="pt-24 overflow-hidden">
 
         {/* Hero */}
-        <section className="relative px-8 py-12 md:py-24 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-center text-center md:text-left">
+        <section className="relative px-8 py-8 md:py-12 lg:py-16 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-12 items-center text-center md:text-left">
           <div className="md:col-span-7 z-10 mx-auto md:mx-0 max-w-4xl">
             <h1 className="font-headline text-5xl md:text-7xl font-extrabold text-on-surface leading-[1.1] tracking-tight mb-6">
               Learn the secret language of your dog.
