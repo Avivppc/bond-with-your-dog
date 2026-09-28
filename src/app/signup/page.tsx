@@ -43,12 +43,14 @@ export default async function SignupPage({
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start pt-6 lg:pt-12">
 
           {/* Value side */}
-          <section className="lg:col-span-6 order-2 lg:order-1">
+          <section className="lg:col-span-6">
             <p className="font-label text-sm font-semibold text-secondary uppercase tracking-widest mb-4">
               Start your journey
             </p>
             <h1 className="font-headline text-4xl md:text-5xl font-extrabold text-on-surface tracking-tight leading-[1.05] mb-5">
-              Your dog is ready. <span className="text-primary">Are you?</span>
+              Your dog is ready.
+              <br />
+              <span className="text-primary">Are you?</span>
             </h1>
             <p className="text-lg text-on-surface-variant font-light leading-relaxed max-w-lg mb-8">
               Join thousands of dog lovers learning Roni&apos;s method: trust and
@@ -64,7 +66,7 @@ export default async function SignupPage({
               ))}
             </ul>
 
-            <div className="hidden lg:grid grid-cols-5 gap-6 items-end">
+            <div className="grid grid-cols-5 gap-5 md:gap-6 items-end">
               <div className="col-span-2 aspect-[3/4] rounded-2xl overflow-hidden kinetic-shadow bg-surface-container-low">
                 <img
                   src={SIGNUP_PHOTO}
@@ -78,15 +80,10 @@ export default async function SignupPage({
                 </div>
               )}
             </div>
-            {testimonial && (
-              <div className="lg:hidden">
-                <TestimonialCard testimonial={testimonial} variant="inline" />
-              </div>
-            )}
           </section>
 
           {/* Form side */}
-          <section className="lg:col-span-6 order-1 lg:order-2">
+          <section className="lg:col-span-6">
             <div className="bg-white rounded-2xl shadow-lg p-8 md:p-10">
               <h2 className="font-headline text-3xl font-extrabold tracking-tight text-on-surface mb-2">
                 Join BONDED
@@ -122,13 +119,12 @@ export default async function SignupPage({
                   <span className="text-xs text-outline">At least 8 characters.</span>
                 </label>
 
-                <label className="flex items-start gap-3 text-sm text-on-surface-variant cursor-pointer mt-1">
+                <label className="flex items-center gap-3 text-xs sm:text-sm text-on-surface-variant cursor-pointer mt-1">
                   <input
                     name="marketing_opt_in"
                     type="checkbox"
                     value="yes"
-                    defaultChecked
-                    className="mt-1 h-4 w-4 rounded border-outline-variant accent-[#8b4b00]"
+                    className="h-4 w-4 shrink-0 rounded border-outline-variant accent-[#8b4b00]"
                   />
                   <span>{MARKETING_CONSENT_LABEL}</span>
                 </label>
@@ -152,7 +148,7 @@ export default async function SignupPage({
 
               <p className="text-xs text-outline mt-5 leading-relaxed">
                 We&apos;ll only email you about your account, plus Roni&apos;s tips if you
-                tick the box above. Unsubscribe anytime.
+                tick the box above. You can unsubscribe at any time.
               </p>
 
               <p className="text-sm text-center mt-6 text-on-surface-variant">
