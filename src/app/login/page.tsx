@@ -1,7 +1,10 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import GoogleButton from "@/components/auth/GoogleButton";
 import { login } from "./actions";
+
+export const metadata = { title: "Sign in" };
 
 export default async function LoginPage({
   searchParams,
@@ -67,6 +70,13 @@ export default async function LoginPage({
               Sign in
             </button>
           </form>
+
+          <div className="flex items-center gap-3 my-5">
+            <span className="h-px flex-1 bg-outline-variant/40" />
+            <span className="text-xs uppercase tracking-widest text-outline">or</span>
+            <span className="h-px flex-1 bg-outline-variant/40" />
+          </div>
+          <GoogleButton next={next ?? "/dashboard"} />
 
           <p className="text-sm text-center mt-6" style={{ color: "#515d64" }}>
             New here?{" "}

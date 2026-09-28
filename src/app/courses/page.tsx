@@ -199,7 +199,7 @@ export default function CoursesPage() {
       <main className="pt-24 pb-20">
 
         {/* Hero */}
-        <section className="relative max-w-7xl mx-auto px-6 py-20 lg:py-32 flex flex-col lg:flex-row items-center gap-16">
+        <section className="relative max-w-7xl mx-auto px-6 py-10 lg:py-16 flex flex-col lg:flex-row items-center gap-16">
           <div className="lg:w-1/2 z-10 space-y-8">
             <h1 className="font-display text-5xl lg:text-7xl font-extrabold tracking-tight text-on-background leading-[1.1]">
               Every extraordinary relationship{" "}
