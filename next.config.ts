@@ -17,6 +17,17 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // PostHog's API paths end in a slash; without this Next would redirect them away.
+  skipTrailingSlashRedirect: true,
+  // Reverse proxy for PostHog (US cloud). The path must match POSTHOG_PROXY_PATH
+  // in src/instrumentation-client.ts.
+  async rewrites() {
+    return [
+      { source: "/tails/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },
+      { source: "/tails/array/:path*", destination: "https://us-assets.i.posthog.com/array/:path*" },
+      { source: "/tails/:path*", destination: "https://us.i.posthog.com/:path*" },
+    ];
+  },
   async redirects() {
     return [
       // Chapter renames (Sept 2026)

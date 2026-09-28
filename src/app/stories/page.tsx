@@ -1,4 +1,4 @@
-import Link from "next/link";
+import PlanCtaLink from "@/components/analytics/PlanCtaLink";
 import Navbar from "@/components/Navbar";
 import Footer, { CONTACT_EMAIL } from "@/components/Footer";
 import TestimonialCard from "@/components/TestimonialCard";
@@ -110,12 +110,13 @@ export default function StoriesPage() {
             Begin with Foundations and build the relationship you&apos;ve always
             wanted with your dog.
           </p>
-          <Link
+          <PlanCtaLink
             href="/chapter/foundations"
+            label="Start with Foundations"
+            plan="foundations"
+            location="stories"
             className="inline-block bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-lg font-bold px-10 py-5 rounded-full shadow-xl hover:scale-105 transition-transform w-full sm:w-auto"
-          >
-            Start with Foundations
-          </Link>
+          />
         </section>
 
       </main>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { TierResultContent } from "@/lib/quiz/data";
 import TestimonialCard from "@/components/TestimonialCard";
 import { testimonialsFor } from "@/lib/testimonials";
+import PlanCtaLink from "@/components/analytics/PlanCtaLink";
 
 interface ResultCardProps {
   result: TierResultContent;
@@ -54,12 +55,13 @@ export default function ResultCard({ result }: ResultCardProps) {
       )}
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link
+        <PlanCtaLink
           href={result.cta.href}
+          label={result.cta.label}
+          plan={result.tier}
+          location="quiz_result"
           className="bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform"
-        >
-          {result.cta.label}
-        </Link>
+        />
         {result.secondaryCta && (
           <Link
             href={result.secondaryCta.href}

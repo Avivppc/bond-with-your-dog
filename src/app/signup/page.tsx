@@ -5,6 +5,8 @@ import GoogleButton from "@/components/auth/GoogleButton";
 import TestimonialCard from "@/components/TestimonialCard";
 import { testimonialById } from "@/lib/testimonials";
 import { MARKETING_CONSENT_LABEL } from "@/lib/auth/marketing-consent";
+import TrackOnMount from "@/components/analytics/TrackOnMount";
+import { EVENTS } from "@/lib/analytics-events";
 import { signup } from "./actions";
 
 export const metadata = {
@@ -98,6 +100,7 @@ export default async function SignupPage({
                   {decodeURIComponent(error)}
                 </div>
               )}
+              {message && <TrackOnMount event={EVENTS.signupCompleted} />}
               {message && (
                 <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm">
                   {decodeURIComponent(message)}
