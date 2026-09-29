@@ -9,10 +9,13 @@ export const dynamic = "force-dynamic";
 
 export default async function CourseLandingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ courseId: string }>;
+  searchParams: Promise<{ enroll?: string }>;
 }) {
   const { courseId } = await params;
+  const enrollFailed = (await searchParams).enroll === "failed";
   const supabase = await createClient();
 
   const {
@@ -80,7 +83,18 @@ export default async function CourseLandingPage({
           </p>
         </header>
 
-        {!enrollment && (
+        {!enrollment && Number(course.price) > 0 && (
+          <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm">
+            <p className="font-bold" style={{ color: "#243036" }}>
+              You&apos;re not enrolled yet
+            </p>
+            <p className="text-sm" style={{ color: "#515d64" }}>
+              Enrollment for this course opens soon. Free preview lessons are available below.
+            </p>
+          </div>
+        )}
+
+        {!enrollment && Number(course.price) === 0 && (
           <div className="bg-white rounded-2xl p-6 mb-8 flex items-center justify-between shadow-sm">
             <div>
               <p className="font-bold" style={{ color: "#243036" }}>
@@ -89,18 +103,22 @@ export default async function CourseLandingPage({
               <p className="text-sm" style={{ color: "#515d64" }}>
                 Enroll to unlock all lessons.
               </p>
+              {enrollFailed && (
+                <p role="alert" className="text-sm font-bold mt-1" style={{ color: "#b91c1c" }}>
+                  We couldn&apos;t enroll you just now. Please try again.
+                </p>
+              )}
             </div>
             <form
               action={async () => {
                 "use server";
                 const supabase = await createClient();
-                const {
-                  data: { user },
-                } = await supabase.auth.getUser();
-                if (!user) return;
-                await supabase
-                  .from("enrollments")
-                  .insert({ user_id: user.id, course_id: courseId });
+                // enroll_free() only admits published courses priced 0 (see phase0 migration).
+                const { error } = await supabase.rpc("enroll_free", { p_course_id: courseId });
+                if (error) {
+                  console.error("enroll_free failed", { courseId, error: error.message });
+                  redirect(`/learn/${courseId}?enroll=failed`);
+                }
                 redirect(`/learn/${courseId}`);
               }}
             >

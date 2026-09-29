@@ -1,9 +1,20 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
+
+// Bounded: the answers are stored verbatim in quiz_attempts by the service role.
+const MAX_QUESTIONS = 100;
+const MAX_CHOICES_PER_QUESTION = 20;
+const MAX_ANSWER_LENGTH = 200;
 
 const Body = z.object({
-  answers: z.record(z.string(), z.array(z.union([z.string(), z.boolean()]))),
+  answers: z
+    .record(
+      z.string().max(MAX_ANSWER_LENGTH),
+      z.array(z.union([z.string().max(MAX_ANSWER_LENGTH), z.boolean()])).max(MAX_CHOICES_PER_QUESTION)
+    )
+    .refine((a) => Object.keys(a).length <= MAX_QUESTIONS, "too many answers"),
 });
 
 function arraysEqualUnordered(a: unknown[], b: unknown[]): boolean {
@@ -30,37 +41,41 @@ export async function POST(
     return NextResponse.json({ error: "invalid input" }, { status: 400 });
   }
 
-  // Fetch lesson + questions (with correct answers — server-only)
-  const [lessonRes, questionsRes] = await Promise.all([
-    supabase
-      .from("lessons")
-      .select("id, course_id, pass_threshold")
-      .eq("id", lessonId)
-      .single(),
-    supabase
-      .from("quiz_questions")
-      .select("id, correct, explanation")
-      .eq("lesson_id", lessonId),
-  ]);
-
-  if (lessonRes.error || !lessonRes.data) {
+  const { data: lesson, error: lessonError } = await supabase
+    .from("lessons")
+    .select("id, course_id, pass_threshold")
+    .eq("id", lessonId)
+    .single();
+  if (lessonError || !lesson) {
     return NextResponse.json({ error: "lesson not found" }, { status: 404 });
   }
-  const lesson = lessonRes.data;
-  const questions = questionsRes.data ?? [];
-  if (questions.length === 0) {
-    return NextResponse.json({ error: "no questions" }, { status: 400 });
+
+  // Same access rule as playback and completion (enrollment, expiry, drip)
+  const { data: canAccess, error: accessError } = await supabase.rpc("can_access_lesson", {
+    p_lesson_id: lessonId,
+  });
+  if (accessError) {
+    console.error("can_access_lesson failed", { lessonId, error: accessError.message });
+    return NextResponse.json({ error: "could not verify access" }, { status: 500 });
+  }
+  if (!canAccess) {
+    return NextResponse.json({ error: "no access to this lesson" }, { status: 403 });
   }
 
-  // Verify enrollment
-  const { data: enrollment } = await supabase
-    .from("enrollments")
-    .select("course_id")
-    .eq("course_id", lesson.course_id)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!enrollment) {
-    return NextResponse.json({ error: "not enrolled" }, { status: 403 });
+  // Answer keys are not readable by client roles (column privilege), so the
+  // grader reads them with the service role — only after the access check above.
+  const service = createServiceClient();
+  const { data: questionRows, error: questionsError } = await service
+    .from("quiz_questions")
+    .select("id, correct, explanation")
+    .eq("lesson_id", lessonId);
+  if (questionsError) {
+    console.error("quiz answer key fetch failed", { lessonId, error: questionsError.message });
+    return NextResponse.json({ error: "could not load quiz" }, { status: 500 });
+  }
+  const questions = questionRows ?? [];
+  if (questions.length === 0) {
+    return NextResponse.json({ error: "no questions" }, { status: 400 });
   }
 
   // Grade
@@ -76,27 +91,32 @@ export async function POST(
   const score = Math.round((correctCount / questions.length) * 100);
   const passed = score >= (lesson.pass_threshold ?? 70);
 
-  // Record attempt
-  await supabase.from("quiz_attempts").insert({
+  // Record the server-graded attempt. Clients cannot insert attempts themselves,
+  // so a "passed" row always comes from this grader.
+  const { error: attemptError } = await service.from("quiz_attempts").insert({
     user_id: user.id,
     lesson_id: lessonId,
     score,
     passed,
     answers: parsed.data.answers,
   });
+  if (attemptError) {
+    console.error("quiz attempt insert failed", { lessonId, error: attemptError.message });
+    return NextResponse.json({ error: "could not save your attempt" }, { status: 500 });
+  }
 
-  // If passed, mark progress complete (triggers achievement / certificate logic)
+  // If passed, complete the lesson (fires achievement / certificate triggers)
   if (passed) {
-    await supabase.from("lesson_progress").upsert(
-      {
-        user_id: user.id,
-        lesson_id: lessonId,
-        completed_at: new Date().toISOString(),
-        watch_seconds: 0,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,lesson_id" }
-    );
+    const { error: completeError } = await supabase.rpc("complete_lesson", {
+      p_lesson_id: lessonId,
+    });
+    if (completeError) {
+      console.error("complete_lesson failed", { lessonId, error: completeError.message });
+      return NextResponse.json(
+        { error: "You passed, but we couldn't save your progress. Please submit again." },
+        { status: 500 }
+      );
+    }
   }
 
   return NextResponse.json({ score, passed, perQuestion });

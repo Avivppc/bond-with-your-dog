@@ -38,22 +38,24 @@ export default function LessonPlayer({
     };
   }, [lessonId, hasPlayback]);
 
-  async function recordProgress(seconds: number, complete: boolean) {
+  // Progress writes go through DB functions that check access; watch time can
+  // never clear a completion (see supabase/migrations/*_phase0_access_foundations.sql).
+  // Returns false when a requested completion was not saved, so the caller can retry.
+  async function recordProgress(seconds: number, complete: boolean): Promise<boolean> {
     const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-    await supabase.from("lesson_progress").upsert(
-      {
-        user_id: user.id,
-        lesson_id: lessonId,
-        watch_seconds: Math.floor(seconds),
-        completed_at: complete ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "user_id,lesson_id" }
-    );
+    const [watch, done] = await Promise.all([
+      supabase.rpc("record_lesson_progress", {
+        p_lesson_id: lessonId,
+        p_watch_seconds: Math.floor(seconds),
+      }),
+      complete ? supabase.rpc("complete_lesson", { p_lesson_id: lessonId }) : null,
+    ]);
+    if (watch.error) console.error("record_lesson_progress failed", watch.error.message);
+    if (done?.error) {
+      console.error("complete_lesson failed", done.error.message);
+      return false;
+    }
+    return true;
   }
 
   if (!hasPlayback) {
@@ -96,7 +98,9 @@ export default function LessonPlayer({
         if (reportedComplete.current) return;
         reportedComplete.current = true;
         const t = (e.target as HTMLMediaElement).currentTime;
-        void recordProgress(t, true);
+        void recordProgress(t, true).then((saved) => {
+          if (!saved) reportedComplete.current = false; // allow a retry on the next "ended"
+        });
       }}
       style={{ aspectRatio: "16/9", width: "100%" }}
     />

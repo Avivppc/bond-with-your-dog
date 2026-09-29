@@ -158,11 +158,10 @@ export async function GET(
 ) {
   const { code } = await params;
   const supabase = await createClient();
+  // Public verification by code; the certificates table itself is own-rows only.
   const { data: cert, error } = await supabase
-    .from("certificates")
-    .select("code, student_name, course_title, issued_at")
-    .eq("code", code)
-    .single();
+    .rpc("verify_certificate", { p_code: code })
+    .maybeSingle<{ code: string; student_name: string; course_title: string; issued_at: string }>();
 
   if (error || !cert) {
     return NextResponse.json({ error: "certificate not found" }, { status: 404 });

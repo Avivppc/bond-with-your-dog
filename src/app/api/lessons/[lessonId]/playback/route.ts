@@ -16,7 +16,7 @@ export async function GET(
 
   const { data: lesson, error } = await supabase
     .from("lessons")
-    .select("id, course_id, mux_playback_id, mux_playback_policy, free_preview")
+    .select("id, mux_playback_id, mux_playback_policy")
     .eq("id", lessonId)
     .single();
 
@@ -28,16 +28,17 @@ export async function GET(
     return NextResponse.json({ error: "no playback yet" }, { status: 404 });
   }
 
-  if (!lesson.free_preview) {
-    const { data: enrollment } = await supabase
-      .from("enrollments")
-      .select("course_id")
-      .eq("course_id", lesson.course_id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (!enrollment) {
-      return NextResponse.json({ error: "not enrolled" }, { status: 403 });
-    }
+  // Single access rule shared with web, app and quiz grading: free preview, or an
+  // unexpired enrollment whose drip delay has passed.
+  const { data: canAccess, error: accessError } = await supabase.rpc("can_access_lesson", {
+    p_lesson_id: lessonId,
+  });
+  if (accessError) {
+    console.error("can_access_lesson failed", { lessonId, error: accessError.message });
+    return NextResponse.json({ error: "could not verify access" }, { status: 500 });
+  }
+  if (!canAccess) {
+    return NextResponse.json({ error: "no access to this lesson" }, { status: 403 });
   }
 
   if (lesson.mux_playback_policy === "public") {
