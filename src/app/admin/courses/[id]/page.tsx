@@ -68,9 +68,14 @@ export default async function EditCoursePage({
       <section className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-extrabold tracking-tighter">Course outline</h2>
-          <Link href={`/learn/${id}`} className="text-xs font-bold text-orange-700" target="_blank">
-            Preview as student ↗
-          </Link>
+          <span className="flex items-center gap-4">
+            <Link href={`/admin/courses/${id}/import`} className="text-xs font-bold text-orange-700">
+              Import from spreadsheet
+            </Link>
+            <Link href={`/learn/${id}`} className="text-xs font-bold text-orange-700" target="_blank">
+              Preview as student ↗
+            </Link>
+          </span>
         </div>
         <CourseOutlineEditor courseId={id} outline={outline} />
       </section>
