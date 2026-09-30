@@ -58,8 +58,8 @@ export default async function InboxPage({
         title="Inbox"
         description="Questions, problem reports and stories members send from the app. Answers reach them in the app (and by email when it's set up)."
         actions={
-          <Link href="/admin/videos" className={BTN_SECONDARY}>
-            Spotlight videos
+          <Link href="/studio" className={BTN_SECONDARY}>
+            Feedback studio
           </Link>
         }
       />

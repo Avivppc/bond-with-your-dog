@@ -16,7 +16,7 @@ export function CourseThumb({ src, className = "h-10 w-16" }: { src: string | nu
 /** Kajabi-style products table: thumbnail + title, students, lessons, created, status. */
 export function CourseTable({ courses }: { courses: readonly AdminCourseRow[] }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="relative overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="border-y border-[#efeeed] text-left text-[#6c6a69]">
           <tr>

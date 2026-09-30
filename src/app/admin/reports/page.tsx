@@ -29,7 +29,7 @@ export default async function ReportsPage({ searchParams }: { searchParams: Prom
         {reports.length === 0 ? (
           <EmptyState title="No reports match your search." />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-y border-[#efeeed] text-left text-[#6c6a69]">
                 <tr>

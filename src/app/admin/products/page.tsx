@@ -83,7 +83,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
         {rows.length === 0 ? (
           <EmptyState title={needle ? "No products match your search." : "No products yet."} />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className={TABLE}>
               <thead className={THEAD}>
                 <tr>
