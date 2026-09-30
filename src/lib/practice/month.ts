@@ -65,12 +65,14 @@ export interface MonthStats {
 
 export function monthStats(ref: MonthRef, sessions: readonly MonthSession[]): MonthStats {
   const inside = sessions.filter((s) => inMonth(ref, s.practicedOn));
-  const minutes = Math.round(inside.reduce((sum, s) => sum + s.durationSeconds, 0) / 60);
+  // Same rounding as the week strip: every logged session counts at least a minute.
+  const minutes = inside.reduce((sum, s) => sum + minutesOf(s.durationSeconds), 0);
+  const seconds = inside.reduce((sum, s) => sum + s.durationSeconds, 0);
   return {
     sessions: inside.length,
     minutes,
     longestRhythm: longestStreak(inside.map((s) => s.practicedOn)),
-    averageMinutes: inside.length ? minutesOf(Math.round((minutes * 60) / inside.length)) : 0,
+    averageMinutes: inside.length ? minutesOf(Math.round(seconds / inside.length)) : 0,
   };
 }
 
