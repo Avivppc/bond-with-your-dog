@@ -1,18 +1,31 @@
 import Link from "next/link";
 
 /**
- * Admin UI kit — Kajabi-style (neutral, Inter 14px, dark pill buttons, white hairline cards).
- * Visual reference: docs/kajabi-research/sources/ui-reference.md
+ * Admin UI kit — Kajabi's tokens, measured from the client's Kajabi (docs/member-app/spec.md):
+ * Inter 14px · page #f8f8f8 · text #1a1a19 · muted #6c6a69 · primary button #343332 pill, 8px 16px,
+ * weight 500, ~38px tall · white cards, 12px radius, hairline borders · green/neutral status pills.
+ * Radii are explicit (rounded-[…]) because the site theme redefines rounded-lg/xl.
  */
 export const BTN_PRIMARY =
-  "inline-flex items-center justify-center gap-1.5 rounded-full bg-[#343332] px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-black disabled:opacity-50";
+  "inline-flex h-[38px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full bg-[#343332] px-4 py-2 text-[14px] font-medium text-white hover:bg-[#1a1a19] disabled:opacity-50";
 export const BTN_SECONDARY =
-  "inline-flex items-center justify-center gap-1.5 rounded-full border border-[#d9d8d6] bg-white px-4 py-2 text-sm font-medium text-[#1a1a19] shadow-sm hover:bg-[#f3f3f2] disabled:opacity-50";
+  "inline-flex h-[38px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-[#d9d8d6] bg-white px-4 py-2 text-[14px] font-medium text-[#1a1a19] hover:bg-[#f3f3f2] disabled:opacity-50";
 export const BTN_DANGER =
-  "inline-flex items-center justify-center gap-1.5 rounded-full border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50";
+  "inline-flex h-[38px] items-center justify-center gap-1.5 whitespace-nowrap rounded-full border border-red-200 bg-white px-4 py-2 text-[14px] font-medium text-red-700 hover:bg-red-50 disabled:opacity-50";
+/** Small outline pill (filters, range pickers, "Load more"). */
+export const PILL =
+  "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[#d9d8d6] bg-white px-3 py-1.5 text-[14px] text-[#1a1a19] hover:bg-[#f8f8f8]";
 export const INPUT =
-  "w-full rounded-[8px] border border-[#d9d8d6] bg-white px-3 py-2 text-sm text-[#1a1a19] placeholder:text-[#9b9997] focus:border-[#343332] focus:outline-none focus:ring-2 focus:ring-black/5";
-export const LABEL = "text-sm font-medium text-[#1a1a19]";
+  "w-full rounded-[8px] border border-[#d9d8d6] bg-white px-3 py-2 text-[14px] text-[#1a1a19] placeholder:text-[#9b9997] focus:border-[#343332] focus:outline-none focus:ring-2 focus:ring-black/5";
+export const LABEL = "text-[14px] font-medium text-[#1a1a19]";
+export const MUTED = "text-[#6c6a69]";
+
+/** Table cells shared by every Kajabi-style list. */
+export const TABLE = "w-full text-[14px]";
+export const THEAD = "border-y border-[#efeeed] text-left text-[#6c6a69]";
+export const TH = "px-4 py-3 font-medium first:pl-5 last:pr-5";
+export const TD = "px-4 py-3 align-middle first:pl-5 last:pr-5";
+export const TROW = "border-b border-[#efeeed] last:border-0 hover:bg-[#fafaf9]";
 
 export interface Crumb {
   label: string;

@@ -1,77 +1,103 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
+import { formatMoney, formatOfferPrice, type PricedOffer } from "@/lib/pricing";
+import { formatAmounts } from "@/lib/admin-helpers/money";
+import { BTN_PRIMARY, Card, EmptyState, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
+import { StatCard } from "../_components/list-kit";
+import { loadPricingStats } from "./sales-data";
 
 export const dynamic = "force-dynamic";
 
+interface OfferRow extends PricedOffer {
+  id: string;
+  slug: string;
+  title: string;
+  status: string;
+  provider_price_id: string | null;
+  includes_community: boolean;
+  offer_courses: { courses: { title: string } | null }[] | null;
+}
+
+function productNames(offer: OfferRow): string {
+  const names = (offer.offer_courses ?? []).flatMap((oc) => (oc.courses ? [oc.courses.title] : []));
+  return [...names, ...(offer.includes_community ? ["Community"] : [])].join(", ") || "—";
+}
+
 export default async function OffersPage() {
   await requireStaff("sales");
-  const { data: offers, error } = await createServiceClient()
-    .from("offers")
-    .select("id, slug, title, payment_type, price_cents, currency, interval, status, provider_price_id, offer_courses(course_id)")
-    .order("created_at", { ascending: false });
-  if (error) console.error("[offers] list failed", error.message);
+  const [offersRes, stats] = await Promise.all([
+    createServiceClient()
+      .from("offers")
+      .select("id, slug, title, payment_type, price_cents, currency, interval, status, provider_price_id, includes_community, offer_courses(courses(title))")
+      .order("created_at", { ascending: false }),
+    loadPricingStats(),
+  ]);
+  if (offersRes.error) console.error("[offers] list failed", offersRes.error.message);
+  const offers = (offersRes.data ?? []) as unknown as OfferRow[];
 
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Offers</h1>
-          <p className="text-sm text-[#6c6a69]">An offer is how people buy access: price, billing, and which courses it unlocks.</p>
-        </div>
-        <Link href="/admin/offers/new" className="bg-[#343332] text-white hover:bg-black px-4 py-2 rounded-full font-medium text-xs">
-          + New offer
-        </Link>
-      </header>
+      <PageHeader
+        title="Offers"
+        description="An offer is how people get access: its price, billing and the products it unlocks."
+        actions={
+          <Link href="/admin/offers/new" className={BTN_PRIMARY}>
+            New offer
+          </Link>
+        }
+      />
+      <div className="grid gap-3 sm:grid-cols-3">
+        <StatCard label="Purchases" hint="Last 30 days" value={stats.purchases30d.toLocaleString("en-US")} href="/admin/orders" />
+        <StatCard label="Net revenue" hint="Last 30 days · after refunds" value={formatAmounts(stats.net30d)} href="/admin/analytics?range=30d" />
+        <StatCard label="Net revenue" hint="All time · after refunds" value={formatAmounts(stats.netAllTime)} />
+      </div>
 
-      <section className="bg-white rounded-[12px] border border-[#e7e6e4] shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-x-auto">
-        {(offers ?? []).length === 0 ? (
-          <p className="p-6 text-sm text-[#6c6a69]">No offers yet.</p>
+      <Card flush>
+        {offers.length === 0 ? (
+          <EmptyState title="No offers yet.">Create an offer to start selling a course.</EmptyState>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="text-left text-sm text-[#6c6a69] border-b border-[#efeeed]">
-              <tr>
-                <th className="px-4 py-2">Offer</th>
-                <th>Price</th>
-                <th>Courses</th>
-                <th>Payment setup</th>
-                <th>Status</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#efeeed]">
-              {(offers ?? []).map((o) => (
-                <tr key={o.id}>
-                  <td className="px-4 py-3">
-                    <p className="font-bold">{o.title}</p>
-                    <p className="text-xs text-[#6c6a69]">/checkout/{o.slug}</p>
-                  </td>
-                  <td>{formatOfferPrice(o as unknown as PricedOffer)}</td>
-                  <td>{o.offer_courses?.length ?? 0}</td>
-                  <td className="text-xs">
-                    {o.payment_type === "free" ? "—" : o.provider_price_id ? "✓ linked" : <span className="text-amber-700">needs price id</span>}
-                  </td>
-                  <td>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
-                        o.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-[#f3f3f2] text-[#6c6a69]"
-                      }`}
-                    >
-                      {o.status}
-                    </span>
-                  </td>
-                  <td className="pe-4 text-end">
-                    <Link href={`/admin/offers/${o.id}`} className="text-[#1a1a19] hover:underline font-bold">
-                      Edit →
-                    </Link>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className={TABLE}>
+              <thead className={THEAD}>
+                <tr>
+                  <th className={TH}>Offer title</th>
+                  <th className={TH}>Products</th>
+                  <th className={TH}>Price</th>
+                  <th className={TH}>Qty sold</th>
+                  <th className={TH}>Net revenue</th>
+                  <th className={TH}>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {offers.map((o) => {
+                  const sales = stats.byOffer.get(o.id) ?? (stats.complete ? { purchases: 0, net: 0 } : null);
+                  return (
+                    <tr key={o.id} className={TROW}>
+                      <td className={TD}>
+                        <Link href={`/admin/offers/${o.id}`} className="font-medium hover:underline">
+                          {o.title}
+                        </Link>
+                        <p className="text-[12px] text-[#6c6a69]">
+                          /checkout/{o.slug}
+                          {o.payment_type !== "free" && !o.provider_price_id && <span className="ml-2 text-[#8a5a00]">· needs a Paddle price id</span>}
+                        </p>
+                      </td>
+                      <td className={`${TD} max-w-64 text-[#6c6a69]`}>{productNames(o)}</td>
+                      <td className={`${TD} whitespace-nowrap`}>{formatOfferPrice(o)}</td>
+                      <td className={`${TD} tabular-nums`}>{sales ? sales.purchases.toLocaleString("en-US") : "—"}</td>
+                      <td className={`${TD} whitespace-nowrap tabular-nums`}>{sales ? formatMoney(sales.net, o.currency) : "—"}</td>
+                      <td className={TD}>
+                        <StatusPill tone={o.status === "published" ? "published" : "draft"}>{o.status === "published" ? "Published" : "Draft"}</StatusPill>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
-      </section>
+      </Card>
     </div>
   );
 }

@@ -1,70 +1,118 @@
 import { canPerform, type StaffCapability, type StaffRole } from "./staff";
 
-/** Admin sidebar, grouped like Kajabi's (Products / Sales / Contacts …). Icons are Material Symbols. */
-export interface AdminNavItem {
+/**
+ * Admin sidebar, laid out like Kajabi's: top-level entries with icons, where groups expand
+ * with a chevron (Products ▾, Sales ▾ …). Settings and "View member app" sit at the bottom.
+ * Icons are Material Symbols.
+ */
+export interface AdminNavLink {
   href: string;
   label: string;
+}
+
+export interface AdminNavEntry {
+  label: string;
   icon: string;
+  /** A plain link (Dashboard) … */
+  href?: string;
+  /** … or an expandable group (Products ▾). */
+  children?: AdminNavLink[];
 }
 
-export interface AdminNavGroup {
-  label: string | null;
-  items: AdminNavItem[];
+export interface AdminNav {
+  main: AdminNavEntry[];
+  bottom: AdminNavEntry[];
 }
 
-interface NavEntry extends AdminNavItem {
+interface NavChild extends AdminNavLink {
   needs: StaffCapability;
 }
 
-const NAV: { label: string | null; items: NavEntry[] }[] = [
-  { label: null, items: [{ href: "/admin", label: "Dashboard", icon: "space_dashboard", needs: "content" }] },
+interface NavDef {
+  label: string;
+  icon: string;
+  href?: string;
+  needs?: StaffCapability;
+  children?: NavChild[];
+}
+
+const MAIN: NavDef[] = [
+  { label: "Dashboard", icon: "home", href: "/admin", needs: "content" },
   {
     label: "Products",
-    items: [
-      { href: "/admin/courses", label: "Courses", icon: "school", needs: "content" },
-      { href: "/admin/offers", label: "Offers", icon: "sell", needs: "sales" },
+    icon: "inventory_2",
+    children: [
+      { href: "/admin/products", label: "All Products", needs: "content" },
+      { href: "/admin/courses", label: "Courses", needs: "content" },
+      { href: "/admin/moves", label: "Moves Library", needs: "content" },
+      { href: "/admin/community", label: "Community", needs: "content" },
     ],
   },
   {
     label: "Sales",
-    items: [
-      { href: "/admin/orders", label: "Orders", icon: "receipt_long", needs: "sales" },
-      { href: "/admin/referrals", label: "Referrals", icon: "card_giftcard", needs: "sales" },
+    icon: "sell",
+    children: [
+      { href: "/admin/offers", label: "Offers", needs: "sales" },
+      { href: "/admin/orders", label: "Orders", needs: "sales" },
+      { href: "/admin/referrals", label: "Referrals", needs: "sales" },
+    ],
+  },
+  {
+    label: "Coaching",
+    icon: "sports",
+    children: [
+      { href: "/studio", label: "Roni's Studio", needs: "content" },
+      { href: "/admin/coaching/questions", label: "Lesson questions", needs: "content" },
+      { href: "/admin/coaching/live-qa", label: "Live Q&A", needs: "content" },
     ],
   },
   {
     label: "Contacts",
-    items: [
-      { href: "/admin/students", label: "Students", icon: "group", needs: "sales" },
-      { href: "/admin/leads", label: "Leads", icon: "contact_mail", needs: "sales" },
+    icon: "group",
+    children: [
+      { href: "/admin/people", label: "All Contacts", needs: "sales" },
+      { href: "/admin/leads", label: "Leads", needs: "sales" },
+      { href: "/admin/inbox", label: "Inbox", needs: "sales" },
     ],
   },
   {
     label: "Analytics",
-    items: [
-      { href: "/admin/analytics", label: "Overview", icon: "monitoring", needs: "sales" },
-      { href: "/admin/reports", label: "Reports", icon: "description", needs: "sales" },
+    icon: "bar_chart",
+    children: [
+      { href: "/admin/analytics", label: "Analytics", needs: "sales" },
+      { href: "/admin/reports", label: "Reports", needs: "sales" },
     ],
   },
-  {
-    label: "Community",
-    items: [
-      { href: "/admin/community", label: "Community", icon: "forum", needs: "content" },
-      { href: "/admin/videos", label: "Spotlight queue", icon: "video_library", needs: "content" },
-    ],
-  },
-  { label: "Settings", items: [{ href: "/admin/team", label: "Team", icon: "badge", needs: "staff" }] },
 ];
 
-export function adminNavFor(role: StaffRole): AdminNavGroup[] {
-  return NAV.map((group) => ({
-    label: group.label,
-    items: group.items.filter((item) => canPerform(role, item.needs)).map(({ href, label, icon }) => ({ href, label, icon })),
-  })).filter((group) => group.items.length > 0);
+const BOTTOM: NavDef[] = [
+  { label: "Settings", icon: "settings", children: [{ href: "/admin/team", label: "Team", needs: "staff" }] },
+  { label: "View member app", icon: "open_in_new", href: "/home", needs: "content" },
+];
+
+function visible(defs: readonly NavDef[], role: StaffRole): AdminNavEntry[] {
+  return defs.flatMap((def): AdminNavEntry[] => {
+    if (def.children) {
+      const children = def.children.filter((c) => canPerform(role, c.needs)).map(({ href, label }) => ({ href, label }));
+      return children.length > 0 ? [{ label: def.label, icon: def.icon, children }] : [];
+    }
+    if (!def.href || (def.needs && !canPerform(role, def.needs))) return [];
+    return [{ label: def.label, icon: def.icon, href: def.href }];
+  });
+}
+
+/** The sidebar a staff member sees; groups with nothing permitted are dropped. */
+export function adminNavFor(role: StaffRole): AdminNav {
+  return { main: visible(MAIN, role), bottom: visible(BOTTOM, role) };
 }
 
 /** The dashboard is active only on /admin itself; every other item also covers its sub-pages. */
 export function isNavItemActive(href: string, pathname: string): boolean {
   if (href === "/admin") return pathname === "/admin";
   return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/** A group opens by itself when one of its pages is showing. */
+export function isGroupActive(entry: AdminNavEntry, pathname: string): boolean {
+  return (entry.children ?? []).some((c) => isNavItemActive(c.href, pathname));
 }

@@ -1,19 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { adminNavFor, isNavItemActive } from "./admin-nav";
+import { adminNavFor, isGroupActive, isNavItemActive } from "./admin-nav";
+
+const hrefsOf = (role: "owner" | "editor") => {
+  const nav = adminNavFor(role);
+  return [...nav.main, ...nav.bottom].flatMap((e) => (e.children ? e.children.map((c) => c.href) : [e.href]));
+};
 
 describe("adminNavFor", () => {
-  it("gives owners every section, grouped like Kajabi's sidebar", () => {
-    const groups = adminNavFor("owner");
-    expect(groups.map((g) => g.label)).toEqual([null, "Products", "Sales", "Contacts", "Analytics", "Community", "Settings"]);
-    expect(groups.flatMap((g) => g.items.map((i) => i.href))).toContain("/admin/team");
+  it("lays out Kajabi's top-level entries with expandable groups", () => {
+    const nav = adminNavFor("owner");
+    expect(nav.main.map((e) => e.label)).toEqual(["Dashboard", "Products", "Sales", "Coaching", "Contacts", "Analytics"]);
+    expect(nav.main[0]).toEqual({ label: "Dashboard", icon: "home", href: "/admin" });
+    expect(nav.main.find((e) => e.label === "Products")?.children?.map((c) => c.label)).toEqual([
+      "All Products",
+      "Courses",
+      "Moves Library",
+      "Community",
+    ]);
+    expect(nav.main.find((e) => e.label === "Contacts")?.children?.map((c) => c.href)).toEqual(["/admin/people", "/admin/leads", "/admin/inbox"]);
+    expect(nav.bottom.map((e) => e.label)).toEqual(["Settings", "View member app"]);
   });
 
-  it("hides sections an editor can't use and drops groups left empty", () => {
-    const groups = adminNavFor("editor");
-    const hrefs = groups.flatMap((g) => g.items.map((i) => i.href));
-    expect(hrefs).not.toContain("/admin/team");
-    expect(groups.some((g) => g.items.length === 0)).toBe(false);
-    expect(groups.map((g) => g.label)).not.toContain("Settings");
+  it("links the coaching tools, including Roni's Studio outside the admin", () => {
+    expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/home"]));
+  });
+
+  it("hides Team from editors and drops the Settings group left empty", () => {
+    const nav = adminNavFor("editor");
+    expect(hrefsOf("editor")).not.toContain("/admin/team");
+    expect(nav.bottom.map((e) => e.label)).toEqual(["View member app"]);
+    expect([...nav.main, ...nav.bottom].every((e) => (e.children ? e.children.length > 0 : Boolean(e.href)))).toBe(true);
   });
 });
 
@@ -23,5 +39,13 @@ describe("isNavItemActive", () => {
     expect(isNavItemActive("/admin", "/admin/courses")).toBe(false);
     expect(isNavItemActive("/admin/courses", "/admin/courses/abc/lessons/1")).toBe(true);
     expect(isNavItemActive("/admin/courses", "/admin/coursesx")).toBe(false);
+  });
+});
+
+describe("isGroupActive", () => {
+  it("opens a group when one of its pages is showing", () => {
+    const contacts = adminNavFor("owner").main.find((e) => e.label === "Contacts");
+    expect(contacts && isGroupActive(contacts, "/admin/people/123")).toBe(true);
+    expect(contacts && isGroupActive(contacts, "/admin/offers")).toBe(false);
   });
 });
