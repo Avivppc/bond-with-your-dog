@@ -29,6 +29,7 @@ const STATE_ICON: Record<LessonState["kind"], string> = {
   open: "play_circle",
   completed: "check_circle",
   locked: "lock",
+  upgrade: "lock",
   scheduled: "schedule",
 };
 
@@ -48,6 +49,13 @@ function LessonLink({ courseId, lesson, state, current }: { courseId: string; le
     </>
   );
   const base = "flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-[12.5px]";
+  if (state.kind === "upgrade") {
+    return (
+      <Link href={`/learn/${courseId}#upgrade`} className={`${base} text-white/55 hover:bg-white/10`} title="Included in the full course">
+        {body}
+      </Link>
+    );
+  }
   if (state.kind === "locked" || state.kind === "scheduled") {
     return (
       <span className={`${base} cursor-not-allowed text-white/45`} title={state.kind === "locked" ? "Get access to unlock" : "Unlocks soon"}>

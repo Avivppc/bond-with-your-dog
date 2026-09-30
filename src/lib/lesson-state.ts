@@ -8,6 +8,8 @@ export type LessonState =
   | { kind: "open" }
   | { kind: "completed" }
   | { kind: "locked" }
+  /** The member has limited access and the lesson is behind the course paywall. */
+  | { kind: "upgrade" }
   | { kind: "scheduled"; unlockAt: Date };
 
 interface LessonForState {
@@ -22,12 +24,18 @@ interface StudentContext {
   now: Date;
   /** Staff previewing a course they aren't enrolled in (the DB lets staff open every lesson). */
   preview?: boolean;
+  /** The enrollment is "limited access" (paywall applies). */
+  limited?: boolean;
+  /** The lesson sits below the course's paywall. */
+  behindPaywall?: boolean;
 }
 
-export function lessonState(lesson: LessonForState, { enrolledAt, completed, now, preview = false }: StudentContext): LessonState {
-  // Mirrors can_access_lesson: free previews are open to everyone, with no drip delay.
+export function lessonState(lesson: LessonForState, ctx: StudentContext): LessonState {
+  const { enrolledAt, completed, now, preview = false, limited = false, behindPaywall = false } = ctx;
+  // Mirrors can_access_lesson: free previews are open to everyone, with no drip delay or paywall.
   if (preview || lesson.free_preview) return completed ? { kind: "completed" } : { kind: "open" };
   if (!enrolledAt) return { kind: "locked" };
+  if (limited && behindPaywall) return { kind: "upgrade" };
   const unlockAt = computeUnlockAt(enrolledAt, lesson.available_after_days);
   if (unlockAt && unlockAt.getTime() > now.getTime()) return { kind: "scheduled", unlockAt };
   return completed ? { kind: "completed" } : { kind: "open" };

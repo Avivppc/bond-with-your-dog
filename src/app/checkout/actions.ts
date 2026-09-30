@@ -8,6 +8,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { getPaymentProvider, configuredProvider } from "@/lib/payments/provider";
 import { fulfillOrder, recordBillingEvent, markBillingEvent } from "@/lib/payments/billing";
 import { siteUrl } from "@/lib/email";
+import { ownsEverything, type AccessLevel } from "@/lib/offer-ownership";
 
 const Slug = z.string().regex(/^[a-z0-9-]{2,80}$/);
 
@@ -22,17 +23,20 @@ async function signedInUser() {
 /** True when the user already has live access to every course in the offer (avoid double charging). */
 async function alreadyOwnsOffer(userId: string, offerId: string): Promise<boolean> {
   const sb = createServiceClient();
-  const { data: courses } = await sb.from("offer_courses").select("course_id").eq("offer_id", offerId);
-  const courseIds = (courses ?? []).map((c) => c.course_id);
-  if (courseIds.length === 0) return false;
+  const { data: courses } = await sb.from("offer_courses").select("course_id, access_level").eq("offer_id", offerId);
+  const offerCourses = (courses ?? []) as { course_id: string; access_level: AccessLevel }[];
+  if (offerCourses.length === 0) return false;
   const nowIso = new Date().toISOString();
   const { data: active } = await sb
     .from("enrollments")
-    .select("course_id")
+    .select("course_id, access_level")
     .eq("user_id", userId)
-    .in("course_id", courseIds)
+    .in(
+      "course_id",
+      offerCourses.map((c) => c.course_id)
+    )
     .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
-  return (active ?? []).length === courseIds.length;
+  return ownsEverything(offerCourses, (active ?? []) as { course_id: string; access_level: AccessLevel }[]);
 }
 
 /** Creates a pending order and sends the buyer to the provider (free offers are fulfilled at once). */

@@ -13,7 +13,7 @@ interface CourseLessonRowProps {
   showPreviewTag: boolean;
 }
 
-const ICON: Record<LessonState["kind"], string> = { open: "play_circle", completed: "check_circle", locked: "lock", scheduled: "schedule" };
+const ICON: Record<LessonState["kind"], string> = { open: "play_circle", completed: "check_circle", locked: "lock", upgrade: "lock", scheduled: "schedule" };
 
 function minutes(seconds: number | null): string | null {
   return seconds ? `${Math.max(1, Math.round(seconds / 60))} min` : null;
@@ -27,6 +27,8 @@ export function CourseLessonRow({ courseId, lesson, number, state, showPreviewTa
       ? `Unlocks ${formatUnlockDate(state.unlockAt)}`
       : state.kind === "locked"
         ? "Locked"
+        : state.kind === "upgrade"
+          ? "Included in the full course"
         : [lesson.kind === "quiz" ? "Quiz" : null, minutes(lesson.duration_seconds)].filter(Boolean).join(" · ");
   const content = (
     <>

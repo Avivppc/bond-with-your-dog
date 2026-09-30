@@ -37,13 +37,16 @@ export default async function CourseHomePage({
   // Staff previews see the member view, like Kajabi's preview mode.
   const isMember = Boolean(enrolledAt) || data.isStaffPreview;
 
+  // Visitors see every offer for the course; limited members only the ones that unlock all of it.
+  const needsOffers = !isMember || data.isLimited;
   const [{ data: profile }, { data: offerLinks }] = await Promise.all([
     supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-    isMember
-      ? Promise.resolve({ data: [] })
-      : supabase.from("offer_courses").select("offers(slug, title, payment_type, price_cents, currency, interval, status)").eq("course_id", courseId),
+    needsOffers
+      ? supabase.from("offer_courses").select("access_level, offers(slug, title, payment_type, price_cents, currency, interval, status)").eq("course_id", courseId)
+      : Promise.resolve({ data: [] }),
   ]);
   const offers = (offerLinks ?? [])
+    .filter((l) => !data.isLimited || l.access_level === "full")
     .flatMap((l) => (l.offers ? [l.offers as unknown as PublishedOffer] : []))
     .filter((o) => o.status === "published");
   const firstName = profile?.full_name?.split(" ")[0] || "friend";
@@ -94,6 +97,35 @@ export default async function CourseHomePage({
           <GetAccess courseId={courseId} isFree={course.price === 0} offers={offers} enrollFailed={enroll === "failed"} enrollFree={enrollFree} />
         )}
       </section>
+
+      {data.isLimited && data.paywallAfterModuleId && (
+        <section id="upgrade" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[16px] bg-white p-6 shadow-sm">
+          <div>
+            <p className="text-xs font-bold" style={{ color: LEARN.orange }}>
+              You have limited access
+            </p>
+            <h2 className="mt-1 text-lg font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
+              Unlock the full course
+            </h2>
+            <p className="text-sm" style={{ color: LEARN.muted }}>
+              Lessons marked with a lock are part of the full course.
+            </p>
+          </div>
+          {offers.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {offers.map((o) => (
+                <Link key={o.slug} href={`/checkout/${o.slug}`} className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
+                  {o.title} — {formatOfferPrice(o)}
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: LEARN.muted }}>
+              Ask us about upgrading.
+            </p>
+          )}
+        </section>
+      )}
 
       <nav className="mt-6 inline-flex rounded-full bg-white p-1 shadow-sm" aria-label="Course sections">
         {[

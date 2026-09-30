@@ -233,3 +233,26 @@ export async function moveLesson(input: z.input<typeof MoveLesson>): Promise<Act
   refresh(course);
   return { ok: true, data: undefined };
 }
+
+// ── Paywall ─────────────────────────────────────────────────
+
+const SetPaywall = z.object({ courseId, afterModuleId: uuid.nullable() });
+
+/**
+ * Places the course paywall after a top-level module (null removes it). Members with a
+ * "limited access" offer only open content above it; the DB trigger rejects other modules.
+ */
+export async function setCoursePaywall(input: z.input<typeof SetPaywall>): Promise<ActionResult> {
+  await requireStaff("content");
+  const parsed = SetPaywall.safeParse(input);
+  if (!parsed.success) return fail(parsed.error.issues[0].message);
+  const { courseId: course, afterModuleId } = parsed.data;
+
+  const { error } = await createServiceClient().from("courses").update({ paywall_after_module_id: afterModuleId }).eq("id", course);
+  if (error) {
+    console.error("setCoursePaywall failed", { course, error: error.message });
+    return fail(error.code === "23514" ? "The paywall can only sit between top-level modules." : "Could not move the paywall.");
+  }
+  refresh(course);
+  return { ok: true, data: undefined };
+}

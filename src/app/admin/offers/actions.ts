@@ -84,7 +84,13 @@ export async function saveOffer(formData: FormData): Promise<void> {
   const { error: deleteError } = await sb.from("offer_courses").delete().eq("offer_id", offerId);
   const { error: insertError } = deleteError
     ? { error: deleteError }
-    : await sb.from("offer_courses").insert(courseIds.map((course_id) => ({ offer_id: offerId, course_id })));
+    : await sb.from("offer_courses").insert(
+        courseIds.map((course_id) => ({
+          offer_id: offerId,
+          course_id,
+          access_level: formData.get(`access_level:${course_id}`) === "limited" ? "limited" : "full",
+        }))
+      );
   if (insertError) {
     console.error("[offers] course list save failed", { offerId, error: insertError.message });
     back(offerId, { error: "Saved the offer, but not its course list. Please save again." });

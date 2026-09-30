@@ -28,6 +28,14 @@ describe("lessonState", () => {
     expect(lessonState(lesson, { ...preview, completed: true })).toEqual({ kind: "completed" });
   });
 
+  it("asks limited members to upgrade for lessons behind the paywall", () => {
+    const limited = { enrolledAt: "2026-09-01T00:00:00Z", now: NOW, completed: false, limited: true };
+    expect(lessonState(lesson, { ...limited, behindPaywall: true })).toEqual({ kind: "upgrade" });
+    expect(lessonState(lesson, { ...limited, behindPaywall: false })).toEqual({ kind: "open" });
+    expect(lessonState(lesson, { ...limited, limited: false, behindPaywall: true })).toEqual({ kind: "open" });
+    expect(lessonState({ ...lesson, free_preview: true }, { ...limited, behindPaywall: true })).toEqual({ kind: "open" });
+  });
+
   it("is scheduled until its drip day, then opens", () => {
     const dripped = { ...lesson, available_after_days: 7 };
     expect(lessonState(dripped, { enrolledAt: "2026-09-28T12:00:00Z", completed: false, now: NOW })).toEqual({

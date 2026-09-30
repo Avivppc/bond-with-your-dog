@@ -28,9 +28,14 @@ type Adding = "lesson" | "submodule" | null;
 
 const orderKey = (items: readonly { id: string }[]) => items.map((i) => i.id).join(",");
 
+/**
+ * A module as Kajabi shows it: a card whose header has the folder icon, title, "+ Add Content",
+ * a status pill and a collapse chevron; its lessons (and submodules) are rows inside the card.
+ */
 export function ModuleCard({ courseId, module, handle, moduleOptions, expandSignal, onError }: ModuleCardProps) {
   const [pending, startTransition] = useTransition();
   const [title, setTitle] = useState(module.title);
+  const [editingTitle, setEditingTitle] = useState(false);
   // A local toggle only counts until the next "Expand all / Collapse all".
   const [override, setOverride] = useState<ExpandSignal | null>(null);
   const open = override && override.version === expandSignal.version ? override.open : expandSignal.open;
@@ -47,6 +52,7 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
   }
 
   function saveTitle() {
+    setEditingTitle(false);
     const next = title.trim();
     if (!next || next === module.title) {
       setTitle(module.title);
@@ -81,141 +87,180 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
     return res.ok;
   }
 
-  return (
-    <div className={`${isTopLevel ? "" : "ml-8 border-l border-[#efeeed]"} ${pending ? "opacity-70" : ""}`}>
-      <div className={`flex items-center gap-2 py-2.5 pl-2 pr-3 ${isTopLevel ? "bg-[#fafaf9]" : ""}`}>
+  const header = (
+    <div className={`group flex min-h-12 items-center gap-2 py-2 pl-2 pr-3 ${isTopLevel ? "" : "bg-[#fcfcfb]"}`}>
+      <span className="opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
         <DragHandle {...handle} label={module.title} />
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          aria-expanded={open}
-          aria-label={open ? `Collapse ${module.title}` : `Expand ${module.title}`}
-          className="flex rounded text-[#6c6a69] hover:text-[#1a1a19]"
-        >
-          <span className={`material-symbols-outlined text-[20px] transition-transform ${open ? "" : "-rotate-90"}`} aria-hidden>
-            expand_more
-          </span>
-        </button>
-        <span className="material-symbols-outlined text-[18px] text-[#6c6a69]" aria-hidden>
-          {isTopLevel ? "folder" : "folder_open"}
-        </span>
+      </span>
+      <span className="material-symbols-outlined text-[18px] text-[#6c6a69]" aria-hidden>
+        {isTopLevel ? "folder" : "folder_open"}
+      </span>
+      {editingTitle ? (
         <input
+          autoFocus
           aria-label="Module title"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={saveTitle}
-          onKeyDown={(e) => e.key === "Enter" && (e.target as HTMLInputElement).blur()}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+            if (e.key === "Escape") {
+              setTitle(module.title);
+              setEditingTitle(false);
+            }
+          }}
           maxLength={200}
-          className="min-w-0 flex-1 rounded bg-transparent px-1 text-sm font-medium text-[#1a1a19] focus:bg-white focus:outline focus:outline-1 focus:outline-[#d9d8d6]"
+          className="min-w-0 flex-1 rounded-[6px] border border-[#d9d8d6] bg-white px-2 py-1 text-sm focus:border-[#343332] focus:outline-none"
         />
-        {!open && itemCount > 0 && <span className="text-xs text-[#9b9997]">{itemCount} items</span>}
-        <ActionMenu
-          label={`Add content to ${module.title}`}
-          trigger={
-            <>
-              <span aria-hidden>+</span> Add content
-            </>
-          }
-          triggerClassName="hidden items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#1a1a19] hover:bg-[#efeeed] sm:inline-flex"
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(!open)}
+          onDoubleClick={() => setEditingTitle(true)}
+          aria-expanded={open}
+          className="min-w-0 flex-1 truncate text-left text-sm font-medium text-[#1a1a19]"
+          title="Click to expand, double-click to rename"
         >
-          {(close) => (
-            <>
-              <button type="button" className={MENU_ITEM} onClick={() => (startAdding("lesson"), close())}>
-                <span className="material-symbols-outlined text-[18px]" aria-hidden>
-                  smart_display
-                </span>
-                Lesson
-              </button>
-              {isTopLevel && (
-                <button type="button" className={MENU_ITEM} onClick={() => (startAdding("submodule"), close())}>
-                  <span className="material-symbols-outlined text-[18px]" aria-hidden>
-                    folder_open
-                  </span>
-                  Submodule
-                </button>
-              )}
-            </>
-          )}
-        </ActionMenu>
-        <PublishToggle
-          published={module.published}
-          disabled={pending}
-          onToggle={() => run(() => updateModule({ courseId, id: module.id, published: !module.published }))}
-        />
-        <ActionMenu
-          label={`Actions for ${module.title}`}
-          trigger={
-            <span className="material-symbols-outlined text-[20px]" aria-hidden>
-              more_horiz
+          {module.title}
+          {!open && itemCount > 0 && <span className="ms-2 text-xs font-normal text-[#9b9997]">{itemCount} items</span>}
+        </button>
+      )}
+      <ActionMenu
+        label={`Add content to ${module.title}`}
+        trigger={
+          <>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>
+              add
             </span>
-          }
-          triggerClassName="flex rounded-[6px] p-0.5 text-[#6c6a69] hover:bg-[#efeeed] hover:text-[#1a1a19]"
-        >
-          {(close) => (
-            <>
-              <button type="button" className={`${MENU_ITEM} sm:hidden`} onClick={() => (startAdding("lesson"), close())}>
-                Add lesson
+            Add Content
+          </>
+        }
+        triggerClassName="hidden items-center gap-1 rounded-full px-2.5 py-1 text-sm font-medium text-[#1a1a19] hover:bg-[#efeeed] sm:inline-flex"
+      >
+        {(close) => (
+          <>
+            <button type="button" className={MENU_ITEM} onClick={() => (startAdding("lesson"), close())}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                videocam
+              </span>
+              Lesson
+            </button>
+            {isTopLevel && (
+              <button type="button" className={MENU_ITEM} onClick={() => (startAdding("submodule"), close())}>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                  folder_open
+                </span>
+                Submodule
               </button>
-              <button type="button" className={`${MENU_ITEM} text-red-700`} onClick={() => (close(), remove())}>
-                Delete {isTopLevel ? "module" : "submodule"}
-              </button>
-            </>
-          )}
-        </ActionMenu>
-      </div>
+            )}
+          </>
+        )}
+      </ActionMenu>
+      <PublishToggle
+        published={module.published}
+        disabled={pending}
+        label={module.title}
+        onChange={(published) => run(() => updateModule({ courseId, id: module.id, published }))}
+      />
+      <ActionMenu
+        label={`Actions for ${module.title}`}
+        trigger={
+          <span className="material-symbols-outlined text-[20px]" aria-hidden>
+            more_horiz
+          </span>
+        }
+        triggerClassName="flex rounded-[6px] p-0.5 text-[#9b9997] hover:bg-[#efeeed] hover:text-[#1a1a19]"
+      >
+        {(close) => (
+          <>
+            <button type="button" className={MENU_ITEM} onClick={() => (close(), setEditingTitle(true))}>
+              Rename
+            </button>
+            <button type="button" className={`${MENU_ITEM} sm:hidden`} onClick={() => (startAdding("lesson"), close())}>
+              Add lesson
+            </button>
+            <button type="button" className={`${MENU_ITEM} text-red-700`} onClick={() => (close(), remove())}>
+              Delete {isTopLevel ? "module" : "submodule"}
+            </button>
+          </>
+        )}
+      </ActionMenu>
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+        aria-label={open ? `Collapse ${module.title}` : `Expand ${module.title}`}
+        className="flex rounded-[6px] p-0.5 text-[#6c6a69] hover:bg-[#efeeed] hover:text-[#1a1a19]"
+      >
+        <span className={`material-symbols-outlined text-[20px] transition-transform ${open ? "rotate-180" : ""}`} aria-hidden>
+          expand_more
+        </span>
+      </button>
+    </div>
+  );
 
-      {open && (
-        <div className="divide-y divide-[#f3f3f2] border-t border-[#f3f3f2] pl-6">
-          {module.lessons.length > 0 && (
-            <SortableList
-              key={orderKey(module.lessons)}
-              items={module.lessons}
-              onReorder={saveLessonOrder}
-              className="divide-y divide-[#f3f3f2]"
-              renderItem={(lesson, h) => (
-                <LessonItem courseId={courseId} lesson={lesson} handle={h} moduleOptions={moduleOptions} onError={onError} />
-              )}
-            />
-          )}
+  const body = open && (
+    <div className="divide-y divide-[#efeeed] border-t border-[#efeeed]">
+      {module.lessons.length > 0 && (
+        <SortableList
+          key={orderKey(module.lessons)}
+          items={module.lessons}
+          onReorder={saveLessonOrder}
+          className="divide-y divide-[#efeeed]"
+          renderItem={(lesson, h) => <LessonItem courseId={courseId} lesson={lesson} handle={h} moduleOptions={moduleOptions} onError={onError} />}
+        />
+      )}
 
-          {module.submodules.length > 0 && (
-            <SortableList
-              key={orderKey(module.submodules)}
-              items={module.submodules}
-              onReorder={saveSubmoduleOrder}
-              className="divide-y divide-[#f3f3f2]"
-              renderItem={(sub, h) => (
-                <ModuleCard
-                  courseId={courseId}
-                  module={sub}
-                  handle={h}
-                  moduleOptions={moduleOptions}
-                  expandSignal={expandSignal}
-                  onError={onError}
-                />
-              )}
-            />
-          )}
-
-          {itemCount === 0 && !adding && <p className="px-3 py-3 text-xs text-[#9b9997]">Empty — use “Add content” to add a lesson.</p>}
-
-          {adding && (
-            <div className="px-3 py-3">
-              <InlineAddForm
-                placeholder={adding === "lesson" ? "Lesson title" : "Submodule title"}
-                onDone={() => setAdding(null)}
-                onAdd={async (t) => {
-                  const res =
-                    adding === "lesson"
-                      ? await createLessonInModule({ courseId, moduleId: module.id, title: t })
-                      : await createModule({ courseId, parentId: module.id, title: t });
-                  return res.ok ? null : res.error;
-                }}
-              />
+      {module.submodules.length > 0 && (
+        <SortableList
+          key={orderKey(module.submodules)}
+          items={module.submodules}
+          onReorder={saveSubmoduleOrder}
+          className="divide-y divide-[#efeeed]"
+          renderItem={(sub, h) => (
+            <div className="pl-6">
+              <ModuleCard courseId={courseId} module={sub} handle={h} moduleOptions={moduleOptions} expandSignal={expandSignal} onError={onError} />
             </div>
           )}
+        />
+      )}
+
+      {itemCount === 0 && !adding && (
+        <button type="button" onClick={() => startAdding("lesson")} className="w-full px-4 py-3 text-left text-sm text-[#6c6a69] hover:bg-[#fafaf9]">
+          Empty — <span className="font-medium text-[#1a1a19] underline">add the first lesson</span>
+        </button>
+      )}
+
+      {adding && (
+        <div className="px-4 py-3">
+          <InlineAddForm
+            placeholder={adding === "lesson" ? "Lesson title" : "Submodule title"}
+            onDone={() => setAdding(null)}
+            onAdd={async (t) => {
+              const res =
+                adding === "lesson"
+                  ? await createLessonInModule({ courseId, moduleId: module.id, title: t })
+                  : await createModule({ courseId, parentId: module.id, title: t });
+              return res.ok ? null : res.error;
+            }}
+          />
         </div>
       )}
     </div>
+  );
+
+  if (!isTopLevel) {
+    return (
+      <div className={pending ? "opacity-70" : ""}>
+        {header}
+        {body}
+      </div>
+    );
+  }
+  return (
+    <section className={`rounded-[12px] border border-[#e7e6e4] bg-white ${pending ? "opacity-70" : ""}`}>
+      {header}
+      {body}
+    </section>
   );
 }

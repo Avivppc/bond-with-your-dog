@@ -51,14 +51,14 @@ export default async function EditOfferPage({
   const sb = createServiceClient();
 
   const [{ data: courses }, offerRes] = await Promise.all([
-    sb.from("courses").select("id, title").order("title"),
+    sb.from("courses").select("id, title, paywall_after_module_id").order("title"),
     id === "new"
       ? Promise.resolve({ data: EMPTY })
-      : sb.from("offers").select("*, offer_courses(course_id)").eq("id", id).maybeSingle(),
+      : sb.from("offers").select("*, offer_courses(course_id, access_level)").eq("id", id).maybeSingle(),
   ]);
-  const offer = offerRes.data as (OfferRow & { offer_courses?: { course_id: string }[] }) | null;
+  const offer = offerRes.data as (OfferRow & { offer_courses?: { course_id: string; access_level: string }[] }) | null;
   if (!offer) notFound();
-  const selected = new Set((offer.offer_courses ?? []).map((c) => c.course_id));
+  const levelOf = new Map((offer.offer_courses ?? []).map((c) => [c.course_id, c.access_level]));
 
   return (
     <div className="space-y-6 max-w-3xl">
@@ -121,11 +121,27 @@ export default async function EditOfferPage({
         <fieldset className="flex flex-col gap-2">
           <legend className="text-sm font-medium text-[#1a1a19] mb-1">Courses unlocked by this offer</legend>
           {(courses ?? []).map((c) => (
-            <label key={c.id} className="flex items-center gap-3 text-sm">
-              <input type="checkbox" name="course_ids" value={c.id} defaultChecked={selected.has(c.id)} className="w-4 h-4" />
-              {c.title}
-            </label>
+            <div key={c.id} className="flex flex-wrap items-center justify-between gap-3 rounded-[8px] border border-[#efeeed] px-3 py-2">
+              <label className="flex items-center gap-3 text-sm">
+                <input type="checkbox" name="course_ids" value={c.id} defaultChecked={levelOf.has(c.id)} className="h-4 w-4 accent-[#343332]" />
+                {c.title}
+              </label>
+              {c.paywall_after_module_id ? (
+                <select
+                  name={`access_level:${c.id}`}
+                  defaultValue={levelOf.get(c.id) ?? "full"}
+                  aria-label={`Access to ${c.title}`}
+                  className="rounded-[8px] border border-[#d9d8d6] bg-white px-2 py-1 text-xs"
+                >
+                  <option value="full">Full access</option>
+                  <option value="limited">Limited — above the paywall only</option>
+                </select>
+              ) : (
+                <span className="text-xs text-[#9b9997]">Full access</span>
+              )}
+            </div>
           ))}
+          <p className="text-xs text-[#6c6a69]">Limited access is available for courses with a paywall (set it in the course outline).</p>
         </fieldset>
 
         <label className="flex flex-col gap-1.5 max-w-48">

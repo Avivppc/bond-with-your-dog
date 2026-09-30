@@ -57,7 +57,7 @@ export default async function EditCoursePage({
       <div>
         <Breadcrumbs items={[{ label: "Courses", href: "/admin/courses" }, { label: course.title }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex min-w-0 items-center gap-4">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
             <CourseThumb src={course.image || null} className="h-14 w-24" />
             <div className="min-w-0">
               <div className="flex items-center gap-2">
@@ -76,9 +76,6 @@ export default async function EditCoursePage({
               </span>
               Preview
             </Link>
-            <Link href={`${base}/import`} className={BTN_SECONDARY}>
-              Import lessons
-            </Link>
           </div>
         </div>
       </div>
@@ -86,7 +83,7 @@ export default async function EditCoursePage({
       {saved && <Notice tone="success">Course details saved.</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
 
-      {activeTab === "outline" && <OutlineTab courseId={id} />}
+      {activeTab === "outline" && <OutlineTab courseId={id} paywallAfterModuleId={course.paywall_after_module_id ?? null} />}
 
       {activeTab === "details" && (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -112,7 +109,7 @@ export default async function EditCoursePage({
   );
 }
 
-async function OutlineTab({ courseId }: { courseId: string }) {
+async function OutlineTab({ courseId, paywallAfterModuleId }: { courseId: string; paywallAfterModuleId: string | null }) {
   const sb = createServiceClient();
   const [modulesRes, lessonsRes] = await Promise.all([
     sb.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
@@ -124,7 +121,7 @@ async function OutlineTab({ courseId }: { courseId: string }) {
   const outline = buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []);
   return (
     <Card>
-      <CourseOutlineEditor courseId={courseId} outline={outline} />
+      <CourseOutlineEditor courseId={courseId} outline={outline} paywallAfterModuleId={paywallAfterModuleId} />
     </Card>
   );
 }
