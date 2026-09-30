@@ -11,6 +11,7 @@ import LessonPlayer from "./LessonPlayer";
 import { LessonContent } from "./LessonContent";
 import QuizPlayer from "./QuizPlayer";
 import { CompleteLessonButton } from "./CompleteLessonButton";
+import AskCoachFab from "@/components/member/AskCoachFab";
 
 export const dynamic = "force-dynamic";
 
@@ -60,18 +61,9 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
 
   return (
     <LearnLayout data={data} variant="lesson" currentLessonId={lessonId}>
-      <header className="mb-5">
-        <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: LEARN.muted }}>
-          Lesson {number || "–"} of {data.lessons.length}
-        </p>
-        <h1 className="mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl" style={{ fontFamily: "var(--font-headline)" }}>
-          {lesson.title}
-        </h1>
-      </header>
-
-      <section className="overflow-hidden rounded-[16px] bg-white shadow-sm">
+      <section className="overflow-hidden rounded-[2rem] bg-white shadow-xl">
         {scheduled ? (
-          <div className="px-6 py-14 text-center" style={{ backgroundColor: "#dbebf4" }}>
+          <div className="px-6 py-16 text-center" style={{ backgroundColor: "#dbebf4" }}>
             <span className="material-symbols-outlined mb-3 block text-5xl" style={{ color: LEARN.teal }} aria-hidden>
               schedule
             </span>
@@ -132,21 +124,32 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
         </nav>
       </section>
 
-      {!scheduled && (lesson.description || bodyHtml || files.length > 0) && (
-        <div className="mt-6 space-y-6">
-          {lesson.description && (
-            <p className="text-base leading-relaxed" style={{ color: LEARN.muted }}>
-              {lesson.description}
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          <header>
+            <p className="text-xs font-bold uppercase tracking-widest" style={{ color: LEARN.brown }}>
+              Lesson {String(number || 0).padStart(2, "0")} of {data.lessons.length}
             </p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-headline)" }}>
+              {lesson.title}
+            </h1>
+            {lesson.description && !scheduled && (
+              <p className="mt-3 leading-relaxed" style={{ color: LEARN.muted }}>
+                {lesson.description}
+              </p>
+            )}
+          </header>
+          {!scheduled && (
+            <div id="resources">
+              <LessonContent lessonId={lessonId} bodyHtml={bodyHtml} files={files} />
+            </div>
           )}
-          <div id="resources">
-            <LessonContent lessonId={lessonId} bodyHtml={bodyHtml} files={files} />
-          </div>
         </div>
-      )}
+        <ExpertVault />
+      </div>
 
       {next && !scheduled && (
-        <Link href={lessonHref(next.id)} className="mt-8 flex items-center justify-between gap-4 rounded-[16px] bg-white p-5 shadow-sm hover:bg-[#f3f9fd]">
+        <Link href={lessonHref(next.id)} className="flex items-center justify-between gap-4 rounded-[2rem] bg-white p-6 shadow-sm hover:bg-[#f3f9fd]">
           <span className="min-w-0">
             <span className="block text-xs font-bold" style={{ color: LEARN.orange }}>
               Up next
@@ -161,5 +164,30 @@ export default async function LessonPage({ params }: { params: Promise<{ courseI
         </Link>
       )}
     </LearnLayout>
+  );
+}
+
+/** "Expert vault": a coaching tip and a direct line to Roni's team. */
+function ExpertVault() {
+  return (
+    <aside className="space-y-4 self-start rounded-[2rem] bg-white p-6 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#fdd400] text-[#594a00]" aria-hidden>
+          <span className="material-symbols-outlined" style={{ fontVariationSettings: "'FILL' 1" }}>
+            person
+          </span>
+        </span>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-wider text-[#6d5a00]">Expert vault</p>
+          <p className="font-bold" style={{ fontFamily: "var(--font-headline)" }}>
+            Coach Roni
+          </p>
+        </div>
+      </div>
+      <p className="text-sm italic leading-snug" style={{ color: LEARN.muted }}>
+        &ldquo;Keep your shoulders square. The dog mirrors your torso, not just your hands.&rdquo;
+      </p>
+      <AskCoachFab variant="card" />
+    </aside>
   );
 }

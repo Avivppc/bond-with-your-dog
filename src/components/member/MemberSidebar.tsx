@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import AskCoachFab from "./AskCoachFab";
 
 type Item = { href: string; label: string; icon: string; locked?: boolean };
 
 const items: Item[] = [
-  { href: "/dashboard", label: "My courses", icon: "school" },
-  { href: "/courses", label: "All courses", icon: "pets" },
+  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
+  { href: "/courses", label: "Training", icon: "pets" },
   { href: "/dashboard?expert=1", label: "Expert Track", icon: "psychology", locked: true },
   { href: "/dashboard#achievements", label: "Achievements", icon: "military_tech" },
   { href: "/community", label: "Community", icon: "forum" },
@@ -16,63 +17,80 @@ const items: Item[] = [
   { href: "/blog", label: "News", icon: "newspaper" },
 ];
 
-const TEAL = "#0e666a";
+const ITEM = "flex items-center gap-3 rounded-full px-4 py-2.5 text-sm font-semibold transition-all";
 
-/** Member portal sidebar — same teal theme as the course pages (Bonded's Kajabi look). */
+function isActive(pathname: string, href: string): boolean {
+  if (href.includes("#") || href.includes("?")) return false;
+  return pathname === href || (href !== "/dashboard" && pathname.startsWith(`${href}/`));
+}
+
+/** Member portal sidebar (the original Bonded portal design: white rail, orange active pill). */
 export default function MemberSidebar() {
   const pathname = usePathname();
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col gap-y-2 py-7 text-white lg:flex" style={{ backgroundColor: TEAL }}>
-      <div className="mb-6 px-6">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col border-r border-slate-100 bg-white py-7 shadow-sm lg:flex" style={{ fontFamily: "var(--font-headline)" }}>
+      <div className="mb-7 px-6">
         <Link href="/" className="flex items-center gap-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff8f00] text-lg font-extrabold">B</span>
-          <span>
-            <span className="block text-lg font-extrabold leading-none" style={{ fontFamily: "var(--font-headline)" }}>
-              Bonded
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0e666a] text-[#c8fcff]">
+            <span className="material-symbols-outlined" aria-hidden>
+              pets
             </span>
-            <span className="mt-1 block text-[11px] font-semibold text-white/70">Member portal</span>
+          </span>
+          <span>
+            <span className="block text-lg font-black leading-none text-[#0e666a]">Member Portal</span>
+            <span className="mt-1 block text-[10px] font-bold uppercase tracking-widest text-slate-400">Bonded Academy</span>
           </span>
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 px-3">
-        {items.map((it) => {
-          const active = pathname === it.href;
-          if (it.locked) {
-            return (
-              <div key={it.href} className="flex cursor-not-allowed items-center justify-between rounded-[12px] px-4 py-2.5 text-sm font-semibold text-white/40">
-                <span className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[20px]">{it.icon}</span> {it.label}
+      <nav className="flex-1 space-y-1 overflow-y-auto px-3">
+        {items.map((it) =>
+          it.locked ? (
+            <div key={it.href} className={`${ITEM} cursor-not-allowed justify-between text-slate-400`} title="Coming soon">
+              <span className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-[20px]" aria-hidden>
+                  {it.icon}
                 </span>
-                <span className="material-symbols-outlined text-sm">lock</span>
-              </div>
-            );
-          }
-          return (
+                {it.label}
+              </span>
+              <span className="material-symbols-outlined text-sm" aria-hidden>
+                lock
+              </span>
+            </div>
+          ) : (
             <Link
               key={it.href}
               href={it.href}
-              aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-3 rounded-[12px] px-4 py-2.5 text-sm font-semibold transition-colors ${
-                active ? "bg-white" : "text-white/80 hover:bg-white/10 hover:text-white"
-              }`}
-              style={active ? { color: TEAL } : undefined}
+              aria-current={isActive(pathname, it.href) ? "page" : undefined}
+              className={`${ITEM} ${isActive(pathname, it.href) ? "translate-x-1 bg-orange-100/70 text-orange-900" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"}`}
             >
-              <span className="material-symbols-outlined text-[20px]">{it.icon}</span> {it.label}
+              <span className="material-symbols-outlined text-[20px]" aria-hidden>
+                {it.icon}
+              </span>
+              {it.label}
             </Link>
-          );
-        })}
+          )
+        )}
       </nav>
 
-      <div className="mt-auto space-y-1 border-t border-white/15 px-3 pt-4">
-        <Link href="/profile" className="flex items-center gap-3 rounded-[12px] px-4 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white">
-          <span className="material-symbols-outlined text-[20px]">settings</span> Profile & settings
-        </Link>
-        <form action="/auth/logout" method="post">
-          <button type="submit" className="flex w-full items-center gap-3 rounded-[12px] px-4 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white">
-            <span className="material-symbols-outlined text-[20px]">logout</span> Sign out
-          </button>
-        </form>
+      <div className="mt-auto space-y-4 px-4">
+        <AskCoachFab variant="sidebar" />
+        <div className="space-y-1 border-t border-slate-100 pt-3">
+          <Link href="/profile" className={`${ITEM} ${pathname === "/profile" ? "bg-orange-100/70 text-orange-900" : "text-slate-500 hover:bg-slate-50"}`}>
+            <span className="material-symbols-outlined text-[20px]" aria-hidden>
+              settings
+            </span>
+            Settings
+          </Link>
+          <form action="/auth/logout" method="post">
+            <button type="submit" className={`${ITEM} w-full text-slate-500 hover:bg-slate-50`}>
+              <span className="material-symbols-outlined text-[20px]" aria-hidden>
+                logout
+              </span>
+              Sign out
+            </button>
+          </form>
+        </div>
       </div>
     </aside>
   );

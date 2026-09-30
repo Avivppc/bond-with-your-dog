@@ -9,6 +9,8 @@ import { courseProgress } from "@/lib/course-progress";
 import MemberShell from "@/components/member/MemberShell";
 import { ProgressBar } from "@/components/learn/CourseSidebar";
 import AskCoachFab from "@/components/member/AskCoachFab";
+import StudentVideoCard from "@/components/member/StudentVideoCard";
+import { LocalTime } from "@/components/ui/LocalTime";
 
 export const dynamic = "force-dynamic";
 
@@ -20,6 +22,25 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/dashboard");
   await claimPendingAccess(supabase);
+
+  const monthAgo = new Date(new Date().getTime() - 30 * 86_400_000).toISOString();
+  const nowIso = new Date().toISOString();
+  const [leaderboardRes, spotlightRes, meetupsRes] = await Promise.all([
+    // Community extras: empty for students outside the community (RLS / RPC checks).
+    supabase.rpc("community_leaderboard", { p_since: monthAgo, p_limit: 3 }),
+    supabase
+      .from("student_videos")
+      .select("id, title, description, mux_playback_id, status, created_at, duration_seconds")
+      .eq("is_public", true)
+      .eq("approved", true)
+      .eq("status", "ready")
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase.from("community_meetups").select("id, title, starts_at").eq("canceled", false).gte("starts_at", nowIso).order("starts_at").limit(2),
+  ]);
+  const leaders = (leaderboardRes.data ?? []) as { user_id: string; full_name: string | null; dog_name: string | null; points: number }[];
+  const spotlight = spotlightRes.data?.[0] ?? null;
+  const meetups = meetupsRes.data ?? [];
 
   const [profileRes, enrollmentsRes, progressRes, achievementsRes, defsRes, certsRes] = await Promise.all([
     supabase.from("profiles").select("full_name, dog_name, dog_breed, avatar_url").eq("id", user.id).single(),
@@ -203,6 +224,11 @@ export default async function DashboardPage() {
                       <span className="material-symbols-outlined">arrow_forward</span>
                     </Link>
                   </div>
+                  {currentCourse.image && (
+                    <div className="relative hidden min-h-[11rem] w-48 shrink-0 self-stretch overflow-hidden rounded-[1.5rem] md:block">
+                      <Image src={currentCourse.image} alt={currentCourse.image_alt || ""} fill className="object-cover transition-transform duration-500 group-hover:scale-105" unoptimized />
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
@@ -297,6 +323,44 @@ export default async function DashboardPage() {
                 </div>
               </section>
             )}
+
+            {/* Member spotlight */}
+            <section>
+              <div className="mb-6 flex items-center justify-between px-2">
+                <h3 className="text-2xl font-extrabold tracking-tight" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
+                  Member spotlight
+                </h3>
+                <Link href="/spotlight" className="flex items-center gap-1 text-sm font-bold hover:underline" style={{ color: "#0e666a" }}>
+                  View all <span className="material-symbols-outlined text-sm">open_in_new</span>
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {spotlight ? (
+                  <StudentVideoCard video={spotlight} />
+                ) : (
+                  <div className="flex flex-col items-center justify-center rounded-[2rem] bg-white/60 p-8 text-center text-sm" style={{ color: "#515d64" }}>
+                    <span className="material-symbols-outlined mb-2 text-4xl" style={{ color: "#a2afb6" }}>
+                      video_library
+                    </span>
+                    The first spotlight routine could be yours.
+                  </div>
+                )}
+                <div className="flex flex-col items-center justify-center rounded-[2rem] border-2 border-dashed bg-white/60 p-8 text-center" style={{ borderColor: "#cde0ea" }}>
+                  <span className="mb-3 flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: "rgba(255,143,0,0.15)", color: "#8b4b00" }}>
+                    <span className="material-symbols-outlined">upload</span>
+                  </span>
+                  <h4 className="font-bold" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
+                    Upload your routine
+                  </h4>
+                  <p className="mt-1 max-w-xs text-xs" style={{ color: "#515d64" }}>
+                    Share your progress and get feedback from Roni&apos;s team — the best ones get featured.
+                  </p>
+                  <Link href="/profile#videos" className="mt-4 rounded-full px-5 py-2 text-xs font-bold text-white" style={{ backgroundColor: "#0e666a" }}>
+                    Start upload
+                  </Link>
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* Right: profile mini + achievements + news */}
@@ -382,6 +446,34 @@ export default async function DashboardPage() {
                   );
                 })}
               </div>
+              {leaders.length > 0 && (
+                <div className="mt-6 border-t pt-4" style={{ borderColor: "#e6eef3" }}>
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: "#515d64" }}>
+                      Community leaderboard
+                    </p>
+                    <Link href="/community/leaderboard" className="text-[10px] font-bold uppercase hover:underline" style={{ color: "#0e666a" }}>
+                      See all
+                    </Link>
+                  </div>
+                  <ol className="space-y-2">
+                    {leaders.map((l, i) => (
+                      <li key={l.user_id} className="flex items-center gap-3 text-sm">
+                        <span className="w-4 text-xs font-black" style={{ color: i === 0 ? "#ff8f00" : "#a2afb6" }}>
+                          {i + 1}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate font-semibold" style={{ color: "#243036" }}>
+                          {l.full_name || "Member"}
+                          {l.dog_name ? ` & ${l.dog_name}` : ""}
+                        </span>
+                        <span className="text-xs font-bold tabular-nums" style={{ color: "#515d64" }}>
+                          {Number(l.points).toLocaleString("en-US")} pts
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              )}
             </section>
 
             {/* Certificates */}
@@ -437,34 +529,39 @@ export default async function DashboardPage() {
                 Academy News
               </h3>
               <div className="space-y-4">
-                <div
-                  className="group p-4 bg-white/60 border-l-4 rounded-r-2xl hover:bg-white transition-colors"
+                {meetups.map((m) => (
+                  <Link
+                    key={m.id}
+                    href={`/community/meetups/${m.id}`}
+                    className="group block rounded-r-2xl border-l-4 bg-white/60 p-4 transition-colors hover:bg-white"
+                    style={{ borderColor: "#0e666a" }}
+                  >
+                    <span className="text-[10px] font-bold uppercase" style={{ color: "#0e666a" }}>
+                      Live event
+                    </span>
+                    <h5 className="text-sm font-bold" style={{ color: "#243036" }}>
+                      {m.title}
+                    </h5>
+                    <p className="mt-1 text-xs" style={{ color: "#515d64" }}>
+                      <LocalTime iso={m.starts_at} format="dateTime" zoneLabel />
+                    </p>
+                  </Link>
+                ))}
+                <Link
+                  href="/community"
+                  className="group block rounded-r-2xl border-l-4 bg-white/60 p-4 transition-colors hover:bg-white"
                   style={{ borderColor: "#8b4b00" }}
                 >
                   <span className="text-[10px] font-bold uppercase" style={{ color: "#8b4b00" }}>
-                    New Workshop
+                    Community
                   </span>
-                  <h5 className="font-bold text-sm" style={{ color: "#243036" }}>
-                    Syncopated Rhythm: Level 2
+                  <h5 className="text-sm font-bold" style={{ color: "#243036" }}>
+                    Announcements, challenges &amp; questions
                   </h5>
-                  <p className="text-xs mt-1" style={{ color: "#515d64" }}>
-                    Join Roni for a deep dive into beat-matching.
+                  <p className="mt-1 text-xs" style={{ color: "#515d64" }}>
+                    See what&apos;s new with Roni and the other teams.
                   </p>
-                </div>
-                <div
-                  className="group p-4 bg-white/60 border-l-4 rounded-r-2xl hover:bg-white transition-colors"
-                  style={{ borderColor: "#0e666a" }}
-                >
-                  <span className="text-[10px] font-bold uppercase" style={{ color: "#0e666a" }}>
-                    Live Event
-                  </span>
-                  <h5 className="font-bold text-sm" style={{ color: "#243036" }}>
-                    Upcoming Q&amp;A Live Session
-                  </h5>
-                  <p className="text-xs mt-1" style={{ color: "#515d64" }}>
-                    Friday at 6:00 PM CET. Bring your questions!
-                  </p>
-                </div>
+                </Link>
               </div>
             </section>
           </aside>

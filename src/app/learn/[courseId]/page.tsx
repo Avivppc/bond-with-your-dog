@@ -68,7 +68,7 @@ export default async function CourseHomePage({
 
   return (
     <LearnLayout data={data} variant="home">
-      <section className="relative overflow-hidden rounded-[20px] p-7 text-white shadow-sm sm:p-9" style={{ backgroundColor: LEARN.teal }}>
+      <section className="relative overflow-hidden rounded-[2rem] p-7 text-white shadow-sm sm:p-9" style={{ backgroundColor: LEARN.teal }}>
         <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
         <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{isMember ? "Member dashboard" : `${course.category} · ${course.level}`}</p>
         <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl" style={{ fontFamily: "var(--font-headline)" }}>
@@ -99,7 +99,7 @@ export default async function CourseHomePage({
       </section>
 
       {data.isLimited && data.paywallAfterModuleId && (
-        <section id="upgrade" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[16px] bg-white p-6 shadow-sm">
+        <section id="upgrade" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] bg-white p-6 shadow-sm">
           <div>
             <p className="text-xs font-bold" style={{ color: LEARN.orange }}>
               You have limited access
@@ -152,7 +152,7 @@ export default async function CourseHomePage({
             Your training
           </p>
           {lessons.length === 0 ? (
-            <div className="rounded-[16px] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
+            <div className="rounded-[1.5rem] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
               Lessons are being prepared. Check back soon.
             </div>
           ) : (
@@ -176,7 +176,7 @@ function moduleTitleOf(outline: CourseOutline<StudentLesson>, lessonId: string):
 function UpNext({ courseId, lesson, number, moduleTitle, enrolled }: { courseId: string; lesson: StudentLesson | null; number: number; moduleTitle: string | null; enrolled: boolean }) {
   if (!lesson) return null;
   return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] bg-white p-6 shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] bg-white p-6 shadow-sm">
       <div className="min-w-0">
         <p className="text-xs font-bold" style={{ color: LEARN.orange }}>
           {enrolled ? "Up next" : "Start here"}
@@ -211,7 +211,7 @@ function CourseMap({ courseId, data, numberOf }: { courseId: string; data: Stude
   );
   if (numberOf.size === 0) {
     return (
-      <div className="mt-6 rounded-[16px] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
+      <div className="mt-6 rounded-[1.5rem] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
         Lessons are being prepared. Check back soon.
       </div>
     );
@@ -219,7 +219,7 @@ function CourseMap({ courseId, data, numberOf }: { courseId: string; data: Stude
   return (
     <div className="mt-6 space-y-4">
       {outline.modules.map((m) => (
-        <section key={m.id} className="overflow-hidden rounded-[16px] bg-white shadow-sm">
+        <section key={m.id} className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
           <h2 className="border-b border-[#edf3f7] px-5 py-4 text-lg font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
             {m.title}
           </h2>
@@ -234,7 +234,7 @@ function CourseMap({ courseId, data, numberOf }: { courseId: string; data: Stude
           ))}
         </section>
       ))}
-      {outline.unassigned.length > 0 && <section className="overflow-hidden rounded-[16px] bg-white shadow-sm">{rows(outline.unassigned)}</section>}
+      {outline.unassigned.length > 0 && <section className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm">{rows(outline.unassigned)}</section>}
     </div>
   );
 }

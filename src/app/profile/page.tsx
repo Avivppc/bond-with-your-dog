@@ -241,7 +241,7 @@ export default async function ProfilePage({
         </div>
 
         {/* Personal video gallery */}
-        <section className="mb-12">
+        <section id="videos" className="mb-12 scroll-mt-8">
           <div className="flex items-center justify-between mb-8">
             <div>
               <h2

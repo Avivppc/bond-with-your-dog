@@ -5,60 +5,109 @@ import type { LessonState } from "@/lib/lesson-state";
 import { formatUnlockDate } from "@/lib/drip";
 import type { StudentLesson } from "@/lib/student-course-server";
 
-/** Student portal palette (Bonded's Kajabi theme — see docs/kajabi-research/sources/ui-reference.md). */
+/** Student portal palette (the original Bonded portal design). */
 export const LEARN = {
   teal: "#0e666a",
-  page: "#e6f3fb",
-  ink: "#253137",
-  muted: "#5b6b73",
+  page: "#edf8ff",
+  panel: "#dbebf4",
+  panelHead: "#d4e5ef",
+  ink: "#243036",
+  muted: "#515d64",
   orange: "#ff8f00",
+  brown: "#8b4b00",
 } as const;
 
-interface CourseSidebarProps {
-  courseId: string;
-  courseTitle: string;
-  outline: CourseOutline<StudentLesson>;
-  states: ReadonlyMap<string, LessonState>;
-  progress: CourseProgress<StudentLesson>;
-  currentLessonId?: string;
-  /** "Now learning" above the progress bar on lesson pages, the brand on the course home. */
-  variant: "home" | "lesson";
+export function ProgressBar({ percent, onDark = false }: { percent: number; onDark?: boolean }) {
+  return (
+    <div className={`h-2 w-full overflow-hidden rounded-full ${onDark ? "bg-white/20" : "bg-[#d4e5ef]"}`} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Course progress">
+      <div className={`h-full rounded-full ${onDark ? "bg-white" : "kinetic-gradient"}`} style={{ width: `${percent}%` }} />
+    </div>
+  );
+}
+
+export function ProgressRing({ percent, size = 48 }: { percent: number; size?: number }) {
+  const r = 18;
+  const c = 2 * Math.PI * r;
+  return (
+    <div className="relative shrink-0" style={{ width: size, height: size }} role="img" aria-label={`${percent}% complete`}>
+      <svg className="-rotate-90" width={size} height={size} viewBox="0 0 44 44" aria-hidden>
+        <circle cx="22" cy="22" r={r} stroke="#a2afb6" strokeOpacity="0.3" strokeWidth="4" fill="none" />
+        <circle cx="22" cy="22" r={r} stroke={LEARN.teal} strokeWidth="4" fill="none" strokeDasharray={c} strokeDashoffset={c - (percent / 100) * c} strokeLinecap="round" />
+      </svg>
+      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-bold" style={{ color: LEARN.teal }}>
+        {percent}%
+      </span>
+    </div>
+  );
 }
 
 const STATE_ICON: Record<LessonState["kind"], string> = {
-  open: "play_circle",
-  completed: "check_circle",
+  open: "play_arrow",
+  completed: "check",
   locked: "lock",
   upgrade: "lock",
   scheduled: "schedule",
 };
 
-function LessonLink({ courseId, lesson, state, current }: { courseId: string; lesson: StudentLesson; state: LessonState; current: boolean }) {
-  const icon = lesson.kind === "quiz" && state.kind === "open" ? "quiz" : STATE_ICON[state.kind];
+interface RowProps {
+  courseId: string;
+  lesson: StudentLesson;
+  number: number;
+  state: LessonState;
+  current: boolean;
+}
+
+function LessonRow({ courseId, lesson, number, state, current }: RowProps) {
+  const done = state.kind === "completed";
+  const closed = state.kind === "locked" || state.kind === "scheduled" || state.kind === "upgrade";
+  const icon = current ? "play_circle" : lesson.kind === "quiz" && state.kind === "open" ? "quiz" : STATE_ICON[state.kind];
+  const label = state.kind === "scheduled" ? `Unlocks ${formatUnlockDate(state.unlockAt)}` : state.kind === "upgrade" ? "Full course" : current ? "Current" : null;
+
   const body = (
     <>
-      <span
-        className="material-symbols-outlined shrink-0 text-[18px]"
-        style={state.kind === "completed" ? { fontVariationSettings: "'FILL' 1" } : undefined}
-        aria-hidden
-      >
-        {icon}
+      <span className="relative shrink-0">
+        <span
+          className="flex h-11 w-11 items-center justify-center rounded-[0.6rem]"
+          style={{ backgroundColor: current ? LEARN.orange : "#cde0ea", color: current ? "#462300" : closed ? "#8a979e" : LEARN.ink }}
+        >
+          <span className="material-symbols-outlined text-[22px]" aria-hidden>
+            {icon}
+          </span>
+        </span>
+        {done && !current && (
+          <span className="absolute -bottom-1 -right-1 flex rounded-full p-0.5 text-white ring-2 ring-[#dbebf4]" style={{ backgroundColor: LEARN.teal }} aria-hidden>
+            <span className="material-symbols-outlined text-[12px]" style={{ fontVariationSettings: "'FILL' 1" }}>
+              check
+            </span>
+          </span>
+        )}
       </span>
-      <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
-      {state.kind === "scheduled" && <span className="shrink-0 text-[10px] opacity-80">{formatUnlockDate(state.unlockAt)}</span>}
+      <span className="min-w-0 flex-1">
+        <span className="block text-[11px] font-bold uppercase tracking-wider" style={{ color: current ? LEARN.brown : "#6c7980" }}>
+          Lesson {String(number).padStart(2, "0")}
+          {label ? ` · ${label}` : ""}
+        </span>
+        <span
+          className={`block truncate font-bold ${done && !current ? "opacity-60" : ""}`}
+          style={{ fontFamily: "var(--font-headline)", color: current ? "#462300" : closed ? "#6c7980" : LEARN.ink }}
+        >
+          {lesson.title}
+        </span>
+      </span>
     </>
   );
-  const base = "flex items-center gap-2.5 rounded-[12px] px-3 py-2 text-[12.5px]";
+
+  const base = "flex items-center gap-3.5 border-l-4 px-4 py-3 transition-colors";
   if (state.kind === "upgrade") {
     return (
-      <Link href={`/learn/${courseId}#upgrade`} className={`${base} text-white/55 hover:bg-white/10`} title="Included in the full course">
+      <Link href={`/learn/${courseId}#upgrade`} className={`${base} border-transparent hover:bg-[#d4e5ef]`} title="Included in the full course">
         {body}
       </Link>
     );
   }
-  if (state.kind === "locked" || state.kind === "scheduled") {
+  if (closed) {
     return (
-      <span className={`${base} cursor-not-allowed text-white/45`} title={state.kind === "locked" ? "Get access to unlock" : "Unlocks soon"}>
+      <span className={`${base} cursor-not-allowed border-transparent`} title={state.kind === "locked" ? "Get access to unlock" : "Unlocks soon"}>
         {body}
       </span>
     );
@@ -67,98 +116,90 @@ function LessonLink({ courseId, lesson, state, current }: { courseId: string; le
     <Link
       href={`/learn/${courseId}/${lesson.id}`}
       aria-current={current ? "page" : undefined}
-      className={`${base} ${current ? "bg-white font-bold" : "text-white/75 hover:bg-white/10 hover:text-white"}`}
-      style={current ? { color: LEARN.teal } : undefined}
+      className={`${base} ${current ? "" : "border-transparent hover:bg-[#d4e5ef]"}`}
+      style={current ? { backgroundColor: "rgba(255,143,0,0.12)", borderColor: LEARN.brown } : undefined}
     >
       {body}
     </Link>
   );
 }
 
-/** The lesson list grouped by module — shared by the desktop sidebar and the mobile drawer. */
-export function CourseJourney({ courseId, outline, states, currentLessonId }: Pick<CourseSidebarProps, "courseId" | "outline" | "states" | "currentLessonId">) {
-  const renderLessons = (lessons: readonly StudentLesson[]) => (
-    <ul className="space-y-0.5">
-      {lessons.map((l) => (
-        <li key={l.id}>
-          <LessonLink courseId={courseId} lesson={l} state={states.get(l.id) ?? { kind: "locked" }} current={l.id === currentLessonId} />
-        </li>
-      ))}
-    </ul>
-  );
-  return (
-    <div className="space-y-5">
-      {outline.modules.map((m) => (
-        <section key={m.id}>
-          <h3 className="mb-1 px-3 text-[13px] font-bold text-white" style={{ fontFamily: "var(--font-headline)" }}>
-            {m.title}
-          </h3>
-          {renderLessons(m.lessons)}
-          {m.submodules.map((s) => (
-            <div key={s.id} className="mt-2">
-              <h4 className="mb-1 px-3 text-[12px] font-semibold text-white/85">{s.title}</h4>
-              {renderLessons(s.lessons)}
-            </div>
-          ))}
-        </section>
-      ))}
-      {outline.unassigned.length > 0 && renderLessons(outline.unassigned)}
-      {outline.modules.length === 0 && outline.unassigned.length === 0 && <p className="px-3 text-xs text-white/70">Lessons are being prepared.</p>}
-    </div>
-  );
+interface PanelProps {
+  courseId: string;
+  outline: CourseOutline<StudentLesson>;
+  lessons: readonly StudentLesson[];
+  states: ReadonlyMap<string, LessonState>;
+  progress: CourseProgress<StudentLesson>;
+  /** The lesson being watched (lesson page) or the next one to watch (course home). */
+  focusLessonId?: string;
+  currentLessonId?: string;
 }
 
-export function ProgressBar({ percent, onDark = false }: { percent: number; onDark?: boolean }) {
-  return (
-    <div className={`h-1.5 w-full overflow-hidden rounded-full ${onDark ? "bg-white/20" : "bg-[#d4e5ef]"}`} role="progressbar" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100} aria-label="Course progress">
-      <div className="h-full rounded-full" style={{ width: `${percent}%`, backgroundColor: LEARN.orange }} />
-    </div>
-  );
-}
+/** "Course progress" card beside the player: ring + every lesson, grouped into collapsible modules. */
+export function CourseProgressPanel({ courseId, outline, lessons, states, progress, focusLessonId, currentLessonId }: PanelProps) {
+  const numberOf = new Map(lessons.map((l, i) => [l.id, i + 1]));
+  const focus = currentLessonId ?? focusLessonId;
+  const rows = (list: readonly StudentLesson[]) =>
+    list.map((l) => (
+      <LessonRow key={l.id} courseId={courseId} lesson={l} number={numberOf.get(l.id) ?? 0} state={states.get(l.id) ?? { kind: "locked" }} current={l.id === currentLessonId} />
+    ));
+  const hasFocus = (m: CourseOutline<StudentLesson>["modules"][number]) =>
+    m.lessons.some((l) => l.id === focus) || m.submodules.some((s) => s.lessons.some((l) => l.id === focus));
+  const doneIn = (m: CourseOutline<StudentLesson>["modules"][number]) => {
+    const all = [...m.lessons, ...m.submodules.flatMap((s) => s.lessons)];
+    return { done: all.filter((l) => states.get(l.id)?.kind === "completed").length, total: all.length };
+  };
 
-export function CourseSidebar({ courseId, courseTitle, outline, states, progress, currentLessonId, variant }: CourseSidebarProps) {
   return (
-    <aside className="fixed inset-y-0 left-0 z-30 hidden w-72 flex-col overflow-y-auto text-white lg:flex" style={{ backgroundColor: LEARN.teal }}>
-      <div className="space-y-4 px-5 pb-5 pt-6">
-        {variant === "home" && (
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full text-lg font-extrabold text-white" style={{ backgroundColor: LEARN.orange }}>
-              B
-            </span>
-            <div className="min-w-0">
-              <p className="font-extrabold leading-tight" style={{ fontFamily: "var(--font-headline)" }}>
-                Bonded
-              </p>
-              <p className="truncate text-xs text-white/75">{courseTitle}</p>
-            </div>
-          </div>
-        )}
-        <Link href="/dashboard" className="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-white/80 hover:text-white">
-          <span className="material-symbols-outlined text-[16px]" aria-hidden>
-            chevron_left
-          </span>
-          All courses
-        </Link>
-        {variant === "lesson" && (
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">Now learning</p>
-            <Link href={`/learn/${courseId}`} className="mt-1 block text-xl font-extrabold leading-tight hover:underline" style={{ fontFamily: "var(--font-headline)" }}>
-              {courseTitle}
-            </Link>
-          </div>
-        )}
-        <div className="space-y-1.5">
-          <div className="flex justify-between text-[11px] text-white/80">
-            <span>Course progress</span>
-            <span className="font-bold text-white">{progress.percent}%</span>
-          </div>
-          <ProgressBar percent={progress.percent} onDark />
+    <div className="overflow-hidden rounded-[2rem] border border-[#a2afb6]/20" style={{ backgroundColor: LEARN.panel }}>
+      <div className="flex items-center justify-between gap-4 p-6" style={{ backgroundColor: LEARN.panelHead }}>
+        <div>
+          <h2 className="text-xl font-extrabold" style={{ fontFamily: "var(--font-headline)", color: LEARN.ink }}>
+            Course progress
+          </h2>
+          <p className="text-sm font-bold" style={{ color: LEARN.teal }}>
+            {progress.completed} of {progress.total} lessons complete
+          </p>
         </div>
+        <ProgressRing percent={progress.percent} />
       </div>
-      <div className="border-t border-white/15 px-2 pb-8 pt-4">
-        <p className="mb-3 px-3 text-[11px] font-bold uppercase tracking-wider text-white/70">Course journey</p>
-        <CourseJourney courseId={courseId} outline={outline} states={states} currentLessonId={currentLessonId} />
+      <div className="max-h-[65vh] overflow-y-auto pb-2">
+        {outline.modules.map((m, i) => {
+          const count = doneIn(m);
+          return (
+            <details key={m.id} open={hasFocus(m) || (!focus && i === 0)} className="group border-t border-[#a2afb6]/20 first:border-t-0">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-3 hover:bg-[#d4e5ef]">
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-extrabold" style={{ fontFamily: "var(--font-headline)", color: LEARN.ink }}>
+                    {m.title}
+                  </span>
+                  <span className="text-[11px] font-semibold" style={{ color: LEARN.muted }}>
+                    {count.done}/{count.total} done
+                  </span>
+                </span>
+                <span className="material-symbols-outlined text-[20px] transition-transform group-open:rotate-180" style={{ color: LEARN.muted }} aria-hidden>
+                  expand_more
+                </span>
+              </summary>
+              {rows(m.lessons)}
+              {m.submodules.map((s) => (
+                <div key={s.id}>
+                  <p className="px-5 pb-1 pt-3 text-[11px] font-bold uppercase tracking-wider" style={{ color: LEARN.teal }}>
+                    {s.title}
+                  </p>
+                  {rows(s.lessons)}
+                </div>
+              ))}
+            </details>
+          );
+        })}
+        {outline.unassigned.length > 0 && <div className="border-t border-[#a2afb6]/20">{rows(outline.unassigned)}</div>}
+        {lessons.length === 0 && (
+          <p className="px-6 py-8 text-center text-sm" style={{ color: LEARN.muted }}>
+            Lessons are being prepared.
+          </p>
+        )}
       </div>
-    </aside>
+    </div>
   );
 }

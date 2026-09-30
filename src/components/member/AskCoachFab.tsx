@@ -2,7 +2,16 @@
 
 import { useState } from "react";
 
-export default function AskCoachFab() {
+/** Where the "ask the team" button sits: floating (dashboard), the sidebar pill, or the lesson's Expert vault card. */
+type AskVariant = "fab" | "sidebar" | "card";
+
+const TRIGGER_CLASS: Record<AskVariant, string> = {
+  fab: "fixed bottom-8 right-8 hidden lg:flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all z-[60] bg-[#0e666a] text-[#c8fcff]",
+  sidebar: "flex w-full items-center justify-center gap-2 rounded-full bg-[#8b4b00] px-4 py-3 text-sm font-bold text-white shadow-md hover:brightness-110",
+  card: "block w-full rounded-full bg-[#fdd400] py-3 text-center text-sm font-bold text-[#594a00] transition-all hover:scale-[1.02] active:scale-95",
+};
+
+export default function AskCoachFab({ variant = "fab" }: { variant?: AskVariant }) {
   const [open, setOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [done, setDone] = useState(false);
@@ -36,16 +45,27 @@ export default function AskCoachFab() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="fixed bottom-8 right-8 hidden lg:flex items-center gap-3 px-6 py-4 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all z-[60]"
-        style={{ backgroundColor: "#0e666a", color: "#c8fcff" }}
-      >
-        <div className="relative">
-          <span className="material-symbols-outlined text-2xl">chat_bubble</span>
-          <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-[#0e666a]" style={{ backgroundColor: "#8b4b00" }} />
-        </div>
-        <span className="font-bold">Ask the team</span>
+      <button type="button" onClick={() => setOpen(true)} className={TRIGGER_CLASS[variant]} style={{ fontFamily: "var(--font-headline)" }}>
+        {variant === "fab" && (
+          <>
+            <span className="relative">
+              <span className="material-symbols-outlined text-2xl" aria-hidden>
+                chat_bubble
+              </span>
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-[#0e666a] bg-[#ff8f00]" aria-hidden />
+            </span>
+            <span className="font-bold">Ask Roni&apos;s team</span>
+          </>
+        )}
+        {variant === "sidebar" && (
+          <>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>
+              help
+            </span>
+            Ask-a-Question
+          </>
+        )}
+        {variant === "card" && "Ask a question"}
       </button>
 
       {open && (
