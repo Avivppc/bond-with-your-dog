@@ -5,9 +5,10 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { MeetupSchema, meetupReturnUrl, parseMeetupReturn } from "./meetup-schema";
 
 /** Admin → Community: settings, channels, challenges (with steps) and meetups. */
-type Tab = "settings" | "channels" | "challenges" | "meetups";
+type Tab = "settings" | "channels" | "challenges";
 
 function back(tab: Tab, params: Record<string, string>): never {
   redirect(`/admin/community?${new URLSearchParams({ tab, ...params }).toString()}`);
@@ -49,6 +50,7 @@ const Settings = z.object({
   description: optionalText(500),
   cover_image_url: optionalUrl,
   guidelines: optionalText(4000),
+  whatsapp_url: optionalUrl,
   open_to_students: checkbox,
   require_approval: checkbox,
 });
@@ -153,34 +155,44 @@ export async function deleteStep(formData: FormData): Promise<void> {
   done("challenges");
 }
 
-// ── Meetups ─────────────────────────────────────────────────
-const Meetup = z.object({
-  id: uuid.optional(),
-  title: z.string().trim().min(1, "Give the meetup a title").max(120),
-  description: optionalText(4000),
-  starts_at: isoDate,
-  duration_minutes: z.coerce.number().int().min(5).max(720),
-  location: optionalText(200),
-  meeting_url: optionalUrl,
-  cover_image_url: optionalUrl,
-  published: checkbox,
-  canceled: checkbox,
-});
-
+// ── Meetups & Live Q&A sessions ─────────────────────────────
 export async function saveMeetup(formData: FormData): Promise<void> {
   await requireStaff("content");
-  const parsed = Meetup.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) back("meetups", { error: parsed.error.issues[0].message });
+  const returnTo = parseMeetupReturn(formData.get("return_to"));
+  const parsed = MeetupSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    const editing = uuid.safeParse(formData.get("id"));
+    redirect(meetupReturnUrl(returnTo, { error: parsed.error.issues[0].message }, editing.success ? editing.data : undefined));
+  }
   const { id, ...fields } = parsed.data;
   const sb = createServiceClient();
-  await write("meetups", "meetup", id ? sb.from("community_meetups").update(fields).eq("id", id) : sb.from("community_meetups").insert(fields));
-  done("meetups");
+  const { data, error } = id
+    ? await sb.from("community_meetups").update(fields).eq("id", id).select("id").maybeSingle()
+    : await sb.from("community_meetups").insert(fields).select("id").single();
+  if (error || !data) {
+    console.error("[admin/community] meetup save failed", error?.message ?? "not found");
+    redirect(meetupReturnUrl(returnTo, { error: `Could not save the ${fields.kind === "live_qa" ? "session" : "meetup"}.` }, id));
+  }
+  revalidateMeetups();
+  redirect(meetupReturnUrl(returnTo, { saved: "1" }, data.id as string));
 }
 
 export async function deleteMeetup(formData: FormData): Promise<void> {
   await requireStaff("content");
+  const returnTo = parseMeetupReturn(formData.get("return_to"));
   const id = uuid.safeParse(formData.get("id"));
-  if (!id.success) back("meetups", { error: "Invalid meetup." });
-  await write("meetups", "meetup", createServiceClient().from("community_meetups").delete().eq("id", id.data));
-  done("meetups");
+  if (!id.success) redirect(meetupReturnUrl(returnTo, { error: "Invalid meetup." }));
+  const { error } = await createServiceClient().from("community_meetups").delete().eq("id", id.data);
+  if (error) {
+    console.error("[admin/community] meetup delete failed", error.message);
+    redirect(meetupReturnUrl(returnTo, { error: "Could not delete it." }, id.data));
+  }
+  revalidateMeetups();
+  redirect(meetupReturnUrl(returnTo, { saved: "1" }));
+}
+
+function revalidateMeetups(): void {
+  revalidatePath("/admin/community");
+  revalidatePath("/admin/coaching/live-qa");
+  revalidatePath("/community", "layout");
 }

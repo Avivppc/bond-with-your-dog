@@ -8,6 +8,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { LESSON_FILES_BUCKET } from "@/lib/lesson-files";
 import { buildAnswerKey } from "@/lib/quiz/answer-key";
 import { sanitizeLessonHtml } from "@/lib/sanitize";
+import { parseLessonContent } from "@/lib/content/lesson-content";
+import { MAX_PRACTICE_MINUTES, MIN_PRACTICE_MINUTES } from "@/lib/content/limits";
 import { MAX_ANSWER_ROWS } from "./[lid]/QuestionForm";
 
 const checkbox = z.preprocess((v) => v === "on" || v === true, z.boolean());
@@ -33,6 +35,16 @@ const LessonSchema = z.object({
   published: checkbox,
   module_id: z.preprocess((v) => (v === "" ? undefined : v), z.string().uuid().optional()),
   body_html: z.string().max(MAX_BODY_CHARS, "The lesson text is too long.").optional(),
+  practice_minutes: z.preprocess(
+    (v) => (v === "" || v == null ? null : Number(v)),
+    z
+      .number({ message: "Practice time must be a number of minutes." })
+      .int("Practice time must be whole minutes.")
+      .min(MIN_PRACTICE_MINUTES, `Practice time: ${MIN_PRACTICE_MINUTES}–${MAX_PRACTICE_MINUTES} minutes.`)
+      .max(MAX_PRACTICE_MINUTES, `Practice time: ${MIN_PRACTICE_MINUTES}–${MAX_PRACTICE_MINUTES} minutes.`)
+      .nullable()
+      .optional()
+  ),
 });
 
 type LessonInput = z.infer<typeof LessonSchema>;
@@ -73,6 +85,8 @@ export async function updateLesson(formData: FormData) {
   }
   const { body_html: bodyHtml, ...fields } = parsed.data;
   const details = omitModule(fields);
+  const content = parseLessonContent(formData);
+  if (!content.ok) redirect(lessonUrl(details.course_id, id, { error: content.error }));
   const placement = await placementFor(id, parsed.data);
   if (placement === "invalid") redirect(lessonUrl(details.course_id, id, { error: "Choose a module from this course." }));
 
@@ -81,6 +95,7 @@ export async function updateLesson(formData: FormData) {
     .update({
       ...details,
       ...(placement ?? {}),
+      ...(content.value ?? {}),
       ...(bodyHtml !== undefined ? { body_html: sanitizeLessonHtml(bodyHtml) || null } : {}),
     })
     .eq("id", id)

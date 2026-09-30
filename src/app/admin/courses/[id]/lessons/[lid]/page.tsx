@@ -10,6 +10,9 @@ import { QuestionForm, type QuestionDefaults } from "./QuestionForm";
 import { VideoPanel } from "./VideoPanel";
 import { BodyEditor } from "./BodyEditor";
 import { FilesPanel } from "./FilesPanel";
+import { PracticeCard, TakeawaysCuesCard } from "./PracticeCards";
+import { readTextList } from "@/lib/content/lists";
+import { readPracticeSteps } from "@/lib/content/practice-steps";
 import type { LessonVideoSummary } from "./content-actions";
 import { updateLesson, deleteLesson, deleteQuestion } from "../actions";
 
@@ -91,6 +94,8 @@ export default async function EditLessonPage({
             <QuestionsCard courseId={courseId} lessonId={lid} passThreshold={lesson.pass_threshold} questions={questions} />
           )}
           <BodyEditor formId={LESSON_FORM_ID} initialHtml={lesson.body_html ?? ""} />
+          <TakeawaysCuesCard formId={LESSON_FORM_ID} takeaways={readTextList(lesson.key_takeaways)} cues={readTextList(lesson.cues)} />
+          <PracticeCard formId={LESSON_FORM_ID} minutes={lesson.practice_minutes ?? null} steps={readPracticeSteps(lesson.practice_steps)} />
           <FilesPanel courseId={courseId} lessonId={lid} files={filesRes.data ?? []} />
         </div>
 

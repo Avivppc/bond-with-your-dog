@@ -3,7 +3,8 @@ import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, INPUT, LABEL, Notice, PageHeader, StatusPill, Tabs, type TabItem } from "@/app/admin/_components/ui";
 import { saveCommunitySettings } from "./actions";
-import { ChallengeForm, ChannelForm, MeetupForm, StepForm, type ChallengeRecord, type ChannelRecord, type MeetupRecord, type StepRecord } from "./forms";
+import { ChallengeForm, ChannelForm, StepForm, type ChallengeRecord, type ChannelRecord, type StepRecord } from "./forms";
+import { MeetupForm, type MeetupRecord } from "./MeetupForm";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +76,18 @@ export default async function AdminCommunityPage({ searchParams }: { searchParam
             <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className={LABEL}>Description</span>
               <textarea name="description" defaultValue={settings?.description ?? ""} rows={2} maxLength={500} className={INPUT} />
+            </label>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={LABEL}>WhatsApp group link</span>
+              <input
+                name="whatsapp_url"
+                type="url"
+                defaultValue={settings?.whatsapp_url ?? ""}
+                maxLength={500}
+                placeholder="https://chat.whatsapp.com/…"
+                className={INPUT}
+              />
+              <span className="text-xs text-[#6c6a69]">The invite link members open from the community hub (https only). Leave blank if there&apos;s no group.</span>
             </label>
             <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className={LABEL}>Community guidelines</span>
@@ -218,6 +231,7 @@ async function MeetupsTab() {
                   <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-5 py-3">
                     <span className="font-medium">{m.title}</span>
                     <span className="flex items-center gap-2 text-xs text-[#6c6a69]">
+                      {m.kind === "live_qa" && <StatusPill tone="info">Live Q&amp;A</StatusPill>}
                       {when(m.starts_at)} · {rsvps.filter((r) => r.meetup_id === m.id).length} going
                       {m.canceled ? <StatusPill tone="danger">Canceled</StatusPill> : <StatusPill tone={m.published ? "published" : "draft"}>{m.published ? "Published" : "Draft"}</StatusPill>}
                     </span>
@@ -231,7 +245,7 @@ async function MeetupsTab() {
           </ul>
         )}
       </Card>
-      <Card title="New meetup">
+      <Card title="New meetup" description="Live Q&A sessions can also be managed under Coaching → Live Q&A.">
         <MeetupForm />
       </Card>
     </div>
