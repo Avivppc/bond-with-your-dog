@@ -1,10 +1,10 @@
 /** Member notification preferences (profiles.notif_prefs). Pure; unknown keys are preserved. */
 
 export const NOTIF_PREFS = [
-  { key: "practice_reminders", label: "Practice reminders", hint: "On your practice days, at 9 am", fallback: true },
+  { key: "practice_reminders", label: "Practice reminders", hint: "On your practice days", fallback: true },
   { key: "feedback", label: "Feedback from Roni", hint: "When Roni replies to a video", fallback: true },
-  { key: "new_lesson", label: "New lesson opens", hint: "Every 3 days while a chapter is running", fallback: true },
-  { key: "live_qa", label: "Live Q&A reminders", hint: "A week before and an hour before", fallback: false },
+  { key: "new_lesson", label: "New lesson opens", hint: "When a new lesson opens in your course", fallback: true },
+  { key: "live_qa", label: "Live Q&A reminders", hint: "Before each Live Q&A session", fallback: false },
 ] as const;
 
 export type NotifPrefKey = (typeof NOTIF_PREFS)[number]["key"];
