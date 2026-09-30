@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { LESSON_FILES_BUCKET } from "@/lib/lesson-files";
+import { buildAnswerKey } from "@/lib/quiz/answer-key";
+import { MAX_ANSWER_ROWS } from "./[lid]/QuestionForm";
 
 const checkbox = z.preprocess((v) => v === "on" || v === true, z.boolean());
 const optionalInt = z.preprocess(
@@ -21,7 +23,8 @@ const LessonSchema = z.object({
   kind: z.enum(["video", "quiz"]),
   duration_seconds: optionalInt,
   available_after_days: optionalInt,
-  pass_threshold: z.coerce.number().int().min(0).max(100).default(70),
+  // Blank means "use the default", not 0% (which would pass every attempt).
+  pass_threshold: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().int().min(0).max(100).default(70)),
   free_preview: checkbox,
   published: checkbox,
 });
@@ -76,55 +79,54 @@ export async function deleteLesson(formData: FormData) {
 // ── Quiz questions ─────────────────────────────────────────
 const QuestionSchema = z.object({
   lesson_id: z.string().uuid(),
+  course_id: z.string().min(1),
   position: z.coerce.number().int().min(1),
-  prompt: z.string().min(2),
+  prompt: z.string().trim().min(2).max(1000),
   kind: z.enum(["single", "multi", "tf"]),
-  // options + correct submitted as JSON strings
-  options_json: z.string(),
-  correct_json: z.string(),
-  explanation: z.string().optional(),
+  explanation: z.string().max(2000).optional(),
+  tf_answer: z.enum(["true", "false", ""]).optional(),
 });
 
 export async function upsertQuestion(formData: FormData) {
   await requireAdmin();
   const id = formData.get("id");
+  const back = (params: string): never =>
+    redirect(`/admin/courses/${formData.get("course_id")}/lessons/${formData.get("lesson_id")}?${params}`);
+
   const parsed = QuestionSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    redirect(
-      `/admin/courses/${formData.get("course_id")}/lessons/${formData.get("lesson_id")}?error=` +
-        encodeURIComponent(parsed.error.issues[0].message)
-    );
-  }
-  let options: unknown;
-  let correct: unknown;
-  try {
-    options = JSON.parse(parsed.data.options_json);
-    correct = JSON.parse(parsed.data.correct_json);
-  } catch {
-    redirect(
-      `/admin/courses/${formData.get("course_id")}/lessons/${formData.get("lesson_id")}?error=` +
-        encodeURIComponent("Options/correct must be valid JSON")
-    );
-  }
+  if (!parsed.success) return back("error=" + encodeURIComponent(parsed.error.issues[0].message));
+
+  const key = buildAnswerKey({
+    kind: parsed.data.kind,
+    options: Array.from({ length: MAX_ANSWER_ROWS }, (_, i) => String(formData.get(`option_${i}`) ?? "")),
+    correct: formData.getAll("correct").map(Number).filter(Number.isInteger),
+    tf: parsed.data.tf_answer === "true" ? true : parsed.data.tf_answer === "false" ? false : null,
+  });
+  if (!key.ok) return back("error=" + encodeURIComponent(key.error));
+
   const row = {
     lesson_id: parsed.data.lesson_id,
     position: parsed.data.position,
     prompt: parsed.data.prompt,
     kind: parsed.data.kind,
-    options,
-    correct,
+    options: key.options,
+    correct: key.correct,
     explanation: parsed.data.explanation || null,
   };
   const sb = createServiceClient();
-  if (typeof id === "string" && id) {
-    await sb.from("quiz_questions").update(row).eq("id", id);
-  } else {
-    await sb.from("quiz_questions").insert(row);
+  const { error } =
+    typeof id === "string" && id
+      ? await sb.from("quiz_questions").update(row).eq("id", id).eq("lesson_id", row.lesson_id)
+      : await sb.from("quiz_questions").insert(row);
+  if (error) {
+    console.error("upsertQuestion failed", { lessonId: row.lesson_id, error: error.message });
+    back(
+      "error=" +
+        encodeURIComponent(error.code === "23505" ? "Another question already uses that order number." : "Could not save the question.")
+    );
   }
-  revalidatePath(`/admin/courses/${formData.get("course_id")}/lessons/${parsed.data.lesson_id}`);
-  redirect(
-    `/admin/courses/${formData.get("course_id")}/lessons/${parsed.data.lesson_id}?saved=1`
-  );
+  revalidatePath(`/admin/courses/${parsed.data.course_id}/lessons/${parsed.data.lesson_id}`);
+  back("saved=1");
 }
 
 export async function deleteQuestion(formData: FormData) {

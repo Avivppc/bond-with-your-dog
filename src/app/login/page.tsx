@@ -80,7 +80,7 @@ export default async function LoginPage({
 
           <p className="text-sm text-center mt-6" style={{ color: "#515d64" }}>
             New here?{" "}
-            <Link href="/signup" className="font-bold" style={{ color: "#8b4b00" }}>
+            <Link href={next ? `/signup?next=${encodeURIComponent(next)}` : "/signup"} className="font-bold" style={{ color: "#8b4b00" }}>
               Create an account
             </Link>
           </p>

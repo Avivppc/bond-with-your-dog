@@ -35,6 +35,37 @@ describe("parseOutlineImport", () => {
     ]);
   });
 
+  it("fills a blank Module (and its Submodule) down from the row above, like a grouped spreadsheet", () => {
+    const text = [
+      "Module\tSubmodule\tLesson",
+      "The Bond\tTrust\tOne",
+      "\t\tTwo",
+      "\tPlay\tThree",
+      "Walks\t\tFour",
+    ].join("\n");
+    const result = parseOutlineImport(text);
+    expect(result.errors).toEqual([]);
+    expect(result.rows.map((r) => [r.module, r.submodule, r.lesson])).toEqual([
+      ["The Bond", "Trust", "One"],
+      ["The Bond", "Trust", "Two"],
+      ["The Bond", "Play", "Three"],
+      ["Walks", null, "Four"],
+    ]);
+  });
+
+  it("keeps quoted multi-line cells together and reports the row's first line", () => {
+    const tsv = 'Module\tLesson\tDescription\nM1\tIntro\t"Line one\nLine two"\nM1\tNext\t';
+    const result = parseOutlineImport(tsv);
+    expect(result.errors).toEqual([]);
+    expect(result.rows.map((r) => [r.line, r.lesson, r.description])).toEqual([
+      [2, "Intro", "Line one\nLine two"],
+      [4, "Next", null],
+    ]);
+
+    const csv = 'Module,Lesson,Description\nM1,"Sit,\nStay",x';
+    expect(parseOutlineImport(csv).rows[0]).toMatchObject({ lesson: "Sit,\nStay", description: "x" });
+  });
+
   it("requires Module and Lesson columns", () => {
     expect(parseOutlineImport("Title\tVideo\nA\tB").errors[0].message).toMatch(/Module.*Lesson/);
     expect(parseOutlineImport("").errors[0].message).toMatch(/empty/i);

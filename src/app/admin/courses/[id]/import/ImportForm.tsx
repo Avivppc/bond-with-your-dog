@@ -31,7 +31,16 @@ export function ImportForm({ courseId }: { courseId: string }) {
           Imported {result.data.lessonsCreated} lessons and {result.data.modulesCreated} new modules — all as drafts.
         </p>
         {result.data.skipped.length > 0 && (
-          <p className="text-sm text-amber-800">{result.data.skipped.length} row(s) were skipped (see the list below the preview).</p>
+          <div className="text-sm text-amber-800">
+            <p>{result.data.skipped.length} row(s) were skipped:</p>
+            <ul className="list-disc ps-5 mt-1 space-y-0.5">
+              {result.data.skipped.map((s) => (
+                <li key={`${s.line}-${s.message}`}>
+                  Row {s.line}: {s.message}
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
         <Link href={`/admin/courses/${courseId}`} className="inline-block bg-orange-700 text-white px-5 py-2 rounded-full font-bold text-sm">
           Review the outline →

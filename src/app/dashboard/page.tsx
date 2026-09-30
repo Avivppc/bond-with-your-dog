@@ -3,6 +3,8 @@ import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { claimPendingAccess } from "@/lib/access";
+import { isEnrollmentActive } from "@/lib/enrollment";
+import { loadLessonOrder } from "@/lib/course-outline-server";
 import MemberShell from "@/components/member/MemberShell";
 import AskCoachFab from "@/components/member/AskCoachFab";
 
@@ -21,7 +23,7 @@ export default async function DashboardPage() {
     supabase.from("profiles").select("full_name, dog_name, dog_breed, avatar_url").eq("id", user.id).single(),
     supabase
       .from("enrollments")
-      .select("course_id, enrolled_at, courses(*)")
+      .select("course_id, enrolled_at, expires_at, courses(*)")
       .order("enrolled_at", { ascending: false }),
     supabase.from("lesson_progress").select("lesson_id, completed_at, lessons(course_id)").eq("user_id", user.id),
     supabase.from("achievements").select("code, earned_at").eq("user_id", user.id),
@@ -34,7 +36,7 @@ export default async function DashboardPage() {
   ]);
 
   const profile = profileRes.data;
-  const enrollments = enrollmentsRes.data ?? [];
+  const enrollments = (enrollmentsRes.data ?? []).filter((e) => isEnrollmentActive(e));
   const progress = progressRes.data ?? [];
   const earned = new Set((achievementsRes.data ?? []).map((a) => a.code));
   const defs = defsRes.data ?? [];
@@ -64,11 +66,7 @@ export default async function DashboardPage() {
       image: string | null;
       image_alt: string | null;
     };
-    const { data: lessons } = await supabase
-      .from("lessons")
-      .select("id, position, title")
-      .eq("course_id", c.id)
-      .order("position", { ascending: true });
+    const lessons = await loadLessonOrder(supabase, c.id);
     const completedSet = new Set(
       progress.filter((p) => p.completed_at).map((p) => p.lesson_id)
     );

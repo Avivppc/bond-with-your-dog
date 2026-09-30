@@ -6,15 +6,20 @@ import { updateCourse, deleteCourse } from "@/app/admin/actions";
 import { buildOutline } from "@/lib/course-outline";
 import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 import { CourseImageUpload } from "./CourseImageUpload";
+import { requireStaff } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function EditCoursePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
+  await requireStaff("content");
   const { id } = await params;
+  const { saved, error } = await searchParams;
   const sb = createServiceClient();
   const { data: course } = await sb.from("courses").select("*").eq("id", id).single();
   if (!course) notFound();
@@ -45,11 +50,22 @@ export default async function EditCoursePage({
         <p className="text-sm text-slate-500 mt-1">/{course.id}</p>
       </header>
 
+      {saved && (
+        <p role="status" className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-sm">
+          Course details saved.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
+          {error}
+        </p>
+      )}
+
       <CourseImageUpload courseId={id} currentUrl={course.image || null} currentAlt={course.image_alt || null} />
 
       {/* Course details */}
       <section className="bg-white rounded-xl p-1 shadow-sm">
-        <details>
+        <details open={Boolean(error)}>
           <summary className="cursor-pointer px-6 py-4 font-bold text-slate-700">
             Course details
           </summary>

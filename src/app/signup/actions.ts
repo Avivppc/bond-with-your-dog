@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/safe-next";
 
 const Schema = z.object({
   full_name: z.string().min(2),
@@ -14,6 +15,8 @@ const Schema = z.object({
 });
 
 export async function signup(formData: FormData) {
+  const next = safeNext(String(formData.get("next") ?? ""));
+  const nextParam = `next=${encodeURIComponent(next)}`;
   const parsed = Schema.safeParse({
     full_name: formData.get("full_name"),
     email: formData.get("email"),
@@ -23,7 +26,7 @@ export async function signup(formData: FormData) {
 
   if (!parsed.success) {
     redirect(
-      "/signup?error=" +
+      `/signup?${nextParam}&error=` +
         encodeURIComponent("Please fill in all fields (password must be 8+ characters).")
     );
   }
@@ -41,17 +44,17 @@ export async function signup(formData: FormData) {
         full_name: parsed.data.full_name,
         marketing_opt_in: parsed.data.marketing_opt_in,
       },
-      emailRedirectTo: `${origin}/auth/callback`,
+      emailRedirectTo: `${origin}/auth/callback?${nextParam}`,
     },
   });
 
   if (error) {
-    redirect("/signup?error=" + encodeURIComponent(error.message));
+    redirect(`/signup?${nextParam}&error=` + encodeURIComponent(error.message));
   }
 
   revalidatePath("/", "layout");
   redirect(
-    "/signup?message=" +
+    `/signup?${nextParam}&message=` +
       encodeURIComponent("Check your email to confirm your account, then sign in.")
   );
 }

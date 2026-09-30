@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
 import { saveLessonBody } from "./content-actions";
 
 interface BodyEditorProps {
@@ -32,6 +31,12 @@ function ToolbarButton({ label, active, onClick }: ToolbarButtonProps) {
   );
 }
 
+/** "example.com" → "https://example.com"; keeps http(s)/mailto as typed (the server drops anything else). */
+function normalizeHref(raw: string): string {
+  const href = raw.trim();
+  return /^(https?:\/\/|mailto:)/i.test(href) ? href : `https://${href.replace(/^\/+/, "")}`;
+}
+
 function Toolbar({ editor }: { editor: Editor }) {
   function setLink() {
     const previous = editor.getAttributes("link").href as string | undefined;
@@ -41,7 +46,7 @@ function Toolbar({ editor }: { editor: Editor }) {
       editor.chain().focus().unsetLink().run();
       return;
     }
-    editor.chain().focus().extendMarkRange("link").setLink({ href: href.trim() }).run();
+    editor.chain().focus().extendMarkRange("link").setLink({ href: normalizeHref(href) }).run();
   }
 
   return (
@@ -63,23 +68,29 @@ export function BodyEditor({ courseId, lessonId, initialHtml }: BodyEditorProps)
   const [status, setStatus] = useState<{ kind: "saved" | "error"; message: string } | null>(null);
   const [dirty, setDirty] = useState(false);
   const [pending, startTransition] = useTransition();
+  // Bumped on every edit, so typing during a save keeps the editor dirty.
+  const revision = useRef(0);
 
   const editor = useEditor({
-    extensions: [StarterKit.configure({ heading: { levels: [2, 3] } }), Link.configure({ openOnClick: false })],
+    extensions: [StarterKit.configure({ heading: { levels: [2, 3] }, link: { openOnClick: false } })],
     content: initialHtml,
     immediatelyRender: false, // required for SSR (Next.js) to avoid hydration mismatches
     editorProps: {
       attributes: { class: "lesson-prose min-h-48 px-4 py-3 focus:outline-none", "aria-label": "Lesson text" },
     },
-    onUpdate: () => setDirty(true),
+    onUpdate: () => {
+      revision.current += 1;
+      setDirty(true);
+    },
   });
 
   function save() {
     if (!editor) return;
+    const savedRevision = revision.current;
     startTransition(async () => {
       const res = await saveLessonBody({ courseId, lessonId, html: editor.getHTML() });
       if (res.ok) {
-        setDirty(false);
+        if (revision.current === savedRevision) setDirty(false);
         setStatus({ kind: "saved", message: "Saved." });
       } else {
         setStatus({ kind: "error", message: res.error });

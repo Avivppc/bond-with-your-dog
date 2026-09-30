@@ -1,12 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/safe-next";
 import { MARKETING_CONSENT_COOKIE } from "@/lib/auth/marketing-consent";
 
-/** Only allow same-site relative paths as a post-login destination. */
-function safeNext(next: string | null): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//")) return "/dashboard";
-  return next;
-}
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);

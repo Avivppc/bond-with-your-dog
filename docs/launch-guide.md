@@ -60,7 +60,8 @@ npm run dev -- --port 3100
    - **Confirm email: פעיל.** ההזמנות לצוות וההענקות במייל נפתחות רק למייל מאומת.
    - Site URL: `https://www.bonded.dog`.
    - להוסיף ל-Redirect URLs את `https://www.bonded.dog/auth/callback`.
-5. **Storage:** הבאקט `lesson-files` (פרטי) נוצר אוטומטית במיגרציה. לוודא שהוא קיים.
+5. **Storage:** הבאקטים `lesson-files` (פרטי, עד 200MB לקובץ) ו-`course-images` (ציבורי) נוצרים אוטומטית במיגרציות. לוודא שהם קיימים.
+   - ⚠️ **מגבלת העלאה גלובלית:** ב-Storage → Settings יש "Upload file size limit" שגובר על הגדרת הבאקט. בתוכנית Free היא 50MB לכל היותר. אם יש קבצי הורדה גדולים יותר, צריך תוכנית Pro ולהעלות את המגבלה ל-200MB.
 
 ### ג. Vercel
 להגדיר את משתני הסביבה מ-[env.example](env.example). בפרט:

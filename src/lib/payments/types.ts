@@ -16,6 +16,7 @@ export type BillingEvent =
       amountCents: number;
       currency: string;
       periodEnd: string | null; // end of the billing period this payment covers
+      priceIds: string[]; // provider price ids actually paid for (validated against the offer)
     }
   | {
       kind: "subscription.updated";
@@ -37,8 +38,14 @@ export interface CheckoutRequest {
   successUrl: string;
 }
 
+export interface CheckoutSession {
+  /** Where to send the buyer. */
+  url: string;
+  /** Provider transaction id created by OUR server — webhooks are matched on it. */
+  providerRef: string | null;
+}
+
 export interface PaymentProvider {
   name: ProviderName;
-  /** Returns the URL to send the buyer to. */
-  createCheckout(request: CheckoutRequest): Promise<string>;
+  createCheckout(request: CheckoutRequest): Promise<CheckoutSession>;
 }

@@ -5,22 +5,26 @@ describe("resolveStaffRole", () => {
   const bootstrapOwners = ["founder@bonded.dev"];
 
   it("treats bootstrap emails (ADMIN_EMAILS) as owners even without a DB row", () => {
-    expect(resolveStaffRole("Founder@Bonded.dev", null, bootstrapOwners)).toBe("owner");
+    expect(resolveStaffRole("Founder@Bonded.dev", null, bootstrapOwners, true)).toBe("owner");
   });
 
   it("uses the database role for invited staff", () => {
-    expect(resolveStaffRole("client@studio.dev", "editor", bootstrapOwners)).toBe("editor");
-    expect(resolveStaffRole("partner@studio.dev", "owner", bootstrapOwners)).toBe("owner");
+    expect(resolveStaffRole("client@studio.dev", "editor", bootstrapOwners, true)).toBe("editor");
+    expect(resolveStaffRole("partner@studio.dev", "owner", bootstrapOwners, true)).toBe("owner");
   });
 
   it("upgrades a bootstrap email to owner even if the DB says editor", () => {
-    expect(resolveStaffRole("founder@bonded.dev", "editor", bootstrapOwners)).toBe("owner");
+    expect(resolveStaffRole("founder@bonded.dev", "editor", bootstrapOwners, true)).toBe("owner");
+  });
+
+  it("ignores the bootstrap list for an unverified email (someone signing up with the owner's address)", () => {
+    expect(resolveStaffRole("founder@bonded.dev", null, bootstrapOwners, false)).toBeNull();
   });
 
   it("returns null for students and unknown roles", () => {
-    expect(resolveStaffRole("student@test.dev", null, bootstrapOwners)).toBeNull();
-    expect(resolveStaffRole("student@test.dev", "superuser", bootstrapOwners)).toBeNull();
-    expect(resolveStaffRole(undefined, null, bootstrapOwners)).toBeNull();
+    expect(resolveStaffRole("student@test.dev", null, bootstrapOwners, true)).toBeNull();
+    expect(resolveStaffRole("student@test.dev", "superuser", bootstrapOwners, true)).toBeNull();
+    expect(resolveStaffRole(undefined, null, bootstrapOwners, true)).toBeNull();
   });
 });
 

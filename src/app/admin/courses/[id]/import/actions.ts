@@ -80,6 +80,9 @@ export async function importOutline(input: z.input<typeof Input>): Promise<Impor
 
   const moduleCache = new Map<string, string>();
   const nextLessonPosition = new Map<string, number>();
+  // Lesson titles already in each module, so pasting the same table twice adds nothing.
+  const titlesIn = new Map<string, Set<string>>();
+  const skipped: ImportError[] = [...errors];
   const videos: { lessonId: string; url: string }[] = [];
   let modulesCreated = 0;
   let lessonsCreated = 0;
@@ -90,10 +93,17 @@ export async function importOutline(input: z.input<typeof Input>): Promise<Impor
       const target = row.submodule ? await ensureModule(sb, moduleCache, courseId, top.id, row.submodule) : top;
       modulesCreated += Number(top.created) + Number(row.submodule ? target.created : false);
 
-      if (!nextLessonPosition.has(target.id)) {
-        const { data: last } = await sb.from("lessons").select("position").eq("module_id", target.id).order("position", { ascending: false }).limit(1);
-        nextLessonPosition.set(target.id, (last?.[0]?.position ?? 0) + 1);
+      if (!titlesIn.has(target.id)) {
+        const { data: existing } = await sb.from("lessons").select("title, position").eq("module_id", target.id);
+        titlesIn.set(target.id, new Set((existing ?? []).map((l) => l.title.toLowerCase())));
+        nextLessonPosition.set(target.id, Math.max(0, ...(existing ?? []).map((l) => l.position)) + 1);
       }
+      const titles = titlesIn.get(target.id) ?? new Set<string>();
+      if (titles.has(row.lesson.toLowerCase())) {
+        skipped.push({ line: row.line, message: `"${row.lesson}" is already in this module` });
+        continue;
+      }
+      titlesIn.set(target.id, new Set([...titles, row.lesson.toLowerCase()]));
       const position = nextLessonPosition.get(target.id) ?? 1;
       nextLessonPosition.set(target.id, position + 1);
 
@@ -127,5 +137,5 @@ export async function importOutline(input: z.input<typeof Input>): Promise<Impor
 
   await fillVideoMetadata(sb, videos);
   revalidatePath(`/admin/courses/${courseId}`);
-  return { ok: true, data: { modulesCreated, lessonsCreated, skipped: errors } };
+  return { ok: true, data: { modulesCreated, lessonsCreated, skipped: [...skipped].sort((a, b) => a.line - b.line) } };
 }

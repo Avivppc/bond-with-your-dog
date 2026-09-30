@@ -51,14 +51,22 @@ export function FilesPanel({ courseId, lessonId, files }: FilesPanelProps) {
     if (!list?.length) return;
     setError(null);
     const errors: string[] = [];
-    for (const file of Array.from(list)) {
-      setUploading(file.name);
-      const failure = await uploadOne(file);
-      if (failure) errors.push(failure);
+    try {
+      for (const file of Array.from(list)) {
+        setUploading(file.name);
+        try {
+          const failure = await uploadOne(file);
+          if (failure) errors.push(failure);
+        } catch (err) {
+          console.error("lesson file upload failed", err);
+          errors.push(`${file.name}: upload failed — check your connection and try again`);
+        }
+      }
+    } finally {
+      setUploading(null);
+      if (inputRef.current) inputRef.current.value = "";
+      if (errors.length) setError(errors.join(" · "));
     }
-    setUploading(null);
-    if (inputRef.current) inputRef.current.value = "";
-    if (errors.length) setError(errors.join(" · "));
   }
 
   function remove(fileId: string, name: string) {

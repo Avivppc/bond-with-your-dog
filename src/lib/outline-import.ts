@@ -3,6 +3,7 @@ import { parseVimeoUrl } from "./video/vimeo";
 /**
  * Bulk course import from a pasted spreadsheet (TSV from Sheets/Excel, or CSV).
  * Required columns: Module, Lesson. Optional: Submodule, Vimeo, Description.
+ * A blank Module cell continues the module above it (grouped sheets).
  * Pure — the admin action turns the rows into draft modules/lessons.
  */
 export interface ImportRow {
@@ -41,16 +42,40 @@ function columnFor(header: string): Column | null {
   return (Object.keys(ALIASES) as Column[]).find((c) => ALIASES[c].includes(h)) ?? null;
 }
 
-/** Splits one line; handles double-quoted CSV fields with escaped quotes. */
-function splitLine(line: string, delimiter: string): string[] {
-  if (delimiter === "\t") return line.split("\t");
-  const cells: string[] = [];
+interface RawRecord {
+  line: number;
+  cells: string[];
+}
+
+/**
+ * Splits pasted text into records. A cell that starts with a double quote may contain the
+ * delimiter, newlines and "" escapes — Sheets/Excel quote multi-line cells this way in TSV too.
+ */
+function tokenize(text: string, delimiter: string): RawRecord[] {
+  const records: RawRecord[] = [];
+  let cells: string[] = [];
   let cell = "";
   let quoted = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+  let atCellStart = true;
+  let line = 1;
+  let recordLine = 1;
+
+  const endCell = () => {
+    cells = [...cells, cell];
+    cell = "";
+    atCellStart = true;
+  };
+  const endRecord = () => {
+    endCell();
+    records.push({ line: recordLine, cells });
+    cells = [];
+  };
+
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "\n") line++;
     if (quoted) {
-      if (ch === '"' && line[i + 1] === '"') {
+      if (ch === '"' && text[i + 1] === '"') {
         cell += '"';
         i++;
       } else if (ch === '"') {
@@ -58,17 +83,35 @@ function splitLine(line: string, delimiter: string): string[] {
       } else {
         cell += ch;
       }
-    } else if (ch === '"') {
+      continue;
+    }
+    if (ch === '"' && atCellStart) {
       quoted = true;
+      atCellStart = false;
     } else if (ch === delimiter) {
-      cells.push(cell);
-      cell = "";
+      endCell();
+    } else if (ch === "\n") {
+      endRecord();
+      recordLine = line;
     } else {
       cell += ch;
+      atCellStart = false;
     }
   }
-  cells.push(cell);
-  return cells;
+  endRecord();
+  return records.filter((r) => r.cells.some((c) => c.trim()));
+}
+
+interface Placement {
+  module: string;
+  submodule: string | null;
+}
+
+/** A row's own Module starts a new group; a blank one continues the group above (Submodule may change). */
+function placeRow(previous: Placement | null, ownModule: string | null, submodule: string | null): Placement | null {
+  if (ownModule) return { module: ownModule, submodule };
+  if (!previous) return null;
+  return { module: previous.module, submodule: submodule ?? previous.submodule };
 }
 
 const clean = (v: string | undefined): string | null => {
@@ -77,46 +120,34 @@ const clean = (v: string | undefined): string | null => {
 };
 
 export function parseOutlineImport(text: string): ImportResult {
-  const lines = text.replace(/\r\n?/g, "\n").split("\n");
-  const firstIndex = lines.findIndex((l) => l.trim());
-  if (firstIndex === -1) return { rows: [], errors: [{ line: 1, message: "The pasted table is empty." }] };
+  const normalized = text.replace(/\r\n?/g, "\n");
+  const firstLine = normalized.split("\n").find((l) => l.trim());
+  if (firstLine === undefined) return { rows: [], errors: [{ line: 1, message: "The pasted table is empty." }] };
 
-  const delimiter = lines[firstIndex].includes("\t") ? "\t" : ",";
-  const headers = splitLine(lines[firstIndex], delimiter).map(columnFor);
+  const delimiter = firstLine.includes("\t") ? "\t" : ",";
+  const [header, ...records] = tokenize(normalized, delimiter);
+  const headers = header.cells.map(columnFor);
   if (!headers.includes("module") || !headers.includes("lesson")) {
-    return { rows: [], errors: [{ line: firstIndex + 1, message: "The first row must name the columns — at least Module and Lesson." }] };
+    return { rows: [], errors: [{ line: header.line, message: "The first row must name the columns — at least Module and Lesson." }] };
   }
-
-  const dataLines = lines
-    .map((content, i) => ({ content, line: i + 1 }))
-    .slice(firstIndex + 1)
-    .filter((l) => l.content.trim());
-  if (dataLines.length > MAX_IMPORT_ROWS) {
-    return { rows: [], errors: [{ line: firstIndex + 2, message: `Import up to ${MAX_IMPORT_ROWS} lessons at a time.` }] };
+  if (records.length > MAX_IMPORT_ROWS) {
+    return { rows: [], errors: [{ line: header.line + 1, message: `Import up to ${MAX_IMPORT_ROWS} lessons at a time.` }] };
   }
 
   const rows: ImportRow[] = [];
   const errors: ImportError[] = [];
-  for (const { content, line } of dataLines) {
-    const cells = splitLine(content, delimiter);
-    const get = (c: Column) => clean(cells[headers.indexOf(c)]);
-    const moduleTitle = get("module");
-    const lesson = get("lesson");
-    const vimeoUrl = headers.includes("vimeo") ? get("vimeo") : null;
+  // Grouped spreadsheets name the module once; blank Module cells below belong to it.
+  let current: Placement | null = null;
+  for (const { cells, line } of records) {
+    const get = (c: Column) => (headers.includes(c) ? clean(cells[headers.indexOf(c)]) : null);
+    current = placeRow(current, get("module"), get("submodule"));
 
-    if (!moduleTitle) errors.push({ line, message: "Module is required" });
+    const lesson = get("lesson");
+    const vimeoUrl = get("vimeo");
+    if (!current) errors.push({ line, message: "Module is required" });
     else if (!lesson) errors.push({ line, message: "Lesson title is required" });
     else if (vimeoUrl && !parseVimeoUrl(vimeoUrl)) errors.push({ line, message: `Not a Vimeo link: ${vimeoUrl}` });
-    else {
-      rows.push({
-        line,
-        module: moduleTitle,
-        submodule: headers.includes("submodule") ? get("submodule") : null,
-        lesson,
-        vimeoUrl,
-        description: headers.includes("description") ? get("description") : null,
-      });
-    }
+    else rows.push({ line, module: current.module, submodule: current.submodule, lesson, vimeoUrl, description: get("description") });
   }
   return { rows, errors };
 }

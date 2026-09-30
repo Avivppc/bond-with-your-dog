@@ -6,25 +6,8 @@ import { LessonContent } from "./LessonContent";
 import { createServiceClient } from "@/lib/supabase/admin";
 import QuizPlayer from "./QuizPlayer";
 import { computeUnlockAt, isLockedNow, formatUnlockDate } from "@/lib/drip";
-import { buildOutline, flattenLessons, type OutlineLessonRow } from "@/lib/course-outline";
-
-/** Visible lessons in outline reading order (RLS hides drafts from students). */
-async function loadLessonOrder(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  courseId: string
-): Promise<OutlineLessonRow[]> {
-  const [modulesRes, lessonsRes] = await Promise.all([
-    supabase.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
-    supabase
-      .from("lessons")
-      .select("id, module_id, title, position, published, kind, free_preview, available_after_days")
-      .eq("course_id", courseId),
-  ]);
-  if (modulesRes.error || lessonsRes.error) {
-    console.error("lesson order load failed", { courseId, error: modulesRes.error?.message ?? lessonsRes.error?.message });
-  }
-  return flattenLessons(buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []));
-}
+import { loadLessonOrder } from "@/lib/course-outline-server";
+import { isEnrollmentActive } from "@/lib/enrollment";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +27,7 @@ export default async function LessonPage({
   const { data: lesson } = await supabase
     .from("lessons")
     .select(
-      "id, course_id, position, title, description, body_html, free_preview, kind, available_after_days, pass_threshold"
+      "id, course_id, position, title, description, free_preview, kind, available_after_days, pass_threshold"
     )
     .eq("id", lessonId)
     .single();
@@ -53,10 +36,11 @@ export default async function LessonPage({
 
   const { data: enrollment } = await supabase
     .from("enrollments")
-    .select("course_id, enrolled_at")
+    .select("course_id, enrolled_at, expires_at")
     .eq("course_id", courseId)
     .eq("user_id", user.id)
     .maybeSingle();
+  const activeEnrollment = isEnrollmentActive(enrollment) ? enrollment : null;
 
   // Same rule as playback/API: free preview, live content + unexpired enrollment + drip, or staff preview.
   const [{ data: canAccess }, videoRes, filesRes] = await Promise.all([
@@ -64,14 +48,21 @@ export default async function LessonPage({
     createServiceClient().from("lesson_videos").select("lesson_id").eq("lesson_id", lessonId).maybeSingle(),
     supabase.from("lesson_files").select("id, file_name, size_bytes").eq("lesson_id", lessonId).order("position"),
   ]);
-  if (!canAccess && !enrollment) {
-    redirect(`/learn/${courseId}`);
-  }
   const hasVideo = Boolean(videoRes.data);
 
-  // Drip lock
-  const unlockAt = computeUnlockAt(enrollment?.enrolled_at, lesson.available_after_days);
-  const drippedLocked = enrollment ? isLockedNow(unlockAt) : false;
+  // Drip lock (only meaningful for an active enrollment). Anyone else without access goes
+  // back to the course page (buy/enroll) — expired or refunded access sees nothing here.
+  const unlockAt = computeUnlockAt(activeEnrollment?.enrolled_at, lesson.available_after_days);
+  const drippedLocked = activeEnrollment ? isLockedNow(unlockAt) : false;
+  if (!canAccess && !drippedLocked) {
+    redirect(`/learn/${courseId}`);
+  }
+
+  // Lesson text is server-only: loaded only when the student may actually open the lesson.
+  const bodyHtml =
+    canAccess && !drippedLocked
+      ? ((await createServiceClient().from("lessons").select("body_html").eq("id", lessonId).single()).data?.body_html ?? null)
+      : null;
 
   const [siblingsRes, courseRes, progressRes] = await Promise.all([
     loadLessonOrder(supabase, courseId),
@@ -193,7 +184,9 @@ export default async function LessonPage({
                   )}
                 </div>
 
-                <LessonContent lessonId={lessonId} bodyHtml={lesson.body_html} files={filesRes.data ?? []} />
+                {!drippedLocked && (
+                  <LessonContent lessonId={lessonId} bodyHtml={bodyHtml} files={filesRes.data ?? []} />
+                )}
 
                 {/* Prev/next nav */}
                 <nav className="flex items-center justify-between gap-4 pt-2">

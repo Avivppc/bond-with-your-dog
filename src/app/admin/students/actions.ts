@@ -83,11 +83,10 @@ export async function revokeCourseAccess(formData: FormData): Promise<void> {
   await requireStaff("sales");
   const parsed = RevokeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back({ error: "Invalid request." });
-  const { error } = await createServiceClient()
-    .from("enrollments")
-    .update({ expires_at: new Date().toISOString() })
-    .eq("user_id", parsed.data.user_id)
-    .eq("course_id", parsed.data.course_id);
+  const { error } = await createServiceClient().rpc("revoke_course_access", {
+    p_user_id: parsed.data.user_id,
+    p_course_id: parsed.data.course_id,
+  });
   if (error) {
     console.error("[students] revoke failed", { ...parsed.data, error: error.message });
     back({ error: "Could not revoke access." });

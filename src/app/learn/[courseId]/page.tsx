@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { claimPendingAccess } from "@/lib/access";
 import { buildOutline, flattenLessons } from "@/lib/course-outline";
 import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
+import { isEnrollmentActive } from "@/lib/enrollment";
 import { CourseLessonRow, type MemberLessonRow } from "./CourseLessonRow";
 
 export const dynamic = "force-dynamic";
@@ -59,12 +60,14 @@ export default async function CourseLandingPage({
     .filter((o) => o.status === "published");
   const lessonNumber = new Map(flattenLessons(outline).map((l, i) => [l.id, i + 1]));
 
-  const { data: enrollment } = await supabase
+  const { data: enrollmentRow } = await supabase
     .from("enrollments")
-    .select("course_id, enrolled_at")
+    .select("course_id, enrolled_at, expires_at")
     .eq("course_id", courseId)
     .eq("user_id", user.id)
     .maybeSingle();
+  // Ended access (refund, revoke, expiry) is treated like no enrollment: show buy options again.
+  const enrollment = isEnrollmentActive(enrollmentRow) ? enrollmentRow : null;
 
   const { data: progress } = await supabase
     .from("lesson_progress")

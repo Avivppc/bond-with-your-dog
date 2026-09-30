@@ -1,6 +1,6 @@
 import "server-only";
 import { z } from "zod";
-import type { CheckoutRequest, PaymentProvider, ProviderName } from "./types";
+import type { CheckoutRequest, CheckoutSession, PaymentProvider, ProviderName } from "./types";
 
 /**
  * PAYMENTS_PROVIDER selects the provider:
@@ -13,8 +13,9 @@ export function configuredProvider(): ProviderName | null {
   const value = process.env.PAYMENTS_PROVIDER;
   if (value === "paddle") return "paddle";
   if (value === "test") {
-    if (process.env.NODE_ENV === "production" && process.env.VERCEL_ENV === "production") {
-      console.error("[payments] test provider is disabled in production");
+    // Fail closed: fake payments only ever run in local development (next dev).
+    if (process.env.NODE_ENV !== "development") {
+      console.error("[payments] PAYMENTS_PROVIDER=test is ignored outside local development");
       return null;
     }
     return "test";
@@ -30,7 +31,7 @@ const TransactionResponse = z.object({ data: z.object({ id: z.string() }) });
 
 const paddle: PaymentProvider = {
   name: "paddle",
-  async createCheckout(request: CheckoutRequest): Promise<string> {
+  async createCheckout(request: CheckoutRequest): Promise<CheckoutSession> {
     const apiKey = process.env.PADDLE_API_KEY;
     if (!apiKey) throw new Error("PADDLE_API_KEY is not configured");
     if (!request.providerPriceId) throw new Error("This offer has no Paddle price id yet");
@@ -55,16 +56,16 @@ const paddle: PaymentProvider = {
     const url = new URL("/checkout/pay", request.successUrl);
     url.searchParams.set("_ptxn", parsed.data.id);
     url.searchParams.set("order", request.orderId);
-    return url.toString();
+    return { url: url.toString(), providerRef: parsed.data.id };
   },
 };
 
 const test: PaymentProvider = {
   name: "test",
-  async createCheckout(request: CheckoutRequest): Promise<string> {
+  async createCheckout(request: CheckoutRequest): Promise<CheckoutSession> {
     const url = new URL("/checkout/test-pay", request.successUrl);
     url.searchParams.set("order", request.orderId);
-    return url.toString();
+    return { url: url.toString(), providerRef: null };
   },
 };
 

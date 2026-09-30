@@ -2,27 +2,25 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { accessGrantedEmail, sendEmail } from "@/lib/email";
 import type { BillingEvent } from "./types";
+import { validatePayment } from "./validate-payment";
 
 /**
  * Applies provider-agnostic billing events to orders, subscriptions and access.
- * Every webhook is first recorded in billing_events (unique per provider+event id),
- * so redelivered webhooks are acknowledged but never applied twice.
+ * Every webhook is recorded once in billing_events and claimed atomically, so
+ * redelivered or concurrent webhooks are never applied twice.
  */
 type Sb = ReturnType<typeof createServiceClient>;
 
 const GRACE_DAYS = 3; // keep access a little past period end while renewals retry
 
-interface OrderRow {
-  id: string;
-  user_id: string;
-  offer_id: string;
-  status: string;
-}
+/** A delivered event we deliberately do not act on (unknown/foreign transaction, mismatch). */
+export class BillingIgnored extends Error {}
 
 interface OfferRow {
   id: string;
   payment_type: "free" | "one_time" | "subscription";
   days_of_access: number | null;
+  provider_price_id: string | null;
 }
 
 function withGrace(periodEnd: string | null): string | null {
@@ -54,25 +52,36 @@ export async function recordBillingEvent(
   return existing?.processed_at && !existing.error ? "processed" : "retry";
 }
 
-export async function markBillingEvent(provider: string, eventId: string, error: string | null): Promise<void> {
-  const { error: updateError } = await createServiceClient()
-    .from("billing_events")
-    .update({ processed_at: new Date().toISOString(), error })
-    .eq("provider", provider)
-    .eq("event_id", eventId);
-  if (updateError) console.error("[billing] could not mark event", { provider, eventId, error: updateError.message });
+/** Atomically claims an unprocessed event; false when another delivery is already working on it. */
+export async function claimBillingEvent(provider: string, eventId: string): Promise<boolean> {
+  const { data, error } = await createServiceClient().rpc("claim_billing_event", { p_provider: provider, p_event_id: eventId });
+  if (error) throw new Error(`could not claim billing event: ${error.message}`);
+  return data === true;
 }
 
-async function grant(sb: Sb, order: Pick<OrderRow, "user_id" | "offer_id" | "id">, source: string, expiresAt: string | null) {
-  const { data: created, error } = await sb.rpc("grant_offer_access", {
-    p_user_id: order.user_id,
-    p_offer_id: order.offer_id,
+/** outcome: null = applied, "ignored: …" = deliberately skipped (done), any other string = failed (retry). */
+export async function markBillingEvent(provider: string, eventId: string, outcome: string | null, failed = false): Promise<void> {
+  const update = failed
+    ? { error: outcome, processing_started_at: null, processed_at: null }
+    : { error: outcome, processed_at: new Date().toISOString() };
+  const { error } = await createServiceClient().from("billing_events").update(update).eq("provider", provider).eq("event_id", eventId);
+  if (error) console.error("[billing] could not mark event", { provider, eventId, error: error.message });
+}
+
+async function grant(sb: Sb, userId: string, offerId: string, orderId: string | null, source: string, expiresAt: string | null) {
+  const { error } = await sb.rpc("grant_offer_access", {
+    p_user_id: userId,
+    p_offer_id: offerId,
     p_source: source,
-    p_order_id: order.id,
+    p_order_id: orderId,
     p_expires_at: expiresAt,
   });
   if (error) throw new Error(`grant_offer_access failed: ${error.message}`);
-  return Number(created ?? 0);
+}
+
+async function revoke(sb: Sb, userId: string, offerId: string, orderId: string | null) {
+  const { error } = await sb.rpc("revoke_offer_access", { p_user_id: userId, p_offer_id: offerId, p_order_id: orderId });
+  if (error) throw new Error(`revoke_offer_access failed: ${error.message}`);
 }
 
 /** Emails the buyer the course links. Never throws — access is already granted. */
@@ -92,36 +101,44 @@ export async function notifyAccessGranted(userId: string, offerId: string): Prom
 }
 
 async function loadOffer(sb: Sb, offerId: string): Promise<OfferRow> {
-  const { data, error } = await sb.from("offers").select("id, payment_type, days_of_access").eq("id", offerId).single();
+  const { data, error } = await sb
+    .from("offers")
+    .select("id, payment_type, days_of_access, provider_price_id")
+    .eq("id", offerId)
+    .single();
   if (error || !data) throw new Error(`offer ${offerId} not found`);
   return data as OfferRow;
 }
 
-/** Marks a pending order paid and grants access (shared by webhooks, free offers and test mode). */
-export async function fulfillOrder(
-  orderId: string,
-  payment: { providerRef: string | null; subscriptionRef: string | null; periodEnd: string | null; provider: string }
-): Promise<void> {
+export interface FulfillmentPayment {
+  provider: string;
+  providerRef: string | null;
+  subscriptionRef: string | null;
+  periodEnd: string | null;
+  amountCents: number | null; // actually charged (incl. tax/discounts); null = keep order amount
+}
+
+/**
+ * Grants access for a pending order, then marks it paid. Idempotent: re-running for a
+ * paid order re-applies the (idempotent) grant; refunded/canceled/failed orders never
+ * get access. The access email is sent only on the pending → paid transition.
+ */
+export async function fulfillOrder(orderId: string, payment: FulfillmentPayment): Promise<void> {
   const sb = createServiceClient();
   const { data: order } = await sb.from("orders").select("id, user_id, offer_id, status").eq("id", orderId).maybeSingle();
   if (!order) throw new Error(`order ${orderId} not found`);
-  if (order.status === "paid") return; // already fulfilled
+  if (order.status !== "pending" && order.status !== "paid") {
+    throw new BillingIgnored(`order ${orderId} is ${order.status}; not fulfilling`);
+  }
 
   const offer = await loadOffer(sb, order.offer_id);
-  const { error: updateError } = await sb
-    .from("orders")
-    .update({ status: "paid", paid_at: new Date().toISOString(), provider_ref: payment.providerRef })
-    .eq("id", order.id)
-    .eq("status", "pending");
-  if (updateError) throw new Error(`could not mark order paid: ${updateError.message}`);
-
   const expiresAt =
     offer.payment_type === "subscription"
       ? withGrace(payment.periodEnd)
       : offer.days_of_access
         ? new Date(Date.now() + offer.days_of_access * 86_400_000).toISOString()
         : null;
-  await grant(sb, order, offer.payment_type === "subscription" ? "subscription" : "order", expiresAt);
+  await grant(sb, order.user_id, order.offer_id, order.id, offer.payment_type === "subscription" ? "subscription" : "order", expiresAt);
 
   if (payment.subscriptionRef) {
     const { error } = await sb.from("subscriptions").upsert(
@@ -139,7 +156,20 @@ export async function fulfillOrder(
     );
     if (error) throw new Error(`could not store subscription: ${error.message}`);
   }
-  await notifyAccessGranted(order.user_id, order.offer_id);
+
+  const { data: transitioned, error: updateError } = await sb
+    .from("orders")
+    .update({
+      status: "paid",
+      paid_at: new Date().toISOString(),
+      ...(payment.providerRef ? { provider_ref: payment.providerRef } : {}),
+      ...(payment.amountCents !== null ? { amount_cents: payment.amountCents } : {}),
+    })
+    .eq("id", order.id)
+    .eq("status", "pending")
+    .select("id");
+  if (updateError) throw new Error(`could not mark order paid: ${updateError.message}`);
+  if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
 }
 
 export async function applyBillingEvent(provider: string, event: BillingEvent): Promise<void> {
@@ -147,7 +177,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
 
   switch (event.kind) {
     case "ignored":
-      return;
+      throw new BillingIgnored(event.reason);
 
     case "order.paid": {
       if (event.recurring && event.subscriptionRef) {
@@ -156,20 +186,36 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
           .select("id, user_id, offer_id, order_id")
           .eq("provider_ref", event.subscriptionRef)
           .maybeSingle();
-        if (!sub) throw new Error(`renewal for unknown subscription ${event.subscriptionRef}`);
-        await grant(sb, { id: sub.order_id, user_id: sub.user_id, offer_id: sub.offer_id }, "subscription", withGrace(event.periodEnd));
+        if (!sub) throw new Error(`renewal for unknown subscription ${event.subscriptionRef}`); // retry: first payment may lag
+        await grant(sb, sub.user_id, sub.offer_id, sub.order_id, "subscription", withGrace(event.periodEnd));
         await sb
           .from("subscriptions")
           .update({ status: "active", current_period_end: event.periodEnd, updated_at: new Date().toISOString() })
           .eq("id", sub.id);
         return;
       }
-      if (!event.orderId) throw new Error(`payment ${event.providerRef} has no order id in custom data`);
-      await fulfillOrder(event.orderId, {
+
+      // Only transactions our server created (stored on the order at checkout) can fulfil an order.
+      const { data: order } = await sb
+        .from("orders")
+        .select("id, currency, offer_id")
+        .eq("provider", provider)
+        .eq("provider_ref", event.providerRef)
+        .maybeSingle();
+      if (!order) throw new BillingIgnored(`payment ${event.providerRef} does not belong to any order we created`);
+
+      const offer = await loadOffer(sb, order.offer_id);
+      const mismatch = validatePayment(order, offer, event);
+      if (mismatch) {
+        console.error("[billing] payment rejected", { orderId: order.id, providerRef: event.providerRef, mismatch });
+        throw new BillingIgnored(`rejected: ${mismatch}`);
+      }
+      await fulfillOrder(order.id, {
+        provider,
         providerRef: event.providerRef,
         subscriptionRef: event.subscriptionRef,
         periodEnd: event.periodEnd,
-        provider,
+        amountCents: event.amountCents,
       });
       return;
     }
@@ -180,11 +226,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         .select("id, user_id, offer_id, order_id")
         .eq("provider_ref", event.subscriptionRef)
         .maybeSingle();
-      if (!sub) {
-        // Subscription events can arrive before transaction.completed; the payment creates the row.
-        console.warn("[billing] subscription event before payment", { ref: event.subscriptionRef, status: event.status });
-        return;
-      }
+      if (!sub) throw new BillingIgnored(`subscription ${event.subscriptionRef} not created yet (payment creates it)`);
       await sb
         .from("subscriptions")
         .update({
@@ -194,32 +236,24 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
           updated_at: new Date().toISOString(),
         })
         .eq("id", sub.id);
-      if (event.status === "canceled") {
-        const { error } = await sb.rpc("revoke_offer_access", {
-          p_user_id: sub.user_id,
-          p_offer_id: sub.offer_id,
-          p_order_id: sub.order_id,
-        });
-        if (error) throw new Error(`revoke on cancel failed: ${error.message}`);
-      }
+      if (event.status === "canceled") await revoke(sb, sub.user_id, sub.offer_id, sub.order_id);
       return;
     }
 
     case "order.refunded": {
-      if (!event.full) return; // partial refunds keep access
+      if (!event.full) throw new BillingIgnored("partial refund keeps access");
       const { data: order } = await sb
         .from("orders")
-        .select("id, user_id, offer_id, status")
+        .select("id, user_id, offer_id")
+        .eq("provider", provider)
         .eq("provider_ref", event.providerRef)
         .maybeSingle();
-      if (!order) throw new Error(`refund for unknown transaction ${event.providerRef}`);
+      if (!order) {
+        // e.g. a refunded subscription renewal: access ends with the subscription (cancel event).
+        throw new BillingIgnored(`refund for ${event.providerRef} does not match an order`);
+      }
       await sb.from("orders").update({ status: "refunded" }).eq("id", order.id);
-      const { error } = await sb.rpc("revoke_offer_access", {
-        p_user_id: order.user_id,
-        p_offer_id: order.offer_id,
-        p_order_id: order.id,
-      });
-      if (error) throw new Error(`revoke on refund failed: ${error.message}`);
+      await revoke(sb, order.user_id, order.offer_id, order.id);
       return;
     }
   }

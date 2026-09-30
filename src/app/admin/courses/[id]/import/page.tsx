@@ -5,6 +5,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { ImportForm } from "./ImportForm";
 
 export const dynamic = "force-dynamic";
+// The import action runs on this route: big pastes create hundreds of rows and fetch Vimeo metadata.
+export const maxDuration = 60;
 
 export default async function ImportOutlinePage({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff("content");

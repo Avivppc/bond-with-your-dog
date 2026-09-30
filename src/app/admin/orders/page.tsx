@@ -17,14 +17,25 @@ const STATUS_STYLE: Record<string, string> = {
 export default async function OrdersPage() {
   await requireStaff("sales");
   const sb = createServiceClient();
-  const [ordersRes, usersRes, subsRes] = await Promise.all([
-    sb.from("orders").select("id, user_id, status, amount_cents, currency, provider, created_at, offers(title)").order("created_at", { ascending: false }).limit(LIMIT),
-    sb.auth.admin.listUsers({ page: 1, perPage: 1000 }),
-    sb.from("subscriptions").select("order_id, status, current_period_end"),
-  ]);
-  const emailOf = new Map((usersRes.data?.users ?? []).map((u) => [u.id, u.email ?? ""]));
-  const subOf = new Map((subsRes.data ?? []).map((s) => [s.order_id, s]));
+  const ordersRes = await sb
+    .from("orders")
+    .select("id, user_id, status, amount_cents, currency, provider, created_at, offers(title)")
+    .order("created_at", { ascending: false })
+    .limit(LIMIT);
+  if (ordersRes.error) console.error("[orders] list failed", ordersRes.error.message);
   const orders = ordersRes.data ?? [];
+  const orderIds = orders.map((o) => o.id);
+  const userIds = [...new Set(orders.map((o) => o.user_id))];
+
+  const [emailsRes, subsRes] = await Promise.all([
+    userIds.length ? sb.rpc("admin_user_emails", { p_user_ids: userIds }) : Promise.resolve({ data: [], error: null }),
+    orderIds.length
+      ? sb.from("subscriptions").select("order_id, status, current_period_end").in("order_id", orderIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (emailsRes.error) console.error("[orders] email lookup failed", emailsRes.error.message);
+  const emailOf = new Map(((emailsRes.data ?? []) as { user_id: string; email: string }[]).map((u) => [u.user_id, u.email]));
+  const subOf = new Map((subsRes.data ?? []).map((s) => [s.order_id, s]));
   const paid = orders.filter((o) => o.status === "paid");
 
   return (

@@ -20,16 +20,17 @@ function isStaffRole(value: unknown): value is StaffRole {
 }
 
 /**
- * Bootstrap owners (ADMIN_EMAILS) always resolve to owner so the platform owner
- * can never lock themselves out; everyone else gets their staff_members role.
+ * Bootstrap owners (ADMIN_EMAILS) with a VERIFIED email always resolve to owner so the
+ * platform owner can never lock themselves out; everyone else gets their staff_members role.
  */
 export function resolveStaffRole(
   email: string | null | undefined,
   dbRole: string | null | undefined,
-  bootstrapOwnerEmails: readonly string[]
+  bootstrapOwnerEmails: readonly string[],
+  emailVerified: boolean
 ): StaffRole | null {
   const normalized = email?.trim().toLowerCase();
-  if (normalized && bootstrapOwnerEmails.includes(normalized)) return "owner";
+  if (emailVerified && normalized && bootstrapOwnerEmails.includes(normalized)) return "owner";
   return isStaffRole(dbRole) ? dbRole : null;
 }
 

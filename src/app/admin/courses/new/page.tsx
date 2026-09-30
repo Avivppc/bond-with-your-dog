@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { createCourse } from "@/app/admin/actions";
 import { FormField } from "@/app/admin/_components/FormField";
+import { requireStaff } from "@/lib/admin";
 
 export default async function NewCoursePage({
   searchParams,
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
+  await requireStaff("content");
   const { error } = await searchParams;
   return (
     <div className="max-w-2xl">

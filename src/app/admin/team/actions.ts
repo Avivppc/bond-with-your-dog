@@ -100,6 +100,9 @@ export async function removeStaffMember(formData: FormData): Promise<void> {
     console.error("[team] remove member failed", { target: target.data, error: error.message });
     back({ error: "Could not remove the member." });
   }
+  // Free the (unique) invite email so this person can be invited again later.
+  const { error: inviteError } = await sb.from("staff_invites").delete().eq("accepted_by", target.data);
+  if (inviteError) console.error("[team] invite cleanup failed", { target: target.data, error: inviteError.message });
   revalidatePath("/admin/team");
   back({ ok: "Member removed." });
 }

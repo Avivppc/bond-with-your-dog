@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { parsePriceToCents } from "@/lib/pricing";
+import { configuredProvider } from "@/lib/payments/provider";
 
 const optionalPositiveInt = z.preprocess(
   (v) => (v === "" || v == null ? null : Number(v)),
@@ -60,6 +61,11 @@ export async function saveOffer(formData: FormData): Promise<void> {
   const id = String(formData.get("id") ?? "new");
   const parsed = OfferSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back(id, { error: parsed.error.issues[0].message });
+  // Paddle charges a price it knows about; a published paid offer without one can't be bought.
+  const offer = parsed.data;
+  if (configuredProvider() === "paddle" && offer.status === "published" && offer.payment_type !== "free" && !offer.provider_price_id) {
+    back(id, { error: "Add the Paddle price ID (pri_…) before publishing a paid offer" });
+  }
   const courseIds = formData.getAll("course_ids").map(String).filter(Boolean);
   if (courseIds.length === 0) back(id, { error: "Choose at least one course for this offer" });
 

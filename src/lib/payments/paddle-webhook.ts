@@ -41,6 +41,7 @@ const Transaction = z.object({
   currency_code: z.string(),
   custom_data: CustomData,
   details: z.object({ totals: z.object({ grand_total: z.string() }) }),
+  items: z.array(z.object({ price: z.object({ id: z.string() }).nullable().optional() })).optional(),
   billing_period: Period,
 });
 
@@ -79,6 +80,7 @@ export function mapPaddleEvent(payload: unknown): BillingEvent {
       amountCents: Number.parseInt(t.details.totals.grand_total, 10) || 0,
       currency: t.currency_code,
       periodEnd: t.billing_period?.ends_at ?? null,
+      priceIds: (t.items ?? []).flatMap((i) => (i.price?.id ? [i.price.id] : [])),
     };
   }
 

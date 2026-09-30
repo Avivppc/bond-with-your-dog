@@ -27,8 +27,8 @@ set role authenticated;
 
 -- Enrolled learner: sees body and file metadata, never the video reference.
 select t.login('00000000-0000-0000-0000-0000000000d1');
-select t.ok((select body_html from public.lessons where id = 'd0000000-0000-0000-0000-000000000001') = '<p>Hello</p>',
-            'lesson body is readable with the lesson');
+select t.denied($$select body_html from public.lessons$$,
+                'lesson body is server-only (loaded after can_access_lesson)');
 select t.ok((select count(*) from public.lesson_files) = 1, 'enrolled learner sees file metadata');
 select t.denied($$select external_id from public.lesson_videos$$, 'video references are server-only');
 select t.denied($$insert into public.lesson_files (lesson_id, file_name, storage_path)

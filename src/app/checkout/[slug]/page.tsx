@@ -13,6 +13,7 @@ const ERRORS: Record<string, string> = {
   "not-configured": "Online payments are not open yet. Please check back soon.",
   provider: "We couldn't reach the payment provider. Please try again in a moment.",
   failed: "Something went wrong starting your checkout. Please try again.",
+  owned: "You already have access to everything in this offer — head to your dashboard to keep learning.",
 };
 
 export default async function CheckoutPage({

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { LessonForm } from "./LessonForm";
+import { QuestionForm, type QuestionDefaults } from "./QuestionForm";
 import { VideoPanel } from "./VideoPanel";
 import { BodyEditor } from "./BodyEditor";
 import { FilesPanel } from "./FilesPanel";
@@ -9,9 +10,9 @@ import type { LessonVideoSummary } from "./content-actions";
 import {
   updateLesson,
   deleteLesson,
-  upsertQuestion,
   deleteQuestion,
 } from "../actions";
+import { requireStaff } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function EditLessonPage({
   params: Promise<{ id: string; lid: string }>;
   searchParams: Promise<{ saved?: string; error?: string }>;
 }) {
+  await requireStaff("content");
   const { id: courseId, lid } = await params;
   const { saved, error } = await searchParams;
   const sb = createServiceClient();
@@ -142,8 +144,8 @@ export default async function EditLessonPage({
                         position: q.position,
                         prompt: q.prompt,
                         kind: q.kind,
-                        options_json: JSON.stringify(q.options, null, 2),
-                        correct_json: JSON.stringify(q.correct, null, 2),
+                        options: (q.options ?? []) as QuestionDefaults["options"],
+                        correct: (q.correct ?? []) as unknown[],
                         explanation: q.explanation ?? "",
                       }}
                     />
@@ -176,9 +178,8 @@ export default async function EditLessonPage({
                   position: (questions?.length ?? 0) + 1,
                   prompt: "",
                   kind: "single",
-                  options_json:
-                    '[\n  { "id": "a", "text": "Option A" },\n  { "id": "b", "text": "Option B" }\n]',
-                  correct_json: '["a"]',
+                  options: [],
+                  correct: [],
                   explanation: "",
                 }}
               />
@@ -201,114 +202,5 @@ export default async function EditLessonPage({
         </form>
       </section>
     </div>
-  );
-}
-
-function QuestionForm({
-  defaults,
-}: {
-  defaults: {
-    id?: string;
-    lesson_id: string;
-    course_id: string;
-    position: number;
-    prompt: string;
-    kind: "single" | "multi" | "tf";
-    options_json: string;
-    correct_json: string;
-    explanation: string;
-  };
-}) {
-  return (
-    <form action={upsertQuestion} className="flex flex-col gap-4">
-      {defaults.id && <input type="hidden" name="id" value={defaults.id} />}
-      <input type="hidden" name="lesson_id" value={defaults.lesson_id} />
-      <input type="hidden" name="course_id" value={defaults.course_id} />
-
-      <div className="grid grid-cols-2 gap-4">
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-            Position
-          </span>
-          <input
-            name="position"
-            type="number"
-            defaultValue={defaults.position}
-            className="px-3 py-2 rounded-lg border border-slate-200 bg-white"
-          />
-        </label>
-        <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Kind</span>
-          <select
-            name="kind"
-            defaultValue={defaults.kind}
-            className="px-3 py-2 rounded-lg border border-slate-200 bg-white"
-          >
-            <option value="single">Single choice</option>
-            <option value="multi">Multiple choice</option>
-            <option value="tf">True / False</option>
-          </select>
-        </label>
-      </div>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Prompt</span>
-        <textarea
-          name="prompt"
-          rows={2}
-          defaultValue={defaults.prompt}
-          className="px-3 py-2 rounded-lg border border-slate-200 bg-white resize-none"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-          Options (JSON)
-        </span>
-        <textarea
-          name="options_json"
-          rows={5}
-          defaultValue={defaults.options_json}
-          className="px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs"
-        />
-        <span className="text-xs text-slate-500">
-          For single/multi: <code>[{`{"id":"a","text":"..."}`}, ...]</code>. For tf: <code>[]</code>.
-        </span>
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-          Correct answer (JSON)
-        </span>
-        <textarea
-          name="correct_json"
-          rows={2}
-          defaultValue={defaults.correct_json}
-          className="px-3 py-2 rounded-lg border border-slate-200 bg-white font-mono text-xs"
-        />
-        <span className="text-xs text-slate-500">
-          single: <code>[&quot;a&quot;]</code> · multi: <code>[&quot;a&quot;,&quot;c&quot;]</code> · tf: <code>[true]</code>.
-        </span>
-      </label>
-
-      <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
-          Explanation (shown after answering)
-        </span>
-        <textarea
-          name="explanation"
-          rows={2}
-          defaultValue={defaults.explanation}
-          className="px-3 py-2 rounded-lg border border-slate-200 bg-white resize-none"
-        />
-      </label>
-
-      <button
-        type="submit"
-        className="bg-orange-700 text-white px-5 py-2.5 rounded-full font-bold text-xs self-start"
-      >
-        Save question
-      </button>
-    </form>
   );
 }

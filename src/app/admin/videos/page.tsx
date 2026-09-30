@@ -1,9 +1,11 @@
 import { createServiceClient } from "@/lib/supabase/admin";
 import { approveVideo, unapproveVideo, deleteVideo } from "./actions";
+import { requireStaff } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminVideosPage() {
+  await requireStaff("content");
   const sb = createServiceClient();
   const { data: pending } = await sb
     .from("student_videos")

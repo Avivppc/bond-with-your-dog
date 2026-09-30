@@ -4,18 +4,26 @@ import { cancelAccessInvite, grantAccessByEmail, revokeCourseAccess } from "./ac
 
 export const dynamic = "force-dynamic";
 
-const PAGE_SIZE = 200;
+const PAGE_SIZE = 50;
 
-interface EnrollmentRow {
-  user_id: string;
+interface EnrollmentSummary {
   course_id: string;
+  title: string;
   source: string;
-  enrolled_at: string;
   expires_at: string | null;
-  courses: { title: string } | null;
 }
 
-function accessLabel(e: EnrollmentRow): { text: string; active: boolean } {
+interface StudentRow {
+  user_id: string;
+  email: string;
+  created_at: string;
+  full_name: string | null;
+  completed_lessons: number;
+  enrollments: EnrollmentSummary[];
+  total_count: number;
+}
+
+function accessLabel(e: EnrollmentSummary): { text: string; active: boolean } {
   if (!e.expires_at) return { text: "lifetime", active: true };
   const active = new Date(e.expires_at) > new Date();
   return { text: `${active ? "until" : "ended"} ${new Date(e.expires_at).toLocaleDateString("en-US")}`, active };
@@ -24,27 +32,24 @@ function accessLabel(e: EnrollmentRow): { text: string; active: boolean } {
 export default async function StudentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; ok?: string; error?: string }>;
+  searchParams: Promise<{ q?: string; page?: string; ok?: string; error?: string }>;
 }) {
   await requireStaff("sales");
-  const { q, ok, error } = await searchParams;
+  const { q, page: pageParam, ok, error } = await searchParams;
+  const page = Math.max(1, Number.parseInt(pageParam ?? "1", 10) || 1);
   const sb = createServiceClient();
 
-  const [usersRes, enrollmentsRes, progressRes, offersRes, invitesRes] = await Promise.all([
-    sb.auth.admin.listUsers({ page: 1, perPage: PAGE_SIZE }),
-    sb.from("enrollments").select("user_id, course_id, source, enrolled_at, expires_at, courses(title)"),
-    sb.from("lesson_progress").select("user_id").not("completed_at", "is", null),
+  const [studentsRes, offersRes, invitesRes] = await Promise.all([
+    sb.rpc("admin_list_students", { p_search: q?.trim() ?? "", p_limit: PAGE_SIZE, p_offset: (page - 1) * PAGE_SIZE }),
     sb.from("offers").select("id, title").order("title"),
     sb.from("access_invites").select("id, email, created_at, offers(title)").is("claimed_at", null).order("created_at", { ascending: false }),
   ]);
 
-  const needle = q?.trim().toLowerCase() ?? "";
-  const users = (usersRes.data?.users ?? [])
-    .filter((u) => !needle || u.email?.toLowerCase().includes(needle))
-    .sort((a, b) => b.created_at.localeCompare(a.created_at));
-  const enrollments = (enrollmentsRes.data ?? []) as unknown as EnrollmentRow[];
-  const completedByUser = new Map<string, number>();
-  for (const p of progressRes.data ?? []) completedByUser.set(p.user_id, (completedByUser.get(p.user_id) ?? 0) + 1);
+  if (studentsRes.error) console.error("[students] list failed", studentsRes.error.message);
+  const users = (studentsRes.data ?? []) as StudentRow[];
+  const total = users[0]?.total_count ?? 0;
+  const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const pageHref = (n: number) => `/admin/students?${new URLSearchParams({ ...(q ? { q } : {}), page: String(n) }).toString()}`;
 
   return (
     <div className="space-y-6">
@@ -120,10 +125,10 @@ export default async function StudentsPage({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {users.map((u) => {
-              const mine = enrollments.filter((e) => e.user_id === u.id);
+              const mine = u.enrollments;
               return (
-                <tr key={u.id} className="align-top">
-                  <td className="px-4 py-3 font-semibold">{u.email}</td>
+                <tr key={u.user_id} className="align-top">
+                  <td className="px-4 py-3 font-semibold">{u.email}{u.full_name && <span className="block text-xs font-normal text-slate-500">{u.full_name}</span>}</td>
                   <td className="py-3">
                     {mine.length === 0 ? (
                       <span className="text-slate-400">—</span>
@@ -133,13 +138,13 @@ export default async function StudentsPage({
                           const label = accessLabel(e);
                           return (
                             <li key={e.course_id} className="flex items-center gap-2">
-                              <span className={label.active ? "" : "line-through text-slate-400"}>{e.courses?.title ?? e.course_id}</span>
+                              <span className={label.active ? "" : "line-through text-slate-400"}>{e.title}</span>
                               <span className="text-[10px] uppercase text-slate-500">
                                 {e.source} · {label.text}
                               </span>
                               {label.active && (
                                 <form action={revokeCourseAccess}>
-                                  <input type="hidden" name="user_id" value={u.id} />
+                                  <input type="hidden" name="user_id" value={u.user_id} />
                                   <input type="hidden" name="course_id" value={e.course_id} />
                                   <button type="submit" className="text-[10px] text-red-600 hover:text-red-800">
                                     revoke
@@ -152,7 +157,7 @@ export default async function StudentsPage({
                       </ul>
                     )}
                   </td>
-                  <td className="py-3">{completedByUser.get(u.id) ?? 0}</td>
+                  <td className="py-3">{u.completed_lessons}</td>
                   <td className="py-3 text-slate-500">{new Date(u.created_at).toLocaleDateString("en-US")}</td>
                 </tr>
               );
@@ -161,6 +166,16 @@ export default async function StudentsPage({
         </table>
         {users.length === 0 && <p className="p-6 text-sm text-slate-500">No students found.</p>}
       </section>
+
+      {pages > 1 && (
+        <nav className="flex items-center gap-3 text-sm" aria-label="Pages">
+          {page > 1 && <a href={pageHref(page - 1)} className="font-bold text-orange-700">← Previous</a>}
+          <span className="text-slate-500">
+            Page {page} of {pages} · {total} students
+          </span>
+          {page < pages && <a href={pageHref(page + 1)} className="font-bold text-orange-700">Next →</a>}
+        </nav>
+      )}
     </div>
   );
 }

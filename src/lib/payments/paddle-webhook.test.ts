@@ -43,6 +43,7 @@ describe("mapPaddleEvent", () => {
         currency_code: "USD",
         custom_data: { order_id: order },
         details: { totals: { grand_total: "4900" } },
+        items: [{ price: { id: "pri_course" }, quantity: 1 }],
         billing_period: null,
       },
     });
@@ -55,6 +56,7 @@ describe("mapPaddleEvent", () => {
       amountCents: 4900,
       currency: "USD",
       periodEnd: null,
+      priceIds: ["pri_course"],
     });
   });
 

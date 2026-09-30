@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { canPerform, resolveStaffRole, type StaffCapability, type StaffRole } from "@/lib/staff";
 
 /** Bootstrap owners from ADMIN_EMAILS (comma-separated). Invited staff live in staff_members. */
@@ -32,6 +33,17 @@ async function loadStaffRole(supabase: ServerSupabase, userId: string): Promise<
   return typeof claimed.data === "string" ? claimed.data : null;
 }
 
+/**
+ * Bootstrap owners also get a staff_members row, so database policies (draft preview,
+ * current_staff_role) treat them as staff — not only the app-level guard.
+ */
+async function ensureOwnerRow(userId: string): Promise<void> {
+  const { error } = await createServiceClient()
+    .from("staff_members")
+    .upsert({ user_id: userId, role: "owner" }, { onConflict: "user_id" });
+  if (error) console.error("could not record bootstrap owner", { userId, error: error.message });
+}
+
 export interface StaffSession {
   user: User;
   role: StaffRole;
@@ -48,8 +60,10 @@ export async function requireStaff(capability: StaffCapability = "content"): Pro
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/admin");
 
-  const role = resolveStaffRole(user.email, await loadStaffRole(supabase, user.id), getAdminEmails());
+  const dbRole = await loadStaffRole(supabase, user.id);
+  const role = resolveStaffRole(user.email, dbRole, getAdminEmails(), Boolean(user.email_confirmed_at));
   if (!role || !canPerform(role, capability)) redirect("/dashboard");
+  if (role === "owner" && dbRole !== "owner") await ensureOwnerRow(user.id);
   return { user, role };
 }
 

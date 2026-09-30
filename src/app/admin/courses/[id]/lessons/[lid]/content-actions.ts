@@ -98,11 +98,15 @@ export async function setLessonVideo(input: z.input<typeof SetVideo>): Promise<A
   }
 
   // Keep the public lesson row in sync for outlines/cards (duration, thumbnail are not secret).
-  const { error: lessonError } = await sb
-    .from("lessons")
-    .update({ duration_seconds: meta?.durationSeconds ?? null, thumbnail_url: meta?.thumbnailUrl ?? null })
-    .eq("id", lessonId);
-  if (lessonError) console.error("lesson video metadata sync failed", { lessonId, error: lessonError.message });
+  // When Vimeo won't share metadata (private video, outage) keep what the editor entered by hand.
+  const synced = {
+    ...(meta?.durationSeconds != null ? { duration_seconds: meta.durationSeconds } : {}),
+    ...(meta?.thumbnailUrl ? { thumbnail_url: meta.thumbnailUrl } : {}),
+  };
+  if (Object.keys(synced).length > 0) {
+    const { error: lessonError } = await sb.from("lessons").update(synced).eq("id", lessonId);
+    if (lessonError) console.error("lesson video metadata sync failed", { lessonId, error: lessonError.message });
+  }
 
   refresh(courseId, lessonId);
   return {

@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { StatsOverview } from "./_components/StatsOverview";
+import { requireStaff } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCoursesPage() {
+  await requireStaff("content");
   const sb = createServiceClient();
   const { data: courses } = await sb
     .from("courses")

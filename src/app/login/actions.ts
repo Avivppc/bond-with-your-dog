@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { safeNext } from "@/lib/auth/safe-next";
 
 const Schema = z.object({
   email: z.string().email(),
@@ -12,6 +13,9 @@ const Schema = z.object({
 });
 
 export async function login(formData: FormData) {
+  const next = safeNext(String(formData.get("next") ?? ""));
+  const back = (error: string): never =>
+    redirect(`/login?next=${encodeURIComponent(next)}&error=${encodeURIComponent(error)}`);
   const parsed = Schema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
@@ -19,7 +23,7 @@ export async function login(formData: FormData) {
   });
 
   if (!parsed.success) {
-    redirect("/login?error=" + encodeURIComponent("Please check your email and password."));
+    return back("Please check your email and password.");
   }
 
   const supabase = await createClient();
@@ -29,9 +33,9 @@ export async function login(formData: FormData) {
   });
 
   if (error) {
-    redirect("/login?error=" + encodeURIComponent(error.message));
+    return back(error.message);
   }
 
   revalidatePath("/", "layout");
-  redirect(parsed.data.next || "/dashboard");
+  redirect(next);
 }

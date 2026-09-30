@@ -31,9 +31,9 @@ const labelClass = "text-xs font-bold uppercase tracking-wider text-on-surface-v
 export default async function SignupPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; message?: string }>;
+  searchParams: Promise<{ error?: string; message?: string; next?: string }>;
 }) {
-  const { error, message } = await searchParams;
+  const { error, message, next } = await searchParams;
   const testimonial = testimonialById(SIGNUP_TESTIMONIAL_ID);
 
   return (
@@ -105,6 +105,7 @@ export default async function SignupPage({
               )}
 
               <form action={signup} className="flex flex-col gap-4">
+                <input type="hidden" name="next" value={next ?? "/dashboard"} />
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>Your name</span>
                   <input name="full_name" type="text" required minLength={2} autoComplete="name" className={inputClass} />
@@ -143,7 +144,7 @@ export default async function SignupPage({
                   <span className="h-px flex-1 bg-outline-variant/40" />
                 </div>
 
-                <GoogleButton consentInputName="marketing_opt_in" label="Sign up with Google" />
+                <GoogleButton consentInputName="marketing_opt_in" label="Sign up with Google" next={next ?? "/dashboard"} />
               </form>
 
               <p className="text-xs text-outline mt-5 leading-relaxed">
@@ -153,7 +154,7 @@ export default async function SignupPage({
 
               <p className="text-sm text-center mt-6 text-on-surface-variant">
                 Already a member?{" "}
-                <Link href="/login" className="font-bold text-primary">
+                <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className="font-bold text-primary">
                   Sign in
                 </Link>
               </p>
