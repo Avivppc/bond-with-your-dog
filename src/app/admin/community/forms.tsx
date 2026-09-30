@@ -1,7 +1,8 @@
 import { BTN_DANGER, BTN_PRIMARY, INPUT, LABEL } from "@/app/admin/_components/ui";
 import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
 import { LocalDateTime } from "./LocalDateTime";
-import { deleteChallenge, deleteChannel, deleteMeetup, deleteStep, saveChallenge, saveChannel, saveMeetup, saveStep } from "./actions";
+import { deleteChallenge, deleteChannel, deleteStep, saveChallenge, saveChannel, saveStep } from "./actions";
+import { Area, Check, Text } from "./fields";
 
 /** Admin → Community forms (one per record; the same form creates or edits). */
 export interface ChannelRecord {
@@ -32,46 +33,6 @@ export interface StepRecord {
   title: string;
   body: string | null;
   position: number;
-}
-
-export interface MeetupRecord {
-  id: string;
-  title: string;
-  description: string | null;
-  starts_at: string;
-  duration_minutes: number;
-  location: string | null;
-  meeting_url: string | null;
-  cover_image_url: string | null;
-  published: boolean;
-  canceled: boolean;
-}
-
-function Text({ label, name, value, placeholder, required, max }: { label: string; name: string; value?: string | null; placeholder?: string; required?: boolean; max: number }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className={LABEL}>{label}</span>
-      <input name={name} defaultValue={value ?? ""} placeholder={placeholder} required={required} maxLength={max} className={INPUT} />
-    </label>
-  );
-}
-
-function Area({ label, name, value, rows = 3, max }: { label: string; name: string; value?: string | null; rows?: number; max: number }) {
-  return (
-    <label className="flex flex-col gap-1.5">
-      <span className={LABEL}>{label}</span>
-      <textarea name={name} defaultValue={value ?? ""} rows={rows} maxLength={max} className={INPUT} />
-    </label>
-  );
-}
-
-function Check({ label, name, checked }: { label: string; name: string; checked: boolean }) {
-  return (
-    <label className="flex items-center gap-2.5">
-      <input type="checkbox" name={name} defaultChecked={checked} className="h-4 w-4 accent-[#343332]" />
-      <span className="text-sm">{label}</span>
-    </label>
-  );
 }
 
 export function ChannelForm({ channel }: { channel?: ChannelRecord }) {
@@ -181,47 +142,6 @@ export function StepForm({ challengeId, step, nextPosition }: { challengeId: str
           <input type="hidden" name="id" value={step.id} />
           <ConfirmSubmit className={BTN_DANGER} message={`Delete step "${step.title}"?`}>
             Delete
-          </ConfirmSubmit>
-        </form>
-      )}
-    </div>
-  );
-}
-
-export function MeetupForm({ meetup }: { meetup?: MeetupRecord }) {
-  return (
-    <div className="space-y-3">
-      <form action={saveMeetup} className="grid gap-3 sm:grid-cols-2">
-        {meetup && <input type="hidden" name="id" value={meetup.id} />}
-        <div className="sm:col-span-2">
-          <Text label="Title" name="title" value={meetup?.title} required max={120} placeholder="Live Q&A with Roni" />
-        </div>
-        <div className="sm:col-span-2">
-          <Area label="Description" name="description" value={meetup?.description} max={4000} />
-        </div>
-        <LocalDateTime name="starts_at" label="Starts" defaultValue={meetup?.starts_at ?? null} required />
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Length (minutes)</span>
-          <input name="duration_minutes" type="number" min={5} max={720} defaultValue={meetup?.duration_minutes ?? 60} className={INPUT} />
-        </label>
-        <Text label="Meeting link (Zoom…)" name="meeting_url" value={meetup?.meeting_url} max={500} placeholder="https://zoom.us/j/…" />
-        <Text label="Location (optional)" name="location" value={meetup?.location} max={200} placeholder="Online" />
-        <Text label="Cover image URL (optional)" name="cover_image_url" value={meetup?.cover_image_url} max={500} placeholder="https://…" />
-        <div className="flex flex-col justify-end gap-2 pb-1">
-          <Check label="Published" name="published" checked={meetup?.published ?? true} />
-          {meetup && <Check label="Canceled" name="canceled" checked={meetup.canceled} />}
-        </div>
-        <div className="sm:col-span-2">
-          <button type="submit" className={BTN_PRIMARY}>
-            {meetup ? "Save meetup" : "Create meetup"}
-          </button>
-        </div>
-      </form>
-      {meetup && (
-        <form action={deleteMeetup}>
-          <input type="hidden" name="id" value={meetup.id} />
-          <ConfirmSubmit className={BTN_DANGER} message={`Delete "${meetup.title}" and its RSVPs?`}>
-            Delete meetup
           </ConfirmSubmit>
         </form>
       )}
