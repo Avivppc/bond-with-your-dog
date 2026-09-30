@@ -25,14 +25,16 @@ describe("resolveStaffRole", () => {
 });
 
 describe("canPerform", () => {
-  it("lets editors manage content but not staff or settings", () => {
+  it("lets editors (the client's team) run content and sales, but not staff or settings", () => {
     expect(canPerform("editor", "content")).toBe(true);
+    expect(canPerform("editor", "sales")).toBe(true);
     expect(canPerform("editor", "staff")).toBe(false);
     expect(canPerform("editor", "settings")).toBe(false);
   });
 
   it("lets owners do everything", () => {
     expect(canPerform("owner", "content")).toBe(true);
+    expect(canPerform("owner", "sales")).toBe(true);
     expect(canPerform("owner", "staff")).toBe(true);
     expect(canPerform("owner", "settings")).toBe(true);
   });

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { claimPendingAccess } from "@/lib/access";
 import MemberShell from "@/components/member/MemberShell";
 import AskCoachFab from "@/components/member/AskCoachFab";
 
@@ -14,6 +15,7 @@ export default async function DashboardPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/dashboard");
+  await claimPendingAccess(supabase);
 
   const [profileRes, enrollmentsRes, progressRes, achievementsRes, defsRes, certsRes] = await Promise.all([
     supabase.from("profiles").select("full_name, dog_name, dog_breed, avatar_url").eq("id", user.id).single(),

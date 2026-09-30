@@ -3,7 +3,9 @@ import { redirect, notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
+import { claimPendingAccess } from "@/lib/access";
 import { buildOutline, flattenLessons } from "@/lib/course-outline";
+import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { CourseLessonRow, type MemberLessonRow } from "./CourseLessonRow";
 
 export const dynamic = "force-dynamic";
@@ -23,6 +25,7 @@ export default async function CourseLandingPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/learn/${courseId}`);
+  await claimPendingAccess(supabase);
 
   const { data: course } = await supabase
     .from("courses")
@@ -47,6 +50,13 @@ export default async function CourseLandingPage({
     });
   }
   const outline = buildOutline<MemberLessonRow>(modulesRes.data ?? [], lessonsRes.data ?? []);
+  const { data: offerLinks } = await supabase
+    .from("offer_courses")
+    .select("offers(slug, title, payment_type, price_cents, currency, interval, status)")
+    .eq("course_id", courseId);
+  const offers = (offerLinks ?? [])
+    .flatMap((l) => (l.offers ? [l.offers as unknown as PricedOffer & { slug: string; title: string; status: string }] : []))
+    .filter((o) => o.status === "published");
   const lessonNumber = new Map(flattenLessons(outline).map((l, i) => [l.id, i + 1]));
 
   const { data: enrollment } = await supabase
@@ -115,11 +125,26 @@ export default async function CourseLandingPage({
         {!enrollment && Number(course.price) > 0 && (
           <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm">
             <p className="font-bold" style={{ color: "#243036" }}>
-              You&apos;re not enrolled yet
+              Get full access
             </p>
-            <p className="text-sm" style={{ color: "#515d64" }}>
-              Enrollment for this course opens soon. Free preview lessons are available below.
-            </p>
+            {offers.length === 0 ? (
+              <p className="text-sm" style={{ color: "#515d64" }}>
+                Enrollment for this course opens soon. Free preview lessons are available below.
+              </p>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-3">
+                {offers.map((o) => (
+                  <Link
+                    key={o.slug}
+                    href={`/checkout/${o.slug}`}
+                    className="kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm shadow-md"
+                    style={{ color: "#fff0e6" }}
+                  >
+                    {o.title} — {formatOfferPrice(o)}
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

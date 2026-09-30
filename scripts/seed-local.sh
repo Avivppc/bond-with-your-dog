@@ -6,6 +6,7 @@
 #   owner@bonded.test   — bootstrap owner (ADMIN_EMAILS)
 #   editor@bonded.test  — gets "editor" by claiming a pending invite on first login
 #   student@bonded.test — enrolled student
+#   buyer@bonded.test   — no courses; use it to test checkout (PAYMENTS_PROVIDER=test)
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -33,6 +34,7 @@ create_user() {
 create_user owner@bonded.test "Owner"
 create_user editor@bonded.test "Editor"
 create_user student@bonded.test "Student"
+create_user buyer@bonded.test "Buyer"
 
 psql "$DB_URL" -v ON_ERROR_STOP=1 -q <<'SQL'
 insert into public.staff_invites (email, role) values ('editor@bonded.test', 'editor')
@@ -66,5 +68,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=$SERVICE_KEY
 ADMIN_EMAILS=owner@bonded.test
 NEXT_PUBLIC_SITE_URL=http://localhost:3100
+# Local checkout without a payment account (never enable in production)
+PAYMENTS_PROVIDER=test
+# Local-only secret so scripts/simulate-paddle-webhook.mjs can sign test webhooks
+PADDLE_WEBHOOK_SECRET=local_paddle_webhook_secret
 ENV
 echo "Seeded local Supabase and wrote .env.local"

@@ -1,5 +1,8 @@
 import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { StatsOverview } from "./_components/StatsOverview";
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminCoursesPage() {
   const sb = createServiceClient();
@@ -10,6 +13,7 @@ export default async function AdminCoursesPage() {
 
   return (
     <div>
+      <StatsOverview />
       <header className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-extrabold tracking-tighter">Courses</h1>
         <Link

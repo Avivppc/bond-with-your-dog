@@ -3,16 +3,16 @@
  * mobile app and tests can share it.
  *
  * - owner:  the platform owner — everything, including inviting staff and settings
- * - editor: the client's content team — courses, lessons, media, moderation
+ * - editor: the client's team — courses, lessons, media, moderation, offers, students, orders
  */
 export type StaffRole = "owner" | "editor";
-export type StaffCapability = "content" | "staff" | "settings";
+export type StaffCapability = "content" | "sales" | "staff" | "settings";
 
 const STAFF_ROLES: readonly StaffRole[] = ["owner", "editor"];
 
 const CAPABILITIES: Record<StaffRole, readonly StaffCapability[]> = {
-  owner: ["content", "staff", "settings"],
-  editor: ["content"],
+  owner: ["content", "sales", "staff", "settings"],
+  editor: ["content", "sales"],
 };
 
 function isStaffRole(value: unknown): value is StaffRole {
