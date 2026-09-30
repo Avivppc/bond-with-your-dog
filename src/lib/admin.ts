@@ -16,6 +16,22 @@ export function isAdminEmail(email: string | null | undefined): boolean {
   return getAdminEmails().includes(email.toLowerCase());
 }
 
+type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
+
+/**
+ * The caller's staff role from the DB. If they have none yet, try to claim a pending
+ * invite for their (verified) email — that is how invited editors get access on first login.
+ */
+async function loadStaffRole(supabase: ServerSupabase, userId: string): Promise<string | null> {
+  const current = await supabase.rpc("current_staff_role");
+  if (current.error) console.error("current_staff_role failed", { userId, error: current.error.message });
+  if (typeof current.data === "string") return current.data;
+
+  const claimed = await supabase.rpc("claim_staff_invite");
+  if (claimed.error) console.error("claim_staff_invite failed", { userId, error: claimed.error.message });
+  return typeof claimed.data === "string" ? claimed.data : null;
+}
+
 export interface StaffSession {
   user: User;
   role: StaffRole;
@@ -32,10 +48,7 @@ export async function requireStaff(capability: StaffCapability = "content"): Pro
   } = await supabase.auth.getUser();
   if (!user) redirect("/login?next=/admin");
 
-  const { data: dbRole, error } = await supabase.rpc("current_staff_role");
-  if (error) console.error("current_staff_role failed", { userId: user.id, error: error.message });
-
-  const role = resolveStaffRole(user.email, typeof dbRole === "string" ? dbRole : null, getAdminEmails());
+  const role = resolveStaffRole(user.email, await loadStaffRole(supabase, user.id), getAdminEmails());
   if (!role || !canPerform(role, capability)) redirect("/dashboard");
   return { user, role };
 }

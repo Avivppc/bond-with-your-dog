@@ -1,0 +1,105 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
+import { Resend } from "resend";
+import { z } from "zod";
+import { requireStaff } from "@/lib/admin";
+import { createServiceClient } from "@/lib/supabase/admin";
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.bonded.dog";
+
+const InviteSchema = z.object({
+  email: z.string().trim().toLowerCase().email("Enter a valid email address"),
+  role: z.enum(["editor", "owner"]),
+});
+
+function back(params: Record<string, string>): never {
+  redirect(`/admin/team?${new URLSearchParams(params).toString()}`);
+}
+
+/** Tells the invitee how to get in. Skipped (with a warning) when Resend isn't configured. */
+async function sendInviteEmail(email: string, role: string, inviterEmail: string | undefined): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.EMAIL_FROM;
+  if (!apiKey || !from) {
+    console.warn("[team] Resend not configured; invite saved without email", { email });
+    return false;
+  }
+  const loginUrl = `${SITE_URL}/login?next=/admin`;
+  const { error } = await new Resend(apiKey).emails.send({
+    from,
+    to: email,
+    subject: "You've been invited to manage the Bonded academy",
+    text: [
+      `Hi,`,
+      ``,
+      `${inviterEmail ?? "The Bonded team"} invited you to the Bonded admin as ${role === "owner" ? "an owner" : "a content editor"}.`,
+      ``,
+      `1. Open ${loginUrl}`,
+      `2. Sign in — or create an account — using this email address (${email}).`,
+      `3. Confirm your email if asked. You'll land in the admin area.`,
+    ].join("\n"),
+  });
+  if (error) {
+    console.error("[team] invite email failed", { email, error: error.message });
+    return false;
+  }
+  return true;
+}
+
+export async function inviteStaff(formData: FormData): Promise<void> {
+  const { user } = await requireStaff("staff");
+  const parsed = InviteSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) back({ error: parsed.error.issues[0].message });
+  const { email, role } = parsed.data;
+
+  const { error } = await createServiceClient()
+    .from("staff_invites")
+    .insert({ email, role, invited_by: user.id });
+  if (error) {
+    if (error.code === "23505") back({ error: `${email} already has an invite.` });
+    console.error("[team] invite insert failed", { email, error: error.message });
+    back({ error: "Could not create the invite." });
+  }
+
+  const emailed = await sendInviteEmail(email, role, user.email);
+  revalidatePath("/admin/team");
+  back({ ok: emailed ? `Invite sent to ${email}.` : `Invite saved for ${email} — email not sent, share the login link manually.` });
+}
+
+export async function revokeInvite(formData: FormData): Promise<void> {
+  await requireStaff("staff");
+  const id = z.string().uuid().safeParse(formData.get("id"));
+  if (!id.success) back({ error: "Invalid invite." });
+
+  const { error } = await createServiceClient().from("staff_invites").delete().eq("id", id.data).is("accepted_at", null);
+  if (error) {
+    console.error("[team] revoke invite failed", { id: id.data, error: error.message });
+    back({ error: "Could not revoke the invite." });
+  }
+  revalidatePath("/admin/team");
+  back({ ok: "Invite revoked." });
+}
+
+export async function removeStaffMember(formData: FormData): Promise<void> {
+  const { user } = await requireStaff("staff");
+  const target = z.string().uuid().safeParse(formData.get("user_id"));
+  if (!target.success) back({ error: "Invalid member." });
+  if (target.data === user.id) back({ error: "You can't remove yourself." });
+
+  const sb = createServiceClient();
+  const { data: member } = await sb.from("staff_members").select("role").eq("user_id", target.data).maybeSingle();
+  if (member?.role === "owner") {
+    const { count } = await sb.from("staff_members").select("user_id", { count: "exact", head: true }).eq("role", "owner");
+    if ((count ?? 0) <= 1) back({ error: "Keep at least one owner." });
+  }
+
+  const { error } = await sb.from("staff_members").delete().eq("user_id", target.data);
+  if (error) {
+    console.error("[team] remove member failed", { target: target.data, error: error.message });
+    back({ error: "Could not remove the member." });
+  }
+  revalidatePath("/admin/team");
+  back({ ok: "Member removed." });
+}

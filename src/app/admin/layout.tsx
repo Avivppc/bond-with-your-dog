@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/admin";
+import { requireStaff } from "@/lib/admin";
+import { canPerform } from "@/lib/staff";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  await requireAdmin();
+  const { role } = await requireStaff("content");
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#f5f7fa" }}>
       <nav className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
@@ -18,6 +19,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <Link href="/admin/videos" className="text-sm text-slate-300 hover:text-white">
             Spotlight queue
           </Link>
+          {canPerform(role, "staff") && (
+            <Link href="/admin/team" className="text-sm text-slate-300 hover:text-white">
+              Team
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-4 text-sm">
           <Link href="/" className="text-slate-300 hover:text-white">

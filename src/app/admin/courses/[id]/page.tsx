@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { CourseForm } from "@/app/admin/courses/new/page";
 import { updateCourse, deleteCourse } from "@/app/admin/actions";
+import { buildOutline } from "@/lib/course-outline";
+import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +18,20 @@ export default async function EditCoursePage({
   const { data: course } = await sb.from("courses").select("*").eq("id", id).single();
   if (!course) notFound();
 
-  const { data: lessons } = await sb
-    .from("lessons")
-    .select("id, position, title, kind, mux_playback_id, available_after_days, free_preview")
-    .eq("course_id", id)
-    .order("position", { ascending: true });
+  const [modulesRes, lessonsRes] = await Promise.all([
+    sb.from("modules").select("id, parent_id, title, position, published").eq("course_id", id),
+    sb
+      .from("lessons")
+      .select("id, module_id, title, position, published, kind, free_preview, available_after_days")
+      .eq("course_id", id),
+  ]);
+  if (modulesRes.error || lessonsRes.error) {
+    console.error("course outline load failed", {
+      id,
+      error: modulesRes.error?.message ?? lessonsRes.error?.message,
+    });
+  }
+  const outline = buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []);
 
   return (
     <div className="space-y-10">
@@ -53,64 +64,15 @@ export default async function EditCoursePage({
         </details>
       </section>
 
-      {/* Lessons */}
+      {/* Outline */}
       <section className="bg-white rounded-xl p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-extrabold tracking-tighter">Lessons</h2>
-          <Link
-            href={`/admin/courses/${id}/lessons/new`}
-            className="bg-orange-700 text-white px-4 py-2 rounded-full font-bold text-xs"
-          >
-            + New lesson
+          <h2 className="text-xl font-extrabold tracking-tighter">Course outline</h2>
+          <Link href={`/learn/${id}`} className="text-xs font-bold text-orange-700" target="_blank">
+            Preview as student ↗
           </Link>
         </div>
-        {!lessons || lessons.length === 0 ? (
-          <p className="text-slate-500 text-sm py-6">No lessons yet.</p>
-        ) : (
-          <ol className="divide-y divide-slate-100">
-            {lessons.map((l) => (
-              <li
-                key={l.id}
-                className="py-3 flex items-center justify-between gap-4 text-sm"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-bold text-slate-400 w-8 shrink-0">{l.position}.</span>
-                  <span className="font-bold text-slate-800 truncate">{l.title}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase shrink-0 ${
-                      l.kind === "quiz"
-                        ? "bg-purple-100 text-purple-800"
-                        : "bg-blue-100 text-blue-800"
-                    }`}
-                  >
-                    {l.kind}
-                  </span>
-                  {l.kind === "video" && !l.mux_playback_id && (
-                    <span className="text-[10px] font-bold uppercase text-amber-700 shrink-0">
-                      no video
-                    </span>
-                  )}
-                  {l.available_after_days != null && (
-                    <span className="text-[10px] font-bold uppercase text-slate-500 shrink-0">
-                      drips after {l.available_after_days}d
-                    </span>
-                  )}
-                  {l.free_preview && (
-                    <span className="text-[10px] font-bold uppercase text-emerald-700 shrink-0">
-                      free preview
-                    </span>
-                  )}
-                </div>
-                <Link
-                  href={`/admin/courses/${id}/lessons/${l.id}`}
-                  className="text-orange-700 font-bold shrink-0"
-                >
-                  Edit →
-                </Link>
-              </li>
-            ))}
-          </ol>
-        )}
+        <CourseOutlineEditor courseId={id} outline={outline} />
       </section>
 
       <section className="bg-white rounded-xl p-6 shadow-sm border border-red-100">

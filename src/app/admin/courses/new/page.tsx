@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createCourse } from "@/app/admin/actions";
+import { FormField } from "@/app/admin/_components/FormField";
 
 export default async function NewCoursePage({
   searchParams,
@@ -43,44 +44,17 @@ function CourseForm({
     published: boolean;
   }>;
 }) {
-  const Field = ({
-    label,
-    name,
-    type = "text",
-    required = false,
-    defaultValue,
-    placeholder,
-  }: {
-    label: string;
-    name: string;
-    type?: string;
-    required?: boolean;
-    defaultValue?: string | number;
-    placeholder?: string;
-  }) => (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{label}</span>
-      <input
-        name={name}
-        type={type}
-        required={required}
-        defaultValue={defaultValue ?? ""}
-        placeholder={placeholder}
-        className="px-4 py-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-orange-300 focus:outline-none"
-      />
-    </label>
-  );
 
   return (
     <form action={action} className="bg-white rounded-xl p-8 shadow-sm flex flex-col gap-5">
-      <Field
+      <FormField
         label="Course slug (URL)"
         name="id"
         required
         placeholder="kinetic-basics"
         defaultValue={defaults?.id}
       />
-      <Field label="Title" name="title" required defaultValue={defaults?.title} />
+      <FormField label="Title" name="title" required defaultValue={defaults?.title} />
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
           Description
@@ -106,7 +80,7 @@ function CourseForm({
             <option>Advanced</option>
           </select>
         </label>
-        <Field
+        <FormField
           label="Category"
           name="category"
           required
@@ -115,11 +89,11 @@ function CourseForm({
         />
       </div>
       <div className="grid grid-cols-2 gap-5">
-        <Field label="Price ($)" name="price" type="number" required defaultValue={defaults?.price ?? 0} />
-        <Field label="Badge (optional)" name="badge" defaultValue={defaults?.badge} />
+        <FormField label="Price ($)" name="price" type="number" required defaultValue={defaults?.price ?? 0} />
+        <FormField label="Badge (optional)" name="badge" defaultValue={defaults?.badge} />
       </div>
-      <Field label="Image URL" name="image" defaultValue={defaults?.image} />
-      <Field label="Image alt text" name="image_alt" defaultValue={defaults?.image_alt} />
+      <FormField label="Image URL" name="image" defaultValue={defaults?.image} />
+      <FormField label="Image alt text" name="image_alt" defaultValue={defaults?.image_alt} />
       <label className="flex items-center gap-3">
         <input
           type="checkbox"

@@ -1,3 +1,4 @@
+import { FormField } from "@/app/admin/_components/FormField";
 type Defaults = Partial<{
   id: string;
   course_id: string;
@@ -22,33 +23,6 @@ export function LessonForm({
   submitLabel: string;
   defaults: Defaults;
 }) {
-  const Field = ({
-    label,
-    name,
-    type = "text",
-    defaultValue,
-    placeholder,
-    hint,
-  }: {
-    label: string;
-    name: string;
-    type?: string;
-    defaultValue?: string | number | null;
-    placeholder?: string;
-    hint?: string;
-  }) => (
-    <label className="flex flex-col gap-1.5">
-      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">{label}</span>
-      <input
-        name={name}
-        type={type}
-        defaultValue={defaultValue ?? ""}
-        placeholder={placeholder}
-        className="px-4 py-2.5 rounded-lg border border-slate-200 bg-white focus:ring-2 focus:ring-orange-300 focus:outline-none"
-      />
-      {hint && <span className="text-xs text-slate-500">{hint}</span>}
-    </label>
-  );
 
   return (
     <form action={action} className="bg-white rounded-xl p-8 shadow-sm flex flex-col gap-5">
@@ -56,7 +30,7 @@ export function LessonForm({
       <input type="hidden" name="course_id" value={defaults.course_id} />
 
       <div className="grid grid-cols-2 gap-5">
-        <Field label="Position" name="position" type="number" defaultValue={defaults.position} />
+        <FormField label="Position" name="position" type="number" defaultValue={defaults.position} />
         <label className="flex flex-col gap-1.5">
           <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Kind</span>
           <select
@@ -70,7 +44,7 @@ export function LessonForm({
         </label>
       </div>
 
-      <Field label="Title" name="title" defaultValue={defaults.title} />
+      <FormField label="Title" name="title" defaultValue={defaults.title} />
       <label className="flex flex-col gap-1.5">
         <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Description</span>
         <textarea
@@ -82,7 +56,7 @@ export function LessonForm({
       </label>
 
       <div className="grid grid-cols-2 gap-5">
-        <Field
+        <FormField
           label="Mux playback ID"
           name="mux_playback_id"
           defaultValue={defaults.mux_playback_id}
@@ -104,21 +78,21 @@ export function LessonForm({
       </div>
 
       <div className="grid grid-cols-3 gap-5">
-        <Field
+        <FormField
           label="Duration (sec)"
           name="duration_seconds"
           type="number"
           defaultValue={defaults.duration_seconds}
           hint="Optional"
         />
-        <Field
+        <FormField
           label="Drip — days after enroll"
           name="available_after_days"
           type="number"
           defaultValue={defaults.available_after_days ?? ""}
           hint="Blank = unlocked immediately"
         />
-        <Field
+        <FormField
           label="Pass threshold (quiz)"
           name="pass_threshold"
           type="number"
