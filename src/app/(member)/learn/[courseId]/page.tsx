@@ -1,58 +1,43 @@
 import Link from "next/link";
-import { redirect, notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { claimPendingAccess } from "@/lib/access";
+import { requireMember } from "@/lib/member/viewer";
+import { loadStudentCourse } from "@/lib/student-course-server";
+import { chapterLock } from "@/lib/member/chapter-lock";
 import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
-import { loadStudentCourse, type StudentCourse, type StudentLesson } from "@/lib/student-course-server";
-import type { CourseOutline } from "@/lib/course-outline";
-import { LearnLayout } from "@/components/learn/LearnLayout";
-import { LEARN, ProgressBar } from "@/components/learn/CourseSidebar";
-import { CourseLessonRow } from "./CourseLessonRow";
+import { Breadcrumbs, Ms, ProgressLine, Tip, formatMinutes } from "@/components/app/ui";
+import { LessonList } from "./LessonList";
 
 export const dynamic = "force-dynamic";
 
 type PublishedOffer = PricedOffer & { slug: string; title: string; status: string };
 
-const PILL_ORANGE = "inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-95";
-
-export default async function CourseHomePage({
-  params,
-  searchParams,
-}: {
-  params: Promise<{ courseId: string }>;
-  searchParams: Promise<{ enroll?: string; tab?: string }>;
-}) {
+export default async function CourseOverviewPage({ params, searchParams }: { params: Promise<{ courseId: string }>; searchParams: Promise<{ enroll?: string }> }) {
   const { courseId } = await params;
-  const { enroll, tab } = await searchParams;
+  const { enroll } = await searchParams;
+  const viewer = await requireMember(`/learn/${courseId}`);
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect(`/login?next=/learn/${courseId}`);
-  await claimPendingAccess(supabase);
-
-  const data = await loadStudentCourse(supabase, courseId, user.id);
+  const data = await loadStudentCourse(supabase, courseId, viewer.userId);
   if (!data) notFound();
-  const { course, outline, lessons, enrolledAt, progress } = data;
-  // Staff previews see the member view, like Kajabi's preview mode.
-  const isMember = Boolean(enrolledAt) || data.isStaffPreview;
 
-  // Visitors see every offer for the course; limited members only the ones that unlock all of it.
-  const needsOffers = !isMember || data.isLimited;
-  const [{ data: profile }, { data: offerLinks }] = await Promise.all([
-    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
-    needsOffers
+  const { course, lessons, progress } = data;
+  const isMember = Boolean(data.enrolledAt) || data.isStaffPreview;
+  const [lock, offerLinks, certRes] = await Promise.all([
+    chapterLock(supabase, data, viewer.userId),
+    !isMember || data.isLimited
       ? supabase.from("offer_courses").select("access_level, offers(slug, title, payment_type, price_cents, currency, interval, status)").eq("course_id", courseId)
       : Promise.resolve({ data: [] }),
+    supabase.from("certificates").select("code").eq("user_id", viewer.userId).eq("course_id", courseId).maybeSingle(),
   ]);
-  const offers = (offerLinks ?? [])
+  const offers = ((offerLinks.data ?? []) as unknown as { access_level: string; offers: PublishedOffer | null }[])
     .filter((l) => !data.isLimited || l.access_level === "full")
-    .flatMap((l) => (l.offers ? [l.offers as unknown as PublishedOffer] : []))
-    .filter((o) => o.status === "published");
-  const firstName = profile?.full_name?.split(" ")[0] || "friend";
-  const numberOf = new Map(lessons.map((l, i) => [l.id, i + 1]));
+    .flatMap((l) => (l.offers && l.offers.status === "published" ? [l.offers] : []));
+
   const next = progress.next ?? lessons[0] ?? null;
-  const showMap = tab === "map";
+  const nextNumber = next ? lessons.findIndex((l) => l.id === next.id) + 1 : 0;
+  const totalSeconds = lessons.reduce((sum, l) => sum + (l.duration_seconds ?? 0), 0);
+  const hasDrip = lessons.some((l) => (l.available_after_days ?? 0) > 0);
+  const dog = viewer.activeDog?.name;
 
   async function enrollFree() {
     "use server";
@@ -66,219 +51,159 @@ export default async function CourseHomePage({
     redirect(`/learn/${courseId}`);
   }
 
-  return (
-    <LearnLayout data={data} variant="home">
-      <section className="relative overflow-hidden rounded-[2rem] p-7 text-white shadow-sm sm:p-9" style={{ backgroundColor: LEARN.teal }}>
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
-        <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{isMember ? "Member dashboard" : `${course.category} · ${course.level}`}</p>
-        <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl" style={{ fontFamily: "var(--font-headline)" }}>
-          {isMember ? `Welcome back, ${firstName}` : course.title}
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">{course.description}</p>
+  const cta = (() => {
+    if (!isMember) {
+      if (offers.length > 0)
+        return offers.map((o) => (
+          <Link key={o.slug} className="btn btn-primary" href={`/checkout/${o.slug}`}>
+            Get access · {formatOfferPrice(o)}
+          </Link>
+        ));
+      if (course.price === 0)
+        return (
+          <form action={enrollFree}>
+            <button type="submit" className="btn btn-primary">
+              <Ms name="play_arrow" fill />
+              Start for free
+            </button>
+          </form>
+        );
+      return <span className="faint">Enrollment opens soon. Free preview lessons are open below.</span>;
+    }
+    if (lock.locked) return <span className="pill neutral"><Ms name="lock" size="sm" />Opens after {lock.requiredTitle}</span>;
+    if (!next) return null;
+    return (
+      <Link className="btn btn-primary" href={`/learn/${courseId}/${next.id}`} data-tour="continue">
+        <Ms name="play_arrow" fill />
+        {progress.completed === 0 ? "Start Lesson 1" : progress.next ? `Continue Lesson ${nextNumber}` : "Watch again"}
+      </Link>
+    );
+  })();
 
-        {isMember ? (
-          <div className="mt-6 flex flex-wrap items-end justify-between gap-5">
-            <div className="w-full max-w-sm space-y-1.5">
-              <div className="flex justify-between text-xs text-white/80">
-                <span>
-                  {progress.completed} of {progress.total} lessons complete
-                </span>
-                <span className="font-bold text-white">{progress.percent}%</span>
-              </div>
-              <ProgressBar percent={progress.percent} onDark />
-            </div>
-            {next && (
-              <Link href={`/learn/${courseId}/${next.id}`} className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
-                {progress.completed === 0 ? "Start training" : progress.next ? "Continue training" : "Watch again"} →
+  return (
+    <>
+      {data.isStaffPreview && (
+        <Tip icon="visibility">
+          <b>Preview mode.</b> You&apos;re seeing this course as a team member — every lesson is open to you. <Link href={`/admin/courses/${courseId}`} className="link">Back to admin</Link>
+        </Tip>
+      )}
+      <Breadcrumbs items={[{ href: "/my-courses", label: "My Courses" }, { label: course.title }]} />
+      <div className="hero">
+        <div className="media" style={{ aspectRatio: "16/11" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- course cover */}
+          <img src={course.image || "/app/img/roni-kneel.jpg"} alt={course.imageAlt ?? ""} />
+          {isMember && !lock.locked && next && (
+            <Link className="play" href={`/learn/${courseId}/${next.id}`} aria-label={`Play ${next.title}`}>
+              <Ms name="play_arrow" fill />
+            </Link>
+          )}
+        </div>
+        <div className="hero-copy">
+          {course.chapterNumber && <span className="eyebrow">Chapter {course.chapterNumber}</span>}
+          <h1 className="display" style={{ fontSize: 42 }}>
+            {course.title}
+          </h1>
+          <p className="lede">{course.description}</p>
+          <div className="row faint">
+            <Ms name="video_library" size="sm" />
+            {lessons.length} lessons
+            {totalSeconds > 0 && (
+              <>
+                <span>·</span>
+                <Ms name="schedule" size="sm" />
+                {formatMinutes(totalSeconds)}
+              </>
+            )}
+            <span>·</span>with Roni Sagi
+          </div>
+          {isMember && <ProgressLine label="Your progress" value={`${progress.percent}%`} percent={progress.percent} />}
+          <div className="row">{cta}</div>
+          {enroll === "failed" && (
+            <p role="alert" className="faint" style={{ color: "var(--danger)" }}>
+              We couldn&apos;t enroll you just now. Please try again.
+            </p>
+          )}
+        </div>
+      </div>
+
+      {lock.locked && (
+        <Tip icon="lock_clock" warm>
+          <b>This chapter opens after {lock.requiredTitle}.</b> Finish every lesson there and {course.title} unlocks here{dog ? ` for you and ${dog}` : ""}.{" "}
+          {lock.requiredId && (
+            <Link className="link" href={`/learn/${lock.requiredId}`}>
+              Go to {lock.requiredTitle}
+            </Link>
+          )}
+        </Tip>
+      )}
+
+      {data.isLimited && data.paywallAfterModuleId && (
+        <div id="upgrade" className="card" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div className="stack" style={{ gap: 4 }}>
+            <span className="eyebrow">You have limited access</span>
+            <h2 className="h3">Unlock the full course</h2>
+            <p className="faint">Lessons marked with a lock are part of the full course.</p>
+          </div>
+          <div className="row">
+            {offers.length > 0 ? (
+              offers.map((o) => (
+                <Link key={o.slug} className="btn btn-primary btn-sm" href={`/checkout/${o.slug}`}>
+                  {o.title} · {formatOfferPrice(o)}
+                </Link>
+              ))
+            ) : (
+              <Link className="btn btn-ghost btn-sm" href="/help">
+                Ask us about upgrading
               </Link>
             )}
           </div>
-        ) : (
-          <GetAccess courseId={courseId} isFree={course.price === 0} offers={offers} enrollFailed={enroll === "failed"} enrollFree={enrollFree} />
-        )}
-      </section>
-
-      {data.isLimited && data.paywallAfterModuleId && (
-        <section id="upgrade" className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] bg-white p-6 shadow-sm">
-          <div>
-            <p className="text-xs font-bold" style={{ color: LEARN.orange }}>
-              You have limited access
-            </p>
-            <h2 className="mt-1 text-lg font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
-              Unlock the full course
-            </h2>
-            <p className="text-sm" style={{ color: LEARN.muted }}>
-              Lessons marked with a lock are part of the full course.
-            </p>
-          </div>
-          {offers.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {offers.map((o) => (
-                <Link key={o.slug} href={`/checkout/${o.slug}`} className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
-                  {o.title} — {formatOfferPrice(o)}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm" style={{ color: LEARN.muted }}>
-              Ask us about upgrading.
-            </p>
-          )}
-        </section>
-      )}
-
-      <nav className="mt-6 inline-flex rounded-full bg-white p-1 shadow-sm" aria-label="Course sections">
-        {[
-          { label: "Home", href: `/learn/${courseId}`, active: !showMap },
-          { label: "Course map", href: `/learn/${courseId}?tab=map`, active: showMap },
-        ].map((t) => (
-          <Link
-            key={t.label}
-            href={t.href}
-            aria-current={t.active ? "page" : undefined}
-            className={`rounded-full px-4 py-1.5 text-sm font-semibold ${t.active ? "text-white" : "hover:bg-[#f3f9fd]"}`}
-            style={t.active ? { backgroundColor: LEARN.teal } : { color: LEARN.muted }}
-          >
-            {t.label}
-          </Link>
-        ))}
-      </nav>
-
-      {showMap ? (
-        <CourseMap courseId={courseId} data={data} numberOf={numberOf} />
-      ) : (
-        <div className="mt-6 space-y-4">
-          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: LEARN.muted }}>
-            Your training
-          </p>
-          {lessons.length === 0 ? (
-            <div className="rounded-[1.5rem] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
-              Lessons are being prepared. Check back soon.
-            </div>
-          ) : (
-            <UpNext courseId={courseId} lesson={next} number={next ? (numberOf.get(next.id) ?? 1) : 1} moduleTitle={next ? moduleTitleOf(outline, next.id) : null} enrolled={isMember} />
-          )}
         </div>
       )}
-    </LearnLayout>
-  );
-}
 
-function moduleTitleOf(outline: CourseOutline<StudentLesson>, lessonId: string): string | null {
-  for (const m of outline.modules) {
-    if (m.lessons.some((l) => l.id === lessonId)) return m.title;
-    const sub = m.submodules.find((s) => s.lessons.some((l) => l.id === lessonId));
-    if (sub) return `${m.title} · ${sub.title}`;
-  }
-  return null;
-}
-
-function UpNext({ courseId, lesson, number, moduleTitle, enrolled }: { courseId: string; lesson: StudentLesson | null; number: number; moduleTitle: string | null; enrolled: boolean }) {
-  if (!lesson) return null;
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[1.5rem] bg-white p-6 shadow-sm">
-      <div className="min-w-0">
-        <p className="text-xs font-bold" style={{ color: LEARN.orange }}>
-          {enrolled ? "Up next" : "Start here"}
-          {moduleTitle ? ` · ${moduleTitle}` : ""}
-        </p>
-        <h2 className="mt-1 text-xl font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
-          {number}. {lesson.title}
-        </h2>
-      </div>
-      <Link href={`/learn/${courseId}?tab=map`} className="text-sm font-bold hover:underline" style={{ color: LEARN.teal }}>
-        See all lessons →
-      </Link>
-    </div>
-  );
-}
-
-function CourseMap({ courseId, data, numberOf }: { courseId: string; data: StudentCourse; numberOf: ReadonlyMap<string, number> }) {
-  const { outline, states, enrolledAt, isStaffPreview } = data;
-  const rows = (lessons: readonly StudentLesson[]) => (
-    <div className="divide-y divide-[#edf3f7]">
-      {lessons.map((l) => (
-        <CourseLessonRow
-          key={l.id}
-          courseId={courseId}
-          lesson={l}
-          number={numberOf.get(l.id) ?? 0}
-          state={states.get(l.id) ?? { kind: "locked" }}
-          showPreviewTag={!enrolledAt && !isStaffPreview}
-        />
-      ))}
-    </div>
-  );
-  if (numberOf.size === 0) {
-    return (
-      <div className="mt-6 rounded-[1.5rem] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
-        Lessons are being prepared. Check back soon.
-      </div>
-    );
-  }
-  return (
-    <div className="mt-6 space-y-4">
-      {outline.modules.map((m) => (
-        <section key={m.id} className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm">
-          <h2 className="border-b border-[#edf3f7] px-5 py-4 text-lg font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
-            {m.title}
-          </h2>
-          {rows(m.lessons)}
-          {m.submodules.map((s) => (
-            <div key={s.id}>
-              <h3 className="bg-[#f6fafd] px-5 py-2.5 text-sm font-bold" style={{ color: LEARN.teal }}>
-                {s.title}
-              </h3>
-              {rows(s.lessons)}
+      <div className="grid-main">
+        <div className="card">
+          <div className="card-head">
+            <h2 className="h2">Lessons</h2>
+            {hasDrip && <span className="faint">New lessons open on a schedule</span>}
+          </div>
+          {lessons.length === 0 ? <p className="faint">Lessons are being prepared. Check back soon.</p> : <LessonList data={data} locked={lock.locked && isMember} />}
+        </div>
+        <div className="stack-lg sticky">
+          {course.whatYouNeed.length > 0 && (
+            <div className="card tight">
+              <span className="eyebrow muted">What you&apos;ll need</span>
+              <div className="list">
+                {course.whatYouNeed.map((n) => (
+                  <div key={n.label} className="list-row">
+                    <Ms name={n.icon} color="var(--teal)" />
+                    <div className="grow">{n.label}</div>
+                  </div>
+                ))}
+              </div>
             </div>
-          ))}
-        </section>
-      ))}
-      {outline.unassigned.length > 0 && <section className="overflow-hidden rounded-[1.5rem] bg-white shadow-sm">{rows(outline.unassigned)}</section>}
-    </div>
-  );
-}
-
-function GetAccess({
-  courseId,
-  isFree,
-  offers,
-  enrollFailed,
-  enrollFree,
-}: {
-  courseId: string;
-  isFree: boolean;
-  offers: readonly PublishedOffer[];
-  enrollFailed: boolean;
-  enrollFree: () => Promise<void>;
-}) {
-  if (offers.length > 0) {
-    return (
-      <div className="mt-6 flex flex-wrap gap-3">
-        {offers.map((o) => (
-          <Link key={o.slug} href={`/checkout/${o.slug}`} className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
-            Get access · {o.title} — {formatOfferPrice(o)}
-          </Link>
-        ))}
-        <Link href={`/learn/${courseId}?tab=map`} className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-bold hover:bg-white/10">
-          Browse lessons
-        </Link>
+          )}
+          {course.beforeYouStart && (
+            <Tip warm>
+              <b>Before you start</b>
+              <br />
+              {course.beforeYouStart}
+            </Tip>
+          )}
+          {isMember && (
+            <Link className="card tight" href={certRes.data ? `/certificates/${certRes.data.code}` : "/progress"} style={{ flexDirection: "row", alignItems: "center" }}>
+              <div className="badge" style={{ padding: 0, background: "none", boxShadow: "none" }}>
+                <div className="seal" style={{ width: 52, height: 52 }}>
+                  <Ms name="workspace_premium" fill />
+                </div>
+              </div>
+              <div>
+                <b>Certificate of completion</b>
+                <div className="faint">{certRes.data ? "Earned — view and share it" : `Earned with lesson ${lessons.length || ""}`}</div>
+              </div>
+            </Link>
+          )}
+        </div>
       </div>
-    );
-  }
-  if (isFree) {
-    return (
-      <form action={enrollFree} className="mt-6 space-y-2">
-        <button type="submit" className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
-          Enroll for free →
-        </button>
-        {enrollFailed && (
-          <p role="alert" className="text-sm font-bold text-[#ffd7c2]">
-            We couldn&apos;t enroll you just now. Please try again.
-          </p>
-        )}
-      </form>
-    );
-  }
-  return <p className="mt-6 text-sm text-white/85">Enrollment opens soon. Free preview lessons are available in the course map.</p>;
+    </>
+  );
 }

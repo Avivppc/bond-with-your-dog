@@ -7,20 +7,20 @@ import { createClient } from "@/lib/supabase/client";
 interface CompleteLessonButtonProps {
   lessonId: string;
   completed: boolean;
-  /** Where to go after completing (the next lesson), if anywhere. */
-  nextHref: string | null;
+  /** The "Lesson complete" screen for this lesson. */
+  doneHref: string;
 }
 
-/** Kajabi's "Complete lesson": marks the lesson done (access is checked in complete_lesson) and moves on. */
-export function CompleteLessonButton({ lessonId, completed, nextHref }: CompleteLessonButtonProps) {
+/** Marks the lesson done (access is checked in complete_lesson) and opens the lesson-complete screen. */
+export function CompleteLessonButton({ lessonId, completed, doneHref }: CompleteLessonButtonProps) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   if (completed) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e3f5f5] px-4 py-2 text-sm font-bold text-[#0e666a]">
-        <span className="material-symbols-outlined text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }} aria-hidden>
+      <span className="pill reliable" style={{ height: 38, padding: "0 16px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+        <span className="ms sm fill" aria-hidden>
           check_circle
         </span>
         Completed
@@ -37,24 +37,18 @@ export function CompleteLessonButton({ lessonId, completed, nextHref }: Complete
         return;
       }
       setError(null);
-      if (nextHref) router.push(nextHref);
-      else router.refresh();
+      router.push(doneHref);
     });
   }
 
   return (
-    <span className="inline-flex items-center gap-2">
+    <span className="row" style={{ gap: 8 }}>
       {error && (
-        <span role="alert" className="text-xs font-semibold text-red-700">
+        <span role="alert" className="faint" style={{ color: "var(--danger)" }}>
           {error}
         </span>
       )}
-      <button
-        type="button"
-        onClick={complete}
-        disabled={pending}
-        className="rounded-full bg-[#ff8f00] px-5 py-2 text-sm font-bold text-white shadow-sm hover:brightness-95 disabled:opacity-60"
-      >
+      <button type="button" onClick={complete} disabled={pending} className="btn btn-primary btn-sm" data-tour="complete">
         {pending ? "Saving…" : "Complete lesson"}
       </button>
     </span>

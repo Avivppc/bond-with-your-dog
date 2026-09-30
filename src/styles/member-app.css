@@ -431,3 +431,14 @@
 .member-app .community-hero .copy { padding: 24px; }
 .member-app .map-btn span.lbl { display: none; }
 }
+
+/* ── Additions for the Next.js build (not in the static design) ── */
+.member-app .tabs a { display: inline-flex; align-items: center; height: 40px; padding: 0 18px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.member-app .tabs a:hover { background: var(--tint); }
+.member-app .tabs a.on { background: var(--ink); color: #f3fbff; }
+.member-app .player iframe, .member-app .player video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.member-app .lesson-prose { color: var(--ink); line-height: 1.7; }
+.member-app .lesson-prose p { margin: 0 0 12px; }
+.member-app .lesson-prose ul, .member-app .lesson-prose ol { margin: 0 0 12px; padding-left: 22px; }
+.member-app .lesson-prose a { color: var(--teal); text-decoration: underline; }
+.member-app .input:disabled, .member-app .btn:disabled { opacity: .6; cursor: not-allowed; }
