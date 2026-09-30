@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { moveItem } from "@/lib/content/lists";
+import { moveItem } from "@/lib/course-outline";
 
 export interface Row<T> {
   key: number;

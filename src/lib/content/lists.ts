@@ -26,10 +26,3 @@ export function readTextList(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
   return value.filter((v): v is string => typeof v === "string" && v.trim() !== "");
 }
-
-/** A copy of `list` with the item at `from` moved to `to` (unchanged when out of range). */
-export function moveItem<T>(list: readonly T[], from: number, to: number): T[] {
-  if (from < 0 || from >= list.length || to < 0 || to >= list.length) return [...list];
-  const rest = list.filter((_, i) => i !== from);
-  return [...rest.slice(0, to), list[from], ...rest.slice(to)];
-}
