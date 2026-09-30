@@ -1,6 +1,9 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Ms } from "@/components/app/ui";
 
 type Question = {
   id: string;
@@ -8,7 +11,6 @@ type Question = {
   prompt: string;
   kind: "single" | "multi" | "tf";
   options: { id: string; text: string }[];
-  explanation?: string | null;
 };
 
 type Result = {
@@ -17,16 +19,24 @@ type Result = {
   perQuestion: { id: string; correct: boolean; explanation?: string | null }[];
 };
 
-export default function QuizPlayer({
-  lessonId,
-  passThreshold,
-}: {
+type Answer = string[] | boolean[];
+
+const KEYS = "ABCDEFGH";
+
+interface QuizPlayerProps {
   lessonId: string;
   passThreshold: number;
-}) {
+  lessonNumber: number;
+  nextHref: string | null;
+}
+
+/** "Checkpoint" (design): one question at a time, graded on the server when all are answered. */
+export default function QuizPlayer({ lessonId, passThreshold, lessonNumber, nextHref }: QuizPlayerProps) {
+  const router = useRouter();
   const [questions, setQuestions] = useState<Question[] | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string[] | boolean[]>>({});
+  const [answers, setAnswers] = useState<Record<string, Answer>>({});
+  const [index, setIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
 
@@ -35,11 +45,11 @@ export default function QuizPlayer({
     (async () => {
       try {
         const res = await fetch(`/api/quiz/${lessonId}/questions`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        if (!res.ok) throw new Error(res.status === 403 ? "You need access to this lesson." : "Could not load the questions.");
         const json = await res.json();
         if (!cancelled) setQuestions(json.questions);
       } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load questions");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Could not load the questions.");
       }
     })();
     return () => {
@@ -47,259 +57,149 @@ export default function QuizPlayer({
     };
   }, [lessonId]);
 
-  function setAnswer(qid: string, value: string[] | boolean[]) {
-    setAnswers((a) => ({ ...a, [qid]: value }));
-  }
-
   async function submit() {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch(`/api/quiz/${lessonId}/submit`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers }),
-      });
+      const res = await fetch(`/api/quiz/${lessonId}/submit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ answers }) });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      if (!res.ok) throw new Error(json.error || "Could not check your answers.");
       setResult(json);
+      if (json.passed) router.refresh();
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to submit");
+      setError(e instanceof Error ? e.message : "Could not check your answers.");
     } finally {
       setSubmitting(false);
     }
   }
 
-  function retake() {
-    setAnswers({});
-    setResult(null);
-  }
-
-  if (error) {
-    return <div className="p-8 text-red-700 text-sm">{error}</div>;
-  }
-  if (!questions) {
-    return <div className="p-8 text-sm" style={{ color: "#515d64" }}>Loading…</div>;
-  }
-  if (questions.length === 0) {
-    return (
-      <div className="p-8 text-sm" style={{ color: "#515d64" }}>
-        No questions yet — please check back soon.
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-8 md:p-10 space-y-8">
-      {result ? (
-        <ResultPanel
-          result={result}
-          questions={questions}
-          passThreshold={passThreshold}
-          onRetake={retake}
-        />
-      ) : (
-        <>
-          <header>
-            <p
-              className="text-xs font-bold uppercase tracking-widest mb-1"
-              style={{ color: "#8b4b00" }}
-            >
-              Quiz · pass at {passThreshold}%
-            </p>
-            <h2
-              className="text-2xl font-extrabold"
-              style={{ fontFamily: "var(--font-headline)", color: "#243036" }}
-            >
-              Test what you&apos;ve learned
-            </h2>
-          </header>
-
-          <ol className="space-y-6">
-            {questions.map((q) => (
-              <li
-                key={q.id}
-                className="border rounded-xl p-5"
-                style={{ borderColor: "#dbebf4" }}
-              >
-                <p className="font-bold mb-4" style={{ color: "#243036" }}>
-                  {q.position}. {q.prompt}
-                </p>
-                <Choices
-                  question={q}
-                  value={answers[q.id]}
-                  onChange={(v) => setAnswer(q.id, v)}
-                />
-              </li>
-            ))}
-          </ol>
-
-          <button
-            onClick={submit}
-            disabled={submitting}
-            className="kinetic-gradient px-6 py-3 rounded-full font-bold text-sm shadow-md disabled:opacity-60"
-            style={{ color: "#fff0e6" }}
-          >
-            {submitting ? "Grading..." : "Submit answers"}
-          </button>
-        </>
-      )}
+  const shell = (children: React.ReactNode) => (
+    <div className="card" style={{ maxWidth: 760, margin: "0 auto", width: "100%", padding: 44, gap: 26 }}>
+      {children}
     </div>
   );
-}
 
-function Choices({
-  question,
-  value,
-  onChange,
-}: {
-  question: Question;
-  value: string[] | boolean[] | undefined;
-  onChange: (v: string[] | boolean[]) => void;
-}) {
-  if (question.kind === "tf") {
-    const v = (value as boolean[] | undefined)?.[0];
-    return (
-      <div className="grid grid-cols-2 gap-3">
-        {[true, false].map((opt) => (
-          <button
-            key={String(opt)}
-            type="button"
-            onClick={() => onChange([opt])}
-            className={`px-4 py-3 rounded-lg border-2 font-bold text-sm transition-all ${
-              v === opt
-                ? "border-[#8b4b00] bg-orange-50"
-                : "border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            {opt ? "True" : "False"}
-          </button>
+  if (error && !questions) return shell(<p role="alert" className="muted">{error}</p>);
+  if (!questions) return shell(<div className="skel" style={{ height: 180 }} />);
+  if (questions.length === 0) return shell(<p className="muted">Roni is still writing this checkpoint. Check back soon.</p>);
+  if (result) return shell(<Results result={result} questions={questions} passThreshold={passThreshold} nextHref={nextHref} onRetry={() => (setResult(null), setAnswers({}), setIndex(0))} />);
+
+  const q = questions[index];
+  const value = answers[q.id];
+  const answered = Array.isArray(value) && value.length > 0;
+  const last = index === questions.length - 1;
+  const choose = (v: Answer) => setAnswers((a) => ({ ...a, [q.id]: v }));
+  const selected = (value as string[] | undefined) ?? [];
+
+  return shell(
+    <>
+      <div className="between">
+        <span className="eyebrow">Checkpoint · Lesson {lessonNumber}</span>
+        <span className="faint num">
+          Question {index + 1} of {questions.length}
+        </span>
+      </div>
+      <div className="steps-dots" aria-hidden>
+        {questions.map((x, i) => (
+          <i key={x.id} className={i < index ? "done" : i === index ? "on" : ""} />
         ))}
       </div>
-    );
-  }
-
-  const selected = (value as string[] | undefined) ?? [];
-  return (
-    <div className="space-y-2">
-      {question.options.map((opt) => {
-        const isSelected = selected.includes(opt.id);
-        return (
-          <button
-            key={opt.id}
-            type="button"
-            onClick={() => {
-              if (question.kind === "single") {
-                onChange([opt.id]);
-              } else {
-                onChange(
-                  isSelected
-                    ? selected.filter((s) => s !== opt.id)
-                    : [...selected, opt.id]
-                );
-              }
-            }}
-            className={`w-full text-left px-4 py-3 rounded-lg border-2 transition-all flex items-center gap-3 ${
-              isSelected
-                ? "border-[#8b4b00] bg-orange-50"
-                : "border-slate-200 hover:border-slate-300"
-            }`}
-          >
-            <span
-              className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                isSelected ? "border-[#8b4b00]" : "border-slate-300"
-              }`}
-            >
-              {isSelected && <span className="w-2.5 h-2.5 rounded-full bg-[#8b4b00]" />}
-            </span>
-            <span className="text-sm">{opt.text}</span>
+      <h1 className="h2" style={{ fontSize: 28 }}>
+        {q.prompt}
+      </h1>
+      <div className="options" role={q.kind === "multi" ? "group" : "radiogroup"} aria-label="Answers">
+        {q.kind === "tf"
+          ? [true, false].map((opt, i) => {
+              const on = (value as boolean[] | undefined)?.[0] === opt;
+              return (
+                <button key={String(opt)} type="button" role="radio" aria-checked={on} className={`option ${on ? "sel" : ""}`} onClick={() => choose([opt])}>
+                  <span className="key">{KEYS[i]}</span>
+                  <span>{opt ? "True" : "False"}</span>
+                </button>
+              );
+            })
+          : q.options.map((opt, i) => {
+              const on = selected.includes(opt.id);
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  role={q.kind === "multi" ? "checkbox" : "radio"}
+                  aria-checked={on}
+                  className={`option ${on ? "sel" : ""}`}
+                  onClick={() => choose(q.kind === "single" ? [opt.id] : on ? selected.filter((s) => s !== opt.id) : [...selected, opt.id])}
+                >
+                  <span className="key">{KEYS[i] ?? i + 1}</span>
+                  <span>{opt.text}</span>
+                </button>
+              );
+            })}
+      </div>
+      {q.kind === "multi" && <p className="faint">Choose every answer that fits.</p>}
+      {error && (
+        <p role="alert" className="faint" style={{ color: "var(--danger)" }}>
+          {error}
+        </p>
+      )}
+      <div className="between">
+        {index > 0 ? (
+          <button type="button" className="btn btn-ghost" onClick={() => setIndex(index - 1)}>
+            Back
           </button>
-        );
-      })}
-    </div>
+        ) : (
+          <span />
+        )}
+        {last ? (
+          <button type="button" className="btn btn-primary" disabled={!answered || submitting} onClick={submit}>
+            {submitting ? "Checking…" : "Check answers"}
+          </button>
+        ) : (
+          <button type="button" className="btn btn-primary" disabled={!answered} onClick={() => setIndex(index + 1)}>
+            Next question
+            <Ms name="arrow_forward" size="sm" />
+          </button>
+        )}
+      </div>
+    </>,
   );
 }
 
-function ResultPanel({
-  result,
-  questions,
-  passThreshold,
-  onRetake,
-}: {
-  result: Result;
-  questions: Question[];
-  passThreshold: number;
-  onRetake: () => void;
-}) {
+function Results({ result, questions, passThreshold, nextHref, onRetry }: { result: Result; questions: Question[]; passThreshold: number; nextHref: string | null; onRetry: () => void }) {
+  const right = result.perQuestion.filter((p) => p.correct).length;
   return (
-    <div className="space-y-6">
-      <div
-        className="rounded-2xl p-8 text-center"
-        style={{
-          backgroundColor: result.passed ? "#dcfce7" : "#fef3c7",
-          color: result.passed ? "#166534" : "#92400e",
-        }}
-      >
-        <div className="text-5xl font-black mb-2">{result.score}%</div>
-        <p className="font-bold text-lg">
-          {result.passed ? "You passed!" : `Below pass threshold of ${passThreshold}%`}
-        </p>
-        <p className="text-sm mt-1 opacity-80">
-          {result.perQuestion.filter((p) => p.correct).length} of {questions.length} correct
-        </p>
+    <>
+      <div className="between">
+        <span className="eyebrow">{result.passed ? "Checkpoint passed" : "Not quite yet"}</span>
+        <span className="faint num">
+          {right} / {questions.length} correct · pass at {passThreshold}%
+        </span>
       </div>
-
-      <ol className="space-y-3">
+      <h1 className="display">{result.score}%</h1>
+      <div className="stack">
         {questions.map((q) => {
           const r = result.perQuestion.find((p) => p.id === q.id);
           return (
-            <li
-              key={q.id}
-              className="border rounded-xl p-4 flex gap-4"
-              style={{ borderColor: r?.correct ? "#bbf7d0" : "#fecaca" }}
-            >
-              <span
-                className="material-symbols-outlined shrink-0"
-                style={{
-                  color: r?.correct ? "#16a34a" : "#dc2626",
-                  fontVariationSettings: "'FILL' 1",
-                }}
-              >
-                {r?.correct ? "check_circle" : "cancel"}
-              </span>
-              <div className="min-w-0">
-                <p className="font-bold text-sm" style={{ color: "#243036" }}>
-                  {q.position}. {q.prompt}
-                </p>
-                {r?.explanation && (
-                  <p className="text-xs mt-1" style={{ color: "#515d64" }}>
-                    {r.explanation}
-                  </p>
-                )}
+            <div key={q.id} className="tip" style={r?.correct ? undefined : { background: "var(--danger-soft)", color: "var(--danger)" }}>
+              <Ms name={r?.correct ? "check_circle" : "cancel"} fill />
+              <div>
+                <b>{q.prompt}</b>
+                {r?.explanation && <div style={{ marginTop: 4 }}>{r.explanation}</div>}
               </div>
-            </li>
+            </div>
           );
         })}
-      </ol>
-
-      <div className="flex gap-3">
-        {!result.passed && (
-          <button
-            onClick={onRetake}
-            className="kinetic-gradient px-6 py-3 rounded-full font-bold text-sm"
-            style={{ color: "#fff0e6" }}
-          >
-            Retake quiz
-          </button>
-        )}
-        <button
-          onClick={onRetake}
-          className="px-6 py-3 rounded-full font-bold text-sm border-2"
-          style={{ borderColor: "#8b4b00", color: "#8b4b00" }}
-        >
-          Review answers
-        </button>
       </div>
-    </div>
+      <div className="between">
+        <button type="button" className="btn btn-ghost" onClick={onRetry}>
+          Try again
+        </button>
+        {result.passed && nextHref && (
+          <Link className="btn btn-primary" href={nextHref}>
+            Continue
+            <Ms name="arrow_forward" size="sm" />
+          </Link>
+        )}
+      </div>
+    </>
   );
 }

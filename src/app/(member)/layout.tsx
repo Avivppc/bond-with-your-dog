@@ -1,4 +1,6 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { GuidedTour } from "@/components/app/GuidedTour";
 import { Mrs_Saint_Delafield } from "next/font/google";
 import { memberViewer } from "@/lib/member/viewer";
 import { Sidebar, Tabbar } from "@/components/app/Sidebar";
@@ -28,6 +30,9 @@ export default async function MemberLayout({ children }: { children: React.React
         </main>
       </div>
       <Tabbar />
+      <Suspense fallback={null}>
+        <GuidedTour seen={viewer.profile.tours_seen} onboarded={Boolean(viewer.profile.onboarded_at)} />
+      </Suspense>
     </div>
   );
 }

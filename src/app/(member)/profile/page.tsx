@@ -102,6 +102,7 @@ export default async function ProfilePage() {
       <div className="row" style={{ gap: 20 }}>
         <ArrowLink href="/refer">Refer a friend</ArrowLink>
         <ArrowLink href="/welcome?again=1">Redo the welcome questions</ArrowLink>
+        <ArrowLink href="/home?tour=home">Take the guided tour again</ArrowLink>
       </div>
     </>
   );

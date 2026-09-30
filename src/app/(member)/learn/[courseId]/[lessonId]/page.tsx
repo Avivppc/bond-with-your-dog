@@ -82,7 +82,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
               </>
             </StateCard>
           ) : lesson.kind === "quiz" ? (
-            <QuizPlayer lessonId={lesson.id} passThreshold={lesson.pass_threshold ?? 70} />
+            <QuizPlayer lessonId={lesson.id} passThreshold={lesson.pass_threshold ?? 70} lessonNumber={number} nextHref={next ? lessonHref(next.id) : `/learn/${courseId}`} />
           ) : (
             <div className="player" data-tour="player">
               <LessonPlayer lessonId={lesson.id} hasPlayback={Boolean(videoRes.data)} />
