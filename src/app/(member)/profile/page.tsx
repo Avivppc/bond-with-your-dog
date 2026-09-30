@@ -99,6 +99,19 @@ export default async function ProfilePage() {
           <span className="faint">Notifications, account, your data</span>
         </Link>
       </div>
+      <div className="grid-3">
+        {[
+          { href: "/community", icon: "groups", label: "Community", sub: "Feed, live Q&A and stories" },
+          { href: "/moves", icon: "auto_stories", label: "Moves Library", sub: "Every move with its cue" },
+          { href: "/help", icon: "help", label: "Help", sub: "Questions and support" },
+        ].map((l) => (
+          <Link key={l.href} className="card tight" href={l.href}>
+            <Ms name={l.icon} color="var(--teal)" />
+            <b>{l.label}</b>
+            <span className="faint">{l.sub}</span>
+          </Link>
+        ))}
+      </div>
       <div className="row" style={{ gap: 20 }}>
         <ArrowLink href="/refer">Refer a friend</ArrowLink>
         <ArrowLink href="/welcome?again=1">Redo the welcome questions</ArrowLink>
