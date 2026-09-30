@@ -53,6 +53,7 @@ export function PracticeCard({ formId, minutes, steps }: { formId: string; minut
                     <input
                       form={formId}
                       name="step_title"
+                      required
                       value={row.value.title}
                       onChange={(e) => set({ title: e.target.value })}
                       maxLength={MAX_STEP_TITLE}
