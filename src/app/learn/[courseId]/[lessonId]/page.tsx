@@ -2,6 +2,8 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import LessonPlayer from "./LessonPlayer";
+import { LessonContent } from "./LessonContent";
+import { createServiceClient } from "@/lib/supabase/admin";
 import QuizPlayer from "./QuizPlayer";
 import { computeUnlockAt, isLockedNow, formatUnlockDate } from "@/lib/drip";
 import { buildOutline, flattenLessons, type OutlineLessonRow } from "@/lib/course-outline";
@@ -42,7 +44,7 @@ export default async function LessonPage({
   const { data: lesson } = await supabase
     .from("lessons")
     .select(
-      "id, course_id, position, title, description, free_preview, mux_playback_id, kind, available_after_days, pass_threshold"
+      "id, course_id, position, title, description, body_html, free_preview, kind, available_after_days, pass_threshold"
     )
     .eq("id", lessonId)
     .single();
@@ -56,9 +58,16 @@ export default async function LessonPage({
     .eq("user_id", user.id)
     .maybeSingle();
 
-  if (!enrollment && !lesson.free_preview) {
+  // Same rule as playback/API: free preview, live content + unexpired enrollment + drip, or staff preview.
+  const [{ data: canAccess }, videoRes, filesRes] = await Promise.all([
+    supabase.rpc("can_access_lesson", { p_lesson_id: lessonId }),
+    createServiceClient().from("lesson_videos").select("lesson_id").eq("lesson_id", lessonId).maybeSingle(),
+    supabase.from("lesson_files").select("id, file_name, size_bytes").eq("lesson_id", lessonId).order("position"),
+  ]);
+  if (!canAccess && !enrollment) {
     redirect(`/learn/${courseId}`);
   }
+  const hasVideo = Boolean(videoRes.data);
 
   // Drip lock
   const unlockAt = computeUnlockAt(enrollment?.enrolled_at, lesson.available_after_days);
@@ -157,7 +166,7 @@ export default async function LessonPage({
               <div className="rounded-[2rem] overflow-hidden shadow-xl ring-1 ring-white/10 bg-black">
                 <LessonPlayer
                   lessonId={lesson.id}
-                  hasPlayback={Boolean(lesson.mux_playback_id)}
+                  hasPlayback={hasVideo}
                 />
               </div>
             )}
@@ -184,47 +193,7 @@ export default async function LessonPage({
                   )}
                 </div>
 
-                {/* Resources placeholder */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div
-                    className="p-6 rounded-[1rem] flex items-center gap-4 opacity-70"
-                    style={{ backgroundColor: "#e4f3fc" }}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: "#a6eff3", color: "#0e666a" }}
-                    >
-                      <span className="material-symbols-outlined">description</span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold truncate" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
-                        Lesson worksheet
-                      </div>
-                      <div className="text-xs" style={{ color: "#515d64" }}>
-                        Coming soon
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    className="p-6 rounded-[1rem] flex items-center gap-4 opacity-70"
-                    style={{ backgroundColor: "#e4f3fc" }}
-                  >
-                    <div
-                      className="w-12 h-12 rounded-full flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: "#a6eff3", color: "#0e666a" }}
-                    >
-                      <span className="material-symbols-outlined">music_note</span>
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold truncate" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
-                        Beat map
-                      </div>
-                      <div className="text-xs" style={{ color: "#515d64" }}>
-                        Coming soon
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <LessonContent lessonId={lessonId} bodyHtml={lesson.body_html} files={filesRes.data ?? []} />
 
                 {/* Prev/next nav */}
                 <nav className="flex items-center justify-between gap-4 pt-2">

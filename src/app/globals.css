@@ -136,3 +136,16 @@ details > summary {
 details > summary::-webkit-details-marker {
   display: none;
 }
+
+/* Lesson rich text (admin editor + student lesson page). Content is sanitized on write. */
+.lesson-prose { line-height: 1.7; }
+.lesson-prose > * + * { margin-top: 0.85em; }
+.lesson-prose h2 { font-size: 1.4rem; font-weight: 800; line-height: 1.25; }
+.lesson-prose h3 { font-size: 1.15rem; font-weight: 700; line-height: 1.3; }
+.lesson-prose ul { list-style: disc; padding-inline-start: 1.5rem; }
+.lesson-prose ol { list-style: decimal; padding-inline-start: 1.5rem; }
+.lesson-prose li + li { margin-top: 0.25em; }
+.lesson-prose blockquote { border-inline-start: 4px solid #ff8f00; padding-inline-start: 1rem; font-style: italic; color: #515d64; }
+.lesson-prose a { color: #8b4b00; text-decoration: underline; }
+.lesson-prose hr { border-color: #cde0ea; }
+.lesson-prose code { background: #edf8ff; padding: 0.1em 0.35em; border-radius: 0.3em; font-size: 0.9em; }

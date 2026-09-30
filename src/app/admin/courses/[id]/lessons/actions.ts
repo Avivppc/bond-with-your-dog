@@ -5,44 +5,26 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { LESSON_FILES_BUCKET } from "@/lib/lesson-files";
 
+const checkbox = z.preprocess((v) => v === "on" || v === true, z.boolean());
+const optionalInt = z.preprocess(
+  (v) => (v === "" || v == null ? null : Number(v)),
+  z.number().int().min(0).nullable().optional()
+);
+
+// Lesson details. Position, module and video are managed in the outline / video panel.
 const LessonSchema = z.object({
   course_id: z.string().min(1),
-  position: z.coerce.number().int().min(1),
-  title: z.string().min(2),
-  description: z.string().optional(),
+  title: z.string().trim().min(2).max(200),
+  description: z.string().max(2000).optional(),
   kind: z.enum(["video", "quiz"]),
-  mux_playback_id: z.string().optional(),
-  mux_playback_policy: z.enum(["signed", "public"]).default("signed"),
-  duration_seconds: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().int().nullable().optional()),
-  available_after_days: z.preprocess(
-    (v) => (v === "" || v == null ? null : Number(v)),
-    z.number().int().min(0).nullable().optional()
-  ),
+  duration_seconds: optionalInt,
+  available_after_days: optionalInt,
   pass_threshold: z.coerce.number().int().min(0).max(100).default(70),
-  free_preview: z.preprocess((v) => v === "on" || v === true, z.boolean()),
+  free_preview: checkbox,
+  published: checkbox,
 });
-
-export async function createLesson(formData: FormData) {
-  await requireAdmin();
-  const parsed = LessonSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    redirect(
-      `/admin/courses/${formData.get("course_id")}/lessons/new?error=` +
-        encodeURIComponent(parsed.error.issues[0].message)
-    );
-  }
-  const sb = createServiceClient();
-  const { data, error } = await sb.from("lessons").insert(parsed.data).select("id").single();
-  if (error || !data) {
-    redirect(
-      `/admin/courses/${parsed.data.course_id}/lessons/new?error=` +
-        encodeURIComponent(error?.message || "create failed")
-    );
-  }
-  revalidatePath(`/admin/courses/${parsed.data.course_id}`);
-  redirect(`/admin/courses/${parsed.data.course_id}/lessons/${data.id}`);
-}
 
 export async function updateLesson(formData: FormData) {
   await requireAdmin();
@@ -75,7 +57,18 @@ export async function deleteLesson(formData: FormData) {
   const courseId = formData.get("course_id");
   if (typeof id !== "string" || typeof courseId !== "string") return;
   const sb = createServiceClient();
-  await sb.from("lessons").delete().eq("id", id);
+  // Remove stored downloads first; their rows cascade with the lesson.
+  const { data: files } = await sb.from("lesson_files").select("storage_path").eq("lesson_id", id);
+  const paths = (files ?? []).map((f) => f.storage_path);
+  if (paths.length > 0) {
+    const { error: storageError } = await sb.storage.from(LESSON_FILES_BUCKET).remove(paths);
+    if (storageError) console.error("lesson file cleanup failed", { id, error: storageError.message });
+  }
+  const { error } = await sb.from("lessons").delete().eq("id", id);
+  if (error) {
+    console.error("deleteLesson failed", { id, error: error.message });
+    redirect(`/admin/courses/${courseId}/lessons/${id}?error=` + encodeURIComponent("Could not delete the lesson."));
+  }
   revalidatePath(`/admin/courses/${courseId}`);
   redirect(`/admin/courses/${courseId}`);
 }

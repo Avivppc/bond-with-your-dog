@@ -2,6 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { LessonForm } from "./LessonForm";
+import { VideoPanel } from "./VideoPanel";
+import { BodyEditor } from "./BodyEditor";
+import { FilesPanel } from "./FilesPanel";
+import type { LessonVideoSummary } from "./content-actions";
 import {
   updateLesson,
   deleteLesson,
@@ -22,8 +26,25 @@ export default async function EditLessonPage({
   const { saved, error } = await searchParams;
   const sb = createServiceClient();
 
-  const { data: lesson } = await sb.from("lessons").select("*").eq("id", lid).single();
+  const { data: lesson } = await sb.from("lessons").select("*").eq("id", lid).eq("course_id", courseId).single();
   if (!lesson) notFound();
+
+  const [videoRes, filesRes] = await Promise.all([
+    sb
+      .from("lesson_videos")
+      .select("provider, source_url, thumbnail_url, duration_seconds")
+      .eq("lesson_id", lid)
+      .maybeSingle(),
+    sb.from("lesson_files").select("id, file_name, size_bytes").eq("lesson_id", lid).order("position"),
+  ]);
+  const video: LessonVideoSummary | null = videoRes.data
+    ? {
+        provider: videoRes.data.provider as LessonVideoSummary["provider"],
+        sourceUrl: videoRes.data.source_url,
+        thumbnailUrl: videoRes.data.thumbnail_url,
+        durationSeconds: videoRes.data.duration_seconds,
+      }
+    : null;
 
   const { data: questions } =
     lesson.kind === "quiz"
@@ -43,9 +64,23 @@ export default async function EditLessonPage({
         ← Course
       </Link>
       <header className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tighter">
-          Lesson {lesson.position}: {lesson.title}
-        </h1>
+        <h1 className="text-3xl font-extrabold tracking-tighter">{lesson.title}</h1>
+        <span className="flex items-center gap-3">
+          <span
+            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
+              lesson.published ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {lesson.published ? "Published" : "Draft"}
+          </span>
+          <Link
+            href={`/learn/${courseId}/${lid}`}
+            target="_blank"
+            className="text-xs font-bold text-orange-700"
+          >
+            Preview ↗
+          </Link>
+        </span>
         <span
           className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
             lesson.kind === "quiz"
@@ -66,11 +101,13 @@ export default async function EditLessonPage({
         </div>
       )}
 
-      <LessonForm
-        action={updateLesson}
-        submitLabel="Save changes"
-        defaults={{ ...lesson, course_id: courseId }}
-      />
+      <LessonForm action={updateLesson} defaults={{ ...lesson, course_id: courseId }} />
+
+      {lesson.kind === "video" && <VideoPanel courseId={courseId} lessonId={lid} video={video} />}
+
+      <BodyEditor courseId={courseId} lessonId={lid} initialHtml={lesson.body_html ?? ""} />
+
+      <FilesPanel courseId={courseId} lessonId={lid} files={filesRes.data ?? []} />
 
       {lesson.kind === "quiz" && (
         <section className="bg-white rounded-xl p-6 shadow-sm">
