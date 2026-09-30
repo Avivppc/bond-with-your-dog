@@ -42,6 +42,41 @@ async function readMuxState(row: UploadingRow): Promise<(MuxUploadState & { asse
   };
 }
 
+function isNotFound(err: unknown): boolean {
+  return typeof err === "object" && err !== null && "status" in err && (err as { status: unknown }).status === 404;
+}
+
+/** Deletes a Mux asset; true when it's gone (already missing counts as gone). */
+export async function deleteMuxAsset(assetId: string, videoId: string | null): Promise<boolean> {
+  try {
+    await getMux().video.assets.delete(assetId);
+    return true;
+  } catch (err) {
+    if (isNotFound(err)) return true;
+    console.error("[feedback] Mux asset delete failed", { videoId, assetId, error: err instanceof Error ? err.message : String(err) });
+    return false;
+  }
+}
+
+/** Cancels a direct upload that never finished (so nothing arrives later). */
+export async function cancelMuxUpload(uploadId: string, videoId: string): Promise<void> {
+  try {
+    const upload = await getMux().video.uploads.retrieve(uploadId);
+    if (upload.asset_id) await deleteMuxAsset(upload.asset_id, videoId);
+    else if (upload.status === "waiting") await getMux().video.uploads.cancel(uploadId);
+  } catch (err) {
+    if (!isNotFound(err)) console.error("[feedback] Mux upload cancel failed", { videoId, error: err instanceof Error ? err.message : String(err) });
+  }
+}
+
+/** The asset behind a row, looking through the direct upload when the row doesn't know it yet. */
+export async function assetIdFor(row: { mux_asset_id: string | null; mux_upload_id: string | null }): Promise<string | null> {
+  if (row.mux_asset_id) return row.mux_asset_id;
+  if (!row.mux_upload_id) return null;
+  const upload = await getMux().video.uploads.retrieve(row.mux_upload_id);
+  return upload.asset_id ?? null;
+}
+
 /**
  * Brings one "uploading" row up to date with Mux (service role: the values come from Mux, not
  * from the member). Returns the row's status afterwards.
@@ -57,6 +92,7 @@ export async function settleUpload(row: UploadingRow, now: Date = new Date()): P
   }
   const outcome = settleOutcome(state, now.getTime() - new Date(row.created_at).getTime());
   if (outcome.kind === "pending") return row.status;
+  if (outcome.kind === "too_long" && state?.assetId) await deleteMuxAsset(state.assetId, row.id);
 
   const patch =
     outcome.kind === "ready"

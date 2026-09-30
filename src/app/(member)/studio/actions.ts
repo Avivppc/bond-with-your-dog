@@ -106,11 +106,13 @@ export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioR
 
   const firstSend = video.status === "waiting";
   const patch = firstSend ? { summary, status: "replied", reviewed_by: user.id, replied_at: new Date().toISOString() } : { summary };
-  const { error } = await sb.from("feedback_videos").update(patch).eq("id", videoId);
+  // Guarded on the status we read, so two simultaneous sends can't both notify the member.
+  const { data: updated, error } = await sb.from("feedback_videos").update(patch).eq("id", videoId).eq("status", video.status).select("id");
   if (error) {
     console.error("[studio] send feedback failed", { videoId, error: error.message });
     return fail("The feedback didn't send. Please try again.");
   }
+  if (!updated?.length) return fail("Someone on the team just sent this. Reload to see their feedback.");
   const email = firstSend
     ? await notifyMemberByEmail(sb, video.user_id as string, {
         subject: `Roni replied to your ${video.title} video`,

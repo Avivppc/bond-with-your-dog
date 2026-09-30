@@ -32,8 +32,9 @@ begin
   if char_length(coalesce(p_note, '')) > 2000 then
     raise exception 'the note is too long' using errcode = '22023';
   end if;
+  -- Failed uploads don't use up the day's allowance.
   if (select count(*) from public.feedback_videos
-       where user_id = auth.uid() and created_at > now() - interval '1 day') >= 5 then
+       where user_id = auth.uid() and status <> 'errored' and created_at > now() - interval '1 day') >= 5 then
     raise exception 'you can send up to 5 videos a day' using errcode = '54000';
   end if;
 

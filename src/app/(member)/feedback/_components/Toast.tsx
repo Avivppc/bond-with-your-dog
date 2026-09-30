@@ -7,31 +7,29 @@ const SHOW_MS = 3200;
 
 /**
  * The design's toast for a one-off notice carried in the URL (e.g. ?sent=1 after an action).
- * Removes the parameter once shown so a reload doesn't repeat it.
+ * Render it unconditionally: it picks the message for the parameter's value, removes the
+ * parameter (so a reload doesn't repeat it) and stays mounted while the toast shows.
  */
-export function UrlToast({ message, param }: { message: string; param: string }) {
+export function UrlToast({ param, messages }: { param: string; messages: Record<string, string> }) {
   const router = useRouter();
   const pathname = usePathname();
   const search = useSearchParams();
-  const [open, setOpen] = useState(true);
+  const [toast, show] = useToast();
+  const value = search.get(param);
 
   useEffect(() => {
+    if (!value) return;
+    const message = messages[value];
+    if (message) show(message);
     const next = new URLSearchParams(search.toString());
     next.delete(param);
     const qs = next.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-    const timer = window.setTimeout(() => setOpen(false), SHOW_MS);
-    return () => window.clearTimeout(timer);
-    // Show once per mount; the URL cleanup must not re-trigger it.
+    // Runs when a new value arrives in the URL; the cleanup replace must not re-trigger it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [value]);
 
-  if (!open) return null;
-  return (
-    <div className="toast" role="status">
-      {message}
-    </div>
-  );
+  return toast;
 }
 
 /** A toast raised from client code: returns [node, show]. */

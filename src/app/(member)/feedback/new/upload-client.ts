@@ -70,6 +70,11 @@ export function uploadToMux(uploadUrl: string, file: File, onProgress: (percent:
   });
 }
 
+/** The upload to Mux failed: remove the unfinished video so it doesn't linger. Best effort. */
+export async function abandonUpload(videoId: string): Promise<void> {
+  await fetch(`/api/feedback/uploads/${videoId}`, { method: "DELETE" }).catch(() => undefined);
+}
+
 /** Asks the server to check Mux a few times; the list page keeps checking after that. */
 export async function confirmUpload(videoId: string, attempts = 4): Promise<string> {
   let status = "uploading";

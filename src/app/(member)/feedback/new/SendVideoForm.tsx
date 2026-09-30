@@ -6,7 +6,7 @@ import { Ms, ProgressLine } from "@/components/app/ui";
 import type { SubjectOption } from "@/lib/feedback/subjects";
 import { checkVideoDuration, checkVideoFile, formatBytes, VIDEO_ACCEPT } from "@/lib/feedback/video-file";
 import { formatClock } from "@/lib/feedback/format";
-import { confirmUpload, readVideoDuration, startUpload, uploadToMux } from "./upload-client";
+import { abandonUpload, confirmUpload, readVideoDuration, startUpload, uploadToMux } from "./upload-client";
 
 interface Chosen {
   file: File;
@@ -77,7 +77,12 @@ export function SendVideoForm({
         file: chosen.file,
         durationSeconds: chosen.duration,
       });
-      await uploadToMux(uploadUrl, chosen.file, setProgress);
+      try {
+        await uploadToMux(uploadUrl, chosen.file, setProgress);
+      } catch (uploadError) {
+        await abandonUpload(videoId);
+        throw uploadError;
+      }
       setPhase("processing");
       await confirmUpload(videoId);
       router.push("/feedback?sent=1");

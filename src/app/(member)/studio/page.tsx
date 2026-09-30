@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { memberViewer } from "@/lib/member/viewer";
 import { Ms } from "@/components/app/ui";
 import { loadQueue, loadReviewDetail, loadStudioStats, settleStaleUploads, type StudioTab } from "@/lib/feedback/studio";
-import { EMAIL_OUTCOME_NOTE, isEmailOutcome } from "@/lib/feedback/email-outcome";
+import { EMAIL_OUTCOME_NOTE } from "@/lib/feedback/email-outcome";
 import { QueryTabs } from "../feedback/_components/QueryTabs";
 import { UrlToast } from "../feedback/_components/Toast";
 import { Greeting } from "./Greeting";
@@ -12,7 +12,11 @@ import { ReviewPanel } from "./ReviewPanel";
 
 export const metadata = { title: "Roni's Studio" };
 
-type Search = Promise<{ q?: string; id?: string; sent?: string }>;
+type Search = Promise<{ q?: string; id?: string }>;
+
+const SENT_MESSAGES = Object.fromEntries(
+  Object.entries(EMAIL_OUTCOME_NOTE).map(([outcome, note]) => [outcome, `Feedback sent. The member was notified ${note}.`])
+);
 
 const TABS = [
   { value: "waiting", label: "Waiting" },
@@ -22,7 +26,7 @@ const TABS = [
 export default async function StudioPage({ searchParams }: { searchParams: Search }) {
   await requireStaff("content");
   const viewer = await memberViewer();
-  const { q, id, sent } = await searchParams;
+  const { q, id } = await searchParams;
   const tab: StudioTab = q === "done" ? "done" : "waiting";
   const sb = createServiceClient();
 
@@ -81,7 +85,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Searc
           </div>
         )}
       </div>
-      {isEmailOutcome(sent) && <UrlToast param="sent" message={`Feedback sent. The member was notified ${EMAIL_OUTCOME_NOTE[sent]}.`} />}
+      <UrlToast param="sent" messages={SENT_MESSAGES} />
     </>
   );
 }

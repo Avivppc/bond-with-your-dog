@@ -51,6 +51,10 @@ select public.start_feedback_video(null, null, null, 'three', null);
 select public.start_feedback_video(null, null, null, 'four', null);
 select public.start_feedback_video(null, null, null, 'five', null);
 select t.fails_with($$select public.start_feedback_video(null, null, null, 'six', null)$$, '54000', 'five videos a day at most');
+reset role;
+update public.feedback_videos set status = 'errored' where title = 'five';
+set role authenticated;
+select t.ok(public.start_feedback_video(null, null, null, 'retry', null) is not null, 'a failed upload does not use up the allowance');
 
 select t.login('00000000-0000-0000-0000-0000000f0002');
 select t.ok((select count(*) from public.feedback_videos) = 0, 'other members do not see my videos');

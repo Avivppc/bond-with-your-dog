@@ -11,6 +11,11 @@ test("a ready asset moves the video into Roni's queue", () => {
   });
 });
 
+test("clips over the limit are refused even when the browser couldn't check", () => {
+  expect(settleOutcome({ ...base, assetStatus: "ready", playbackId: "pb", durationSeconds: 300 }, 1000)).toEqual({ kind: "too_long" });
+  expect(settleOutcome({ ...base, assetStatus: "ready", playbackId: "pb", durationSeconds: 121 }, 1000).kind).toBe("ready");
+});
+
 test("Mux errors mark the upload failed", () => {
   expect(settleOutcome({ ...base, assetStatus: "errored" }, 1000)).toEqual({ kind: "errored" });
   expect(settleOutcome({ ...base, uploadStatus: "timed_out", assetStatus: null }, 1000)).toEqual({ kind: "errored" });

@@ -13,12 +13,17 @@ export interface MuxUploadState {
   durationSeconds: number | null;
 }
 
+/** The browser checks the 2-minute limit, but the server has the final word once Mux knows the length. */
+export const SERVER_MAX_SECONDS = 125;
+
 export type SettleOutcome =
   | { kind: "ready"; playbackId: string; durationSeconds: number | null }
+  | { kind: "too_long" }
   | { kind: "errored" }
   | { kind: "pending" };
 
 export function settleOutcome(state: MuxUploadState | null, ageMs: number): SettleOutcome {
+  if (state?.assetStatus === "ready" && (state.durationSeconds ?? 0) > SERVER_MAX_SECONDS) return { kind: "too_long" };
   if (state?.assetStatus === "ready" && state.playbackId) {
     return { kind: "ready", playbackId: state.playbackId, durationSeconds: state.durationSeconds };
   }

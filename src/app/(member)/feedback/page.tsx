@@ -12,7 +12,9 @@ import { FeedbackCard, type FeedbackCardVideo } from "./_components/FeedbackCard
 
 export const metadata = { title: "Your videos" };
 
-type Search = Promise<{ tab?: string; sent?: string }>;
+type Search = Promise<{ tab?: string }>;
+
+const SENT_MESSAGES = { "1": "Video sent. Roni will reply in your Feedback tab." };
 
 const TABS = [
   { value: "all", label: "All" },
@@ -40,7 +42,7 @@ async function loadVideos(): Promise<Row[]> {
 
 export default async function FeedbackPage({ searchParams }: { searchParams: Search }) {
   await requireMember("/feedback");
-  const { tab: tabParam, sent } = await searchParams;
+  const { tab: tabParam } = await searchParams;
   const tab = parseFeedbackTab(tabParam);
   const rows = await loadVideos();
   const statuses = rows.map((r) => r.status as FeedbackStatus);
@@ -91,7 +93,7 @@ export default async function FeedbackPage({ searchParams }: { searchParams: Sea
         </div>
       )}
       <RefreshWhileProcessing active={processing} />
-      {sent === "1" && <UrlToast param="sent" message="Video sent. Roni will reply in your Feedback tab." />}
+      <UrlToast param="sent" messages={SENT_MESSAGES} />
     </>
   );
 }

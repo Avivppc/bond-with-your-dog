@@ -8,7 +8,3 @@ export const EMAIL_OUTCOME_NOTE: Record<EmailOutcome, string> = {
   not_configured: "in the app; email isn't set up yet",
   failed: "in the app; the email didn't go out",
 };
-
-export function isEmailOutcome(value: string | undefined): value is EmailOutcome {
-  return value !== undefined && value in EMAIL_OUTCOME_NOTE;
-}
