@@ -52,11 +52,13 @@ export default async function PlanPage({ searchParams }: { searchParams: Search 
   const viewer = await requireMember("/plan");
   const sp = await searchParams;
   const dog = viewer.activeDog;
-  const header = (action?: React.ReactNode) => (
+  const header = (action?: React.ReactNode, which = "This week") => (
     <div className="between">
       <div className="head-block">
         <span className="eyebrow">Practice</span>
-        <h1 className="h1">This week with {dog?.name ?? "your dog"}</h1>
+        <h1 className="h1">
+          {which} with {dog?.name ?? "your dog"}
+        </h1>
         <p className="lede">Short and often beats long and rare. Roni recommends 3–5 sessions of 5–10 minutes.</p>
       </div>
       {action}
@@ -98,7 +100,10 @@ export default async function PlanPage({ searchParams }: { searchParams: Search 
   return (
     <>
       <TimeZoneSync />
-      {header(<AddSessionForm dogId={dog.id} days={dayOptions} lessons={lessonOptions} defaultMinutes={viewer.profile.session_minutes} />)}
+      {header(
+        <AddSessionForm dogId={dog.id} days={dayOptions} lessons={lessonOptions} defaultMinutes={viewer.profile.session_minutes} />,
+        isThisWeek ? "This week" : monday < mondayOf(today) ? "A past week" : "A week ahead",
+      )}
       <div className="stack">
         <div className="between" style={{ alignItems: "center" }}>
           <div className="row">
