@@ -68,6 +68,7 @@ async function paidPayload(orderId) {
       details: { totals: { grand_total: String(order.amount_cents) } },
       items: [{ price: { id: priceId } }],
       billing_period: isSubscription ? { starts_at: new Date().toISOString(), ends_at: periodEnd } : null,
+      payments: [{ status: "captured", method_details: { type: process.env.PAYMENT_METHOD ?? "card" } }],
     },
   };
 }

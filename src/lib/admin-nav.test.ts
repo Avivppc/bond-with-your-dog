@@ -4,7 +4,7 @@ import { adminNavFor, isNavItemActive } from "./admin-nav";
 describe("adminNavFor", () => {
   it("gives owners every section, grouped like Kajabi's sidebar", () => {
     const groups = adminNavFor("owner");
-    expect(groups.map((g) => g.label)).toEqual([null, "Products", "Sales", "Contacts", "Community", "Settings"]);
+    expect(groups.map((g) => g.label)).toEqual([null, "Products", "Sales", "Contacts", "Analytics", "Community", "Settings"]);
     expect(groups.flatMap((g) => g.items.map((i) => i.href))).toContain("/admin/team");
   });
 

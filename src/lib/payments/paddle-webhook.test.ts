@@ -45,6 +45,10 @@ describe("mapPaddleEvent", () => {
         details: { totals: { grand_total: "4900" } },
         items: [{ price: { id: "pri_course" }, quantity: 1 }],
         billing_period: null,
+        payments: [
+          { status: "error", method_details: { type: "card" } },
+          { status: "captured", method_details: { type: "paypal" } },
+        ],
       },
     });
     expect(event).toEqual({
@@ -57,6 +61,7 @@ describe("mapPaddleEvent", () => {
       currency: "USD",
       periodEnd: null,
       priceIds: ["pri_course"],
+      paymentMethod: "paypal",
     });
   });
 
@@ -74,7 +79,13 @@ describe("mapPaddleEvent", () => {
         billing_period: { starts_at: "2026-10-01T00:00:00Z", ends_at: "2026-11-01T00:00:00Z" },
       },
     });
-    expect(event).toMatchObject({ kind: "order.paid", recurring: true, subscriptionRef: "sub_1", periodEnd: "2026-11-01T00:00:00Z" });
+    expect(event).toMatchObject({
+      kind: "order.paid",
+      recurring: true,
+      subscriptionRef: "sub_1",
+      periodEnd: "2026-11-01T00:00:00Z",
+      paymentMethod: null,
+    });
   });
 
   it("maps subscription lifecycle events", () => {
@@ -99,10 +110,17 @@ describe("mapPaddleEvent", () => {
     });
   });
 
-  it("maps approved refunds and ignores pending ones and other events", () => {
+  it("maps approved refunds (with their amount) and ignores pending ones and other events", () => {
     expect(
-      mapPaddleEvent({ event_id: "e", event_type: "adjustment.updated", data: { action: "refund", status: "approved", type: "full", transaction_id: "txn_1" } })
-    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: true });
+      mapPaddleEvent({
+        event_id: "e",
+        event_type: "adjustment.updated",
+        data: { id: "adj_1", action: "refund", status: "approved", type: "full", transaction_id: "txn_1", totals: { total: "4900" } },
+      })
+    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: true, adjustmentRef: "adj_1", amountCents: 4900 });
+    expect(
+      mapPaddleEvent({ event_id: "e", event_type: "adjustment.updated", data: { id: "adj_2", action: "refund", status: "approved", type: "partial", transaction_id: "txn_1" } })
+    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: false, adjustmentRef: "adj_2", amountCents: null });
     expect(
       mapPaddleEvent({ event_id: "e", event_type: "adjustment.created", data: { action: "refund", status: "pending_approval", type: "full", transaction_id: "txn_1" } })
     ).toMatchObject({ kind: "ignored" });

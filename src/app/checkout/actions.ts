@@ -77,7 +77,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
   }
 
   if (offer.payment_type === "free") {
-    await fulfillOrder(order.id, { provider: "free", providerRef: null, subscriptionRef: null, periodEnd: null, amountCents: 0 });
+    await fulfillOrder(order.id, { provider: "free", providerRef: null, subscriptionRef: null, periodEnd: null, amountCents: 0, paymentMethod: "free" });
     redirect(`/checkout/success?order=${order.id}`);
   }
 
@@ -141,6 +141,7 @@ export async function completeTestPayment(formData: FormData): Promise<void> {
     subscriptionRef: isSubscription ? `test_sub_${randomUUID()}` : null,
     periodEnd,
     amountCents: null,
+    paymentMethod: "test",
   });
   await markBillingEvent("test", eventId, null);
   redirect(`/checkout/success?order=${order.id}`);

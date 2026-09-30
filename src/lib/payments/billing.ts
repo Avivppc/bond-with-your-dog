@@ -116,6 +116,28 @@ export interface FulfillmentPayment {
   subscriptionRef: string | null;
   periodEnd: string | null;
   amountCents: number | null; // actually charged (incl. tax/discounts); null = keep order amount
+  paymentMethod: string | null; // card, paypal… ("free" / "test" for those providers)
+}
+
+interface LedgerRow {
+  event_key: string;
+  user_id: string;
+  offer_id: string;
+  order_id: string | null;
+  subscription_id?: string | null;
+  provider: string;
+  provider_ref: string | null;
+  kind: "charge" | "refund";
+  amount_cents: number;
+  currency: string;
+  payment_method: string | null;
+  is_renewal?: boolean;
+}
+
+/** Adds a row to the payments ledger (analytics). The event key makes replays a no-op. */
+async function recordPayment(sb: Sb, row: LedgerRow): Promise<void> {
+  const { error } = await sb.from("payments").upsert(row, { onConflict: "event_key", ignoreDuplicates: true });
+  if (error) throw new Error(`could not record payment ${row.event_key}: ${error.message}`);
 }
 
 /**
@@ -125,7 +147,11 @@ export interface FulfillmentPayment {
  */
 export async function fulfillOrder(orderId: string, payment: FulfillmentPayment): Promise<void> {
   const sb = createServiceClient();
-  const { data: order } = await sb.from("orders").select("id, user_id, offer_id, status").eq("id", orderId).maybeSingle();
+  const { data: order } = await sb
+    .from("orders")
+    .select("id, user_id, offer_id, status, amount_cents, currency")
+    .eq("id", orderId)
+    .maybeSingle();
   if (!order) throw new Error(`order ${orderId} not found`);
   if (order.status !== "pending" && order.status !== "paid") {
     throw new BillingIgnored(`order ${orderId} is ${order.status}; not fulfilling`);
@@ -164,11 +190,25 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
       paid_at: new Date().toISOString(),
       ...(payment.providerRef ? { provider_ref: payment.providerRef } : {}),
       ...(payment.amountCents !== null ? { amount_cents: payment.amountCents } : {}),
+      payment_method: payment.paymentMethod,
     })
     .eq("id", order.id)
     .eq("status", "pending")
     .select("id");
   if (updateError) throw new Error(`could not mark order paid: ${updateError.message}`);
+
+  await recordPayment(sb, {
+    event_key: `charge:order:${order.id}`,
+    user_id: order.user_id,
+    offer_id: order.offer_id,
+    order_id: order.id,
+    provider: payment.provider,
+    provider_ref: payment.providerRef,
+    kind: "charge",
+    amount_cents: payment.amountCents ?? order.amount_cents,
+    currency: order.currency,
+    payment_method: payment.paymentMethod,
+  });
   if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
 }
 
@@ -192,6 +232,20 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
           .from("subscriptions")
           .update({ status: "active", current_period_end: event.periodEnd, updated_at: new Date().toISOString() })
           .eq("id", sub.id);
+        await recordPayment(sb, {
+          event_key: `charge:${provider}:${event.providerRef}`,
+          user_id: sub.user_id,
+          offer_id: sub.offer_id,
+          order_id: sub.order_id,
+          subscription_id: sub.id,
+          provider,
+          provider_ref: event.providerRef,
+          kind: "charge",
+          amount_cents: event.amountCents,
+          currency: event.currency,
+          payment_method: event.paymentMethod,
+          is_renewal: true,
+        });
         return;
       }
 
@@ -216,6 +270,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         subscriptionRef: event.subscriptionRef,
         periodEnd: event.periodEnd,
         amountCents: event.amountCents,
+        paymentMethod: event.paymentMethod,
       });
       return;
     }
@@ -241,7 +296,30 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
     }
 
     case "order.refunded": {
-      if (!event.full) throw new BillingIgnored("partial refund keeps access");
+      // Every refund goes in the ledger (partial ones too); only a full refund of an order ends access.
+      const { data: charge } = await sb
+        .from("payments")
+        .select("user_id, offer_id, order_id, subscription_id, amount_cents, currency, payment_method")
+        .eq("provider", provider)
+        .eq("provider_ref", event.providerRef)
+        .eq("kind", "charge")
+        .maybeSingle();
+      if (!charge) throw new BillingIgnored(`refund for ${event.providerRef} does not match a payment we recorded`);
+      await recordPayment(sb, {
+        event_key: `refund:${provider}:${event.adjustmentRef ?? event.providerRef}`,
+        user_id: charge.user_id,
+        offer_id: charge.offer_id,
+        order_id: charge.order_id,
+        subscription_id: charge.subscription_id,
+        provider,
+        provider_ref: event.providerRef,
+        kind: "refund",
+        amount_cents: event.amountCents ?? charge.amount_cents,
+        currency: charge.currency,
+        payment_method: charge.payment_method,
+      });
+      if (!event.full) return; // partial refund keeps access
+
       const { data: order } = await sb
         .from("orders")
         .select("id, user_id, offer_id")
@@ -249,10 +327,10 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         .eq("provider_ref", event.providerRef)
         .maybeSingle();
       if (!order) {
-        // e.g. a refunded subscription renewal: access ends with the subscription (cancel event).
-        throw new BillingIgnored(`refund for ${event.providerRef} does not match an order`);
+        // A refunded subscription renewal: recorded above; access ends with the subscription (cancel event).
+        return;
       }
-      await sb.from("orders").update({ status: "refunded" }).eq("id", order.id);
+      await sb.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString() }).eq("id", order.id);
       await revoke(sb, order.user_id, order.offer_id, order.id);
       return;
     }

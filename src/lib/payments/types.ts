@@ -17,6 +17,7 @@ export type BillingEvent =
       currency: string;
       periodEnd: string | null; // end of the billing period this payment covers
       priceIds: string[]; // provider price ids actually paid for (validated against the offer)
+      paymentMethod: string | null; // card, paypal, apple_pay… (analytics)
     }
   | {
       kind: "subscription.updated";
@@ -26,7 +27,13 @@ export type BillingEvent =
       periodEnd: string | null;
       canceledAt: string | null;
     }
-  | { kind: "order.refunded"; providerRef: string; full: boolean }
+  | {
+      kind: "order.refunded";
+      providerRef: string; // the refunded transaction
+      full: boolean;
+      adjustmentRef: string | null; // provider refund id (several partial refunds per transaction)
+      amountCents: number | null; // refunded amount when the provider reports it
+    }
   | { kind: "ignored"; reason: string };
 
 export interface CheckoutRequest {

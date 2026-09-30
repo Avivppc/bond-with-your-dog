@@ -33,6 +33,13 @@ const NAV: { label: string | null; items: NavEntry[] }[] = [
       { href: "/admin/leads", label: "Leads", icon: "contact_mail", needs: "sales" },
     ],
   },
+  {
+    label: "Analytics",
+    items: [
+      { href: "/admin/analytics", label: "Overview", icon: "monitoring", needs: "sales" },
+      { href: "/admin/reports", label: "Reports", icon: "description", needs: "sales" },
+    ],
+  },
   { label: "Community", items: [{ href: "/admin/videos", label: "Spotlight queue", icon: "video_library", needs: "content" }] },
   { label: "Settings", items: [{ href: "/admin/team", label: "Team", icon: "badge", needs: "staff" }] },
 ];

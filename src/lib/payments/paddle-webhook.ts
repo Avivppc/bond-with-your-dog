@@ -43,6 +43,9 @@ const Transaction = z.object({
   details: z.object({ totals: z.object({ grand_total: z.string() }) }),
   items: z.array(z.object({ price: z.object({ id: z.string() }).nullable().optional() })).optional(),
   billing_period: Period,
+  payments: z
+    .array(z.object({ status: z.string().optional(), method_details: z.object({ type: z.string() }).nullable().optional() }))
+    .optional(),
 });
 
 const Subscription = z.object({
@@ -54,10 +57,12 @@ const Subscription = z.object({
 });
 
 const Adjustment = z.object({
+  id: z.string().optional(),
   action: z.string(),
   status: z.string(),
   type: z.string().optional(),
   transaction_id: z.string(),
+  totals: z.object({ total: z.string() }).nullable().optional(),
 });
 
 const ignored = (reason: string): BillingEvent => ({ kind: "ignored", reason });
@@ -81,6 +86,8 @@ export function mapPaddleEvent(payload: unknown): BillingEvent {
       currency: t.currency_code,
       periodEnd: t.billing_period?.ends_at ?? null,
       priceIds: (t.items ?? []).flatMap((i) => (i.price?.id ? [i.price.id] : [])),
+      // The attempt that actually took the money (earlier attempts may have failed).
+      paymentMethod: (t.payments ?? []).find((p) => p.status === "captured")?.method_details?.type ?? null,
     };
   }
 
@@ -103,7 +110,14 @@ export function mapPaddleEvent(payload: unknown): BillingEvent {
     if (!adj.success) return ignored("unexpected adjustment payload");
     const a = adj.data;
     if ((a.action === "refund" || a.action === "chargeback") && a.status === "approved") {
-      return { kind: "order.refunded", providerRef: a.transaction_id, full: a.type !== "partial" };
+      const amount = a.totals ? Number.parseInt(a.totals.total, 10) : Number.NaN;
+      return {
+        kind: "order.refunded",
+        providerRef: a.transaction_id,
+        full: a.type !== "partial",
+        adjustmentRef: a.id ?? null,
+        amountCents: Number.isFinite(amount) ? amount : null,
+      };
     }
     return ignored(`adjustment ${a.action}/${a.status}`);
   }
