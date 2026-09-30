@@ -11,7 +11,7 @@ export default async function PayPage({ searchParams }: { searchParams: Promise<
   const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN;
   if (!_ptxn || !token) redirect("/");
 
-  const successUrl = order ? `${siteUrl()}/checkout/success?order=${encodeURIComponent(order)}` : `${siteUrl()}/dashboard`;
+  const successUrl = order ? `${siteUrl()}/checkout/success?order=${encodeURIComponent(order)}` : `${siteUrl()}/home`;
   return (
     <>
       <Navbar />

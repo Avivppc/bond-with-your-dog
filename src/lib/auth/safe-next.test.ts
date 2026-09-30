@@ -7,9 +7,9 @@ describe("safeNext", () => {
     expect(safeNext("/learn/a?x=1")).toBe("/learn/a?x=1");
   });
 
-  it("falls back to the dashboard for anything that could leave the site", () => {
+  it("falls back to the member home for anything that could leave the site", () => {
     for (const bad of [null, undefined, "", "https://evil.com", "//evil.com", "/\\evil.com", "\\\\evil.com", "javascript:alert(1)", "evil.com"]) {
-      expect(safeNext(bad)).toBe("/dashboard");
+      expect(safeNext(bad)).toBe("/home");
     }
   });
 });

@@ -105,7 +105,7 @@ export default async function SignupPage({
               )}
 
               <form action={signup} className="flex flex-col gap-4">
-                <input type="hidden" name="next" value={next ?? "/dashboard"} />
+                <input type="hidden" name="next" value={next ?? "/home"} />
                 <label className="flex flex-col gap-1.5">
                   <span className={labelClass}>Your name</span>
                   <input name="full_name" type="text" required minLength={2} autoComplete="name" className={inputClass} />
@@ -144,7 +144,7 @@ export default async function SignupPage({
                   <span className="h-px flex-1 bg-outline-variant/40" />
                 </div>
 
-                <GoogleButton consentInputName="marketing_opt_in" label="Sign up with Google" next={next ?? "/dashboard"} />
+                <GoogleButton consentInputName="marketing_opt_in" label="Sign up with Google" next={next ?? "/home"} />
               </form>
 
               <p className="text-xs text-outline mt-5 leading-relaxed">

@@ -14,7 +14,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/dashboard");
+  if (!user) redirect("/login?next=/home");
 
   const { data: order } = await supabase
     .from("orders")

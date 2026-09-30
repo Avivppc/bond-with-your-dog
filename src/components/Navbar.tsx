@@ -67,7 +67,7 @@ export default function Navbar() {
         <div className="flex items-center gap-3">
           {isAuthed ? (
             <Link
-              href="/dashboard"
+              href="/home"
               className="kinetic-gradient px-6 py-2.5 rounded-full font-headline font-bold text-sm hover:scale-95 active:scale-90 transition-transform"
               style={{ color: "#fff0e6" }}
             >
@@ -113,7 +113,7 @@ export default function Navbar() {
           ))}
           {isAuthed ? (
             <Link
-              href="/dashboard"
+              href="/home"
               className="kinetic-gradient text-on-primary px-6 py-3 rounded-full font-headline font-bold text-base text-center mt-2"
               onClick={() => setMenuOpen(false)}
             >

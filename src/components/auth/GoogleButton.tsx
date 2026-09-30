@@ -20,7 +20,7 @@ const CONSENT_COOKIE_MAX_AGE_SECONDS = 10 * 60;
  * /auth/callback reads once the session exists.
  */
 export default function GoogleButton({
-  next = "/dashboard",
+  next = "/home",
   consentInputName,
   label = "Continue with Google",
 }: GoogleButtonProps) {

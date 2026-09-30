@@ -5,9 +5,9 @@
 import Link from "next/link";
 import type { SkillLevel } from "@/lib/member/viewer";
 
-export function Ms({ name, fill = false, size, className = "" }: { name: string; fill?: boolean; size?: "sm"; className?: string }) {
+export function Ms({ name, fill = false, size, className = "", color }: { name: string; fill?: boolean; size?: "sm"; className?: string; color?: string }) {
   return (
-    <span className={`ms ${fill ? "fill" : ""} ${size ?? ""} ${className}`.trim()} aria-hidden>
+    <span className={`ms ${fill ? "fill" : ""} ${size ?? ""} ${className}`.trim()} style={color ? { color } : undefined} aria-hidden>
       {name}
     </span>
   );

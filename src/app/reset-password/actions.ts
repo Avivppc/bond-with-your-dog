@@ -30,5 +30,5 @@ export async function updatePassword(formData: FormData): Promise<void> {
     console.error("[reset-password] update failed", error.message);
     redirect(`/reset-password?error=${encodeURIComponent(FRIENDLY_ERRORS[error.code ?? ""] ?? "We couldn't save the new password. Please try again.")}`);
   }
-  redirect("/dashboard");
+  redirect("/home");
 }

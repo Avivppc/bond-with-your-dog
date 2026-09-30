@@ -38,7 +38,7 @@ export default async function LoginPage({
           )}
 
           <form action={login} className="flex flex-col gap-4">
-            <input type="hidden" name="next" value={next ?? "/dashboard"} />
+            <input type="hidden" name="next" value={next ?? "/home"} />
             <label className="flex flex-col gap-1.5">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
                 Email
@@ -79,7 +79,7 @@ export default async function LoginPage({
             <span className="text-xs uppercase tracking-widest text-outline">or</span>
             <span className="h-px flex-1 bg-outline-variant/40" />
           </div>
-          <GoogleButton next={next ?? "/dashboard"} />
+          <GoogleButton next={next ?? "/home"} />
 
           <p className="text-sm text-center mt-6" style={{ color: "#515d64" }}>
             New here?{" "}

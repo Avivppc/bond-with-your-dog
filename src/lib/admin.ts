@@ -51,7 +51,7 @@ export interface StaffSession {
 
 /**
  * Verify the current user is staff with the given capability (default: content).
- * Redirects to /login when signed out and to /dashboard when not permitted.
+ * Redirects to /login when signed out and to /home when not permitted.
  */
 export async function requireStaff(capability: StaffCapability = "content"): Promise<StaffSession> {
   const supabase = await createClient();
@@ -62,7 +62,7 @@ export async function requireStaff(capability: StaffCapability = "content"): Pro
 
   const dbRole = await loadStaffRole(supabase, user.id);
   const role = resolveStaffRole(user.email, dbRole, getAdminEmails(), Boolean(user.email_confirmed_at));
-  if (!role || !canPerform(role, capability)) redirect("/dashboard");
+  if (!role || !canPerform(role, capability)) redirect("/home");
   if (role === "owner" && dbRole !== "owner") await ensureOwnerRow(user.id);
   return { user, role };
 }

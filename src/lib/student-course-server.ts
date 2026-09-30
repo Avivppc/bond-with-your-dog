@@ -5,15 +5,36 @@ import { isEnrollmentActive } from "./enrollment";
 import { courseProgress, type CourseProgress } from "./course-progress";
 import { lessonState, type LessonState } from "./lesson-state";
 import { lessonsBehindPaywall } from "./paywall";
+import { parseNeeds, type NeedItem } from "./member/needs";
+
+export type { NeedItem };
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
 export interface StudentLesson extends OutlineLessonRow {
   duration_seconds: number | null;
+  description: string | null;
+  thumbnail_url: string | null;
+}
+
+export interface StudentCourseInfo {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  level: string;
+  image: string | null;
+  imageAlt: string | null;
+  price: number;
+  chapterNumber: number | null;
+  requiresCourseId: string | null;
+  whatYouNeed: NeedItem[];
+  beforeYouStart: string | null;
+  trailerUrl: string | null;
 }
 
 export interface StudentCourse {
-  course: { id: string; title: string; description: string; category: string; level: string; image: string | null; price: number };
+  course: StudentCourseInfo;
   outline: CourseOutline<StudentLesson>;
   /** Visible lessons in reading order. */
   lessons: StudentLesson[];
@@ -35,11 +56,15 @@ export interface StudentCourse {
  */
 export async function loadStudentCourse(supabase: ServerSupabase, courseId: string, userId: string): Promise<StudentCourse | null> {
   const [courseRes, modulesRes, lessonsRes, enrollmentRes, progressRes, staffRes] = await Promise.all([
-    supabase.from("courses").select("id, title, description, category, level, image, price, paywall_after_module_id").eq("id", courseId).maybeSingle(),
+    supabase
+      .from("courses")
+      .select("id, title, description, category, level, image, image_alt, price, paywall_after_module_id, chapter_number, requires_course_id, what_you_need, before_you_start, trailer_url")
+      .eq("id", courseId)
+      .maybeSingle(),
     supabase.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
     supabase
       .from("lessons")
-      .select("id, module_id, position, title, published, kind, duration_seconds, free_preview, available_after_days")
+      .select("id, module_id, position, title, published, kind, duration_seconds, free_preview, available_after_days, description, thumbnail_url")
       .eq("course_id", courseId),
     supabase.from("enrollments").select("enrolled_at, expires_at, access_level").eq("course_id", courseId).eq("user_id", userId).maybeSingle(),
     supabase.from("lesson_progress").select("lesson_id, completed_at").eq("user_id", userId).not("completed_at", "is", null),
@@ -68,7 +93,13 @@ export async function loadStudentCourse(supabase: ServerSupabase, courseId: stri
       category: courseRes.data.category,
       level: courseRes.data.level,
       image: courseRes.data.image || null,
+      imageAlt: courseRes.data.image_alt ?? null,
       price: Number(courseRes.data.price),
+      chapterNumber: courseRes.data.chapter_number ?? null,
+      requiresCourseId: courseRes.data.requires_course_id ?? null,
+      whatYouNeed: parseNeeds(courseRes.data.what_you_need),
+      beforeYouStart: courseRes.data.before_you_start ?? null,
+      trailerUrl: courseRes.data.trailer_url ?? null,
     },
     outline,
     lessons,
