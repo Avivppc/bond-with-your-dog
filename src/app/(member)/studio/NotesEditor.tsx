@@ -5,6 +5,8 @@ import { Ms } from "@/components/app/ui";
 import { formatClock } from "@/lib/feedback/format";
 import { deleteNote, updateNote } from "./actions";
 
+const ICON_BTN = { width: 32, height: 32 } as const;
+
 interface Note {
   id: string;
   at_seconds: number;
@@ -47,11 +49,11 @@ function NoteRow({ note, onSeek, onError }: { note: Note; onSeek: (t: number) =>
             Save
           </button>
         ) : (
-          <button type="button" className="icon-btn" onClick={() => setEditing(true)} aria-label={`Edit note at ${formatClock(note.at_seconds)}`}>
+          <button type="button" className="icon-btn" style={ICON_BTN} onClick={() => setEditing(true)} aria-label={`Edit note at ${formatClock(note.at_seconds)}`}>
             <Ms name="edit" size="sm" />
           </button>
         )}
-        <button type="button" className="icon-btn" onClick={remove} disabled={pending} aria-label={`Delete note at ${formatClock(note.at_seconds)}`}>
+        <button type="button" className="icon-btn" style={ICON_BTN} onClick={remove} disabled={pending} aria-label={`Delete note at ${formatClock(note.at_seconds)}`}>
           <Ms name="delete" size="sm" />
         </button>
       </span>

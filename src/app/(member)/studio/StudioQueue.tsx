@@ -3,6 +3,7 @@ import { ageLabel, isOverdue } from "@/lib/feedback/status";
 import type { QueueVideo, StudioTab } from "@/lib/feedback/studio";
 
 const COLUMNS = "minmax(0,1.4fr) minmax(0,1fr) 90px 110px";
+const PILL = { justifySelf: "start" } as const;
 
 function initials(name: string): string {
   return name
@@ -15,9 +16,9 @@ function initials(name: string): string {
 
 function StatusPill({ video, now }: { video: QueueVideo; now: Date }) {
   if (video.status === "replied") {
-    return video.needsReply ? <span className="pill learning">New message</span> : <span className="pill reliable">Replied</span>;
+    return video.needsReply ? <span className="pill learning" style={PILL}>New message</span> : <span className="pill reliable" style={PILL}>Replied</span>;
   }
-  return isOverdue(video.created_at, now) ? <span className="pill danger">Overdue</span> : <span className="pill learning">New</span>;
+  return isOverdue(video.created_at, now) ? <span className="pill danger" style={PILL}>Overdue</span> : <span className="pill learning" style={PILL}>New</span>;
 }
 
 /** Review queue rows (design: .queue-row); each opens the video in the panel via ?id=. */

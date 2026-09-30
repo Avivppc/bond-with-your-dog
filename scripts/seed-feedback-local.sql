@@ -82,8 +82,6 @@ select n.id, u.student, n.kind, n.title, n.body, n.href, now() - n.age
   from seed_users u, (values
     ('fee00000-0000-4000-8000-000000000401'::uuid, 'feedback', 'Roni replied to your Spin video', '3 notes and a summary',
      '/feedback/fee00000-0000-4000-8000-000000000101', interval '2 hours'),
-    ('fee00000-0000-4000-8000-000000000402'::uuid, 'achievement', 'New achievement: First feedback', 'Received notes from Roni on a video.',
-     '/progress', interval '3 days'),
     ('fee00000-0000-4000-8000-000000000403'::uuid, 'support', 'Roni''s team replied', 'How often should we practise?', '/help', interval '12 days')
   ) as n(id, kind, title, body, href, age)
 on conflict (id) do nothing;
