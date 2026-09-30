@@ -1,6 +1,6 @@
 "use client";
 
-import { ActionMenu, MENU_ITEM } from "./ActionMenu";
+import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
 
 interface PublishToggleProps {
   published: boolean;

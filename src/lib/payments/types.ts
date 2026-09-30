@@ -13,7 +13,8 @@ export type BillingEvent =
       providerRef: string; // provider transaction id
       subscriptionRef: string | null;
       recurring: boolean; // renewal of an existing subscription
-      amountCents: number;
+      amountCents: number; // what the buyer paid, tax included
+      taxCents: number; // tax inside amountCents (collected for the authorities, not revenue)
       currency: string;
       periodEnd: string | null; // end of the billing period this payment covers
       priceIds: string[]; // provider price ids actually paid for (validated against the offer)
@@ -32,7 +33,8 @@ export type BillingEvent =
       providerRef: string; // the refunded transaction
       full: boolean;
       adjustmentRef: string | null; // provider refund id (several partial refunds per transaction)
-      amountCents: number | null; // refunded amount when the provider reports it
+      amountCents: number | null; // refunded amount when the provider reports it (tax included)
+      taxCents: number; // tax inside amountCents
     }
   | { kind: "ignored"; reason: string };
 

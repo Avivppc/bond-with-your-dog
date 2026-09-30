@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { createClient } from "@/lib/supabase/server";
-import { chooseDiscount, discountedCents, isValidReferralCode, type CheckoutDiscount } from "./referrals";
+import { chooseDiscount, discountedCents, heldDiscounts, isValidReferralCode, type CheckoutDiscount, type PendingDiscountOrder } from "./referrals";
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -59,22 +59,40 @@ export interface ReferralQuote {
  * or the buyer's own referrer reward — never both. With Paddle, a discount only applies when its
  * Paddle discount id is configured (otherwise the buyer pays full price and nothing is consumed).
  */
-export async function referralQuote(userId: string, priceCents: number, provider: string | null): Promise<ReferralQuote> {
+export async function referralQuote({
+  userId,
+  offerId,
+  priceCents,
+  provider,
+}: {
+  userId: string;
+  offerId: string;
+  priceCents: number;
+  provider: string | null;
+}): Promise<ReferralQuote> {
   const none: ReferralQuote = { discount: null, amountCents: priceCents, paddleDiscountId: null };
   if (priceCents <= 0) return none;
   const settings = await loadReferralSettings();
   if (!settings.enabled) return none;
 
   const sb = createServiceClient();
-  const windowStart = new Date(Date.now() - settings.attributionDays * 86_400_000).toISOString();
-  const [referralRes, rewardRes] = await Promise.all([
+  const nowMs = Date.now();
+  const windowStart = new Date(nowMs - settings.attributionDays * 86_400_000).toISOString();
+  const [referralRes, rewardRes, pendingRes] = await Promise.all([
     sb.from("referrals").select("id").eq("friend_id", userId).eq("status", "signed_up").gte("created_at", windowStart).maybeSingle(),
-    sb.from("referral_rewards").select("id, percent").eq("user_id", userId).eq("status", "available").order("percent", { ascending: false }).limit(1),
+    sb.from("referral_rewards").select("id, percent").eq("user_id", userId).eq("status", "available").order("percent", { ascending: false }),
+    sb.from("orders").select("offer_id, discount_kind, referral_reward_id, created_at").eq("user_id", userId).eq("status", "pending").not("discount_kind", "is", null),
   ]);
+  if (pendingRes.error) {
+    // Without knowing what other checkouts hold, don't hand out a discount twice.
+    console.error("[referrals] pending orders lookup failed", pendingRes.error.message);
+    return none;
+  }
+  const held = heldDiscounts((pendingRes.data ?? []) as PendingDiscountOrder[], offerId, nowMs);
 
   const paddle = provider === "paddle";
-  const friendPercent = referralRes.data && (!paddle || settings.friendPaddleDiscountId) ? settings.friendDiscountPercent : null;
-  const best = rewardRes.data?.[0];
+  const friendPercent = referralRes.data && !held.friend && (!paddle || settings.friendPaddleDiscountId) ? settings.friendDiscountPercent : null;
+  const best = (rewardRes.data ?? []).find((r) => !held.rewardIds.has(r.id));
   const reward = best && (!paddle || settings.rewardPaddleDiscountId) ? { id: best.id, percent: best.percent } : null;
   const discount = chooseDiscount({ friendPercent, reward });
   if (!discount) return none;

@@ -1,5 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { chooseDiscount, discountedCents, isValidReferralCode } from "./referrals";
+import { DISCOUNT_HOLD_HOURS, chooseDiscount, discountedCents, heldDiscounts, isValidReferralCode, type PendingDiscountOrder } from "./referrals";
+
+describe("heldDiscounts", () => {
+  const now = Date.parse("2026-10-01T12:00:00Z");
+  const order = (o: Partial<PendingDiscountOrder>): PendingDiscountOrder => ({
+    offer_id: "offer-b",
+    discount_kind: "friend",
+    referral_reward_id: null,
+    created_at: "2026-10-01T11:00:00Z",
+    ...o,
+  });
+
+  it("an unpaid checkout for another offer holds the friend discount and its reward", () => {
+    const held = heldDiscounts([order({}), order({ discount_kind: "reward", referral_reward_id: "r1" })], "offer-a", now);
+    expect(held.friend).toBe(true);
+    expect([...held.rewardIds]).toEqual(["r1"]);
+  });
+
+  it("retrying the same offer keeps the discount (same purchase)", () => {
+    expect(heldDiscounts([order({ offer_id: "offer-a" })], "offer-a", now).friend).toBe(false);
+  });
+
+  it("a hold lapses after DISCOUNT_HOLD_HOURS", () => {
+    const old = new Date(now - (DISCOUNT_HOLD_HOURS + 1) * 3_600_000).toISOString();
+    expect(heldDiscounts([order({ created_at: old })], "offer-a", now).friend).toBe(false);
+  });
+});
 
 describe("chooseDiscount", () => {
   it("gives a referred friend their first-purchase discount", () => {

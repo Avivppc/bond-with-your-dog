@@ -102,12 +102,17 @@ export async function deleteModule(input: z.input<typeof DeleteModule>): Promise
   const { courseId: course, id } = parsed.data;
   const sb = createServiceClient();
 
-  const [{ count: lessonCount }, { count: subCount }] = await Promise.all([
+  const [{ count: lessonCount }, { count: subCount }, { data: courseRow }] = await Promise.all([
     sb.from("lessons").select("id", { count: "exact", head: true }).eq("module_id", id),
     sb.from("modules").select("id", { count: "exact", head: true }).eq("parent_id", id),
+    sb.from("courses").select("paywall_after_module_id").eq("id", course).maybeSingle(),
   ]);
   if ((lessonCount ?? 0) > 0 || (subCount ?? 0) > 0) {
     return fail("Move or delete the lessons and submodules inside this module first.");
+  }
+  // Deleting it would silently drop the paywall (and open the whole course to limited buyers).
+  if (courseRow?.paywall_after_module_id === id) {
+    return fail("The paywall sits right after this module. Drag the paywall somewhere else first.");
   }
 
   const { error } = await sb.from("modules").delete().eq("id", id).eq("course_id", course);

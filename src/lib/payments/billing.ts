@@ -116,6 +116,7 @@ export interface FulfillmentPayment {
   subscriptionRef: string | null;
   periodEnd: string | null;
   amountCents: number | null; // actually charged (incl. tax/discounts); null = keep order amount
+  taxCents: number; // tax inside amountCents; the revenue ledger records amount minus tax
   paymentMethod: string | null; // card, paypal… ("free" / "test" for those providers)
 }
 
@@ -205,15 +206,16 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     provider: payment.provider,
     provider_ref: payment.providerRef,
     kind: "charge",
-    amount_cents: payment.amountCents ?? order.amount_cents,
+    amount_cents: (payment.amountCents ?? order.amount_cents) - payment.taxCents,
     currency: order.currency,
     payment_method: payment.paymentMethod,
   });
   if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
 
-  // Referral: converts a referred friend's first purchase / consumes a used reward (idempotent).
+  // Referral: converts a referred friend's first purchase / consumes a used reward. Idempotent, so a
+  // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).
   const { error: referralError } = await sb.rpc("referral_order_paid", { p_order_id: order.id });
-  if (referralError) console.error("[billing] referral settlement failed", { orderId: order.id, error: referralError.message });
+  if (referralError) throw new Error(`referral settlement failed for order ${order.id}: ${referralError.message}`);
 }
 
 export async function applyBillingEvent(provider: string, event: BillingEvent): Promise<void> {
@@ -245,7 +247,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
           provider,
           provider_ref: event.providerRef,
           kind: "charge",
-          amount_cents: event.amountCents,
+          amount_cents: event.amountCents - event.taxCents,
           currency: event.currency,
           payment_method: event.paymentMethod,
           is_renewal: true,
@@ -274,6 +276,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         subscriptionRef: event.subscriptionRef,
         periodEnd: event.periodEnd,
         amountCents: event.amountCents,
+        taxCents: event.taxCents,
         paymentMethod: event.paymentMethod,
       });
       return;
@@ -308,7 +311,12 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         .eq("provider_ref", event.providerRef)
         .eq("kind", "charge")
         .maybeSingle();
-      if (!charge) throw new BillingIgnored(`refund for ${event.providerRef} does not match a payment we recorded`);
+      if (!charge) {
+        // The refund can arrive while the payment webhook is still being retried: retry the refund too.
+        const { data: pendingOrder } = await sb.from("orders").select("id").eq("provider", provider).eq("provider_ref", event.providerRef).maybeSingle();
+        if (pendingOrder) throw new Error(`refund for ${event.providerRef} arrived before its payment was recorded`);
+        throw new BillingIgnored(`refund for ${event.providerRef} does not match a payment we recorded`);
+      }
       await recordPayment(sb, {
         event_key: `refund:${provider}:${event.adjustmentRef ?? event.providerRef}`,
         user_id: charge.user_id,
@@ -318,7 +326,8 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         provider,
         provider_ref: event.providerRef,
         kind: "refund",
-        amount_cents: event.amountCents ?? charge.amount_cents,
+        // The charge row is already net of tax; a provider-reported refund amount includes it.
+        amount_cents: event.amountCents !== null ? event.amountCents - event.taxCents : charge.amount_cents,
         currency: charge.currency,
         payment_method: charge.payment_method,
       });
@@ -336,7 +345,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
       }
       await sb.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString() }).eq("id", order.id);
       const { error: referralError } = await sb.rpc("referral_order_refunded", { p_order_id: order.id });
-      if (referralError) console.error("[billing] referral reversal failed", { orderId: order.id, error: referralError.message });
+      if (referralError) throw new Error(`referral reversal failed for order ${order.id}: ${referralError.message}`);
       await revoke(sb, order.user_id, order.offer_id, order.id);
       return;
     }

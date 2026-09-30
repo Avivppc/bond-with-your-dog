@@ -8,7 +8,7 @@ import { createModule, reorderModules, setCoursePaywall } from "../outline-actio
 import { DragHandle, SortableList, type DragHandleProps } from "./SortableList";
 import { ModuleCard, type ExpandSignal } from "./ModuleCard";
 import { InlineAddForm } from "./InlineAdd";
-import { ActionMenu, MENU_ITEM } from "./ActionMenu";
+import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
 import type { ModuleOption } from "./LessonItem";
 
 interface CourseOutlineEditorProps {

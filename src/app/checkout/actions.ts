@@ -66,7 +66,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
   const jar = await cookies();
   const referralCode = jar.get(REFERRAL_COOKIE)?.value;
   if (referralCode && (await claimReferralCode(await createClient(), referralCode))) jar.delete(REFERRAL_COOKIE);
-  const quote = offer.payment_type === "free" ? null : await referralQuote(user.id, offer.price_cents, provider?.name ?? null);
+  const quote = offer.payment_type === "free" ? null : await referralQuote({ userId: user.id, offerId: offer.id, priceCents: offer.price_cents, provider: provider?.name ?? null });
 
   const { data: order, error } = await sb
     .from("orders")
@@ -89,7 +89,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
   }
 
   if (offer.payment_type === "free") {
-    await fulfillOrder(order.id, { provider: "free", providerRef: null, subscriptionRef: null, periodEnd: null, amountCents: 0, paymentMethod: "free" });
+    await fulfillOrder(order.id, { provider: "free", providerRef: null, subscriptionRef: null, periodEnd: null, amountCents: 0, taxCents: 0, paymentMethod: "free" });
     redirect(`/checkout/success?order=${order.id}`);
   }
 
@@ -154,6 +154,7 @@ export async function completeTestPayment(formData: FormData): Promise<void> {
     subscriptionRef: isSubscription ? `test_sub_${randomUUID()}` : null,
     periodEnd,
     amountCents: null,
+    taxCents: 0,
     paymentMethod: "test",
   });
   await markBillingEvent("test", eventId, null);

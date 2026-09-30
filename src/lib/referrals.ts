@@ -25,6 +25,31 @@ export function chooseDiscount({ friendPercent, reward }: DiscountOptions): Chec
   return { kind: "friend", percent: friend, rewardId: null };
 }
 
+/** How long an unpaid checkout keeps its referral discount to itself (then it's free for a new checkout). */
+export const DISCOUNT_HOLD_HOURS = 24;
+
+export interface PendingDiscountOrder {
+  offer_id: string;
+  discount_kind: "friend" | "reward" | null;
+  referral_reward_id: string | null;
+  created_at: string;
+}
+
+/**
+ * Discounts are only consumed when a payment arrives, so an unpaid checkout for a different offer
+ * "holds" its discount: otherwise opening several checkouts before paying would apply a friend's
+ * first-purchase discount (or a single reward) to all of them. A retry of the same offer doesn't
+ * hold anything — that's the same purchase — and a hold lapses after DISCOUNT_HOLD_HOURS.
+ */
+export function heldDiscounts(pending: PendingDiscountOrder[], offerId: string, nowMs: number): { friend: boolean; rewardIds: Set<string> } {
+  const cutoff = nowMs - DISCOUNT_HOLD_HOURS * 3_600_000;
+  const holding = pending.filter((o) => o.offer_id !== offerId && Date.parse(o.created_at) >= cutoff);
+  return {
+    friend: holding.some((o) => o.discount_kind === "friend"),
+    rewardIds: new Set(holding.flatMap((o) => (o.discount_kind === "reward" && o.referral_reward_id ? [o.referral_reward_id] : []))),
+  };
+}
+
 export function discountedCents(priceCents: number, percent: number): number {
   return Math.round(priceCents * (1 - percent / 100));
 }

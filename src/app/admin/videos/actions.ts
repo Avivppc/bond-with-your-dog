@@ -11,7 +11,7 @@ export async function approveVideo(formData: FormData) {
   const sb = createServiceClient();
   await sb.from("student_videos").update({ approved: true, is_public: true }).eq("id", id);
   revalidatePath("/admin/videos");
-  revalidatePath("/community");
+  revalidatePath("/spotlight");
 }
 
 export async function unapproveVideo(formData: FormData) {
@@ -21,7 +21,7 @@ export async function unapproveVideo(formData: FormData) {
   const sb = createServiceClient();
   await sb.from("student_videos").update({ approved: false, is_public: false }).eq("id", id);
   revalidatePath("/admin/videos");
-  revalidatePath("/community");
+  revalidatePath("/spotlight");
 }
 
 export async function deleteVideo(formData: FormData) {
@@ -31,5 +31,5 @@ export async function deleteVideo(formData: FormData) {
   const sb = createServiceClient();
   await sb.from("student_videos").delete().eq("id", id);
   revalidatePath("/admin/videos");
-  revalidatePath("/community");
+  revalidatePath("/spotlight");
 }

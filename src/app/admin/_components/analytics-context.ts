@@ -24,7 +24,8 @@ const DEFAULT_CURRENCY = "USD";
 export async function analyticsContext(params: AnalyticsSearchParams): Promise<AnalyticsContext> {
   const range = resolveRange(params);
   const seen = await currencies();
-  const requested = params.currency?.toUpperCase();
+  // A repeated ?currency= arrives as an array; only a single value counts.
+  const requested = typeof params.currency === "string" ? params.currency.toUpperCase() : undefined;
   const currency = requested && /^[A-Z]{3}$/.test(requested) ? requested : (seen[0] ?? DEFAULT_CURRENCY);
   return {
     range,

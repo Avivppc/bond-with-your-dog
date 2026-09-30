@@ -46,7 +46,13 @@ const NAV: { label: string | null; items: NavEntry[] }[] = [
       { href: "/admin/reports", label: "Reports", icon: "description", needs: "sales" },
     ],
   },
-  { label: "Community", items: [{ href: "/admin/videos", label: "Spotlight queue", icon: "video_library", needs: "content" }] },
+  {
+    label: "Community",
+    items: [
+      { href: "/admin/community", label: "Community", icon: "forum", needs: "content" },
+      { href: "/admin/videos", label: "Spotlight queue", icon: "video_library", needs: "content" },
+    ],
+  },
   { label: "Settings", items: [{ href: "/admin/team", label: "Team", icon: "badge", needs: "staff" }] },
 ];
 

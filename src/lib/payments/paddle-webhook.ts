@@ -40,7 +40,7 @@ const Transaction = z.object({
   subscription_id: z.string().nullable().optional(),
   currency_code: z.string(),
   custom_data: CustomData,
-  details: z.object({ totals: z.object({ grand_total: z.string() }) }),
+  details: z.object({ totals: z.object({ grand_total: z.string(), tax: z.string().optional() }) }),
   items: z.array(z.object({ price: z.object({ id: z.string() }).nullable().optional() })).optional(),
   billing_period: Period,
   payments: z
@@ -62,10 +62,13 @@ const Adjustment = z.object({
   status: z.string(),
   type: z.string().optional(),
   transaction_id: z.string(),
-  totals: z.object({ total: z.string() }).nullable().optional(),
+  totals: z.object({ total: z.string(), tax: z.string().optional() }).nullable().optional(),
 });
 
 const ignored = (reason: string): BillingEvent => ({ kind: "ignored", reason });
+
+/** Paddle amounts are strings of minor units; a missing or bad one counts as 0. */
+const cents = (value: string | undefined): number => Number.parseInt(value ?? "", 10) || 0;
 
 export function mapPaddleEvent(payload: unknown): BillingEvent {
   const envelope = Envelope.safeParse(payload);
@@ -82,7 +85,8 @@ export function mapPaddleEvent(payload: unknown): BillingEvent {
       providerRef: t.id,
       subscriptionRef: t.subscription_id ?? null,
       recurring: t.origin === "subscription_recurring",
-      amountCents: Number.parseInt(t.details.totals.grand_total, 10) || 0,
+      amountCents: cents(t.details.totals.grand_total),
+      taxCents: cents(t.details.totals.tax),
       currency: t.currency_code,
       periodEnd: t.billing_period?.ends_at ?? null,
       priceIds: (t.items ?? []).flatMap((i) => (i.price?.id ? [i.price.id] : [])),
@@ -117,6 +121,7 @@ export function mapPaddleEvent(payload: unknown): BillingEvent {
         full: a.type !== "partial",
         adjustmentRef: a.id ?? null,
         amountCents: Number.isFinite(amount) ? amount : null,
+        taxCents: cents(a.totals?.tax),
       };
     }
     return ignored(`adjustment ${a.action}/${a.status}`);

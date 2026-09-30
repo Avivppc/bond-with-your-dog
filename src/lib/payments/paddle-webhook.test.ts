@@ -42,7 +42,7 @@ describe("mapPaddleEvent", () => {
         subscription_id: null,
         currency_code: "USD",
         custom_data: { order_id: order },
-        details: { totals: { grand_total: "4900" } },
+        details: { totals: { grand_total: "4900", tax: "747" } },
         items: [{ price: { id: "pri_course" }, quantity: 1 }],
         billing_period: null,
         payments: [
@@ -58,6 +58,7 @@ describe("mapPaddleEvent", () => {
       subscriptionRef: null,
       recurring: false,
       amountCents: 4900,
+      taxCents: 747,
       currency: "USD",
       periodEnd: null,
       priceIds: ["pri_course"],
@@ -115,12 +116,12 @@ describe("mapPaddleEvent", () => {
       mapPaddleEvent({
         event_id: "e",
         event_type: "adjustment.updated",
-        data: { id: "adj_1", action: "refund", status: "approved", type: "full", transaction_id: "txn_1", totals: { total: "4900" } },
+        data: { id: "adj_1", action: "refund", status: "approved", type: "full", transaction_id: "txn_1", totals: { total: "4900", tax: "747" } },
       })
-    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: true, adjustmentRef: "adj_1", amountCents: 4900 });
+    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: true, adjustmentRef: "adj_1", amountCents: 4900, taxCents: 747 });
     expect(
       mapPaddleEvent({ event_id: "e", event_type: "adjustment.updated", data: { id: "adj_2", action: "refund", status: "approved", type: "partial", transaction_id: "txn_1" } })
-    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: false, adjustmentRef: "adj_2", amountCents: null });
+    ).toEqual({ kind: "order.refunded", providerRef: "txn_1", full: false, adjustmentRef: "adj_2", amountCents: null, taxCents: 0 });
     expect(
       mapPaddleEvent({ event_id: "e", event_type: "adjustment.created", data: { action: "refund", status: "pending_approval", type: "full", transaction_id: "txn_1" } })
     ).toMatchObject({ kind: "ignored" });

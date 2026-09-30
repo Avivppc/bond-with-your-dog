@@ -25,6 +25,7 @@ const OfferSchema = z
     days_of_access: optionalPositiveInt,
     status: z.enum(["draft", "published"]),
     provider_price_id: z.string().trim().max(100).optional(),
+    includes_community: z.preprocess((v) => v === "on", z.boolean()),
   })
   .transform((v, ctx) => {
     const cents = v.payment_type === "free" ? 0 : parsePriceToCents(v.price ?? "");
@@ -47,6 +48,7 @@ const OfferSchema = z
       days_of_access: v.payment_type === "one_time" ? v.days_of_access : null,
       status: v.status,
       provider_price_id: v.provider_price_id || null,
+      includes_community: v.includes_community,
       updated_at: new Date().toISOString(),
     };
   });

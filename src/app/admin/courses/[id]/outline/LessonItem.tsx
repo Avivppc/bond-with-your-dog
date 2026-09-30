@@ -6,7 +6,7 @@ import type { OutlineLessonRow } from "@/lib/course-outline";
 import { moveLesson, setLessonPublished } from "../outline-actions";
 import { DragHandle, type DragHandleProps } from "./SortableList";
 import { PublishToggle } from "./PublishToggle";
-import { ActionMenu, MENU_ITEM } from "./ActionMenu";
+import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
 
 export interface ModuleOption {
   id: string;

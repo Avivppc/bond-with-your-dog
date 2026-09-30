@@ -10,7 +10,8 @@ const items: Item[] = [
   { href: "/courses", label: "All courses", icon: "pets" },
   { href: "/dashboard?expert=1", label: "Expert Track", icon: "psychology", locked: true },
   { href: "/dashboard#achievements", label: "Achievements", icon: "military_tech" },
-  { href: "/community", label: "Spotlight", icon: "video_library" },
+  { href: "/community", label: "Community", icon: "forum" },
+  { href: "/spotlight", label: "Spotlight", icon: "video_library" },
   { href: "/refer", label: "Refer a friend", icon: "card_giftcard" },
   { href: "/blog", label: "News", icon: "newspaper" },
 ];

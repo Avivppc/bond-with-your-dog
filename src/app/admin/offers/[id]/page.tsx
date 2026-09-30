@@ -142,6 +142,13 @@ export default async function EditOfferPage({
             </div>
           ))}
           <p className="text-xs text-[#6c6a69]">Limited access is available for courses with a paywall (set it in the course outline).</p>
+          <label className="mt-2 flex items-start gap-3 rounded-[8px] border border-[#efeeed] px-3 py-2 text-sm">
+            <input type="checkbox" name="includes_community" defaultChecked={Boolean((offer as { includes_community?: boolean }).includes_community)} className="mt-0.5 h-4 w-4 accent-[#343332]" />
+            <span>
+              Includes community access
+              <span className="block text-xs text-[#6c6a69]">Buyers join the community even if it isn&apos;t open to all students.</span>
+            </span>
+          </label>
         </fieldset>
 
         <label className="flex flex-col gap-1.5 max-w-48">

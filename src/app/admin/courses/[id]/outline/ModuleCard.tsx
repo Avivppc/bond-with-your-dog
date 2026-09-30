@@ -7,7 +7,7 @@ import { DragHandle, SortableList, type DragHandleProps } from "./SortableList";
 import { LessonItem, type ModuleOption } from "./LessonItem";
 import { InlineAddForm } from "./InlineAdd";
 import { PublishToggle } from "./PublishToggle";
-import { ActionMenu, MENU_ITEM } from "./ActionMenu";
+import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
 
 /** Bumped by "Expand all / Collapse all" in the editor; every module follows the latest value. */
 export interface ExpandSignal {

@@ -46,7 +46,7 @@ export default async function CheckoutPage({
   );
   const price = formatOfferPrice(offer as unknown as PricedOffer);
   // Preview of the referral discount applied at checkout (a friend's first purchase / a referrer reward).
-  const quote = offer.payment_type === "free" ? null : await referralQuote(user.id, offer.price_cents, getPaymentProvider()?.name ?? null);
+  const quote = offer.payment_type === "free" ? null : await referralQuote({ userId: user.id, offerId: offer.id, priceCents: offer.price_cents, provider: getPaymentProvider()?.name ?? null });
   const discount = quote?.discount ?? null;
 
   return (
