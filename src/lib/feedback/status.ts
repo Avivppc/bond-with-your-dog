@@ -55,6 +55,19 @@ export function isOverdue(createdAt: string, now: Date): boolean {
   return now.getTime() - new Date(createdAt).getTime() > OVERDUE_AFTER_DAYS * 86_400_000;
 }
 
+/** Queue "Sent" column: "Today", "1 day", "3 days". */
+export function ageLabel(createdAt: string, now: Date): string {
+  const days = Math.floor((now.getTime() - new Date(createdAt).getTime()) / 86_400_000);
+  if (days <= 0) return "Today";
+  return days === 1 ? "1 day" : `${days} days`;
+}
+
+/** Done videos where the member wrote after Roni's last word need another look. */
+export function hasUnansweredMessage(messages: readonly { from_staff: boolean; created_at: string }[]): boolean {
+  const last = [...messages].sort((a, b) => a.created_at.localeCompare(b.created_at)).at(-1);
+  return Boolean(last && !last.from_staff);
+}
+
 /** Coach levels offered in the Studio ("Ready" = performance-ready). */
 export const COACH_LEVELS = [
   { value: "learning", label: "Learning" },

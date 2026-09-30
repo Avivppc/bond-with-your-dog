@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { feedbackCountsLine, feedbackPill, inTab, isOverdue, parseFeedbackTab } from "./status";
+import { ageLabel, feedbackCountsLine, feedbackPill, hasUnansweredMessage, inTab, isOverdue, parseFeedbackTab } from "./status";
 
 describe("feedbackPill", () => {
   test("shows the design's pills", () => {
@@ -32,6 +32,29 @@ test("feedbackCountsLine counts sent videos and Roni's replies", () => {
   expect(feedbackCountsLine(["replied", "replied", "waiting"])).toBe("3 sent · 2 replies from Roni");
   expect(feedbackCountsLine(["replied", "errored"])).toBe("1 sent · 1 reply from Roni");
   expect(feedbackCountsLine([])).toBe("0 sent · 0 replies from Roni");
+});
+
+test("ageLabel for the queue", () => {
+  const now = new Date("2026-10-01T12:00:00Z");
+  expect(ageLabel("2026-10-01T02:00:00Z", now)).toBe("Today");
+  expect(ageLabel("2026-09-30T10:00:00Z", now)).toBe("1 day");
+  expect(ageLabel("2026-09-27T10:00:00Z", now)).toBe("4 days");
+});
+
+test("hasUnansweredMessage looks at who spoke last", () => {
+  expect(hasUnansweredMessage([])).toBe(false);
+  expect(
+    hasUnansweredMessage([
+      { from_staff: true, created_at: "2026-09-30T10:00:00Z" },
+      { from_staff: false, created_at: "2026-09-30T11:00:00Z" },
+    ])
+  ).toBe(true);
+  expect(
+    hasUnansweredMessage([
+      { from_staff: false, created_at: "2026-09-30T10:00:00Z" },
+      { from_staff: true, created_at: "2026-09-30T11:00:00Z" },
+    ])
+  ).toBe(false);
 });
 
 test("isOverdue after two days in the queue", () => {
