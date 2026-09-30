@@ -28,6 +28,19 @@ export function validateLessonFile(file: FileCandidate): string | null {
   return null;
 }
 
+/** Public course cover images (shown on marketing pages, so a public bucket). */
+export const COURSE_IMAGES_BUCKET = "course-images";
+export const MAX_COURSE_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+const IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
+
+/** Raster web images only (no SVG — it can carry scripts). Returns an error or null. */
+export function validateCourseImage(file: FileCandidate): string | null {
+  if (!IMAGE_EXTENSIONS.has(extensionOf(file.name))) return "Upload a JPG, PNG or WebP image.";
+  if (!file.size) return "The file is empty.";
+  if (file.size > MAX_COURSE_IMAGE_BYTES) return "The image is too large (max 5 MB).";
+  return null;
+}
+
 /** Storage object path: <lessonId>/<uniqueId>-<slugified-name>.<ext> (no path traversal). */
 export function lessonFilePath(lessonId: string, fileName: string, uniqueId: string): string {
   const ext = extensionOf(fileName);

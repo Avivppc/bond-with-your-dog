@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { MAX_LESSON_FILE_BYTES, lessonFilePath, validateLessonFile } from "./lesson-files";
+import { MAX_COURSE_IMAGE_BYTES, MAX_LESSON_FILE_BYTES, lessonFilePath, validateCourseImage, validateLessonFile } from "./lesson-files";
 
 describe("validateLessonFile", () => {
   it("accepts common course materials", () => {
@@ -25,5 +25,18 @@ describe("lessonFilePath", () => {
 
   it("never lets a file name escape its folder", () => {
     expect(lessonFilePath("lesson-1", "../../etc/passwd.pdf", "id")).toBe("lesson-1/id-etc-passwd.pdf");
+  });
+});
+
+describe("validateCourseImage", () => {
+  it("accepts web images up to the size limit", () => {
+    expect(validateCourseImage({ name: "cover.JPG", size: 200_000, type: "image/jpeg" })).toBeNull();
+    expect(validateCourseImage({ name: "cover.webp", size: 10, type: "image/webp" })).toBeNull();
+  });
+
+  it("rejects other types and oversized images", () => {
+    expect(validateCourseImage({ name: "cover.pdf", size: 10, type: "application/pdf" })).toMatch(/image/i);
+    expect(validateCourseImage({ name: "cover.svg", size: 10, type: "image/svg+xml" })).toMatch(/image/i);
+    expect(validateCourseImage({ name: "cover.png", size: MAX_COURSE_IMAGE_BYTES + 1, type: "image/png" })).toMatch(/too large/i);
   });
 });

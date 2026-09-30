@@ -5,6 +5,7 @@ import { CourseForm } from "@/app/admin/courses/new/page";
 import { updateCourse, deleteCourse } from "@/app/admin/actions";
 import { buildOutline } from "@/lib/course-outline";
 import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
+import { CourseImageUpload } from "./CourseImageUpload";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,8 @@ export default async function EditCoursePage({
         <h1 className="text-3xl font-extrabold tracking-tighter">{course.title}</h1>
         <p className="text-sm text-slate-500 mt-1">/{course.id}</p>
       </header>
+
+      <CourseImageUpload courseId={id} currentUrl={course.image || null} currentAlt={course.image_alt || null} />
 
       {/* Course details */}
       <section className="bg-white rounded-xl p-1 shadow-sm">
