@@ -21,6 +21,7 @@ PSQL=(psql -h "$PGDATA" -p "$PORT" -U postgres -d postgres -v ON_ERROR_STOP=1 -q
 for f in "$ROOT"/supabase/migrations/*.sql; do
   "${PSQL[@]}" -f "$f" >/dev/null
 done
+"${PSQL[@]}" -f "$ROOT/supabase/tests/01_helpers.sql"
 
 status=0
 for t in "$ROOT"/supabase/tests/*.test.sql; do

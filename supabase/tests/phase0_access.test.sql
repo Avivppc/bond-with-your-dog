@@ -3,35 +3,7 @@
 -- must go through a SECURITY DEFINER function that checks entitlement.
 \set ON_ERROR_STOP 1
 
--- ── helpers ─────────────────────────────────────────────────
-create schema if not exists t;
-grant usage on schema t to anon, authenticated;
-
-create or replace function t.ok(cond boolean, msg text) returns void
-language plpgsql as $$
-begin
-  if cond is distinct from true then raise exception 'ASSERTION FAILED: %', msg; end if;
-end $$;
-
--- Passes only when the statement is DENIED (permission/RLS 42501, unauthenticated 28000).
--- Any other error (typo, missing column…) fails the test instead of hiding it.
-create or replace function t.denied(stmt text, msg text) returns void
-language plpgsql as $$
-begin
-  begin
-    execute stmt;
-  exception
-    when sqlstate '42501' or sqlstate '28000' then return;
-    when others then raise exception 'WRONG ERROR (% %) for: %', sqlstate, sqlerrm, msg;
-  end;
-  raise exception 'EXPECTED DENIAL BUT SUCCEEDED: %', msg;
-end $$;
-
-create or replace function t.login(uid uuid) returns void
-language sql as $$
-  select set_config('request.jwt.claims', json_build_object('sub', uid, 'role', 'authenticated')::text, false);
-$$;
-grant execute on all functions in schema t to anon, authenticated;
+-- Helpers (t.ok, t.denied, t.login) come from 01_helpers.sql.
 
 -- ── fixtures (as superuser) ─────────────────────────────────
 insert into auth.users (id, email, raw_user_meta_data) values
