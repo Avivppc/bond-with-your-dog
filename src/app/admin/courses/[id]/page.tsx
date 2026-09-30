@@ -10,6 +10,7 @@ import { CourseThumb } from "@/app/admin/_components/CourseTable";
 import { CourseForm } from "@/app/admin/_components/CourseForm";
 import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 import { CourseImageUpload } from "./CourseImageUpload";
+import { ChapterDetailsCard, type ChapterDefaults } from "./ChapterDetailsCard";
 import { CourseOffersTab, CourseSettingsTab, CourseStudentsTab } from "./CourseTabs";
 
 export const dynamic = "force-dynamic";
@@ -87,17 +88,20 @@ export default async function EditCoursePage({
 
       {activeTab === "details" && (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-          <Card title="Course details">
-            <CourseForm
-              action={async (fd: FormData) => {
-                "use server";
-                fd.set("id", id);
-                await updateCourse(fd);
-              }}
-              submitLabel="Save"
-              defaults={course}
-            />
-          </Card>
+          <div className="min-w-0 space-y-6">
+            <Card title="Course details">
+              <CourseForm
+                action={async (fd: FormData) => {
+                  "use server";
+                  fd.set("id", id);
+                  await updateCourse(fd);
+                }}
+                submitLabel="Save"
+                defaults={course}
+              />
+            </Card>
+            <ChapterDetailsTab course={course} />
+          </div>
           <CourseImageUpload courseId={id} currentUrl={course.image || null} currentAlt={course.image_alt || null} />
         </div>
       )}
@@ -124,4 +128,10 @@ async function OutlineTab({ courseId, paywallAfterModuleId }: { courseId: string
       <CourseOutlineEditor courseId={courseId} outline={outline} paywallAfterModuleId={paywallAfterModuleId} />
     </Card>
   );
+}
+
+async function ChapterDetailsTab({ course }: { course: ChapterDefaults }) {
+  const { data, error } = await createServiceClient().from("courses").select("id, title").neq("id", course.id).order("title");
+  if (error) console.error("[course] course list load failed", { courseId: course.id, error: error.message });
+  return <ChapterDetailsCard course={course} otherCourses={data ?? []} />;
 }
