@@ -39,6 +39,7 @@ export interface CommunitySettings {
   guidelines: string | null;
   open_to_students: boolean;
   require_approval: boolean;
+  whatsapp_url: string | null;
 }
 
 export interface PostView {
@@ -106,7 +107,7 @@ export async function communityViewer(supabase: ServerSupabase, userId: string):
 }
 
 export async function loadSettings(supabase: ServerSupabase): Promise<CommunitySettings | null> {
-  const { data } = await supabase.from("community_settings").select("name, description, cover_image_url, guidelines, open_to_students, require_approval").eq("id", 1).maybeSingle();
+  const { data } = await supabase.from("community_settings").select("name, description, cover_image_url, guidelines, open_to_students, require_approval, whatsapp_url").eq("id", 1).maybeSingle();
   return (data as CommunitySettings | null) ?? null;
 }
 

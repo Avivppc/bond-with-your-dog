@@ -29,6 +29,10 @@ update public.profiles set active_dog_id = 'd3000000-0000-0000-0000-000000000001
  where id = '00000000-0000-0000-0000-0000000d0001';
 select t.ok((select active_dog_id from public.profiles where id = '00000000-0000-0000-0000-0000000d0001') = 'd3000000-0000-0000-0000-000000000001', 'members pick their active dog');
 select t.fails_with($$update public.profiles set goals = '{world_domination}' where id = '00000000-0000-0000-0000-0000000d0001'$$, '23514', 'goals come from the fixed list');
+select t.ok((select dog_name from public.profiles where id = '00000000-0000-0000-0000-0000000d0001') = 'Luna', 'the profile mirrors the active dog''s name');
+update public.dogs set name = 'Luna B' where id = 'd3000000-0000-0000-0000-000000000001';
+select t.ok((select dog_name from public.profiles where id = '00000000-0000-0000-0000-0000000d0001') = 'Luna B', 'renaming the active dog updates the mirror');
+update public.dogs set name = 'Luna' where id = 'd3000000-0000-0000-0000-000000000001';
 
 select t.login('00000000-0000-0000-0000-0000000d0002');
 select t.ok((select count(*) from public.dogs) = 0, 'other members do not see my dogs');
