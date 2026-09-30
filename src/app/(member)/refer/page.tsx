@@ -1,13 +1,12 @@
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/email";
 import { loadReferralSettings } from "@/lib/referrals-server";
-import MemberShell from "@/components/member/MemberShell";
-import { CopyLink } from "./CopyLink";
+import { requireMember } from "@/lib/member/viewer";
+import { CopyButton } from "@/components/app/CopyButton";
+import { Ms, StateCard, Tip } from "@/components/app/ui";
 
 export const dynamic = "force-dynamic";
-
-const TEAL = "#0e666a";
+export const metadata = { title: "Refer a friend" };
 
 interface Summary {
   code: string | null;
@@ -18,28 +17,13 @@ interface Summary {
   best_reward_percent: number | null;
 }
 
-/** "Refer a friend": the student's link, how it works, and how their referrals are doing. */
+/** "Refer a friend": the member's link, how it works, and how their referrals are doing. */
 export default async function ReferPage() {
+  await requireMember("/refer");
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/refer");
-
   const settings = await loadReferralSettings();
   if (!settings.enabled) {
-    return (
-      <MemberShell>
-        <div className="mx-auto max-w-3xl p-6 md:p-10">
-          <div className="rounded-[20px] bg-white p-10 text-center shadow-sm">
-            <h1 className="text-2xl font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
-              Refer a friend
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">The referral program isn&apos;t open right now. Check back soon!</p>
-          </div>
-        </div>
-      </MemberShell>
-    );
+    return <StateCard icon="card_giftcard" eyebrow="Refer a friend" title="The referral program isn't open right now">Check back soon — Roni&apos;s team will announce it in the community.</StateCard>;
   }
 
   const { error: codeError } = await supabase.rpc("get_or_create_referral_code");
@@ -48,70 +32,69 @@ export default async function ReferPage() {
   const summary = ((data ?? [])[0] ?? null) as Summary | null;
   const link = summary?.code ? `${siteUrl()}/r/${summary.code}` : null;
 
-  const stats = [
-    { label: "Friends joined", value: summary?.friends_joined ?? 0 },
-    { label: "Friends who bought", value: summary?.friends_converted ?? 0 },
-    { label: "Rewards ready to use", value: summary?.rewards_available ?? 0 },
-  ];
-
   return (
-    <MemberShell>
-      <div className="mx-auto max-w-4xl space-y-6 p-6 md:p-10">
-        <section className="relative overflow-hidden rounded-[20px] p-8 text-white shadow-sm sm:p-10" style={{ backgroundColor: TEAL }}>
-          <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
-          <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">Friend brings friend</p>
-          <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl" style={{ fontFamily: "var(--font-headline)" }}>
-            Give {settings.friendDiscountPercent}%, get {settings.rewardPercent}%
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
-            {settings.description ||
-              `Share your link. Your friend gets ${settings.friendDiscountPercent}% off their first purchase, and when they buy you get ${settings.rewardPercent}% off your next one.`}
-          </p>
-          <div className="mt-6">{link ? <CopyLink url={link} /> : <p className="text-sm">We couldn&apos;t create your link — please refresh.</p>}</div>
-        </section>
+    <>
+      <div className="card" style={{ background: "var(--teal)", color: "#eafcfd", gap: 18 }}>
+        <span className="eyebrow" style={{ color: "#bff3f5" }}>
+          Friend brings friend
+        </span>
+        <h1 className="display" style={{ color: "#fff" }}>
+          Give {settings.friendDiscountPercent}%, get {settings.rewardPercent}%
+        </h1>
+        <p className="lede" style={{ color: "#d6f4f5" }}>
+          {settings.description ||
+            `Share your link. Your friend gets ${settings.friendDiscountPercent}% off their first purchase, and when they buy you get ${settings.rewardPercent}% off your next one.`}
+        </p>
+        {link ? (
+          <div className="row">
+            <input className="input" readOnly value={link} aria-label="Your referral link" style={{ flex: 1, minWidth: 220, background: "#fff" }} />
+            <CopyButton value={link} label="Copy link" className="btn btn-primary btn-sm" />
+          </div>
+        ) : (
+          <p>We couldn&apos;t create your link — please refresh.</p>
+        )}
+      </div>
 
-        <section className="grid gap-4 sm:grid-cols-3">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-[16px] bg-white p-6 shadow-sm">
-              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">{s.label}</p>
-              <p className="mt-1 text-3xl font-extrabold" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
-                {s.value}
-              </p>
+      <div className="grid-3">
+        {[
+          { label: "Friends joined", value: summary?.friends_joined ?? 0 },
+          { label: "Friends who bought", value: summary?.friends_converted ?? 0 },
+          { label: "Rewards ready to use", value: summary?.rewards_available ?? 0 },
+        ].map((s) => (
+          <div key={s.label} className="card tight">
+            <div className="stat">
+              <b>{s.value}</b>
+              <span>{s.label}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {(summary?.rewards_available ?? 0) > 0 && (
+        <Tip icon="celebration">
+          You have {summary?.rewards_available} reward{summary?.rewards_available === 1 ? "" : "s"} — {summary?.best_reward_percent}% off is applied automatically at your next checkout.
+        </Tip>
+      )}
+
+      <div className="card">
+        <h2 className="h3">How it works</h2>
+        <div className="grid-3">
+          {[
+            { icon: "link", title: "Share your link", body: "Send it to a friend who'd love training with their dog." },
+            { icon: "sell", title: "They save", body: `${settings.friendDiscountPercent}% off their first purchase, within ${settings.attributionDays} days.` },
+            { icon: "card_giftcard", title: "You get rewarded", body: `${settings.rewardPercent}% off your next purchase for every friend who buys.` },
+          ].map((step, i) => (
+            <div key={step.title} className="card flat tight">
+              <Ms name={step.icon} color="var(--teal)" />
+              <b>
+                {i + 1}. {step.title}
+              </b>
+              <span className="faint">{step.body}</span>
             </div>
           ))}
-        </section>
-
-        {(summary?.rewards_available ?? 0) > 0 && (
-          <p className="rounded-[16px] bg-[#e3f5f5] p-5 text-sm font-semibold" style={{ color: TEAL }}>
-            🎉 You have {summary?.rewards_available} reward{summary?.rewards_available === 1 ? "" : "s"} — {summary?.best_reward_percent}% off is applied automatically at
-            your next checkout.
-          </p>
-        )}
-
-        <section className="rounded-[16px] bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-extrabold" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
-            How it works
-          </h2>
-          <ol className="mt-4 grid gap-4 sm:grid-cols-3">
-            {[
-              { icon: "link", title: "Share your link", body: "Send it to a friend who'd love training with their dog." },
-              { icon: "sell", title: "They save", body: `${settings.friendDiscountPercent}% off their first purchase, within ${settings.attributionDays} days.` },
-              { icon: "card_giftcard", title: "You get rewarded", body: `${settings.rewardPercent}% off your next purchase for every friend who buys.` },
-            ].map((step, i) => (
-              <li key={step.title} className="rounded-[12px] bg-[#f3f9fd] p-5">
-                <span className="material-symbols-outlined" style={{ color: TEAL }} aria-hidden>
-                  {step.icon}
-                </span>
-                <p className="mt-2 font-bold" style={{ color: "#243036" }}>
-                  {i + 1}. {step.title}
-                </p>
-                <p className="text-sm text-slate-600">{step.body}</p>
-              </li>
-            ))}
-          </ol>
-          <p className="mt-4 text-xs text-slate-500">Rewards are for new customers only and are removed if a friend&apos;s purchase is refunded. One discount per purchase.</p>
-        </section>
+        </div>
+        <p className="faint">Rewards are for new customers only and are removed if a friend&apos;s purchase is refunded. One discount per purchase.</p>
       </div>
-    </MemberShell>
+    </>
   );
 }
