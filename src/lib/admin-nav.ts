@@ -25,7 +25,13 @@ const NAV: { label: string | null; items: NavEntry[] }[] = [
       { href: "/admin/offers", label: "Offers", icon: "sell", needs: "sales" },
     ],
   },
-  { label: "Sales", items: [{ href: "/admin/orders", label: "Orders", icon: "receipt_long", needs: "sales" }] },
+  {
+    label: "Sales",
+    items: [
+      { href: "/admin/orders", label: "Orders", icon: "receipt_long", needs: "sales" },
+      { href: "/admin/referrals", label: "Referrals", icon: "card_giftcard", needs: "sales" },
+    ],
+  },
   {
     label: "Contacts",
     items: [

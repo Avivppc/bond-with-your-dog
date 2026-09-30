@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
 import { MARKETING_CONSENT_COOKIE } from "@/lib/auth/marketing-consent";
+import { REFERRAL_COOKIE } from "@/lib/referrals";
+import { claimReferralCode } from "@/lib/referrals-server";
 
 
 export async function GET(request: NextRequest) {
@@ -32,6 +34,11 @@ export async function GET(request: NextRequest) {
       console.error("[auth/callback] failed to store marketing consent", profileError.message);
     }
     response.cookies.set(MARKETING_CONSENT_COOKIE, "", { maxAge: 0, path: "/" });
+  }
+
+  const referralCode = request.cookies.get(REFERRAL_COOKIE)?.value;
+  if (referralCode && data.user && (await claimReferralCode(supabase, referralCode))) {
+    response.cookies.set(REFERRAL_COOKIE, "", { maxAge: 0, path: "/" });
   }
 
   return response;

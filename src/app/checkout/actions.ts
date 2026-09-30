@@ -9,6 +9,9 @@ import { getPaymentProvider, configuredProvider } from "@/lib/payments/provider"
 import { fulfillOrder, recordBillingEvent, markBillingEvent } from "@/lib/payments/billing";
 import { siteUrl } from "@/lib/email";
 import { ownsEverything, type AccessLevel } from "@/lib/offer-ownership";
+import { cookies } from "next/headers";
+import { REFERRAL_COOKIE } from "@/lib/referrals";
+import { claimReferralCode, referralQuote } from "@/lib/referrals-server";
 
 const Slug = z.string().regex(/^[a-z0-9-]{2,80}$/);
 
@@ -59,15 +62,24 @@ export async function startCheckout(formData: FormData): Promise<void> {
   const provider = offer.payment_type === "free" ? null : getPaymentProvider();
   if (offer.payment_type !== "free" && !provider) redirect(`/checkout/${slug.data}?error=not-configured`);
 
+  // A friend who arrived through a referral link is attributed before the discount is worked out.
+  const jar = await cookies();
+  const referralCode = jar.get(REFERRAL_COOKIE)?.value;
+  if (referralCode && (await claimReferralCode(await createClient(), referralCode))) jar.delete(REFERRAL_COOKIE);
+  const quote = offer.payment_type === "free" ? null : await referralQuote(user.id, offer.price_cents, provider?.name ?? null);
+
   const { data: order, error } = await sb
     .from("orders")
     .insert({
       user_id: user.id,
       offer_id: offer.id,
       status: "pending",
-      amount_cents: offer.price_cents,
+      amount_cents: quote?.amountCents ?? offer.price_cents,
       currency: offer.currency,
       provider: provider?.name ?? "free",
+      discount_kind: quote?.discount?.kind ?? null,
+      discount_percent: quote?.discount?.percent ?? null,
+      referral_reward_id: quote?.discount?.rewardId ?? null,
     })
     .select("id")
     .single();
@@ -90,6 +102,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
       customerEmail: user.email,
       providerPriceId: offer.provider_price_id,
       successUrl: `${siteUrl()}/checkout/success?order=${order.id}`,
+      discountId: quote?.paddleDiscountId ?? null,
     });
     // Webhooks are matched on this server-created transaction id, never on buyer-supplied data.
     if (session.providerRef) {

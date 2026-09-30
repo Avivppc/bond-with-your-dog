@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { createClient } from "@/lib/supabase/server";
 import { configuredProvider } from "@/lib/payments/provider";
-import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
+import { formatMoney, formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { completeTestPayment } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +19,7 @@ export default async function TestPayPage({ searchParams }: { searchParams: Prom
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, offers(title, payment_type, price_cents, currency, interval)")
+    .select("id, status, amount_cents, currency, discount_percent, offers(title, payment_type, price_cents, currency, interval)")
     .eq("id", orderId ?? "")
     .maybeSingle();
   if (!order) notFound();
@@ -34,7 +34,15 @@ export default async function TestPayPage({ searchParams }: { searchParams: Prom
           <h1 className="text-2xl font-extrabold" style={{ color: "#243036" }}>
             {offer?.title}
           </h1>
-          <p className="text-xl font-bold">{offer ? formatOfferPrice(offer) : ""}</p>
+          {/* The order amount is what gets charged (it includes any referral discount). */}
+          <p className="text-xl font-bold">
+            {formatMoney(order.amount_cents, order.currency)}
+            {order.discount_percent ? (
+              <span className="ms-2 text-sm font-normal text-slate-500">
+                ({order.discount_percent}% off {offer ? formatOfferPrice(offer) : ""})
+              </span>
+            ) : null}
+          </p>
           {order.status !== "pending" ? (
             <p className="text-sm">This order is already {order.status}.</p>
           ) : (

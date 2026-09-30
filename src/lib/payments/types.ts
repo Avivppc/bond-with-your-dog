@@ -43,6 +43,8 @@ export interface CheckoutRequest {
   customerEmail: string;
   providerPriceId: string | null;
   successUrl: string;
+  /** Provider discount to apply (referral friend discount / referrer reward). */
+  discountId: string | null;
 }
 
 export interface CheckoutSession {

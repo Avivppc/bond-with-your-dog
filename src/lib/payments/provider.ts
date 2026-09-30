@@ -43,6 +43,7 @@ const paddle: PaymentProvider = {
         items: [{ price_id: request.providerPriceId, quantity: 1 }],
         custom_data: { order_id: request.orderId, user_id: request.userId, offer_id: request.offerId },
         collection_mode: "automatic",
+        ...(request.discountId ? { discount_id: request.discountId } : {}),
       }),
       signal: AbortSignal.timeout(15_000),
     });

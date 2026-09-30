@@ -5,6 +5,9 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { cookies } from "next/headers";
+import { REFERRAL_COOKIE } from "@/lib/referrals";
+import { claimReferralCode } from "@/lib/referrals-server";
 
 const Schema = z.object({
   email: z.string().email(),
@@ -35,6 +38,11 @@ export async function login(formData: FormData) {
   if (error) {
     return back(error.message);
   }
+
+  // Someone who followed a friend's referral link and then signed in is attributed now.
+  const jar = await cookies();
+  const referralCode = jar.get(REFERRAL_COOKIE)?.value;
+  if (referralCode && (await claimReferralCode(supabase, referralCode))) jar.delete(REFERRAL_COOKIE);
 
   revalidatePath("/", "layout");
   redirect(next);

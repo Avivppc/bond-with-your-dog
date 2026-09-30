@@ -11,6 +11,7 @@ const items: Item[] = [
   { href: "/dashboard?expert=1", label: "Expert Track", icon: "psychology", locked: true },
   { href: "/dashboard#achievements", label: "Achievements", icon: "military_tech" },
   { href: "/community", label: "Spotlight", icon: "video_library" },
+  { href: "/refer", label: "Refer a friend", icon: "card_giftcard" },
   { href: "/blog", label: "News", icon: "newspaper" },
 ];
 

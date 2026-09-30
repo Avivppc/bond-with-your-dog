@@ -3,7 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
-import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
+import { formatMoney, formatOfferPrice, type PricedOffer } from "@/lib/pricing";
+import { getPaymentProvider } from "@/lib/payments/provider";
+import { referralQuote } from "@/lib/referrals-server";
 import { startCheckout } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -43,6 +45,9 @@ export default async function CheckoutPage({
     oc.courses ? [oc.courses as unknown as { id: string; title: string }] : []
   );
   const price = formatOfferPrice(offer as unknown as PricedOffer);
+  // Preview of the referral discount applied at checkout (a friend's first purchase / a referrer reward).
+  const quote = offer.payment_type === "free" ? null : await referralQuote(user.id, offer.price_cents, getPaymentProvider()?.name ?? null);
+  const discount = quote?.discount ?? null;
 
   return (
     <>
@@ -91,8 +96,25 @@ export default async function CheckoutPage({
           </div>
 
           <div className="flex items-center justify-between border-t border-slate-100 pt-5">
-            <span className="text-3xl font-extrabold" style={{ color: "#243036" }}>
-              {price}
+            <span>
+              {discount ? (
+                <>
+                  <span className="block text-sm line-through" style={{ color: "#515d64" }}>
+                    {price}
+                  </span>
+                  <span className="text-3xl font-extrabold" style={{ color: "#243036" }}>
+                    {formatMoney(quote!.amountCents, offer.currency)}
+                  </span>
+                  <span className="mt-1 block text-xs font-bold" style={{ color: "#0e666a" }}>
+                    {discount.kind === "friend" ? `Friend discount: ${discount.percent}% off your first purchase` : `Your referral reward: ${discount.percent}% off`}
+                    {offer.payment_type === "subscription" ? " (first payment)" : ""}
+                  </span>
+                </>
+              ) : (
+                <span className="text-3xl font-extrabold" style={{ color: "#243036" }}>
+                  {price}
+                </span>
+              )}
             </span>
             <form action={startCheckout}>
               <input type="hidden" name="slug" value={offer.slug} />

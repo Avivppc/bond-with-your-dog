@@ -210,6 +210,10 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     payment_method: payment.paymentMethod,
   });
   if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
+
+  // Referral: converts a referred friend's first purchase / consumes a used reward (idempotent).
+  const { error: referralError } = await sb.rpc("referral_order_paid", { p_order_id: order.id });
+  if (referralError) console.error("[billing] referral settlement failed", { orderId: order.id, error: referralError.message });
 }
 
 export async function applyBillingEvent(provider: string, event: BillingEvent): Promise<void> {
@@ -331,6 +335,8 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         return;
       }
       await sb.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString() }).eq("id", order.id);
+      const { error: referralError } = await sb.rpc("referral_order_refunded", { p_order_id: order.id });
+      if (referralError) console.error("[billing] referral reversal failed", { orderId: order.id, error: referralError.message });
       await revoke(sb, order.user_id, order.offer_id, order.id);
       return;
     }
