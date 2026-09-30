@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildOutline, moveItem, type OutlineLessonRow, type OutlineModuleRow } from "./course-outline";
+import { buildOutline, flattenLessons, moveItem, type OutlineLessonRow, type OutlineModuleRow } from "./course-outline";
 
 const mod = (over: Partial<OutlineModuleRow> & { id: string }): OutlineModuleRow => ({
   parent_id: null,
@@ -56,6 +56,29 @@ describe("buildOutline", () => {
     const snapshot = JSON.stringify(modules);
     buildOutline(modules, []);
     expect(JSON.stringify(modules)).toBe(snapshot);
+  });
+});
+
+describe("flattenLessons", () => {
+  it("lists lessons in reading order: a module's own lessons, then its submodules, then the next module", () => {
+    const outline = buildOutline(
+      [
+        mod({ id: "m1", position: 1 }),
+        mod({ id: "s1", parent_id: "m1", position: 1 }),
+        mod({ id: "m2", position: 2 }),
+      ],
+      [
+        lesson({ id: "sub-lesson", module_id: "s1", position: 1 }),
+        lesson({ id: "m1-lesson", module_id: "m1", position: 1 }),
+        lesson({ id: "m2-lesson", module_id: "m2", position: 1 }),
+      ]
+    );
+    expect(flattenLessons(outline).map((l) => l.id)).toEqual(["m1-lesson", "sub-lesson", "m2-lesson"]);
+  });
+
+  it("keeps unassigned lessons at the end", () => {
+    const outline = buildOutline([mod({ id: "m1" })], [lesson({ id: "a", module_id: "m1" }), lesson({ id: "loose" })]);
+    expect(flattenLessons(outline).map((l) => l.id)).toEqual(["a", "loose"]);
   });
 });
 

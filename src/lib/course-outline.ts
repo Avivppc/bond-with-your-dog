@@ -21,28 +21,27 @@ export interface OutlineLessonRow {
   available_after_days: number | null;
 }
 
-export interface OutlineModule extends OutlineModuleRow {
-  submodules: OutlineModule[];
-  lessons: OutlineLessonRow[];
+export interface OutlineModule<L extends OutlineLessonRow = OutlineLessonRow> extends OutlineModuleRow {
+  submodules: OutlineModule<L>[];
+  lessons: L[];
 }
 
-export interface CourseOutline {
-  modules: OutlineModule[];
+export interface CourseOutline<L extends OutlineLessonRow = OutlineLessonRow> {
+  modules: OutlineModule<L>[];
   /** Lessons with no module (or a module that no longer exists) — surfaced, never dropped. */
-  unassigned: OutlineLessonRow[];
+  unassigned: L[];
 }
 
 const byPosition = <T extends { position: number }>(a: T, b: T): number => a.position - b.position;
 
-export function buildOutline(
+export function buildOutline<L extends OutlineLessonRow>(
   modules: readonly OutlineModuleRow[],
-  lessons: readonly OutlineLessonRow[]
-): CourseOutline {
+  lessons: readonly L[]
+): CourseOutline<L> {
   const moduleIds = new Set(modules.map((m) => m.id));
-  const lessonsOf = (moduleId: string): OutlineLessonRow[] =>
-    lessons.filter((l) => l.module_id === moduleId).sort(byPosition);
+  const lessonsOf = (moduleId: string): L[] => lessons.filter((l) => l.module_id === moduleId).sort(byPosition);
 
-  const toNode = (m: OutlineModuleRow): OutlineModule => ({
+  const toNode = (m: OutlineModuleRow): OutlineModule<L> => ({
     ...m,
     submodules: modules.filter((s) => s.parent_id === m.id).sort(byPosition).map(toNode),
     lessons: lessonsOf(m.id),
@@ -52,6 +51,12 @@ export function buildOutline(
     modules: modules.filter((m) => m.parent_id === null).sort(byPosition).map(toNode),
     unassigned: lessons.filter((l) => l.module_id === null || !moduleIds.has(l.module_id)),
   };
+}
+
+/** Lessons in reading order (drives "next lesson" and numbering): own lessons, then submodules. */
+export function flattenLessons<L extends OutlineLessonRow>(outline: CourseOutline<L>): L[] {
+  const walk = (m: OutlineModule<L>): L[] => [...m.lessons, ...m.submodules.flatMap(walk)];
+  return [...outline.modules.flatMap(walk), ...outline.unassigned];
 }
 
 /** Returns a new array with the item at `from` moved to `to`; invalid moves return a copy. */

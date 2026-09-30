@@ -4,6 +4,25 @@ import { createClient } from "@/lib/supabase/server";
 import LessonPlayer from "./LessonPlayer";
 import QuizPlayer from "./QuizPlayer";
 import { computeUnlockAt, isLockedNow, formatUnlockDate } from "@/lib/drip";
+import { buildOutline, flattenLessons, type OutlineLessonRow } from "@/lib/course-outline";
+
+/** Visible lessons in outline reading order (RLS hides drafts from students). */
+async function loadLessonOrder(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  courseId: string
+): Promise<OutlineLessonRow[]> {
+  const [modulesRes, lessonsRes] = await Promise.all([
+    supabase.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
+    supabase
+      .from("lessons")
+      .select("id, module_id, title, position, published, kind, free_preview, available_after_days")
+      .eq("course_id", courseId),
+  ]);
+  if (modulesRes.error || lessonsRes.error) {
+    console.error("lesson order load failed", { courseId, error: modulesRes.error?.message ?? lessonsRes.error?.message });
+  }
+  return flattenLessons(buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []));
+}
 
 export const dynamic = "force-dynamic";
 
@@ -46,11 +65,7 @@ export default async function LessonPage({
   const drippedLocked = enrollment ? isLockedNow(unlockAt) : false;
 
   const [siblingsRes, courseRes, progressRes] = await Promise.all([
-    supabase
-      .from("lessons")
-      .select("id, position, title")
-      .eq("course_id", courseId)
-      .order("position", { ascending: true }),
+    loadLessonOrder(supabase, courseId),
     supabase.from("courses").select("title, level, category").eq("id", courseId).single(),
     supabase
       .from("lesson_progress")
@@ -58,7 +73,8 @@ export default async function LessonPage({
       .eq("user_id", user.id),
   ]);
 
-  const siblings = siblingsRes.data ?? [];
+  const siblings = siblingsRes;
+  const numberOf = (id: string): number => siblings.findIndex((l) => l.id === id) + 1;
   const course = courseRes.data;
   const completed = new Set(
     (progressRes.data ?? []).filter((p) => p.completed_at).map((p) => p.lesson_id)
@@ -159,7 +175,7 @@ export default async function LessonPage({
                     className="text-3xl font-extrabold tracking-tight mb-3"
                     style={{ fontFamily: "var(--font-headline)", color: "#243036" }}
                   >
-                    Lesson {lesson.position.toString().padStart(2, "0")}: {lesson.title}
+                    Lesson {numberOf(lesson.id).toString().padStart(2, "0")}: {lesson.title}
                   </h1>
                   {lesson.description && (
                     <p className="leading-relaxed" style={{ color: "#515d64" }}>
@@ -218,7 +234,7 @@ export default async function LessonPage({
                       className="px-5 py-2.5 rounded-full font-bold text-sm border-2 truncate max-w-[45%]"
                       style={{ borderColor: "#8b4b00", color: "#8b4b00" }}
                     >
-                      ← {prev.position}. {prev.title}
+                      ← {numberOf(prev.id)}. {prev.title}
                     </Link>
                   ) : (
                     <span />
@@ -361,7 +377,7 @@ export default async function LessonPage({
                             color: isCurrent ? "#8b4b00" : "#6c7980",
                           }}
                         >
-                          Lesson {s.position.toString().padStart(2, "0")}
+                          Lesson {numberOf(s.id).toString().padStart(2, "0")}
                           {isCurrent ? " · Current" : ""}
                         </div>
                         <div

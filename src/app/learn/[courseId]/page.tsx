@@ -3,7 +3,8 @@ import { redirect, notFound } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
-import { computeUnlockAt, isLockedNow, formatUnlockDate } from "@/lib/drip";
+import { buildOutline, flattenLessons } from "@/lib/course-outline";
+import { CourseLessonRow, type MemberLessonRow } from "./CourseLessonRow";
 
 export const dynamic = "force-dynamic";
 
@@ -31,11 +32,22 @@ export default async function CourseLandingPage({
 
   if (!course) notFound();
 
-  const { data: lessons } = await supabase
-    .from("lessons")
-    .select("id, position, title, kind, duration_seconds, free_preview, available_after_days")
-    .eq("course_id", courseId)
-    .order("position", { ascending: true });
+  // RLS returns only live modules/lessons to students (staff also see drafts).
+  const [modulesRes, lessonsRes] = await Promise.all([
+    supabase.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
+    supabase
+      .from("lessons")
+      .select("id, module_id, position, title, published, kind, duration_seconds, free_preview, available_after_days")
+      .eq("course_id", courseId),
+  ]);
+  if (modulesRes.error || lessonsRes.error) {
+    console.error("course outline load failed", {
+      courseId,
+      error: modulesRes.error?.message ?? lessonsRes.error?.message,
+    });
+  }
+  const outline = buildOutline<MemberLessonRow>(modulesRes.data ?? [], lessonsRes.data ?? []);
+  const lessonNumber = new Map(flattenLessons(outline).map((l, i) => [l.id, i + 1]));
 
   const { data: enrollment } = await supabase
     .from("enrollments")
@@ -52,6 +64,23 @@ export default async function CourseLandingPage({
   const completed = new Set(
     (progress ?? []).filter((p) => p.completed_at).map((p) => p.lesson_id)
   );
+
+  const renderLessons = (items: readonly MemberLessonRow[]) =>
+    items.length > 0 ? (
+      <ol className="divide-y divide-slate-100">
+        {items.map((l) => (
+          <li key={l.id}>
+            <CourseLessonRow
+              courseId={courseId}
+              lesson={l}
+              number={lessonNumber.get(l.id) ?? 0}
+              enrolledAt={enrollment?.enrolled_at ?? null}
+              completed={completed.has(l.id)}
+            />
+          </li>
+        ))}
+      </ol>
+    ) : null;
 
   return (
     <>
@@ -142,94 +171,33 @@ export default async function CourseLandingPage({
               Lessons
             </h2>
           </div>
-          {!lessons || lessons.length === 0 ? (
+          {lessonNumber.size === 0 ? (
             <div className="p-10 text-center text-sm" style={{ color: "#515d64" }}>
               Lessons are being prepared. Check back soon.
             </div>
           ) : (
-            <ol className="divide-y divide-slate-100">
-              {lessons.map((l) => {
-                const unlockAt = computeUnlockAt(enrollment?.enrolled_at, l.available_after_days);
-                const drippedLocked = isLockedNow(unlockAt);
-                const enrollLocked = !enrollment && !l.free_preview;
-                const locked = drippedLocked || enrollLocked;
-                const done = completed.has(l.id);
-                return (
-                  <li key={l.id}>
-                    {locked ? (
-                      <div className="px-6 py-4 flex items-center justify-between opacity-70">
-                        <div className="flex items-center gap-4">
-                          <span className="material-symbols-outlined" style={{ color: "#a2afb6" }}>
-                            {drippedLocked ? "schedule" : "lock"}
-                          </span>
-                          <div>
-                            <p className="font-bold flex items-center gap-2" style={{ color: "#243036" }}>
-                              {l.position}. {l.title}
-                              {l.kind === "quiz" && (
-                                <span
-                                  className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-                                  style={{ backgroundColor: "#f3e8ff", color: "#6b21a8" }}
-                                >
-                                  Quiz
-                                </span>
-                              )}
-                            </p>
-                            {drippedLocked && unlockAt && (
-                              <p className="text-xs" style={{ color: "#515d64" }}>
-                                Unlocks {formatUnlockDate(unlockAt)}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs font-bold uppercase" style={{ color: "#a2afb6" }}>
-                          {drippedLocked ? "Scheduled" : "Locked"}
-                        </span>
-                      </div>
-                    ) : (
-                      <Link
-                        href={`/learn/${courseId}/${l.id}`}
-                        className="px-6 py-4 flex items-center justify-between hover:bg-slate-50"
-                      >
-                        <div className="flex items-center gap-4">
-                          <span
-                            className="material-symbols-outlined"
-                            style={{ color: done ? "#0e666a" : "#8b4b00" }}
-                          >
-                            {done ? "check_circle" : l.kind === "quiz" ? "quiz" : "play_circle"}
-                          </span>
-                          <div>
-                            <p className="font-bold flex items-center gap-2" style={{ color: "#243036" }}>
-                              {l.position}. {l.title}
-                              {l.kind === "quiz" && (
-                                <span
-                                  className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-                                  style={{ backgroundColor: "#f3e8ff", color: "#6b21a8" }}
-                                >
-                                  Quiz
-                                </span>
-                              )}
-                            </p>
-                            {l.duration_seconds ? (
-                              <p className="text-xs" style={{ color: "#515d64" }}>
-                                {Math.round(l.duration_seconds / 60)} min
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-                        {l.free_preview && !enrollment && (
-                          <span
-                            className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
-                            style={{ backgroundColor: "#a6eff3", color: "#005b5f" }}
-                          >
-                            Free preview
-                          </span>
-                        )}
-                      </Link>
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
+            <div className="divide-y divide-slate-100">
+              {outline.modules.map((m) => (
+                <div key={m.id}>
+                  <h3
+                    className="px-6 pt-5 pb-2 text-sm font-extrabold uppercase tracking-wider"
+                    style={{ color: "#8b4b00" }}
+                  >
+                    {m.title}
+                  </h3>
+                  {renderLessons(m.lessons)}
+                  {m.submodules.map((sub) => (
+                    <div key={sub.id} className="ms-6 border-s-2 border-slate-100">
+                      <h4 className="px-6 pt-3 pb-1 text-sm font-bold" style={{ color: "#243036" }}>
+                        {sub.title}
+                      </h4>
+                      {renderLessons(sub.lessons)}
+                    </div>
+                  ))}
+                </div>
+              ))}
+              {renderLessons(outline.unassigned)}
+            </div>
           )}
         </section>
       </main>
