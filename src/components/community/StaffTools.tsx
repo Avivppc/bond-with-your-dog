@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { moderatePost, schedulePost } from "@/app/community/actions";
+import { moderatePost, schedulePost } from "@/app/(member)/community/actions";
 import { BTN, BTN_GHOST, CARD, FIELD } from "./bits";
 
 type ModerationAction = "approve" | "remove" | "dismiss_reports" | "publish_now";

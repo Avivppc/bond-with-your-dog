@@ -1,0 +1,874 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Bonded Member App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Be+Vietnam+Pro:wght@400;500;600&family=Mrs+Saint+Delafield&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0&display=block">
+<link rel="stylesheet" href="app.css">
+
+<!-- ============ SIDEBAR ============ -->
+<aside class="sidebar" aria-label="Main">
+  <div class="brand">
+    <img src="img/logo.png" alt="Bonded">
+    <span class="member-pill">Member</span>
+  </div>
+  <nav class="nav">
+    <a href="#home" data-nav="home"><span class="ms">home</span>Home</a>
+    <a href="#courses" data-nav="courses"><span class="ms">school</span>My Courses</a>
+    <a href="#practice" data-nav="practice"><span class="ms">pets</span>Practice</a>
+    <a href="#moves" data-nav="moves"><span class="ms">auto_stories</span>Moves Library</a>
+    <a href="#feedback" data-nav="feedback"><span class="ms">rate_review</span>Feedback</a>
+    <a href="#progress" data-nav="progress"><span class="ms">insights</span>Progress</a>
+    <a href="#community" data-nav="community"><span class="ms">groups</span>Community</a>
+  </nav>
+  <div class="side-foot">
+    <a class="btn btn-teal" href="#upload"><span class="ms">support_agent</span>Ask Roni</a>
+    <div class="small-links">
+      <a href="#settings" data-nav="settings"><span class="ms sm">settings</span>Settings</a>
+      <a href="#help" data-nav="help"><span class="ms sm">help</span>Help</a>
+    </div>
+  </div>
+</aside>
+
+<div class="main">
+  <!-- ============ TOP BAR ============ -->
+  <header class="topbar">
+    <a class="brand-mini" href="#home"><img src="img/logo.png" alt="Bonded" style="width:108px"></a>
+    <div class="search-wrap" style="flex:1;min-width:0">
+      <label class="search" for="q"><span class="ms sm">search</span><input id="q" type="search" placeholder="Search lessons, moves..." autocomplete="off"></label>
+    </div>
+    <div class="top-right">
+      <a class="icon-btn" href="#notifications" aria-label="Notifications"><span class="ms">notifications</span><span class="dot"></span></a>
+      <span class="vr"></span>
+      <div style="position:relative">
+        <button class="dog-chip" id="dogChip" aria-haspopup="true" aria-expanded="false"><img id="dogChipImg" src="img/luna.jpg" alt=""><span class="name" id="dogChipName">Luna</span><span class="ms sm">expand_more</span></button>
+        <div class="dog-menu" id="dogMenu" hidden>
+          <button data-dog="luna"><img src="img/luna.jpg" alt=""><span>Luna<small>Border Collie · 4 yrs</small></span><span class="ms check">check</span></button>
+          <button data-dog="milo"><img src="img/milo.jpg" alt=""><span>Milo<small>Border Collie · 2 yrs</small></span><span class="ms check" hidden>check</span></button>
+          <div class="divider" style="margin:4px 0"></div>
+          <a href="#dogs"><span class="ms" style="width:36px;text-align:center;color:var(--teal)">add</span>Manage dogs</a>
+        </div>
+      </div>
+      <a href="#profile" class="avatar-initials" aria-label="Your profile">SJ</a>
+    </div>
+  </header>
+
+  <main class="content" id="content">
+
+<!-- ================= HOME ================= -->
+<section class="screen" data-screen="home">
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Bonded: Foundations · Lesson 8 of 10</span>
+      <h1 class="display">Welcome back,<br><em>Sarah &amp; <span data-dogname>Luna</span></em></h1>
+      <p class="lede"><span data-dogname>Luna</span> held eye contact for 12 seconds on Tuesday. Today you'll build on that focus and learn to read when she's ready for more.</p>
+      <div class="progress-line">
+        <div class="row"><span>Foundations</span><span class="num">7 of 10 lessons</span></div>
+        <div class="bar"><i style="width:70%"></i></div>
+      </div>
+      <div class="row" style="gap:20px">
+        <a class="btn btn-primary" href="#lesson"><span class="ms fill">play_arrow</span>Continue Lesson 8</a>
+        <a class="link" href="#practice">Start today's practice<span class="ms">arrow_forward</span></a>
+      </div>
+    </div>
+    <div class="media">
+      <img src="img/hand-touch.jpg" alt="Roni kneeling with a Border Collie touching her hand">
+      <div class="glass"><span class="ms fill" style="color:var(--cognac)">play_circle</span><div><b>Up next · Reading Your Dog's Focus</b><div class="faint">14 min with Roni Sagi</div></div></div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><div class="head-block"><span class="eyebrow muted">This week</span><h2 class="h3">3 of 4 sessions done</h2></div><a class="link" href="#plan">Open plan<span class="ms">arrow_forward</span></a></div>
+      <div class="days">
+        <div class="day done"><i><span class="ms sm">check</span></i>Mon</div>
+        <div class="day"><i></i>Tue</div>
+        <div class="day done"><i><span class="ms sm">check</span></i>Wed</div>
+        <div class="day done today"><i><span class="ms sm">check</span></i>Thu</div>
+        <div class="day"><i></i>Fri</div>
+        <div class="day plan"><i>10'</i>Sat</div>
+        <div class="day"><i></i>Sun</div>
+      </div>
+      <p class="faint">Next session · Saturday · 10 min · Reading Your Dog's Focus</p>
+    </div>
+    <div class="card">
+      <div class="card-head"><div class="row"><img class="avatar" src="img/roni.jpg" alt="Roni Sagi"><div><b>From Roni</b><div class="faint">On your "First Spin" video · 2 days ago</div></div></div><span class="pill reliable">New</span></div>
+      <p class="quote">"Beautiful rhythm, Sarah. Keep your lure hand low and pause one beat before the cue. <span data-dogname>Luna</span> is ready for it."</p>
+      <a class="link" href="#feedback-view">View feedback<span class="ms">arrow_forward</span></a>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="between"><div class="head-block"><span class="eyebrow muted">Skills</span><h2 class="h2"><span data-dogname>Luna</span>'s moves</h2></div><a class="link" href="#progress">See all progress<span class="ms">arrow_forward</span></a></div>
+    <div class="skills-strip">
+      <div class="skill"><img src="img/basic-skills.jpg" alt=""><b>Hand Target</b><span class="pill perform">Performance-ready</span></div>
+      <div class="skill"><img src="img/basic-foundations.jpg" alt=""><b>Eye Contact</b><span class="pill reliable">Reliable</span></div>
+      <div class="skill"><img src="img/moving-together.jpg" alt=""><b>Follow the Hand</b><span class="pill reliable">Reliable</span></div>
+      <div class="skill"><img src="img/artistic-impressions.jpg" alt=""><b>Spin</b><span class="pill learning">Learning</span></div>
+      <div class="skill"><img src="img/basic-tricks.jpg" alt=""><b>Sit Pretty</b><span class="pill learning">Learning</span></div>
+    </div>
+  </div>
+
+  <div class="grid-7-5">
+    <div class="card" style="flex-direction:row;align-items:center;gap:22px;flex-wrap:wrap">
+      <div class="date-tile"><small>Jan</small><b>14</b></div>
+      <div class="stack" style="flex:1;min-width:220px;gap:6px">
+        <span class="eyebrow muted">Live Q&amp;A with Roni</span>
+        <h3 class="h3">Thursday, January 14 · 7 pm your time</h3>
+        <p class="faint">Send your question ahead and Roni will answer it live.</p>
+      </div>
+      <div class="row"><a class="btn btn-ghost btn-sm" href="#community">Send a question</a><a class="link" href="#community">WhatsApp group<span class="ms">arrow_forward</span></a></div>
+    </div>
+    <a class="card flat" href="#moves" style="flex-direction:row;align-items:center;gap:18px">
+      <div class="sketch" style="width:92px;height:92px;flex-shrink:0"><img src="img/drunk-bunny.jpg" alt="" style="width:80px"></div>
+      <div class="stack" style="gap:4px"><span class="eyebrow muted">Moves Library</span><b>15 moves, each with a clip and cue.</b><span class="link">Browse<span class="ms">arrow_forward</span></span></div>
+    </a>
+  </div>
+</section>
+
+<!-- ================= HOME · DAY ONE ================= -->
+<section class="screen" data-screen="home-new">
+  <div class="hero">
+    <div class="hero-copy">
+      <span class="eyebrow">Day 1 · Bonded: Foundations</span>
+      <h1 class="display">Welcome to Bonded,<br><em>Sarah &amp; <span data-dogname>Luna</span></em></h1>
+      <p class="lede">Your first lesson is 11 minutes. Watch it together, then try a five-minute session while it's fresh.</p>
+      <div class="row" style="gap:20px">
+        <a class="btn btn-primary" href="#lesson"><span class="ms fill">play_arrow</span>Start Lesson 1</a>
+        <a class="link" href="#course">See all 10 lessons<span class="ms">arrow_forward</span></a>
+      </div>
+    </div>
+    <div class="media"><img src="img/roni-kneel.jpg" alt="Roni kneeling with her two Border Collies"><span class="play"><span class="ms fill">play_arrow</span></span></div>
+  </div>
+  <div class="grid-3">
+    <div class="card">
+      <span class="eyebrow muted">Your first week</span>
+      <div class="list">
+        <div class="list-row"><span class="num-step">1</span><div class="grow"><div class="title">Watch Lesson 1</div><div class="faint">The Bond Begins · 11 min</div></div></div>
+        <div class="list-row"><span class="num-step" style="background:var(--tint-2);color:var(--ink-2)">2</span><div class="grow"><div class="title">First 5-minute practice</div><div class="faint">We'll guide you step by step</div></div></div>
+        <div class="list-row"><span class="num-step" style="background:var(--tint-2);color:var(--ink-2)">3</span><div class="grow"><div class="title">Say hi in the WhatsApp group</div><div class="faint">Meet the other members</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <span class="eyebrow muted">Your plan</span>
+      <h3 class="h3">Mon, Wed and Sat<br>10 minutes each</h3>
+      <div class="days">
+        <div class="day plan"><i>10'</i>Mon</div><div class="day"><i></i>Tue</div><div class="day plan"><i>10'</i>Wed</div><div class="day"><i></i>Thu</div><div class="day"><i></i>Fri</div><div class="day plan"><i>10'</i>Sat</div><div class="day"><i></i>Sun</div>
+      </div>
+      <a class="link" href="#plan">Change days<span class="ms">arrow_forward</span></a>
+    </div>
+    <div class="card" style="align-items:center;text-align:center">
+      <div class="sketch" style="width:120px;height:120px"><img src="img/intro.jpg" alt="" style="width:104px"></div>
+      <h3 class="h3"><span data-dogname>Luna</span>'s skills show up here</h3>
+      <p class="faint">After your first practice you'll see each move grow from Learning to Performance-ready.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MY COURSES ================= -->
+<section class="screen" data-screen="courses">
+  <div class="head-block"><span class="eyebrow">Your journey</span><h1 class="h1">My Courses</h1><p class="lede">Three chapters, one partnership. Each builds on the last.</p></div>
+  <a class="course-card" href="#course">
+    <div class="media"><img src="img/hand-touch.jpg" alt=""></div>
+    <div class="body">
+      <div class="row"><span class="eyebrow">Chapter 1</span><span class="pill learning">In progress</span></div>
+      <h2 class="h1" style="font-size:32px">Bonded: Foundations</h2>
+      <p class="muted">Focus, trust and body awareness. The base every dance is built on.</p>
+      <div class="row" style="gap:18px">
+        <div class="ring" data-ring="70" data-size="64"></div>
+        <div><b>Lesson 8 · Reading Your Dog's Focus</b><div class="faint">10 lessons · 7 complete</div></div>
+      </div>
+      <div><span class="btn btn-primary">Continue</span></div>
+    </div>
+  </a>
+  <a class="course-card" href="#course">
+    <div class="media"><img src="img/stairs-jump.jpg" alt=""></div>
+    <div class="body">
+      <div class="row"><span class="eyebrow">Chapter 2</span><span class="pill neutral"><span class="ms sm">lock</span>Opens after Foundations</span></div>
+      <h2 class="h1" style="font-size:32px">Bonded: Moves</h2>
+      <p class="muted">Seven lessons of movement vocabulary: heel work, spins, weaves and paws-up.</p>
+      <div class="row"><span class="chip">Heel Walk</span><span class="chip">Bunny Hop</span><span class="chip">Roll Over</span></div>
+      <span class="link">Preview the chapter<span class="ms">arrow_forward</span></span>
+    </div>
+  </a>
+  <a class="course-card dim" href="#membership">
+    <div class="media"><img src="img/agt.jpg" alt=""></div>
+    <div class="body">
+      <div class="row"><span class="eyebrow">Chapter 3</span><span class="pill neutral">Not in your plan yet</span></div>
+      <h2 class="h1" style="font-size:32px">Bonded: Let's Dance</h2>
+      <p class="muted">Nine lessons that turn your moves into a routine set to music, the way Roni and Rhythm did on stage.</p>
+      <div><span class="btn btn-ghost btn-sm">Learn more<span class="ms sm">open_in_new</span></span></div>
+    </div>
+  </a>
+  <a class="card flat" href="#certificate" style="flex-direction:row;align-items:center;gap:18px">
+    <div class="badge" style="padding:0;background:none;box-shadow:none"><div class="seal"><span class="ms fill">workspace_premium</span></div></div>
+    <div class="grow" style="flex:1"><b>Certificates</b><div class="faint">0 of 3 earned · your first arrives with Lesson 10 of Foundations</div></div>
+    <span class="link">Preview<span class="ms">arrow_forward</span></span>
+  </a>
+</section>
+
+<!-- ================= COURSE OVERVIEW ================= -->
+<section class="screen" data-screen="course">
+  <div class="row faint"><a href="#courses">My Courses</a><span class="ms sm">chevron_right</span><span style="color:var(--ink)">Foundations</span></div>
+  <div class="hero">
+    <div class="media" style="aspect-ratio:16/11"><img src="img/roni-kneel.jpg" alt="Roni with two Border Collies"><span class="play"><span class="ms fill">play_arrow</span></span></div>
+    <div class="hero-copy">
+      <span class="eyebrow">Chapter 1</span>
+      <h1 class="display" style="font-size:42px">Bonded: Foundations</h1>
+      <p class="lede">Before any dance comes attention. You'll teach <span data-dogname>Luna</span> to find you, follow you and stay with you, in short sessions she'll love.</p>
+      <div class="row faint"><span class="ms sm">video_library</span>10 lessons<span>·</span><span class="ms sm">schedule</span>2 h 40 min<span>·</span>with Roni Sagi</div>
+      <div class="progress-line"><div class="row"><span>Your progress</span><span class="num">70%</span></div><div class="bar"><i style="width:70%"></i></div></div>
+      <div><a class="btn btn-primary" href="#lesson"><span class="ms fill">play_arrow</span>Continue Lesson 8</a></div>
+    </div>
+  </div>
+  <div class="grid-main">
+    <div class="card">
+      <div class="card-head"><h2 class="h2">Lessons</h2><span class="faint">A new lesson opens every 3 days</span></div>
+      <div class="list" id="lessonList"></div>
+    </div>
+    <div class="stack-lg sticky">
+      <div class="card tight">
+        <span class="eyebrow muted">What you'll need</span>
+        <div class="list">
+          <div class="list-row"><span class="ms" style="color:var(--teal)">cookie</span><div class="grow">Soft, small treats</div></div>
+          <div class="list-row"><span class="ms" style="color:var(--teal)">texture</span><div class="grow">A non-slip mat or rug</div></div>
+          <div class="list-row"><span class="ms" style="color:var(--teal)">crop_free</span><div class="grow">About 3 × 3 m of space</div></div>
+        </div>
+      </div>
+      <div class="tip warm"><span class="ms">favorite</span><div><b>Before you start</b><br>Warm up for two minutes, keep sessions under ten, and check with your vet for puppies under 12 months.</div></div>
+      <a class="card tight" href="#certificate" style="flex-direction:row;align-items:center"><div class="badge" style="padding:0;background:none;box-shadow:none"><div class="seal" style="width:52px;height:52px"><span class="ms fill">workspace_premium</span></div></div><div><b>Certificate of completion</b><div class="faint">Earned with Lesson 10</div></div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= LESSON PLAYER ================= -->
+<section class="screen" data-screen="lesson">
+  <div class="row faint"><a href="#courses">My Courses</a><span class="ms sm">chevron_right</span><a href="#course">Foundations</a><span class="ms sm">chevron_right</span><span style="color:var(--ink)">Lesson 8</span></div>
+  <div class="grid-main">
+    <div class="stack-lg">
+      <div class="player">
+        <img src="img/two-up.jpg" alt="Roni with two Border Collies standing on hind legs">
+        <div class="controls">
+          <div class="scrub"><i style="width:38%"></i><span class="knob" style="left:38%"></span></div>
+          <div class="ctrl-row"><span class="ms fill">pause</span><span class="ms">replay_10</span><span class="ms">volume_up</span><span class="num">05:21 / 14:02</span><span class="sp"></span><span>1×</span><span class="ms">closed_caption</span><span class="ms">slow_motion_video</span><span class="ms">fullscreen</span></div>
+        </div>
+      </div>
+      <div class="between">
+        <div class="head-block"><span class="eyebrow">Foundations · Lesson 8</span><h1 class="h1">Reading Your Dog's Focus</h1></div>
+        <div class="row"><a class="btn btn-ghost btn-sm" href="#upload"><span class="ms sm">videocam</span>Send a video to Roni</a><button class="icon-btn" aria-label="Save"><span class="ms">bookmark</span></button></div>
+      </div>
+      <div class="tabs" data-tabs="lessonTabs"><button class="on">Overview</button><button>Practice steps</button><button>Downloads</button><button>Questions (12)</button></div>
+      <div class="grid-2">
+        <div class="stack">
+          <h3 class="h3">What this lesson is about</h3>
+          <p class="muted">Focus isn't a switch. It rises and falls in small waves. You'll learn the four signals that tell you <span data-dogname>Luna</span> is ready, and the two that mean it's time to stop.</p>
+          <div class="row"><span class="chip">Cue: "Look"</span><span class="chip">Cue: "Break"</span></div>
+        </div>
+        <div class="card flat tight">
+          <span class="eyebrow muted">Key takeaways</span>
+          <div class="check-row"><span class="state-ic done"><span class="ms">check</span></span>Soft eyes and a still body mean she's ready</div>
+          <div class="check-row"><span class="state-ic done"><span class="ms">check</span></span>Sniffing or turning away means pause</div>
+          <div class="check-row"><span class="state-ic done"><span class="ms">check</span></span>End on a success, not on fatigue</div>
+        </div>
+      </div>
+    </div>
+    <div class="stack-lg sticky">
+      <div class="card tight">
+        <div class="row"><div class="ring" data-ring="70" data-size="56"></div><div><b>Foundations</b><div class="faint">7 of 10 lessons complete</div></div></div>
+        <div class="list mini-lessons" id="miniLessons"></div>
+      </div>
+      <div class="card tight" style="background:var(--orange-soft);box-shadow:none">
+        <b>Practice this now</b>
+        <p class="faint" style="color:#5f3500">Three short steps, about 8 minutes. We'll time it for you.</p>
+        <a class="btn btn-primary" href="#practice"><span class="ms">pets</span>Start practice</a>
+        <a class="link" href="#quiz" style="color:var(--cognac)">Take the checkpoint<span class="ms">arrow_forward</span></a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= QUIZ ================= -->
+<section class="screen" data-screen="quiz">
+  <div class="card" style="max-width:760px;margin:0 auto;width:100%;padding:44px;gap:26px">
+    <div class="between"><span class="eyebrow">Checkpoint · Lesson 8</span><span class="faint num">Question 2 of 3</span></div>
+    <div class="steps-dots"><i class="done"></i><i class="on"></i><i></i></div>
+    <h1 class="h2" style="font-size:28px">During a session, <span data-dogname>Luna</span> starts sniffing the floor and turning away. What is she most likely telling you?</h1>
+    <div class="options" id="quizOptions">
+      <button class="option" data-correct="false"><span class="key">A</span><span>She wants a harder exercise</span></button>
+      <button class="option" data-correct="true"><span class="key">B</span><span>She needs a break. Her focus has dipped</span></button>
+      <button class="option" data-correct="false"><span class="key">C</span><span>She didn't hear the cue, so repeat it louder</span></button>
+      <button class="option" data-correct="false"><span class="key">D</span><span>She's ignoring you on purpose</span></button>
+    </div>
+    <div class="tip" id="quizFeedback" hidden><span class="ms">lightbulb</span><div><b>That's right.</b> Sniffing and looking away are calming signals. End with an easy win and try again later. Roni covers this at 06:40.</div></div>
+    <div class="between"><a class="btn btn-ghost" href="#lesson">Back to lesson</a><button class="btn btn-primary" id="quizBtn">Check answer</button></div>
+  </div>
+</section>
+
+<!-- ================= LESSON COMPLETE ================= -->
+<section class="screen" data-screen="complete">
+  <div class="card" style="max-width:880px;margin:0 auto;width:100%;align-items:center;text-align:center;padding:52px 40px;gap:22px">
+    <div class="sketch" style="width:180px;height:180px;border-radius:50%"><img src="img/dancing-skills.jpg" alt="" style="width:150px"></div>
+    <span class="eyebrow">Lesson 8 complete</span>
+    <h1 class="display">Beautiful work, <span data-dogname>Luna</span>.</h1>
+    <p class="lede">You watched, practised twice and passed the checkpoint. Eye Contact just moved up to <b>Reliable</b>.</p>
+    <div class="grid-3" style="width:100%;max-width:620px;text-align:left">
+      <div class="stat"><b>14 min</b><span>Lesson watched</span></div>
+      <div class="stat"><b>2</b><span>Practice sessions</span></div>
+      <div class="stat"><b>3 / 3</b><span>Checkpoint answers</span></div>
+    </div>
+    <div class="divider" style="width:100%"></div>
+    <div class="row" style="justify-content:center;gap:18px">
+      <div class="state-ic lock"><span class="ms sm">lock_clock</span></div>
+      <div style="text-align:left"><b>Lesson 9 · Position Changes</b><div class="faint">Opens Friday, October 3. Keep practising until then.</div></div>
+    </div>
+    <div class="row" style="justify-content:center"><a class="btn btn-primary" href="#plan">Plan my next session</a><a class="btn btn-ghost" href="#upload">Send a video to Roni</a></div>
+  </div>
+</section>
+
+<!-- ================= CERTIFICATE ================= -->
+<section class="screen" data-screen="certificate">
+  <div class="between"><div class="head-block"><span class="eyebrow">Earned September 30, 2026</span><h1 class="h1">Your certificate</h1></div><div class="row"><button class="btn btn-ghost btn-sm" data-copy="https://bonded.dance/c/BND-F-7Q4K2"><span class="ms sm">link</span>Copy share link</button><button class="btn btn-primary btn-sm" data-toast="PDF export comes with the real app"><span class="ms sm">download</span>Download PDF</button></div></div>
+  <div class="cert">
+    <div class="cert-inner">
+      <div class="sketch"><img src="img/give-a-hug.jpg" alt="" style="width:110px"></div>
+      <span class="eyebrow" style="color:#9a7a1a">Certificate of Completion</span>
+      <p class="faint" style="font-size:14px">This certifies that</p>
+      <h2 class="display" style="font-size:40px">Sarah Jenkins &amp; <span data-dogname>Luna</span></h2>
+      <p class="muted" style="max-width:48ch">have completed all ten lessons of <b>Bonded: Foundations</b>, building focus, trust and body awareness together.</p>
+      <div class="cert-meta">
+        <div><span class="sig">Roni Sagi</span><hr><span>Roni Sagi · Founder</span></div>
+        <div><span style="font-family:var(--display);font-size:18px;color:var(--ink);letter-spacing:0;text-transform:none;font-weight:700;line-height:46px">30.09.2026</span><hr><span>Date</span></div>
+        <div><span style="font-family:var(--display);font-size:18px;color:var(--ink);letter-spacing:.04em;text-transform:none;font-weight:700;line-height:46px">BND-F-7Q4K2</span><hr><span>Verify at bonded.dance</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MOVES LIBRARY ================= -->
+<section class="screen" data-screen="moves">
+  <div class="between">
+    <div class="head-block"><span class="eyebrow">Reference</span><h1 class="h1">Moves Library</h1><p class="lede">Every move from the three chapters, with its cue, steps and <span data-dogname>Luna</span>'s current level.</p></div>
+  </div>
+  <div class="row" id="moveFilters"><button class="chip on" data-f="all">All</button><button class="chip" data-f="Foundations">Foundations</button><button class="chip" data-f="Moves">Moves</button><button class="chip" data-f="Let's Dance">Let's Dance</button><span class="vr" style="margin-inline:4px"></span><button class="chip" data-f="learning">Learning</button><button class="chip" data-f="reliable">Reliable</button></div>
+  <div class="grid-main">
+    <div class="moves-grid" id="movesGrid"></div>
+    <div class="card sticky" id="moveDetail"></div>
+  </div>
+</section>
+
+<!-- ================= SEARCH ================= -->
+<section class="screen" data-screen="search">
+  <div class="head-block"><span class="eyebrow">Search</span><label class="search" for="bigSearch" style="width:100%;height:60px;font-size:18px;background:var(--card);box-shadow:var(--shadow)"><span class="ms">search</span><input id="bigSearch" type="search" value="spin"></label><p class="faint">7 results for "spin"</p></div>
+  <div class="grid-2">
+    <div class="card"><span class="eyebrow muted">Lessons</span>
+      <div class="list">
+        <a class="list-row" href="#lesson"><div class="th" style="width:88px;height:58px;border-radius:12px;overflow:hidden"><img src="img/lure.jpg" alt="" style="width:100%;height:100%;object-fit:cover"></div><div class="grow"><div class="title">Your First Spin</div><div class="faint">Foundations · Lesson 5 · 12 min</div></div><span class="ms" style="color:var(--ink-3)">chevron_right</span></a>
+        <a class="list-row" href="#lesson"><div class="th" style="width:88px;height:58px;border-radius:12px;overflow:hidden"><img src="img/dance.jpg" alt="" style="width:100%;height:100%;object-fit:cover"></div><div class="grid-row grow"><div class="title">Spins in Both Directions</div><div class="faint">Moves · Lesson 2 · opens after Foundations</div></div><span class="ms" style="color:var(--ink-3)">lock</span></a>
+      </div>
+    </div>
+    <div class="card"><span class="eyebrow muted">Moves</span>
+      <a class="list-row" href="#moves"><div class="sketch" style="width:58px;height:58px"><img src="img/artistic-impressions.jpg" alt="" style="width:50px"></div><div class="grow"><div class="title">Spin</div><div class="faint">Cue "Spin" · hand circles at nose height</div></div><span class="pill learning">Learning</span></a>
+    </div>
+    <div class="card"><span class="eyebrow muted">Feedback from Roni</span>
+      <a class="list-row" href="#feedback-view"><img class="avatar" src="img/roni.jpg" alt=""><div class="grow"><div class="title">"Pause one beat before the spin cue"</div><div class="faint">On your First Spin video · Sep 28</div></div></a>
+    </div>
+    <div class="card"><span class="eyebrow muted">Q&amp;A recordings</span>
+      <a class="list-row" href="#community"><span class="ms" style="color:var(--teal)">live_tv</span><div class="grow"><div class="title">"My dog only spins one way"</div><div class="faint">Autumn Q&amp;A · at 24:10</div></div></a>
+      <a class="list-row" href="#community"><span class="ms" style="color:var(--teal)">live_tv</span><div class="grow"><div class="title">Spin vs. twist: naming directions</div><div class="faint">Summer Q&amp;A · at 08:45</div></div></a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PRACTICE MODE ================= -->
+<section class="screen" data-screen="practice">
+  <div class="between">
+    <div class="head-block"><span class="eyebrow">Practice · Foundations · Lesson 5</span><h1 class="h1">Your First Spin</h1></div>
+    <div class="row faint"><span class="ms sm">schedule</span>Session 06:12<span>·</span>Step 2 of 4</div>
+  </div>
+  <div class="steps-dots"><i class="done"></i><i class="on"></i><i></i><i></i></div>
+  <div class="grid-main">
+    <div class="card" style="padding:28px">
+      <div class="practice-stage">
+        <div class="media"><img src="img/lure.jpg" alt="Roni luring a Border Collie with a toy"><div class="glass"><span class="ms fill" style="color:var(--cognac)">replay</span>Looping: the lure circle, 6 sec</div></div>
+        <div class="stack-lg">
+          <div class="head-block"><span class="eyebrow muted">Step 2</span><h2 class="h2">Lure <span data-dogname>Luna</span> into a full circle</h2><p class="muted">Hold the treat at nose height and draw a slow circle. Mark the moment she completes the turn.</p></div>
+          <div class="timer"><svg width="200" height="200" viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="88" fill="none" stroke="var(--tint-2)" stroke-width="10"/><circle id="timerArc" cx="100" cy="100" r="88" fill="none" stroke="var(--orange)" stroke-width="10" stroke-linecap="round" stroke-dasharray="553" stroke-dashoffset="0" transform="rotate(-90 100 100)"/></svg><b id="timerText">03:00</b><small id="timerState">Ready</small></div>
+          <div class="row" style="justify-content:center"><button class="btn btn-ghost btn-sm" id="timerBtn"><span class="ms sm">play_arrow</span>Start timer</button></div>
+          <div class="reps"><div><span class="faint">Reps</span><div><b id="repCount">4</b><span class="faint"> / 8</span></div></div><button class="round-btn" id="repBtn" aria-label="Add a rep"><span class="ms">add</span></button></div>
+          <div class="row"><span class="chip">Cue: "Spin"</span><span class="chip">Reward: on the finish</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="stack-lg sticky">
+      <div class="card tight">
+        <span class="eyebrow muted">Session checklist</span>
+        <div class="check-row"><span class="state-ic done"><span class="ms">check</span></span>Warm-up · 2 min</div>
+        <div class="check-row"><span class="state-ic done"><span class="ms">check</span></span>Step 1 · Follow the hand</div>
+        <div class="check-row" style="font-weight:600"><span class="state-ic next"><span class="ms">more_horiz</span></span>Step 2 · Full circle lure</div>
+        <div class="check-row faint"><span class="state-ic lock"></span>Step 3 · Add the cue</div>
+        <div class="check-row faint"><span class="state-ic lock"></span>Cool-down · 1 min</div>
+      </div>
+      <div class="tip"><span class="ms">favorite</span><div>Stop while <span data-dogname>Luna</span> still wants more. Slowing down, sniffing or looking away means it's time for a break.</div></div>
+    </div>
+  </div>
+  <div class="action-bar">
+    <a class="btn btn-ghost btn-sm" href="#lesson"><span class="ms sm">arrow_back</span>Previous step</a>
+    <div class="row"><a class="link" href="#upload"><span class="ms">videocam</span>Record this for Roni</a><a class="btn btn-primary" href="#complete">Next step<span class="ms sm">arrow_forward</span></a></div>
+  </div>
+</section>
+
+<!-- ================= WEEKLY PLAN & HISTORY ================= -->
+<section class="screen" data-screen="plan">
+  <div class="between">
+    <div class="head-block"><span class="eyebrow">Practice</span><h1 class="h1">This week with <span data-dogname>Luna</span></h1><p class="lede">Short and often beats long and rare. Roni recommends 3–5 sessions of 5–10 minutes.</p></div>
+    <button class="btn btn-primary" data-toast="Session added to Friday"><span class="ms sm">add</span>Add a session</button>
+  </div>
+  <div class="week">
+    <div class="wday"><div class="d">Mon <b>22</b></div><div class="session done"><b>Eye Contact</b>8 min · done</div></div>
+    <div class="wday rest"><div class="d">Tue <b>23</b></div><span class="faint">Rest day</span></div>
+    <div class="wday"><div class="d">Wed <b>24</b></div><div class="session done"><b>Your First Spin</b>10 min · done</div></div>
+    <div class="wday today"><div class="d">Thu <b>25</b></div><div class="session done"><b>Lesson 8 watched</b>14 min</div><div class="session done"><b>Spin reps</b>6 min · done</div></div>
+    <div class="wday rest"><div class="d">Fri <b>26</b></div><span class="faint">Rest day</span></div>
+    <div class="wday"><div class="d">Sat <b>27</b></div><div class="session"><b>Reading Focus</b>10 min · 10:00</div></div>
+    <div class="wday rest"><div class="d">Sun <b>28</b></div><span class="faint">Rest day</span></div>
+  </div>
+  <div class="grid-7-5">
+    <div class="card">
+      <div class="card-head"><h2 class="h3">September</h2><div class="row faint" style="gap:6px">Less<span style="width:14px;height:14px;border-radius:4px;background:var(--tint)"></span><span style="width:14px;height:14px;border-radius:4px;background:#cfeff0"></span><span style="width:14px;height:14px;border-radius:4px;background:#86d3d6"></span><span style="width:14px;height:14px;border-radius:4px;background:var(--teal)"></span>More</div></div>
+      <div class="cal" id="cal"></div>
+    </div>
+    <div class="card">
+      <span class="eyebrow muted">This month</span>
+      <div class="grid-2" style="gap:18px">
+        <div class="stat"><b>14</b><span>Sessions</span></div>
+        <div class="stat"><b>172</b><span>Minutes together</span></div>
+        <div class="stat"><b>6 days</b><span>Longest rhythm</span></div>
+        <div class="stat"><b>9 min</b><span>Average session</span></div>
+      </div>
+      <div class="tip"><span class="ms">insights</span><div>Your best sessions happen before 10 am. <span data-dogname>Luna</span> reaches more reps when she's fresh.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ROUTINE BUILDER ================= -->
+<section class="screen" data-screen="routine">
+  <div class="between">
+    <div class="head-block"><span class="eyebrow">Let's Dance · Routine builder</span><h1 class="h1">Sunday Waltz</h1><p class="lede">Lay <span data-dogname>Luna</span>'s reliable moves on the music. Start and end with a move she loves.</p></div>
+    <div class="row"><button class="btn btn-ghost btn-sm" data-toast="Preview plays the song with move cues"><span class="ms sm">play_arrow</span>Preview</button><button class="btn btn-primary btn-sm" data-toast="Routine saved"><span class="ms sm">check</span>Save routine</button></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><div class="row"><div class="sketch" style="width:52px;height:52px;background:var(--ink);color:#ffd59a"><span class="ms fill">music_note</span></div><div><b>Sunday Waltz</b><div class="faint">Your upload · 2:48 · 92 BPM</div></div></div><button class="link" data-toast="Choose an audio file from your device">Change music<span class="ms">swap_horiz</span></button></div>
+    <div class="track">
+      <div class="ticks"><span>0:00</span><span>0:20</span><span>0:40</span><span>1:00</span><span>1:20</span><span>1:40</span><span>2:00</span><span>2:20</span><span>2:48</span></div>
+      <div class="wave"></div>
+      <div class="lanes" id="lanes"></div>
+    </div>
+    <div class="between"><span class="faint" id="routineInfo"></span><a class="link" href="#upload">Send to Roni for feedback<span class="ms">arrow_forward</span></a></div>
+  </div>
+  <div class="grid-7-5">
+    <div class="stack"><span class="eyebrow muted">Add a move</span><div class="palette" id="palette"></div></div>
+    <div class="tip warm"><span class="ms">tips_and_updates</span><div><b>Roni's tip</b><br>Leave two seconds of free movement between hard moves. It gives <span data-dogname>Luna</span> time to breathe and reads as musical, not rushed.</div></div>
+  </div>
+</section>
+
+<!-- ================= UPLOAD VIDEO ================= -->
+<section class="screen" data-screen="upload">
+  <div class="head-block"><span class="eyebrow">Feedback</span><h1 class="h1">Send a video to Roni</h1><p class="lede">Roni watches every video and replies with notes pinned to moments in your clip.</p></div>
+  <div class="grid-main">
+    <form class="card" id="uploadForm" style="gap:26px">
+      <div class="stack"><div class="row"><span class="num-step">1</span><b>Which move is this?</b></div>
+        <select class="input" id="upMove"><option>Spin · Foundations, Lesson 5</option><option>Eye Contact · Foundations, Lesson 2</option><option>Hand Target · Foundations, Lesson 3</option><option>Something else</option></select></div>
+      <div class="stack"><div class="row"><span class="num-step">2</span><b>Add your video</b></div>
+        <label class="drop" id="drop" for="upFile"><span class="ms">cloud_upload</span><b id="dropTitle">Drop a video here or choose a file</b><span class="faint" id="dropSub">MP4 or MOV · up to 2 minutes</span></label>
+        <input id="upFile" type="file" accept="video/*" hidden></div>
+      <div class="stack"><div class="row"><span class="num-step">3</span><b>A note for Roni</b></div>
+        <textarea class="input" id="upNote" placeholder="What should Roni look at? For example: Luna spins left easily but hesitates to the right."></textarea></div>
+      <div class="between"><span class="faint">You'll get a notification when Roni replies.</span><button class="btn btn-primary" type="submit"><span class="ms sm">send</span>Send to Roni</button></div>
+    </form>
+    <div class="stack-lg sticky">
+      <div class="card tight">
+        <span class="eyebrow muted">Filming tips</span>
+        <div class="check-row"><span class="ms" style="color:var(--teal)">screen_rotation</span>Film landscape, from the side</div>
+        <div class="check-row"><span class="ms" style="color:var(--teal)">crop_free</span>Keep the whole dog in frame</div>
+        <div class="check-row"><span class="ms" style="color:var(--teal)">timer</span>30–90 seconds is plenty</div>
+        <div class="check-row"><span class="ms" style="color:var(--teal)">light_mode</span>Daylight, no backlight</div>
+      </div>
+      <div class="media" style="aspect-ratio:4/3"><img src="img/low.jpg" alt="Roni training a Border Collie on a wide plaza"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FEEDBACK LIST ================= -->
+<section class="screen" data-screen="feedback">
+  <div class="between">
+    <div class="head-block"><span class="eyebrow">Feedback</span><h1 class="h1">Your videos</h1><p class="lede">3 sent · 2 replies from Roni</p></div>
+    <a class="btn btn-primary" href="#upload"><span class="ms sm">videocam</span>Send a new video</a>
+  </div>
+  <div class="tabs" data-tabs="fbTabs"><button class="on">All</button><button>Waiting</button><button>Replied</button></div>
+  <div class="stack">
+    <a class="sub-card" href="#feedback-view"><div class="media"><img src="img/lure.jpg" alt=""><span class="ms fill">play_arrow</span></div><div class="stack" style="gap:6px"><b class="h3">Your First Spin</b><span class="faint">Sent Sep 26 · 0:34 · "She hesitates to the right"</span><div class="row"><img class="avatar" src="img/roni.jpg" alt="" style="width:26px;height:26px"><span class="faint">Roni left 3 notes and a summary</span></div></div><span class="pill reliable">Feedback ready</span></a>
+    <a class="sub-card" href="#feedback-view"><div class="media"><img src="img/wall.jpg" alt=""><span class="ms fill">play_arrow</span></div><div class="stack" style="gap:6px"><b class="h3">Hand Target</b><span class="faint">Sent Sep 12 · 0:52</span><div class="row"><img class="avatar" src="img/roni.jpg" alt="" style="width:26px;height:26px"><span class="faint">"Performance-ready. Lovely clean touches."</span></div></div><span class="pill neutral">Read</span></a>
+    <div class="sub-card"><div class="media"><img src="img/sitpretty.jpg" alt=""><span class="ms fill">play_arrow</span></div><div class="stack" style="gap:6px"><b class="h3">Sit Pretty</b><span class="faint">Sent today · 0:41 · "Is her back straight enough?"</span><span class="faint">Roni will reply here. We'll notify you.</span></div><span class="pill learning">In review</span></div>
+  </div>
+</section>
+
+<!-- ================= FEEDBACK VIEW ================= -->
+<section class="screen" data-screen="feedback-view">
+  <div class="row faint"><a href="#feedback">Your videos</a><span class="ms sm">chevron_right</span><span style="color:var(--ink)">Your First Spin</span></div>
+  <div class="grid-main">
+    <div class="stack-lg">
+      <div class="player">
+        <img src="img/lure.jpg" alt="Your spin practice video">
+        <div class="controls">
+          <div class="scrub" id="fbScrub"><i id="fbFill" style="width:12%"></i><span class="mark" style="left:12%"></span><span class="mark" style="left:32%"></span><span class="mark" style="left:56%"></span><span class="knob" id="fbKnob" style="left:12%"></span></div>
+          <div class="ctrl-row"><span class="ms fill">play_arrow</span><span class="num" id="fbTime">00:04 / 00:34</span><span class="sp"></span><span>0.5×</span><span class="ms">fullscreen</span></div>
+        </div>
+      </div>
+      <div class="card" style="background:var(--card)">
+        <div class="row"><img class="avatar lg" src="img/roni.jpg" alt="Roni Sagi"><div><span class="eyebrow">Roni's summary</span><h2 class="h3">Beautiful rhythm. Now slow the cue down.</h2></div></div>
+        <p class="muted">Your lure is smooth and <span data-dogname>Luna</span> is clearly enjoying it. The hesitation to the right comes from the cue arriving while she's still turning. Try the three notes below for a week, then send me another clip.</p>
+        <div class="row"><span class="pill reliable">Spin → still Learning</span><span class="pill perform">Follow the Hand → Performance-ready</span></div>
+      </div>
+    </div>
+    <div class="stack-lg sticky">
+      <div class="card tight">
+        <span class="eyebrow muted">Notes on your video</span>
+        <div class="stack" style="gap:4px" id="fbComments">
+          <button class="comment on" data-pos="12" data-t="00:04"><span class="ts">0:04</span><span>Lovely. Your lure hand stays low and steady.</span></button>
+          <button class="comment" data-pos="32" data-t="00:11"><span class="ts">0:11</span><span><span data-dogname>Luna</span> anticipates here. Pause one beat before the cue.</span></button>
+          <button class="comment" data-pos="56" data-t="00:19"><span class="ts">0:19</span><span>Reward on the finish, not mid-turn, so the full circle pays.</span></button>
+        </div>
+      </div>
+      <div class="card tight">
+        <label class="label" for="replyRoni">Reply to Roni</label>
+        <textarea class="input" id="replyRoni" placeholder="Thank you! Should I also try it off-lead?"></textarea>
+        <div class="row" style="justify-content:space-between"><button class="btn btn-ghost btn-sm" data-toast="Reply sent to Roni">Send reply</button><a class="btn btn-primary btn-sm" href="#practice">Practise these notes</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROGRESS ================= -->
+<section class="screen" data-screen="progress">
+  <div class="card" style="flex-direction:row;align-items:center;gap:24px;flex-wrap:wrap">
+    <img class="avatar xl" id="progDogImg" src="img/luna.jpg" alt="">
+    <div class="stack" style="gap:6px;flex:1;min-width:220px"><span class="eyebrow">Progress</span><h1 class="h1"><span data-dogname>Luna</span>'s journey</h1><p class="muted" id="progDogMeta">Border Collie · 4 years · training since September 2</p></div>
+    <div class="row" style="gap:28px"><div class="stat"><b>7</b><span>Lessons</span></div><div class="stat"><b>14</b><span>Sessions</span></div><div class="stat"><b>2</b><span>Moves ready</span></div></div>
+  </div>
+  <div class="grid-main">
+    <div class="card">
+      <div class="card-head"><h2 class="h2">Moves</h2><div class="row faint" style="gap:14px"><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--orange)"></i> Learning</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--teal)"></i> Reliable</span><span><i style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gold)"></i> Performance-ready</span></div></div>
+      <div class="list" id="skillList"></div>
+    </div>
+    <div class="stack-lg sticky">
+      <div class="card tight"><span class="eyebrow muted">Next milestone</span><b>Spin to Reliable</b><p class="faint">Roni's rule: 8 out of 10 clean reps in two different rooms.</p><div class="bar"><i style="width:55%"></i></div><span class="faint num">5.5 of 10 reps on average</span></div>
+      <div class="tip"><span class="ms">sync_alt</span><div>Training two dogs? Switch between <b>Luna</b> and <b>Milo</b> from the dog chip at the top.</div></div>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="head-block"><span class="eyebrow muted">The path</span><h2 class="h2">26 lessons, three chapters</h2></div>
+    <div class="journey">
+      <div class="chapter"><div class="sketch"><img src="img/basic-foundations.jpg" alt=""></div><div class="between"><b>Foundations</b><span class="faint num">7 / 10</span></div><div class="dots" data-dots="10" data-done="7"></div></div>
+      <div class="chapter"><div class="sketch"><img src="img/moving-together.jpg" alt=""></div><div class="between"><b>Moves</b><span class="faint num">0 / 7</span></div><div class="dots" data-dots="7" data-done="0"></div></div>
+      <div class="chapter"><div class="sketch"><img src="img/dancing-skills.jpg" alt=""></div><div class="between"><b>Let's Dance</b><span class="faint num">0 / 9</span></div><div class="dots" data-dots="9" data-done="0"></div></div>
+    </div>
+  </div>
+  <div class="stack">
+    <div class="head-block"><span class="eyebrow muted">Milestones</span><h2 class="h2">Achievements</h2></div>
+    <div class="badges">
+      <div class="badge"><div class="seal"><span class="ms fill">pets</span></div><b>First practice</b><span class="faint">Sep 3</span></div>
+      <div class="badge"><div class="seal"><span class="ms fill">event_repeat</span></div><b>6-day rhythm</b><span class="faint">Sep 20</span></div>
+      <div class="badge"><div class="seal"><span class="ms fill">rate_review</span></div><b>First feedback</b><span class="faint">Sep 14</span></div>
+      <div class="badge locked"><div class="seal"><span class="ms">workspace_premium</span></div><b>Foundations complete</b><span class="faint">3 lessons to go</span></div>
+      <div class="badge locked"><div class="seal"><span class="ms">music_note</span></div><b>First routine</b><span class="faint">In Let's Dance</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= COMMUNITY ================= -->
+<section class="screen" data-screen="community">
+  <div class="community-hero"><img src="img/steps.jpg" alt="Roni sitting on steps with her Border Collies"><div class="copy"><span class="eyebrow">Community</span><h1 class="display" style="color:#fff">You're training<br>with good company.</h1><p style="color:#e6f1f5">A private WhatsApp group for members and a live Q&amp;A with Roni every season.</p></div></div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="row"><div class="sketch" style="width:52px;height:52px;background:#e3f7ea;color:#1c7a43"><span class="ms fill">forum</span></div><div><span class="eyebrow muted">WhatsApp</span><h2 class="h3">Bonded Members</h2></div></div>
+      <p class="muted">Share wins, ask quick questions and see what other dogs are working on. Roni's team drops in most days.</p>
+      <div class="row"><a class="btn btn-ghost btn-sm" href="https://www.whatsapp.com" target="_blank" rel="noopener"><span class="ms sm">open_in_new</span>Open the group</a><span class="faint">Community guidelines apply</span></div>
+    </div>
+    <div class="card">
+      <div class="row"><div class="date-tile"><small>Jan</small><b>14</b></div><div><span class="eyebrow muted">Next live Q&amp;A</span><h2 class="h3">Winter Q&amp;A with Roni</h2><div class="faint">Thursday · 7 pm your time · 60 min</div></div></div>
+      <form id="qaForm" class="stack"><label class="label" for="qaQ">Send your question ahead</label><textarea class="input" id="qaQ" style="min-height:84px" placeholder="How do I stop Luna from spinning before I cue it?"></textarea><div class="row" style="justify-content:space-between"><button type="button" class="link" data-toast="Added to your calendar">Add to calendar<span class="ms">event</span></button><button class="btn btn-primary btn-sm" type="submit">Send question</button></div></form>
+    </div>
+  </div>
+  <div class="grid-7-5">
+    <div class="card">
+      <div class="card-head"><h2 class="h3">Past Q&amp;A recordings</h2><span class="faint">Members only</span></div>
+      <div class="list">
+        <div class="list-row"><div class="media" style="width:112px;aspect-ratio:16/10;border-radius:12px;flex-shrink:0"><img src="img/pack.jpg" alt=""></div><div class="grow"><div class="title">Autumn Q&amp;A · Spins, focus and multi-dog homes</div><div class="faint">October 2026 · 58 min · 14 chapters</div></div><span class="ms" style="color:var(--teal)">play_circle</span></div>
+        <div class="list-row"><div class="media" style="width:112px;aspect-ratio:16/10;border-radius:12px;flex-shrink:0"><img src="img/walk.jpg" alt=""></div><div class="grow"><div class="title">Summer Q&amp;A · Heat, pacing and short sessions</div><div class="faint">July 2026 · 61 min · 11 chapters</div></div><span class="ms" style="color:var(--teal)">play_circle</span></div>
+        <div class="list-row"><div class="media" style="width:112px;aspect-ratio:16/10;border-radius:12px;flex-shrink:0"><img src="img/serafina.jpg" alt=""></div><div class="grow"><div class="title">Spring Q&amp;A · Starting with a rescue dog</div><div class="faint">April 2026 · 55 min · 9 chapters</div></div><span class="ms" style="color:var(--teal)">play_circle</span></div>
+      </div>
+    </div>
+    <div class="card" style="background:var(--ink);color:#eaf6fb">
+      <span class="eyebrow" style="color:#ffd59a">Bonded Stories</span>
+      <h2 class="h2" style="color:#fff">Share how you and <span data-dogname>Luna</span> changed</h2>
+      <p style="color:#bcd0d8">Your story might appear on the Bonded site, with your permission. Roni reads every one.</p>
+      <div><a class="btn btn-ghost btn-sm" href="#community" data-toast="Opens the story form on the site" style="background:#fff">Share your story</a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROFILE ================= -->
+<section class="screen" data-screen="profile">
+  <div class="card" style="flex-direction:row;align-items:center;gap:24px;flex-wrap:wrap">
+    <div class="avatar-initials" style="width:104px;height:104px;font-size:34px">SJ</div>
+    <div class="stack" style="gap:6px;flex:1;min-width:220px"><span class="eyebrow">Member since September 2026</span><h1 class="h1">Sarah Jenkins</h1><p class="muted">Austin, Texas · sarah.j@example.com</p></div>
+    <a class="btn btn-ghost btn-sm" href="#settings"><span class="ms sm">edit</span>Edit profile</a>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head"><h2 class="h3">Your dogs</h2><a class="link" href="#dogs">Manage<span class="ms">arrow_forward</span></a></div>
+      <div class="list">
+        <div class="list-row"><img class="avatar" src="img/luna.jpg" alt=""><div class="grow"><div class="title">Luna</div><div class="faint">Border Collie · 4 yrs · Foundations, Lesson 8</div></div><span class="pill reliable">Active</span></div>
+        <div class="list-row"><img class="avatar" src="img/milo.jpg" alt=""><div class="grow"><div class="title">Milo</div><div class="faint">Border Collie · 2 yrs · Foundations, Lesson 3</div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h2 class="h3">Training preferences</h2>
+      <div class="field"><span class="label">Practice days</span><div class="row" id="prefDays"><button class="chip on">Mon</button><button class="chip">Tue</button><button class="chip on">Wed</button><button class="chip">Thu</button><button class="chip">Fri</button><button class="chip on">Sat</button><button class="chip">Sun</button></div></div>
+      <div class="field"><span class="label">Session length</span><div class="seg" data-seg><button>5 min</button><button class="on">10 min</button><button>15 min</button></div></div>
+    </div>
+  </div>
+  <div class="grid-3">
+    <a class="card tight" href="#membership"><span class="ms" style="color:var(--teal)">card_membership</span><b>Membership &amp; purchases</b><span class="faint">2 courses · Let's Dance available</span></a>
+    <a class="card tight" href="#certificate"><span class="ms" style="color:var(--teal)">workspace_premium</span><b>Certificates</b><span class="faint">0 of 3 earned</span></a>
+    <a class="card tight" href="#settings"><span class="ms" style="color:var(--teal)">tune</span><b>Settings &amp; privacy</b><span class="faint">Notifications, account, your data</span></a>
+  </div>
+</section>
+
+<!-- ================= DOGS ================= -->
+<section class="screen" data-screen="dogs">
+  <div class="head-block"><span class="eyebrow">Your dogs</span><h1 class="h1">Luna &amp; Milo</h1><p class="lede">Each dog keeps their own progress, plan and feedback. Switch anytime from the dog chip at the top.</p></div>
+  <div class="grid-3">
+    <div class="dog-card"><div class="media"><img src="img/luna.jpg" alt="Luna"></div><div class="body"><div class="between"><h2 class="h2">Luna</h2><span class="pill reliable">Active</span></div><p class="faint">Border Collie · 4 years · Medium</p><div class="row"><span class="chip">No limitations</span></div><div class="between"><span class="faint">Foundations · 70%</span><button class="link" data-toast="Edit form opens here">Edit<span class="ms">edit</span></button></div></div></div>
+    <div class="dog-card"><div class="media"><img src="img/milo.jpg" alt="Milo"></div><div class="body"><div class="between"><h2 class="h2">Milo</h2><button class="btn btn-ghost btn-sm" data-dog="milo">Make active</button></div><p class="faint">Border Collie · 2 years · Medium</p><div class="row"><span class="chip"><span class="ms sm" style="color:var(--cognac)">healing</span>Recovering from a paw injury</span></div><div class="between"><span class="faint">Foundations · 20%</span><button class="link" data-toast="Edit form opens here">Edit<span class="ms">edit</span></button></div></div></div>
+    <a class="dog-card add" href="#onboarding"><span class="ms">add_circle</span>Add another dog<span class="faint" style="font-weight:400">Takes about a minute</span></a>
+  </div>
+  <div class="tip warm"><span class="ms">healing</span><div>For dogs with a limitation, lessons that load the joints (paws-up, bunny hop, jumps) show a gentler alternative first.</div></div>
+</section>
+
+<!-- ================= SETTINGS ================= -->
+<section class="screen" data-screen="settings">
+  <div class="head-block"><span class="eyebrow">Settings</span><h1 class="h1">Account &amp; privacy</h1></div>
+  <div class="grid-2">
+    <div class="card">
+      <h2 class="h3">Notifications</h2>
+      <div class="list">
+        <div class="set-row"><div class="grow"><b>Practice reminders</b><div class="faint">On your practice days, at 9 am</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Practice reminders"></button></div>
+        <div class="set-row"><div class="grow"><b>Feedback from Roni</b><div class="faint">When Roni replies to a video</div></div><button class="switch" role="switch" aria-checked="true" aria-label="Feedback from Roni"></button></div>
+        <div class="set-row"><div class="grow"><b>New lesson opens</b><div class="faint">Every 3 days while a chapter is running</div></div><button class="switch" role="switch" aria-checked="true" aria-label="New lesson opens"></button></div>
+        <div class="set-row"><div class="grow"><b>Live Q&amp;A reminders</b><div class="faint">A week before and an hour before</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Live Q&amp;A reminders"></button></div>
+        <div class="set-row"><div class="grow"><b>Bonded newsletter</b><div class="faint">Tips and news, about twice a month</div></div><button class="switch" role="switch" aria-checked="false" aria-label="Bonded newsletter"></button></div>
+      </div>
+    </div>
+    <div class="stack-lg">
+      <div class="card">
+        <h2 class="h3">Sign-in</h2>
+        <div class="list">
+          <div class="set-row"><div class="grow"><b>Email</b><div class="faint">sarah.j@example.com</div></div><button class="link" data-toast="Change email">Change</button></div>
+          <div class="set-row"><div class="grow"><b>Password</b><div class="faint">Last changed September 2</div></div><a class="link" href="#reset">Reset</a></div>
+          <div class="set-row"><div class="grow"><b>Google</b><div class="faint">Connected</div></div><span class="pill reliable">On</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2 class="h3">Your data</h2>
+        <div class="set-row"><div class="grow"><b>Download my data</b><div class="faint">Profile, dogs, progress and your videos</div></div><button class="btn btn-ghost btn-sm" data-toast="We'll email you a download link">Request</button></div>
+        <div class="set-row" id="delRow"><div class="grow"><b style="color:var(--danger)">Delete account</b><div class="faint">Removes your progress and videos permanently</div></div><button class="btn btn-danger btn-sm" id="delBtn">Delete</button></div>
+        <div class="tip warm" id="delConfirm" hidden><span class="ms">warning</span><div class="stack" style="gap:10px"><span>This can't be undone. Your purchases stay on Kajabi, but lesson progress and videos are erased.</span><div class="row"><button class="btn btn-ghost btn-sm" id="delCancel">Keep my account</button><button class="btn btn-danger btn-sm" data-toast="In the real app this deletes the account">Delete permanently</button></div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MEMBERSHIP ================= -->
+<section class="screen" data-screen="membership">
+  <div class="head-block"><span class="eyebrow">Membership</span><h1 class="h1">Courses &amp; purchases</h1><p class="lede">Purchases are handled by Kajabi. Your access shows here as soon as payment clears.</p></div>
+  <div class="grid-3">
+    <div class="card tight"><div class="media" style="aspect-ratio:16/10"><img src="img/hand-touch.jpg" alt=""></div><b>Bonded: Foundations</b><span class="pill reliable" style="align-self:flex-start">Owned · lifetime access</span></div>
+    <div class="card tight"><div class="media" style="aspect-ratio:16/10"><img src="img/stairs-jump.jpg" alt=""></div><b>Bonded: Moves</b><span class="pill reliable" style="align-self:flex-start">Owned · opens after Foundations</span></div>
+    <div class="card tight"><div class="media" style="aspect-ratio:16/10"><img src="img/agt.jpg" alt=""></div><b>Bonded: Let's Dance</b><a class="btn btn-primary btn-sm" href="https://kajabi.com" target="_blank" rel="noopener" style="align-self:flex-start">Get Let's Dance<span class="ms sm">open_in_new</span></a></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2 class="h3">Order history</h2><span class="faint">Receipts open on Kajabi</span></div>
+    <div class="list">
+      <div class="list-row"><span class="ms" style="color:var(--ink-3)">receipt_long</span><div class="grow"><div class="title">Bonded: Foundations + Moves</div><div class="faint">Order KJ-20931 · September 2, 2026</div></div><a class="link" href="https://kajabi.com" target="_blank" rel="noopener">Receipt<span class="ms">open_in_new</span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= NOTIFICATIONS ================= -->
+<section class="screen" data-screen="notifications">
+  <div class="between"><div class="head-block"><span class="eyebrow">Inbox</span><h1 class="h1">Notifications</h1></div><button class="link" id="markRead">Mark all as read<span class="ms">done_all</span></button></div>
+  <div class="card">
+    <span class="eyebrow muted">Today</span>
+    <div class="list" id="notifList">
+      <a class="notif unread" href="#feedback-view"><img class="avatar" src="img/roni.jpg" alt=""><div><div class="title"><b>Roni replied to your Spin video</b></div><div class="faint">3 notes and a summary · 2 h ago</div></div><span class="ms" style="color:var(--ink-3)">chevron_right</span></a>
+      <a class="notif unread" href="#plan"><span class="ic"><span class="ms">pets</span></span><div><div class="title"><b>Practice day</b></div><div class="faint">10 minutes on Reading Your Dog's Focus · 9:00</div></div><span class="ms" style="color:var(--ink-3)">chevron_right</span></a>
+    </div>
+    <span class="eyebrow muted" style="margin-top:8px">This week</span>
+    <div class="list">
+      <a class="notif" href="#complete"><span class="ic"><span class="ms">lock_clock</span></span><div><div class="title"><b>Lesson 9 opens Friday</b></div><div class="faint">Position Changes · Foundations</div></div><span class="ms" style="color:var(--ink-3)">chevron_right</span></a>
+      <a class="notif" href="#community"><span class="ic"><span class="ms">live_tv</span></span><div><div class="title"><b>Winter Q&amp;A is on the calendar</b></div><div class="faint">Thursday, January 14 · send your question</div></div><span class="ms" style="color:var(--ink-3)">chevron_right</span></a>
+      <a class="notif" href="#progress"><span class="ic" style="background:var(--gold-soft);color:var(--gold-ink)"><span class="ms fill">workspace_premium</span></span><div><div class="title"><b>New achievement: 6-day rhythm</b></div><div class="faint">Six days of practice in a row</div></div><span class="ms" style="color:var(--ink-3)">chevron_right</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ================= HELP ================= -->
+<section class="screen" data-screen="help">
+  <div class="head-block"><span class="eyebrow">Help</span><h1 class="h1">How can we help?</h1><label class="search" for="helpQ" style="width:min(560px,100%);height:54px;background:var(--card);box-shadow:var(--shadow)"><span class="ms">search</span><input id="helpQ" type="search" placeholder="Search help articles"></label></div>
+  <div class="grid-main">
+    <div class="stack">
+      <details class="faq" open><summary>How long should a practice session be?<span class="ms">add</span></summary><p>Five to ten minutes is ideal. Two short sessions beat one long one. Stop while your dog still wants more.</p></details>
+      <details class="faq"><summary>When do new lessons open?<span class="ms">add</span></summary><p>A new lesson opens every three days, so each skill has time to settle. You can rewatch any open lesson at any time.</p></details>
+      <details class="faq"><summary>Can I train two dogs on one account?<span class="ms">add</span></summary><p>Yes. Add each dog under Your dogs. Each one keeps its own progress, plan and feedback.</p></details>
+      <details class="faq"><summary>My dog is a puppy. Is Bonded safe?<span class="ms">add</span></summary><p>Foundations is gentle, but for puppies under 12 months skip jumps and paws-up moves, and check with your vet first.</p></details>
+      <details class="faq"><summary>How do I film a good video for Roni?<span class="ms">add</span></summary><p>Film landscape from the side, keep the whole dog in frame and aim for 30 to 90 seconds in daylight.</p></details>
+      <details class="faq"><summary>Where do I manage my purchase?<span class="ms">add</span></summary><p>Purchases and receipts live on Kajabi. Open Membership &amp; purchases to find the link.</p></details>
+    </div>
+    <div class="stack-lg sticky">
+      <div class="card tight"><span class="ms" style="color:var(--teal)">support_agent</span><b>Ask Roni about training</b><p class="faint">Send a video or a question. Roni answers training questions herself.</p><a class="btn btn-ghost btn-sm" href="#upload" style="align-self:flex-start">Ask Roni</a></div>
+      <form class="card tight" id="bugForm"><span class="ms" style="color:var(--cognac)">bug_report</span><b>Report a problem</b><textarea class="input" id="bugText" style="min-height:84px" placeholder="What happened, and on which page?"></textarea><button class="btn btn-ghost btn-sm" type="submit" style="align-self:flex-start">Send report</button></form>
+    </div>
+  </div>
+</section>
+
+<!-- ================= SYSTEM STATES ================= -->
+<section class="screen" data-screen="states">
+  <div class="head-block"><span class="eyebrow">System states</span><h1 class="h1">When things aren't ready</h1><p class="lede">One consistent voice for locked, offline, error, empty and loading moments.</p></div>
+  <div class="grid-3">
+    <div class="card state-card"><div class="big-ic" style="background:var(--orange-soft);color:var(--cognac)"><span class="ms">lock_clock</span></div><span class="eyebrow">Locked lesson</span><h2 class="h3">Lesson 9 opens Friday, October 3</h2><p class="faint">Keep practising Lesson 8 until then. It's how the skill settles.</p><a class="btn btn-ghost btn-sm" href="#practice">Practise Lesson 8</a></div>
+    <div class="card state-card"><div class="big-ic"><span class="ms">wifi_off</span></div><span class="eyebrow muted">Offline</span><h2 class="h3">You're offline</h2><p class="faint">Lessons you've downloaded still play. We'll sync your progress when you're back.</p><button class="btn btn-ghost btn-sm" data-toast="Showing downloaded lessons">Show downloads</button></div>
+    <div class="card state-card"><div class="big-ic" style="background:var(--danger-soft);color:var(--danger)"><span class="ms">error</span></div><span class="eyebrow" style="color:var(--danger)">Video error</span><h2 class="h3">This video didn't load</h2><p class="faint">Check your connection and try again. If it keeps happening, report it from Help.</p><button class="btn btn-ghost btn-sm" data-toast="Retrying…">Try again</button></div>
+    <div class="card state-card"><div class="sketch" style="width:96px;height:96px"><img src="img/take-a-selfie.jpg" alt="" style="width:84px"></div><span class="eyebrow muted">Empty</span><h2 class="h3">No videos yet</h2><p class="faint">Send Roni a short clip and her notes will appear here.</p><a class="btn btn-ghost btn-sm" href="#upload">Send a video</a></div>
+    <div class="card"><span class="eyebrow muted">Loading</span><div class="skel" style="height:140px;border-radius:18px"></div><div class="skel" style="height:18px;width:70%"></div><div class="skel" style="height:14px;width:45%"></div></div>
+    <div class="card state-card"><div class="big-ic" style="background:var(--teal-soft);color:var(--teal)"><span class="ms">search_off</span></div><span class="eyebrow muted">No results</span><h2 class="h3">Nothing matches "pirouette"</h2><p class="faint">Try "spin" or browse the Moves Library.</p><a class="btn btn-ghost btn-sm" href="#moves">Open Moves Library</a></div>
+  </div>
+</section>
+
+<!-- ================= RONI'S STUDIO ================= -->
+<section class="screen" data-screen="studio">
+  <div class="studio-banner"><span class="ms fill">verified_user</span>Roni's Studio · only you and your team see this view</div>
+  <div class="between"><div class="head-block"><span class="eyebrow">Studio</span><h1 class="h1">Good morning, Roni</h1></div><div class="row" style="gap:28px"><div class="stat"><b>6</b><span>Videos waiting</span></div><div class="stat"><b>2</b><span>Stories to approve</span></div><div class="stat"><b>11</b><span>Q&amp;A questions</span></div></div></div>
+  <div class="grid-7-5">
+    <div class="card">
+      <div class="card-head"><h2 class="h3">Review queue</h2><div class="tabs" data-tabs="qTabs"><button class="on">Waiting</button><button>Done</button></div></div>
+      <div class="queue-head" style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 90px 110px;gap:14px"><span>Member</span><span>Move</span><span>Sent</span><span>Status</span></div>
+      <div class="stack" style="gap:2px" id="queue"></div>
+    </div>
+    <div class="card">
+      <div class="media" style="aspect-ratio:16/10"><img src="img/sitpretty.jpg" alt=""><span class="play"><span class="ms fill">play_arrow</span></span></div>
+      <div><b>Sarah &amp; Luna · Sit Pretty</b><div class="faint">"Is her back straight enough?"</div></div>
+      <div class="row"><span class="chip">0:07</span><input class="input" id="noteInput" style="flex:1;height:40px;min-width:0" placeholder="Add a note at 0:07"><button class="btn btn-ghost btn-sm" data-toast="Note pinned at 0:07">Pin</button></div>
+      <textarea class="input" id="summaryInput" placeholder="Summary for Sarah"></textarea>
+      <div class="row"><span class="label">Set level</span><div class="seg" data-seg><button class="on">Learning</button><button>Reliable</button><button>Ready</button></div></div>
+      <button class="btn btn-primary" data-toast="Feedback sent to Sarah">Send feedback</button>
+    </div>
+  </div>
+</section>
+
+<!-- ================= ONBOARDING (bare) ================= -->
+<section class="screen" data-screen="onboarding">
+  <div class="bare-top"><img src="img/logo.png" alt="Bonded"><a class="faint" href="#home-new">Save and finish later</a></div>
+  <div class="stepper" id="stepper"><div class="on"><i></i>Welcome</div><div><i></i>Your dog</div><div><i></i>Your goals</div><div><i></i>Your plan</div></div>
+  <div class="onb">
+    <div class="media" id="onbMedia"><img id="onbImg" src="img/p-steps.jpg" alt=""><div class="glass" id="onbQuote"><span class="eyebrow">Roni Sagi</span><span style="font-family:var(--display);font-weight:600;font-size:17px;line-height:1.4">"Every dog dances differently. Tell me about yours."</span></div></div>
+    <div class="panel" id="onbPanel">
+      <!-- step 1 -->
+      <div class="stack-lg" data-step="1">
+        <span class="eyebrow">Step 1 of 4</span>
+        <h1 class="display" style="font-size:42px">Hi Sarah,<br>I'm <em>Roni</em>.</h1>
+        <p class="lede">I've danced with dogs for twenty years, on stage and in my living room. In the next minute you'll tell me about your dog, and I'll set up a plan that fits your week.</p>
+        <div class="list">
+          <div class="list-row"><span class="ms" style="color:var(--teal)">pets</span><div class="grow">Built around your dog's age and body</div></div>
+          <div class="list-row"><span class="ms" style="color:var(--teal)">schedule</span><div class="grow">Sessions of 5 to 15 minutes</div></div>
+          <div class="list-row"><span class="ms" style="color:var(--teal)">rate_review</span><div class="grow">Send me videos, and I reply with notes</div></div>
+        </div>
+      </div>
+      <!-- step 2 -->
+      <div class="stack-lg" data-step="2" hidden>
+        <span class="eyebrow">Step 2 of 4</span>
+        <h1 class="h1">Meet your dog</h1>
+        <div class="row" style="gap:20px"><label class="photo-drop" for="dogPhoto" id="dogPhotoBox"><span class="ms" style="font-size:30px">add_a_photo</span></label><input type="file" id="dogPhoto" accept="image/*" hidden><div class="faint">Add a photo so we can<br>put a face to the name</div></div>
+        <div class="grid-2" style="gap:16px">
+          <div class="field"><label for="dogName">Dog's name</label><input class="input" id="dogName" value="Luna"></div>
+          <div class="field"><label for="dogBreed">Breed</label><input class="input" id="dogBreed" value="Border Collie"></div>
+        </div>
+        <div class="field"><span class="label">Age</span><div class="seg" data-seg><button>Puppy, under 1</button><button class="on">1–7 years</button><button>Senior, 8+</button></div></div>
+        <div class="field"><span class="label">Any physical limitations?</span><div class="row" data-multi><button class="chip on">None</button><button class="chip">Joint issues</button><button class="chip">Recovering from injury</button><button class="chip">Other</button></div><span class="faint">We'll offer gentler versions of moves that load the joints.</span></div>
+      </div>
+      <!-- step 3 -->
+      <div class="stack-lg" data-step="3" hidden>
+        <span class="eyebrow">Step 3 of 4</span>
+        <h1 class="h1">What would you love to do together?</h1>
+        <div class="goal-grid" data-multi>
+          <button class="goal on"><span class="ms">favorite</span>Deepen our bond</button>
+          <button class="goal"><span class="ms">celebration</span>Learn tricks for fun</button>
+          <button class="goal on"><span class="ms">music_note</span>Dance a routine</button>
+          <button class="goal"><span class="ms">self_improvement</span>Build calm and focus</button>
+          <button class="goal"><span class="ms">bolt</span>Give an active dog a job</button>
+          <button class="goal"><span class="ms">stadium</span>Perform one day</button>
+        </div>
+        <div class="field"><span class="label">Time per session</span><div class="seg" data-seg><button>5 min</button><button class="on">10 min</button><button>15+ min</button></div></div>
+        <div class="field"><span class="label">Which days suit you?</span><div class="row" data-multi><button class="chip on">Mon</button><button class="chip">Tue</button><button class="chip on">Wed</button><button class="chip">Thu</button><button class="chip">Fri</button><button class="chip on">Sat</button><button class="chip">Sun</button></div></div>
+      </div>
+      <!-- step 4 -->
+      <div class="stack-lg" data-step="4" hidden>
+        <span class="eyebrow">Step 4 of 4</span>
+        <h1 class="h1">Your plan with <span data-dogname>Luna</span></h1>
+        <p class="lede">You'll start with Foundations. Three 10-minute sessions a week, and a new lesson every three days.</p>
+        <div class="card flat tight">
+          <div class="days"><div class="day plan"><i>10'</i>Mon</div><div class="day"><i></i>Tue</div><div class="day plan"><i>10'</i>Wed</div><div class="day"><i></i>Thu</div><div class="day"><i></i>Fri</div><div class="day plan"><i>10'</i>Sat</div><div class="day"><i></i>Sun</div></div>
+        </div>
+        <div class="list-row"><div class="media" style="width:120px;aspect-ratio:16/10;border-radius:14px;flex-shrink:0"><img src="img/roni-kneel.jpg" alt=""></div><div class="grow"><span class="eyebrow muted">First lesson</span><div class="title">The Bond Begins</div><div class="faint">11 min · Foundations</div></div></div>
+      </div>
+      <div class="between" style="margin-top:auto"><button class="btn btn-ghost" id="onbBack" hidden>Back</button><span></span><button class="btn btn-primary" id="onbNext">Let's begin<span class="ms sm">arrow_forward</span></button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= RESET PASSWORD (bare) ================= -->
+<section class="screen" data-screen="reset">
+  <div class="bare-top"><img src="img/logo.png" alt="Bonded"><a class="faint" href="#home">Back to sign in</a></div>
+  <form class="card center-card" id="resetForm" style="padding:40px;gap:22px">
+    <div class="sketch" style="width:88px;height:88px;border-radius:50%"><img src="img/basic-foundations.jpg" alt="" style="width:76px"></div>
+    <div class="head-block"><span class="eyebrow">Account</span><h1 class="h2" style="font-size:28px">Reset your password</h1><p class="muted">Enter the email you signed up with and we'll send you a link.</p></div>
+    <div class="field"><label for="resetEmail">Email</label><input class="input" id="resetEmail" type="email" placeholder="you@example.com" required></div>
+    <button class="btn btn-primary" type="submit">Send reset link</button>
+    <div class="tip" id="resetDone" hidden><span class="ms">mark_email_read</span><div><b>Check your inbox.</b> The link works for one hour. No email? Check spam, or try again in a minute.</div></div>
+  </form>
+</section>
+
+  </main>
+</div>
+
+<!-- ============ MOBILE TAB BAR ============ -->
+<nav class="tabbar" aria-label="Main">
+  <a href="#home" data-nav="home"><span class="ms">home</span>Home</a>
+  <a href="#courses" data-nav="courses"><span class="ms">school</span>Courses</a>
+  <a href="#practice" data-nav="practice"><span class="ms">pets</span>Practice</a>
+  <a href="#feedback" data-nav="feedback"><span class="ms">rate_review</span>Feedback</a>
+  <a href="#progress" data-nav="progress"><span class="ms">insights</span>Progress</a>
+</nav>
+
+<!-- ============ SCREEN MAP ============ -->
+<button class="map-btn" id="mapBtn"><span class="ms">dashboard</span><span class="lbl">All screens</span><kbd id="mapCount"></kbd></button>
+<div class="drawer-back" id="drawerBack" hidden></div>
+<aside class="drawer" id="drawer" hidden aria-label="All screens">
+  <div class="between"><div class="head-block"><span class="eyebrow">Prototype</span><h2 class="h2">All screens</h2></div><button class="icon-btn" id="drawerClose" aria-label="Close"><span class="ms">close</span></button></div>
+  <div id="drawerList" class="stack-lg"></div>
+</aside>
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+
+</body></html>

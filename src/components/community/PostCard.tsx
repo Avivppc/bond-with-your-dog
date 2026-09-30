@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { PostView } from "@/lib/community/queries";
-import { deletePost, moderatePost, reportPost, toggleLike, updatePost, vote } from "@/app/community/actions";
+import { deletePost, moderatePost, reportPost, toggleLike, updatePost, vote } from "@/app/(member)/community/actions";
 import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
 import { Avatar, BTN, BTN_GHOST, CARD, FIELD, RichText, TimeAgo } from "./bits";
 

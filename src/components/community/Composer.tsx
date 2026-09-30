@@ -4,7 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { validateCommunityImage } from "@/lib/community/media";
-import { createPost, startCommunityUpload } from "@/app/community/actions";
+import { createPost, startCommunityUpload } from "@/app/(member)/community/actions";
 import { Avatar, BTN, BTN_GHOST, CARD, FIELD } from "./bits";
 
 const MEDIA_BUCKET = "community-media";

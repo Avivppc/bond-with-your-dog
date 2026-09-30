@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { CommentView } from "@/lib/community/queries";
-import { addComment, deleteComment, toggleLike } from "@/app/community/actions";
+import { addComment, deleteComment, toggleLike } from "@/app/(member)/community/actions";
 import { Avatar, BTN, FIELD, RichText, TimeAgo } from "./bits";
 
 interface CommentThreadProps {

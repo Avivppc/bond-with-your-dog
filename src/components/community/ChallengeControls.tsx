@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { completeStep, joinChallenge, rsvp } from "@/app/community/actions";
+import { completeStep, joinChallenge, rsvp } from "@/app/(member)/community/actions";
 import { BTN, BTN_GHOST } from "./bits";
 
 export function JoinChallengeButton({ challengeId }: { challengeId: string }) {
