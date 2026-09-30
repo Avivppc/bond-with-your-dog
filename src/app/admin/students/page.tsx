@@ -54,23 +54,23 @@ export default async function StudentsPage({
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-3xl font-extrabold tracking-tighter">Students</h1>
-        <p className="text-sm text-slate-500">Everyone with an account, their courses and progress.</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Students</h1>
+        <p className="text-sm text-[#6c6a69]">Everyone with an account, their courses and progress.</p>
       </header>
 
-      {ok && <p role="status" className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-sm">{ok}</p>}
-      {error && <p role="alert" className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</p>}
+      {ok && <p role="status" className="p-3 rounded-[8px] bg-emerald-50 text-emerald-800 text-sm">{ok}</p>}
+      {error && <p role="alert" className="p-3 rounded-[8px] bg-red-50 text-red-700 text-sm">{error}</p>}
 
-      <section className="bg-white rounded-xl p-6 shadow-sm">
-        <h2 className="font-extrabold mb-3">Grant access</h2>
+      <section className="bg-white rounded-[12px] p-6 border border-[#e7e6e4] shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+        <h2 className="font-semibold mb-3">Grant access</h2>
         <form action={grantAccessByEmail} className="flex flex-wrap items-end gap-3">
           <label className="flex flex-col gap-1.5 flex-1 min-w-56">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Email</span>
-            <input name="email" type="email" required className="px-4 py-2.5 rounded-lg border border-slate-200" />
+            <span className="text-sm font-medium text-[#1a1a19]">Email</span>
+            <input name="email" type="email" required className="px-4 py-2.5 rounded-[8px] border border-[#d9d8d6]" />
           </label>
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Offer</span>
-            <select name="offer_id" required className="px-4 py-2.5 rounded-lg border border-slate-200 bg-white">
+            <span className="text-sm font-medium text-[#1a1a19]">Offer</span>
+            <select name="offer_id" required className="px-4 py-2.5 rounded-[8px] border border-[#d9d8d6] bg-white">
               {(offersRes.data ?? []).map((o) => (
                 <option key={o.id} value={o.id}>
                   {o.title}
@@ -79,16 +79,16 @@ export default async function StudentsPage({
             </select>
           </label>
           <label className="flex flex-col gap-1.5 w-32">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Days</span>
-            <input name="days" type="number" min={1} placeholder="lifetime" className="px-4 py-2.5 rounded-lg border border-slate-200" />
+            <span className="text-sm font-medium text-[#1a1a19]">Days</span>
+            <input name="days" type="number" min={1} placeholder="lifetime" className="px-4 py-2.5 rounded-[8px] border border-[#d9d8d6]" />
           </label>
-          <button type="submit" className="bg-orange-700 text-white px-5 py-2.5 rounded-full font-bold text-sm">
+          <button type="submit" className="bg-[#343332] text-white hover:bg-black px-5 py-2.5 rounded-full font-medium text-sm">
             Grant
           </button>
         </form>
-        <p className="text-xs text-slate-500 mt-2">No account yet? Access unlocks when they sign up with this email. Useful for moving students from Kajabi.</p>
+        <p className="text-xs text-[#6c6a69] mt-2">No account yet? Access unlocks when they sign up with this email. Useful for moving students from Kajabi.</p>
         {(invitesRes.data ?? []).length > 0 && (
-          <ul className="mt-4 text-sm divide-y divide-slate-100">
+          <ul className="mt-4 text-sm divide-y divide-[#efeeed]">
             {(invitesRes.data ?? []).map((inv) => (
               <li key={inv.id} className="py-2 flex items-center justify-between">
                 <span>
@@ -107,15 +107,15 @@ export default async function StudentsPage({
       </section>
 
       <form className="flex gap-2">
-        <input name="q" defaultValue={q ?? ""} placeholder="Search by email" className="px-4 py-2 rounded-lg border border-slate-200 flex-1 max-w-sm" />
-        <button type="submit" className="px-4 py-2 rounded-full border border-slate-300 text-sm font-bold">
+        <input name="q" defaultValue={q ?? ""} placeholder="Search by email" className="px-4 py-2 rounded-[8px] border border-[#d9d8d6] flex-1 max-w-sm" />
+        <button type="submit" className="px-4 py-2 rounded-full border border-[#d9d8d6] text-sm font-bold">
           Search
         </button>
       </form>
 
-      <section className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <section className="bg-white rounded-[12px] border border-[#e7e6e4] shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-left text-xs uppercase text-slate-500 bg-slate-50">
+          <thead className="text-left text-sm text-[#6c6a69] border-b border-[#efeeed]">
             <tr>
               <th className="px-4 py-2">Student</th>
               <th>Courses</th>
@@ -123,23 +123,23 @@ export default async function StudentsPage({
               <th>Joined</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody className="divide-y divide-[#efeeed]">
             {users.map((u) => {
               const mine = u.enrollments;
               return (
                 <tr key={u.user_id} className="align-top">
-                  <td className="px-4 py-3 font-semibold">{u.email}{u.full_name && <span className="block text-xs font-normal text-slate-500">{u.full_name}</span>}</td>
+                  <td className="px-4 py-3 font-semibold">{u.email}{u.full_name && <span className="block text-xs font-normal text-[#6c6a69]">{u.full_name}</span>}</td>
                   <td className="py-3">
                     {mine.length === 0 ? (
-                      <span className="text-slate-400">—</span>
+                      <span className="text-[#9b9997]">—</span>
                     ) : (
                       <ul className="space-y-1">
                         {mine.map((e) => {
                           const label = accessLabel(e);
                           return (
                             <li key={e.course_id} className="flex items-center gap-2">
-                              <span className={label.active ? "" : "line-through text-slate-400"}>{e.title}</span>
-                              <span className="text-[10px] uppercase text-slate-500">
+                              <span className={label.active ? "" : "line-through text-[#9b9997]"}>{e.title}</span>
+                              <span className="text-xs text-[#6c6a69]">
                                 {e.source} · {label.text}
                               </span>
                               {label.active && (
@@ -158,22 +158,22 @@ export default async function StudentsPage({
                     )}
                   </td>
                   <td className="py-3">{u.completed_lessons}</td>
-                  <td className="py-3 text-slate-500">{new Date(u.created_at).toLocaleDateString("en-US")}</td>
+                  <td className="py-3 text-[#6c6a69]">{new Date(u.created_at).toLocaleDateString("en-US")}</td>
                 </tr>
               );
             })}
           </tbody>
         </table>
-        {users.length === 0 && <p className="p-6 text-sm text-slate-500">No students found.</p>}
+        {users.length === 0 && <p className="p-6 text-sm text-[#6c6a69]">No students found.</p>}
       </section>
 
       {pages > 1 && (
         <nav className="flex items-center gap-3 text-sm" aria-label="Pages">
-          {page > 1 && <a href={pageHref(page - 1)} className="font-bold text-orange-700">← Previous</a>}
-          <span className="text-slate-500">
+          {page > 1 && <a href={pageHref(page - 1)} className="font-bold text-[#1a1a19] hover:underline">← Previous</a>}
+          <span className="text-[#6c6a69]">
             Page {page} of {pages} · {total} students
           </span>
-          {page < pages && <a href={pageHref(page + 1)} className="font-bold text-orange-700">Next →</a>}
+          {page < pages && <a href={pageHref(page + 1)} className="font-bold text-[#1a1a19] hover:underline">Next →</a>}
         </nav>
       )}
     </div>

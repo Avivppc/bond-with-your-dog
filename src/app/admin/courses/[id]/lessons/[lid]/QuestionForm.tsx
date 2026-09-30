@@ -14,7 +14,7 @@ export interface QuestionDefaults {
   explanation: string;
 }
 
-const inputClass = "px-3 py-2 rounded-lg border border-slate-200 bg-white";
+const inputClass = "px-3 py-2 rounded-[8px] border border-[#d9d8d6] bg-white";
 
 /**
  * Friendly quiz question editor: type answers in rows and tick the correct one(s).
@@ -33,11 +33,11 @@ export function QuestionForm({ defaults }: { defaults: QuestionDefaults }) {
 
       <div className="grid grid-cols-[6rem_1fr] gap-4">
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Order</span>
+          <span className="text-sm font-medium text-[#1a1a19]">Order</span>
           <input name="position" type="number" min={1} defaultValue={defaults.position} className={inputClass} />
         </label>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Question type</span>
+          <span className="text-sm font-medium text-[#1a1a19]">Question type</span>
           <select name="kind" defaultValue={defaults.kind} className={inputClass}>
             <option value="single">One correct answer</option>
             <option value="multi">Several correct answers</option>
@@ -47,12 +47,12 @@ export function QuestionForm({ defaults }: { defaults: QuestionDefaults }) {
       </div>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Question</span>
+        <span className="text-sm font-medium text-[#1a1a19]">Question</span>
         <textarea name="prompt" rows={2} required defaultValue={defaults.prompt} className={inputClass} />
       </label>
 
       <fieldset className="flex flex-col gap-2">
-        <legend className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">
+        <legend className="text-sm font-medium text-[#1a1a19] mb-1">
           Answers — tick the correct one(s) <span className="normal-case font-normal">(not used for true/false)</span>
         </legend>
         {rows.map((opt, i) => (
@@ -71,7 +71,7 @@ export function QuestionForm({ defaults }: { defaults: QuestionDefaults }) {
       </fieldset>
 
       <label className="flex flex-col gap-1.5 max-w-60">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">True / false answer</span>
+        <span className="text-sm font-medium text-[#1a1a19]">True / false answer</span>
         <select name="tf_answer" defaultValue={tfDefault} className={inputClass}>
           <option value="">—</option>
           <option value="true">True</option>
@@ -80,11 +80,11 @@ export function QuestionForm({ defaults }: { defaults: QuestionDefaults }) {
       </label>
 
       <label className="flex flex-col gap-1.5">
-        <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Explanation (shown after answering)</span>
+        <span className="text-sm font-medium text-[#1a1a19]">Explanation (shown after answering)</span>
         <textarea name="explanation" rows={2} defaultValue={defaults.explanation} className={inputClass} />
       </label>
 
-      <button type="submit" className="bg-orange-700 text-white px-5 py-2 rounded-full font-bold text-xs self-start">
+      <button type="submit" className="bg-[#343332] text-white hover:bg-black px-5 py-2 rounded-full font-medium text-xs self-start">
         Save question
       </button>
     </form>

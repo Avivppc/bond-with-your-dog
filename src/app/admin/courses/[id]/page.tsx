@@ -1,116 +1,130 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { CourseForm } from "@/app/admin/courses/new/page";
-import { updateCourse, deleteCourse } from "@/app/admin/actions";
+import { requireStaff } from "@/lib/admin";
+import { canPerform } from "@/lib/staff";
+import { updateCourse } from "@/app/admin/actions";
 import { buildOutline } from "@/lib/course-outline";
+import { BTN_SECONDARY, Card, Notice, StatusPill, Tabs, Breadcrumbs, type TabItem } from "@/app/admin/_components/ui";
+import { CourseThumb } from "@/app/admin/_components/CourseTable";
+import { CourseForm } from "@/app/admin/_components/CourseForm";
 import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 import { CourseImageUpload } from "./CourseImageUpload";
-import { requireStaff } from "@/lib/admin";
+import { CourseOffersTab, CourseSettingsTab, CourseStudentsTab } from "./CourseTabs";
 
 export const dynamic = "force-dynamic";
+
+const TAB_KEYS = ["outline", "details", "offers", "students", "settings"] as const;
+type TabKey = (typeof TAB_KEYS)[number];
+
+function asTab(value: string | undefined): TabKey {
+  return (TAB_KEYS as readonly string[]).includes(value ?? "") ? (value as TabKey) : "outline";
+}
 
 export default async function EditCoursePage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ saved?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; saved?: string; error?: string }>;
 }) {
-  await requireStaff("content");
+  const { role } = await requireStaff("content");
   const { id } = await params;
-  const { saved, error } = await searchParams;
+  const { tab: tabParam, saved, error } = await searchParams;
+  const canSell = canPerform(role, "sales");
+
   const sb = createServiceClient();
-  const { data: course } = await sb.from("courses").select("*").eq("id", id).single();
+  const { data: course } = await sb.from("courses").select("*").eq("id", id).maybeSingle();
   if (!course) notFound();
 
-  const [modulesRes, lessonsRes] = await Promise.all([
-    sb.from("modules").select("id, parent_id, title, position, published").eq("course_id", id),
-    sb
-      .from("lessons")
-      .select("id, module_id, title, position, published, kind, free_preview, available_after_days")
-      .eq("course_id", id),
-  ]);
-  if (modulesRes.error || lessonsRes.error) {
-    console.error("course outline load failed", {
-      id,
-      error: modulesRes.error?.message ?? lessonsRes.error?.message,
-    });
-  }
-  const outline = buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []);
+  const base = `/admin/courses/${id}`;
+  const tabs: TabItem[] = [
+    { key: "outline", label: "Outline", href: base },
+    { key: "details", label: "Details", href: `${base}?tab=details` },
+    ...(canSell
+      ? [
+          { key: "offers", label: "Offers", href: `${base}?tab=offers` },
+          { key: "students", label: "Students", href: `${base}?tab=students` },
+        ]
+      : []),
+    { key: "settings", label: "Settings", href: `${base}?tab=settings` },
+  ];
+  const requested = asTab(tabParam);
+  const activeTab = tabs.some((t) => t.key === requested) ? requested : "outline";
 
   return (
-    <div className="space-y-10">
-      <Link href="/admin" className="text-sm font-bold text-orange-700 inline-block">
-        ← Courses
-      </Link>
+    <div className="space-y-6">
+      <div>
+        <Breadcrumbs items={[{ label: "Courses", href: "/admin/courses" }, { label: course.title }]} />
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-4">
+            <CourseThumb src={course.image || null} className="h-14 w-24" />
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="truncate text-2xl font-semibold tracking-tight">{course.title}</h1>
+                <StatusPill tone={course.published ? "published" : "draft"}>{course.published ? "Published" : "Draft"}</StatusPill>
+              </div>
+              <div className="mt-3">
+                <Tabs items={tabs} active={activeTab} />
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href={`/learn/${id}`} target="_blank" className={BTN_SECONDARY}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                visibility
+              </span>
+              Preview
+            </Link>
+            <Link href={`${base}/import`} className={BTN_SECONDARY}>
+              Import lessons
+            </Link>
+          </div>
+        </div>
+      </div>
 
-      <header>
-        <h1 className="text-3xl font-extrabold tracking-tighter">{course.title}</h1>
-        <p className="text-sm text-slate-500 mt-1">/{course.id}</p>
-      </header>
+      {saved && <Notice tone="success">Course details saved.</Notice>}
+      {error && <Notice tone="error">{error}</Notice>}
 
-      {saved && (
-        <p role="status" className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-sm">
-          Course details saved.
-        </p>
-      )}
-      {error && (
-        <p role="alert" className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-          {error}
-        </p>
-      )}
+      {activeTab === "outline" && <OutlineTab courseId={id} />}
 
-      <CourseImageUpload courseId={id} currentUrl={course.image || null} currentAlt={course.image_alt || null} />
-
-      {/* Course details */}
-      <section className="bg-white rounded-xl p-1 shadow-sm">
-        <details open={Boolean(error)}>
-          <summary className="cursor-pointer px-6 py-4 font-bold text-slate-700">
-            Course details
-          </summary>
-          <div className="p-6 pt-0">
+      {activeTab === "details" && (
+        <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+          <Card title="Course details">
             <CourseForm
               action={async (fd: FormData) => {
                 "use server";
                 fd.set("id", id);
                 await updateCourse(fd);
               }}
-              submitLabel="Save changes"
+              submitLabel="Save"
               defaults={course}
             />
-          </div>
-        </details>
-      </section>
-
-      {/* Outline */}
-      <section className="bg-white rounded-xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-extrabold tracking-tighter">Course outline</h2>
-          <span className="flex items-center gap-4">
-            <Link href={`/admin/courses/${id}/import`} className="text-xs font-bold text-orange-700">
-              Import from spreadsheet
-            </Link>
-            <Link href={`/learn/${id}`} className="text-xs font-bold text-orange-700" target="_blank">
-              Preview as student ↗
-            </Link>
-          </span>
+          </Card>
+          <CourseImageUpload courseId={id} currentUrl={course.image || null} currentAlt={course.image_alt || null} />
         </div>
-        <CourseOutlineEditor courseId={id} outline={outline} />
-      </section>
+      )}
 
-      <section className="bg-white rounded-xl p-6 shadow-sm border border-red-100">
-        <h2 className="font-bold text-red-700 mb-3">Danger zone</h2>
-        <form action={deleteCourse}>
-          <input type="hidden" name="id" value={id} />
-          <button
-            type="submit"
-            className="bg-red-600 text-white px-4 py-2 rounded-full font-bold text-xs"
-          >
-            Delete course
-          </button>
-        </form>
-      </section>
+      {activeTab === "offers" && <CourseOffersTab courseId={id} />}
+      {activeTab === "students" && <CourseStudentsTab courseId={id} />}
+      {activeTab === "settings" && <CourseSettingsTab courseId={id} />}
     </div>
+  );
+}
+
+async function OutlineTab({ courseId }: { courseId: string }) {
+  const sb = createServiceClient();
+  const [modulesRes, lessonsRes] = await Promise.all([
+    sb.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
+    sb.from("lessons").select("id, module_id, title, position, published, kind, free_preview, available_after_days").eq("course_id", courseId),
+  ]);
+  if (modulesRes.error || lessonsRes.error) {
+    console.error("course outline load failed", { courseId, error: modulesRes.error?.message ?? lessonsRes.error?.message });
+  }
+  const outline = buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []);
+  return (
+    <Card>
+      <CourseOutlineEditor courseId={courseId} outline={outline} />
+    </Card>
   );
 }

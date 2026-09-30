@@ -6,6 +6,7 @@ import type { OutlineLessonRow } from "@/lib/course-outline";
 import { moveLesson, setLessonPublished } from "../outline-actions";
 import { DragHandle, type DragHandleProps } from "./SortableList";
 import { PublishToggle } from "./PublishToggle";
+import { ActionMenu, MENU_ITEM } from "./ActionMenu";
 
 export interface ModuleOption {
   id: string;
@@ -20,8 +21,11 @@ interface LessonItemProps {
   onError: (message: string) => void;
 }
 
+const TAG = "rounded-full px-2 py-0.5 text-[11px] font-medium";
+
 export function LessonItem({ courseId, lesson, handle, moduleOptions, onError }: LessonItemProps) {
   const [pending, startTransition] = useTransition();
+  const editHref = `/admin/courses/${courseId}/lessons/${lesson.id}`;
 
   function togglePublished() {
     startTransition(async () => {
@@ -39,46 +43,60 @@ export function LessonItem({ courseId, lesson, handle, moduleOptions, onError }:
   }
 
   return (
-    <div
-      className={`flex items-center gap-3 py-2 px-2 rounded-lg hover:bg-slate-50 text-sm ${pending ? "opacity-60" : ""}`}
-    >
+    <div className={`group flex items-center gap-2.5 py-2.5 pl-2 pr-3 text-sm hover:bg-[#fafaf9] ${pending ? "opacity-60" : ""}`}>
       <DragHandle {...handle} label={lesson.title} />
-      <Link
-        href={`/admin/courses/${courseId}/lessons/${lesson.id}`}
-        className="font-semibold text-slate-800 truncate hover:text-orange-700 flex-1 min-w-0"
-      >
+      <span className="material-symbols-outlined text-[18px] text-[#6c6a69]" aria-hidden>
+        {lesson.kind === "quiz" ? "quiz" : "smart_display"}
+      </span>
+      <Link href={editHref} className="min-w-0 flex-1 truncate text-[#1a1a19] hover:underline">
         {lesson.title}
       </Link>
-      {lesson.kind === "quiz" && (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-purple-100 text-purple-800">
-          quiz
-        </span>
-      )}
-      {lesson.free_preview && (
-        <span className="text-[10px] font-bold uppercase text-emerald-700">free preview</span>
-      )}
-      {lesson.available_after_days != null && (
-        <span className="text-[10px] font-bold uppercase text-slate-500">
-          drips {lesson.available_after_days}d
-        </span>
-      )}
-      <select
-        aria-label={`Move ${lesson.title} to another module`}
-        className="text-xs border border-slate-200 rounded-md px-1.5 py-1 text-slate-600 max-w-36"
-        value=""
-        onChange={(e) => moveTo(e.target.value)}
-        disabled={pending}
-      >
-        <option value="">Move to…</option>
-        {moduleOptions
-          .filter((m) => m.id !== lesson.module_id)
-          .map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.label}
-            </option>
-          ))}
-      </select>
+      {lesson.kind === "quiz" && <span className={`${TAG} bg-[#f1ebfb] text-[#5b2d9e]`}>Quiz</span>}
+      {lesson.free_preview && <span className={`${TAG} bg-[#e6f0fb] text-[#1d4f91]`}>Free preview</span>}
+      {lesson.available_after_days != null && <span className={`${TAG} bg-[#fdf1dc] text-[#8a5a00]`}>Day {lesson.available_after_days}</span>}
       <PublishToggle published={lesson.published} onToggle={togglePublished} disabled={pending} />
+      <ActionMenu
+        label={`Actions for ${lesson.title}`}
+        trigger={
+          <span className="material-symbols-outlined text-[20px]" aria-hidden>
+            more_horiz
+          </span>
+        }
+        triggerClassName="flex rounded-[6px] p-0.5 text-[#6c6a69] hover:bg-[#efeeed] hover:text-[#1a1a19]"
+      >
+        {(close) => (
+          <>
+            <Link href={editHref} className={MENU_ITEM} onClick={close}>
+              Edit lesson
+            </Link>
+            <Link href={`/learn/${courseId}/${lesson.id}`} target="_blank" className={MENU_ITEM} onClick={close}>
+              Preview
+            </Link>
+            <label className="block px-3 pb-2 pt-1">
+              <span className="mb-1 block text-xs text-[#6c6a69]">Move to</span>
+              <select
+                aria-label={`Move ${lesson.title} to another module`}
+                className="w-full rounded-[8px] border border-[#d9d8d6] bg-white px-2 py-1.5 text-sm"
+                value=""
+                onChange={(e) => {
+                  moveTo(e.target.value);
+                  close();
+                }}
+                disabled={pending}
+              >
+                <option value="">Choose a module…</option>
+                {moduleOptions
+                  .filter((m) => m.id !== lesson.module_id)
+                  .map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.label}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </>
+        )}
+      </ActionMenu>
     </div>
   );
 }

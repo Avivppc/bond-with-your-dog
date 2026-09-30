@@ -6,47 +6,42 @@ import { usePathname } from "next/navigation";
 type Item = { href: string; label: string; icon: string; locked?: boolean };
 
 const items: Item[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "dashboard" },
-  { href: "/courses", label: "Training", icon: "pets" },
+  { href: "/dashboard", label: "My courses", icon: "school" },
+  { href: "/courses", label: "All courses", icon: "pets" },
   { href: "/dashboard?expert=1", label: "Expert Track", icon: "psychology", locked: true },
   { href: "/dashboard#achievements", label: "Achievements", icon: "military_tech" },
   { href: "/community", label: "Spotlight", icon: "video_library" },
   { href: "/blog", label: "News", icon: "newspaper" },
 ];
 
+const TEAL = "#0e666a";
+
+/** Member portal sidebar — same teal theme as the course pages (Bonded's Kajabi look). */
 export default function MemberSidebar() {
   const pathname = usePathname();
   return (
-    <aside className="hidden lg:flex h-screen w-64 fixed left-0 top-0 flex-col bg-white border-r border-slate-100 shadow-sm py-8 gap-y-2 z-40">
-      <div className="px-6 mb-8">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-64 flex-col gap-y-2 py-7 text-white lg:flex" style={{ backgroundColor: TEAL }}>
+      <div className="mb-6 px-6">
         <Link href="/" className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-[#0e666a] flex items-center justify-center text-[#c8fcff]">
-            <span className="material-symbols-outlined">pets</span>
-          </div>
-          <div>
-            <h2 className="text-lg font-black leading-none" style={{ color: "#0e666a", fontFamily: "var(--font-headline)" }}>
-              Member Portal
-            </h2>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">
-              Keta Tov Academy
-            </p>
-          </div>
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#ff8f00] text-lg font-extrabold">B</span>
+          <span>
+            <span className="block text-lg font-extrabold leading-none" style={{ fontFamily: "var(--font-headline)" }}>
+              Bonded
+            </span>
+            <span className="mt-1 block text-[11px] font-semibold text-white/70">Member portal</span>
+          </span>
         </Link>
       </div>
 
-      <nav className="flex-1 space-y-1 px-2">
+      <nav className="flex-1 space-y-1 px-3">
         {items.map((it) => {
-          const active = pathname === it.href || (it.href === "/dashboard" && pathname === "/dashboard");
+          const active = pathname === it.href;
           if (it.locked) {
             return (
-              <div
-                key={it.href}
-                className="px-4 py-3 flex items-center justify-between rounded-full text-sm font-semibold opacity-60 cursor-not-allowed text-slate-500"
-                style={{ fontFamily: "var(--font-headline)" }}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined">{it.icon}</span> {it.label}
-                </div>
+              <div key={it.href} className="flex cursor-not-allowed items-center justify-between rounded-[12px] px-4 py-2.5 text-sm font-semibold text-white/40">
+                <span className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-[20px]">{it.icon}</span> {it.label}
+                </span>
                 <span className="material-symbols-outlined text-sm">lock</span>
               </div>
             );
@@ -55,43 +50,27 @@ export default function MemberSidebar() {
             <Link
               key={it.href}
               href={it.href}
-              className={`px-4 py-3 flex items-center gap-3 rounded-full transition-all text-sm font-semibold ${
-                active
-                  ? "bg-orange-100/60 text-orange-900 translate-x-1"
-                  : "text-slate-500 hover:bg-slate-50"
+              aria-current={active ? "page" : undefined}
+              className={`flex items-center gap-3 rounded-[12px] px-4 py-2.5 text-sm font-semibold transition-colors ${
+                active ? "bg-white" : "text-white/80 hover:bg-white/10 hover:text-white"
               }`}
-              style={{ fontFamily: "var(--font-headline)" }}
+              style={active ? { color: TEAL } : undefined}
             >
-              <span className="material-symbols-outlined">{it.icon}</span> {it.label}
+              <span className="material-symbols-outlined text-[20px]">{it.icon}</span> {it.label}
             </Link>
           );
         })}
       </nav>
 
-      <div className="mt-auto px-4 space-y-4">
-        <Link
-          href="/profile"
-          className="block w-full text-center py-3 rounded-full font-bold text-sm shadow-md kinetic-gradient"
-          style={{ color: "#fff0e6", fontFamily: "var(--font-headline)" }}
-        >
-          Profile & Settings
+      <div className="mt-auto space-y-1 border-t border-white/15 px-3 pt-4">
+        <Link href="/profile" className="flex items-center gap-3 rounded-[12px] px-4 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white">
+          <span className="material-symbols-outlined text-[20px]">settings</span> Profile & settings
         </Link>
-        <div className="pt-4 border-t border-slate-100 space-y-1">
-          <Link
-            href="/profile"
-            className="text-slate-500 px-4 py-2 flex items-center gap-3 hover:text-[#8b4b00] transition-colors text-sm font-semibold"
-          >
-            <span className="material-symbols-outlined text-lg">settings</span> Settings
-          </Link>
-          <form action="/auth/logout" method="post">
-            <button
-              type="submit"
-              className="text-slate-500 px-4 py-2 flex items-center gap-3 hover:text-[#8b4b00] transition-colors text-sm font-semibold w-full"
-            >
-              <span className="material-symbols-outlined text-lg">logout</span> Sign out
-            </button>
-          </form>
-        </div>
+        <form action="/auth/logout" method="post">
+          <button type="submit" className="flex w-full items-center gap-3 rounded-[12px] px-4 py-2.5 text-sm font-semibold text-white/80 hover:bg-white/10 hover:text-white">
+            <span className="material-symbols-outlined text-[20px]">logout</span> Sign out
+          </button>
+        </form>
       </div>
     </aside>
   );

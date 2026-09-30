@@ -24,39 +24,40 @@ export function LessonContent({ lessonId, bodyHtml, files }: LessonContentProps)
     <div className="space-y-6">
       {bodyHtml && (
         <div
-          className="lesson-prose rounded-[1rem] bg-white p-6"
+          className="lesson-prose rounded-[16px] bg-white p-6 shadow-sm"
           style={{ color: "#243036" }}
           dangerouslySetInnerHTML={{ __html: bodyHtml }}
         />
       )}
 
       {files.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {files.map((f) => (
-            <a
-              key={f.id}
-              href={`/api/lessons/${lessonId}/files/${f.id}`}
-              className="p-5 rounded-[1rem] flex items-center gap-4 hover:brightness-95 transition"
-              style={{ backgroundColor: "#e4f3fc" }}
-            >
-              <span
-                className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 material-symbols-outlined"
-                style={{ backgroundColor: "#a6eff3", color: "#0e666a" }}
-                aria-hidden
-              >
-                download
-              </span>
-              <span className="min-w-0">
-                <span className="block font-bold truncate" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
-                  {f.file_name}
-                </span>
-                <span className="block text-xs" style={{ color: "#515d64" }}>
-                  {formatSize(f.size_bytes)}
-                </span>
-              </span>
-            </a>
-          ))}
-        </div>
+        <section className="overflow-hidden rounded-[16px] bg-white shadow-sm">
+          <h2 className="border-b border-[#edf3f7] px-5 py-3 text-sm font-extrabold" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
+            Resources
+          </h2>
+          <ul className="divide-y divide-[#edf3f7]">
+            {files.map((f) => (
+              <li key={f.id}>
+                <a href={`/api/lessons/${lessonId}/files/${f.id}`} className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#f3f9fd]">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e3f5f5] text-[#0e666a]" aria-hidden>
+                    <span className="material-symbols-outlined text-[20px] leading-none">download</span>
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold" style={{ color: "#243036" }}>
+                      {f.file_name}
+                    </span>
+                    <span className="block text-xs" style={{ color: "#5b6b73" }}>
+                      {formatSize(f.size_bytes)}
+                    </span>
+                  </span>
+                  <span className="text-xs font-bold" style={{ color: "#0e666a" }}>
+                    Download
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
     </div>
   );

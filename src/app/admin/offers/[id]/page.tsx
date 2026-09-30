@@ -4,6 +4,7 @@ import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { FormField } from "@/app/admin/_components/FormField";
 import { saveOffer } from "../actions";
+import { Notice, PageHeader } from "@/app/admin/_components/ui";
 
 export const dynamic = "force-dynamic";
 
@@ -35,7 +36,7 @@ const EMPTY: OfferRow = {
   provider_price_id: null,
 };
 
-const selectClass = "px-4 py-2.5 rounded-lg border border-slate-200 bg-white";
+const selectClass = "px-4 py-2.5 rounded-[8px] border border-[#d9d8d6] bg-white";
 
 export default async function EditOfferPage({
   params,
@@ -61,27 +62,27 @@ export default async function EditOfferPage({
 
   return (
     <div className="space-y-6 max-w-3xl">
-      <Link href="/admin/offers" className="text-sm font-bold text-orange-700 inline-block">
-        ← Offers
-      </Link>
-      <h1 className="text-3xl font-extrabold tracking-tighter">{id === "new" ? "New offer" : offer.title}</h1>
-      {saved && <p role="status" className="p-3 rounded-lg bg-emerald-50 text-emerald-800 text-sm">Saved.</p>}
-      {error && <p role="alert" className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</p>}
+      <PageHeader
+        title={id === "new" ? "New offer" : offer.title}
+        crumbs={[{ label: "Offers", href: "/admin/offers" }, { label: id === "new" ? "New offer" : offer.title }]}
+      />
+      {saved && <Notice tone="success">Saved.</Notice>}
+      {error && <Notice tone="error">{error}</Notice>}
 
-      <form action={saveOffer} className="bg-white rounded-xl p-6 shadow-sm flex flex-col gap-5">
+      <form action={saveOffer} className="bg-white rounded-[12px] p-6 border border-[#e7e6e4] shadow-[0_1px_2px_rgba(0,0,0,0.04)] flex flex-col gap-5">
         <input type="hidden" name="id" value={offer.id} />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <FormField label="Title" name="title" required defaultValue={offer.title} />
           <FormField label="Slug (checkout URL)" name="slug" required defaultValue={offer.slug} placeholder="foundations" />
         </div>
         <label className="flex flex-col gap-1.5">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Description</span>
-          <textarea name="description" rows={2} maxLength={2000} defaultValue={offer.description ?? ""} className="px-4 py-2.5 rounded-lg border border-slate-200" />
+          <span className="text-sm font-medium text-[#1a1a19]">Description</span>
+          <textarea name="description" rows={2} maxLength={2000} defaultValue={offer.description ?? ""} className="px-4 py-2.5 rounded-[8px] border border-[#d9d8d6]" />
         </label>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Type</span>
+            <span className="text-sm font-medium text-[#1a1a19]">Type</span>
             <select name="payment_type" defaultValue={offer.payment_type} className={selectClass}>
               <option value="one_time">One-time payment</option>
               <option value="subscription">Subscription</option>
@@ -91,7 +92,7 @@ export default async function EditOfferPage({
           <FormField label="Price" name="price" defaultValue={offer.price_cents ? (offer.price_cents / 100).toString() : ""} placeholder="49" />
           <FormField label="Currency" name="currency" defaultValue={offer.currency} />
           <label className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Billing (subscriptions)</span>
+            <span className="text-sm font-medium text-[#1a1a19]">Billing (subscriptions)</span>
             <select name="interval" defaultValue={offer.interval ?? ""} className={selectClass}>
               <option value="">—</option>
               <option value="month">Monthly</option>
@@ -118,7 +119,7 @@ export default async function EditOfferPage({
         </div>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="text-xs font-bold uppercase tracking-wider text-slate-600 mb-1">Courses unlocked by this offer</legend>
+          <legend className="text-sm font-medium text-[#1a1a19] mb-1">Courses unlocked by this offer</legend>
           {(courses ?? []).map((c) => (
             <label key={c.id} className="flex items-center gap-3 text-sm">
               <input type="checkbox" name="course_ids" value={c.id} defaultChecked={selected.has(c.id)} className="w-4 h-4" />
@@ -128,22 +129,22 @@ export default async function EditOfferPage({
         </fieldset>
 
         <label className="flex flex-col gap-1.5 max-w-48">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Status</span>
+          <span className="text-sm font-medium text-[#1a1a19]">Status</span>
           <select name="status" defaultValue={offer.status} className={selectClass}>
             <option value="draft">Draft</option>
             <option value="published">Published</option>
           </select>
         </label>
 
-        <button type="submit" className="bg-orange-700 text-white px-6 py-3 rounded-full font-bold text-sm self-start">
+        <button type="submit" className="bg-[#343332] text-white hover:bg-black px-6 py-3 rounded-full font-medium text-sm self-start">
           Save offer
         </button>
       </form>
 
       {id !== "new" && (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-[#6c6a69]">
           Checkout link:{" "}
-          <Link href={`/checkout/${offer.slug}`} className="text-orange-700 font-bold" target="_blank">
+          <Link href={`/checkout/${offer.slug}`} className="text-[#1a1a19] hover:underline font-bold" target="_blank">
             /checkout/{offer.slug}
           </Link>
         </p>

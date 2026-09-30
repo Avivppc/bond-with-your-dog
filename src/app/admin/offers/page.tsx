@@ -17,20 +17,20 @@ export default async function OffersPage() {
     <div className="space-y-6">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tighter">Offers</h1>
-          <p className="text-sm text-slate-500">An offer is how people buy access: price, billing, and which courses it unlocks.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Offers</h1>
+          <p className="text-sm text-[#6c6a69]">An offer is how people buy access: price, billing, and which courses it unlocks.</p>
         </div>
-        <Link href="/admin/offers/new" className="bg-orange-700 text-white px-4 py-2 rounded-full font-bold text-xs">
+        <Link href="/admin/offers/new" className="bg-[#343332] text-white hover:bg-black px-4 py-2 rounded-full font-medium text-xs">
           + New offer
         </Link>
       </header>
 
-      <section className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <section className="bg-white rounded-[12px] border border-[#e7e6e4] shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-x-auto">
         {(offers ?? []).length === 0 ? (
-          <p className="p-6 text-sm text-slate-500">No offers yet.</p>
+          <p className="p-6 text-sm text-[#6c6a69]">No offers yet.</p>
         ) : (
           <table className="w-full text-sm">
-            <thead className="text-left text-xs uppercase text-slate-500 bg-slate-50">
+            <thead className="text-left text-sm text-[#6c6a69] border-b border-[#efeeed]">
               <tr>
                 <th className="px-4 py-2">Offer</th>
                 <th>Price</th>
@@ -40,12 +40,12 @@ export default async function OffersPage() {
                 <th />
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#efeeed]">
               {(offers ?? []).map((o) => (
                 <tr key={o.id}>
                   <td className="px-4 py-3">
                     <p className="font-bold">{o.title}</p>
-                    <p className="text-xs text-slate-500">/checkout/{o.slug}</p>
+                    <p className="text-xs text-[#6c6a69]">/checkout/{o.slug}</p>
                   </td>
                   <td>{formatOfferPrice(o as unknown as PricedOffer)}</td>
                   <td>{o.offer_courses?.length ?? 0}</td>
@@ -54,15 +54,15 @@ export default async function OffersPage() {
                   </td>
                   <td>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-                        o.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
+                      className={`px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                        o.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-[#f3f3f2] text-[#6c6a69]"
                       }`}
                     >
                       {o.status}
                     </span>
                   </td>
                   <td className="pe-4 text-end">
-                    <Link href={`/admin/offers/${o.id}`} className="text-orange-700 font-bold">
+                    <Link href={`/admin/offers/${o.id}`} className="text-[#1a1a19] hover:underline font-bold">
                       Edit →
                     </Link>
                   </td>

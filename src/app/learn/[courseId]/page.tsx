@@ -1,235 +1,252 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
 import { claimPendingAccess } from "@/lib/access";
-import { buildOutline, flattenLessons } from "@/lib/course-outline";
 import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
-import { isEnrollmentActive } from "@/lib/enrollment";
-import { CourseLessonRow, type MemberLessonRow } from "./CourseLessonRow";
+import { loadStudentCourse, type StudentCourse, type StudentLesson } from "@/lib/student-course-server";
+import type { CourseOutline } from "@/lib/course-outline";
+import { LearnLayout } from "@/components/learn/LearnLayout";
+import { LEARN, ProgressBar } from "@/components/learn/CourseSidebar";
+import { CourseLessonRow } from "./CourseLessonRow";
 
 export const dynamic = "force-dynamic";
 
-export default async function CourseLandingPage({
+type PublishedOffer = PricedOffer & { slug: string; title: string; status: string };
+
+const PILL_ORANGE = "inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-bold text-white shadow-sm hover:brightness-95";
+
+export default async function CourseHomePage({
   params,
   searchParams,
 }: {
   params: Promise<{ courseId: string }>;
-  searchParams: Promise<{ enroll?: string }>;
+  searchParams: Promise<{ enroll?: string; tab?: string }>;
 }) {
   const { courseId } = await params;
-  const enrollFailed = (await searchParams).enroll === "failed";
+  const { enroll, tab } = await searchParams;
   const supabase = await createClient();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect(`/login?next=/learn/${courseId}`);
   await claimPendingAccess(supabase);
 
-  const { data: course } = await supabase
-    .from("courses")
-    .select("*")
-    .eq("id", courseId)
-    .single();
+  const data = await loadStudentCourse(supabase, courseId, user.id);
+  if (!data) notFound();
+  const { course, outline, lessons, enrolledAt, progress } = data;
+  // Staff previews see the member view, like Kajabi's preview mode.
+  const isMember = Boolean(enrolledAt) || data.isStaffPreview;
 
-  if (!course) notFound();
-
-  // RLS returns only live modules/lessons to students (staff also see drafts).
-  const [modulesRes, lessonsRes] = await Promise.all([
-    supabase.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
-    supabase
-      .from("lessons")
-      .select("id, module_id, position, title, published, kind, duration_seconds, free_preview, available_after_days")
-      .eq("course_id", courseId),
+  const [{ data: profile }, { data: offerLinks }] = await Promise.all([
+    supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle(),
+    isMember
+      ? Promise.resolve({ data: [] })
+      : supabase.from("offer_courses").select("offers(slug, title, payment_type, price_cents, currency, interval, status)").eq("course_id", courseId),
   ]);
-  if (modulesRes.error || lessonsRes.error) {
-    console.error("course outline load failed", {
-      courseId,
-      error: modulesRes.error?.message ?? lessonsRes.error?.message,
-    });
-  }
-  const outline = buildOutline<MemberLessonRow>(modulesRes.data ?? [], lessonsRes.data ?? []);
-  const { data: offerLinks } = await supabase
-    .from("offer_courses")
-    .select("offers(slug, title, payment_type, price_cents, currency, interval, status)")
-    .eq("course_id", courseId);
   const offers = (offerLinks ?? [])
-    .flatMap((l) => (l.offers ? [l.offers as unknown as PricedOffer & { slug: string; title: string; status: string }] : []))
+    .flatMap((l) => (l.offers ? [l.offers as unknown as PublishedOffer] : []))
     .filter((o) => o.status === "published");
-  const lessonNumber = new Map(flattenLessons(outline).map((l, i) => [l.id, i + 1]));
+  const firstName = profile?.full_name?.split(" ")[0] || "friend";
+  const numberOf = new Map(lessons.map((l, i) => [l.id, i + 1]));
+  const next = progress.next ?? lessons[0] ?? null;
+  const showMap = tab === "map";
 
-  const { data: enrollmentRow } = await supabase
-    .from("enrollments")
-    .select("course_id, enrolled_at, expires_at")
-    .eq("course_id", courseId)
-    .eq("user_id", user.id)
-    .maybeSingle();
-  // Ended access (refund, revoke, expiry) is treated like no enrollment: show buy options again.
-  const enrollment = isEnrollmentActive(enrollmentRow) ? enrollmentRow : null;
-
-  const { data: progress } = await supabase
-    .from("lesson_progress")
-    .select("lesson_id, completed_at")
-    .eq("user_id", user.id);
-
-  const completed = new Set(
-    (progress ?? []).filter((p) => p.completed_at).map((p) => p.lesson_id)
-  );
-
-  const renderLessons = (items: readonly MemberLessonRow[]) =>
-    items.length > 0 ? (
-      <ol className="divide-y divide-slate-100">
-        {items.map((l) => (
-          <li key={l.id}>
-            <CourseLessonRow
-              courseId={courseId}
-              lesson={l}
-              number={lessonNumber.get(l.id) ?? 0}
-              enrolledAt={enrollment?.enrolled_at ?? null}
-              completed={completed.has(l.id)}
-            />
-          </li>
-        ))}
-      </ol>
-    ) : null;
+  async function enrollFree() {
+    "use server";
+    const sb = await createClient();
+    // enroll_free() refuses courses that are sold in a paid offer (see review_hardening migration).
+    const { error } = await sb.rpc("enroll_free", { p_course_id: courseId });
+    if (error) {
+      console.error("enroll_free failed", { courseId, error: error.message });
+      redirect(`/learn/${courseId}?enroll=failed`);
+    }
+    redirect(`/learn/${courseId}`);
+  }
 
   return (
-    <>
-      <Navbar />
-      <main
-        className="pt-28 pb-20 max-w-5xl mx-auto px-5 md:px-8 min-h-screen"
-        style={{ backgroundColor: "#edf8ff" }}
-      >
-        <Link
-          href="/dashboard"
-          className="text-sm font-bold mb-6 inline-block"
-          style={{ color: "#8b4b00" }}
-        >
-          ← Back to dashboard
-        </Link>
+    <LearnLayout data={data} variant="home">
+      <section className="relative overflow-hidden rounded-[20px] p-7 text-white shadow-sm sm:p-9" style={{ backgroundColor: LEARN.teal }}>
+        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-white/10" aria-hidden />
+        <p className="text-[11px] font-bold uppercase tracking-widest text-white/75">{isMember ? "Member dashboard" : `${course.category} · ${course.level}`}</p>
+        <h1 className="mt-2 text-3xl font-extrabold tracking-tight sm:text-4xl" style={{ fontFamily: "var(--font-headline)" }}>
+          {isMember ? `Welcome back, ${firstName}` : course.title}
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">{course.description}</p>
 
-        <header className="mb-10">
-          <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#8b4b00" }}>
-            {course.category} · {course.level}
-          </p>
-          <h1
-            className="text-4xl md:text-5xl font-extrabold tracking-tighter mb-3"
-            style={{ fontFamily: "var(--font-headline)", color: "#243036" }}
-          >
-            {course.title}
-          </h1>
-          <p className="text-lg max-w-2xl" style={{ color: "#515d64" }}>
-            {course.description}
-          </p>
-        </header>
-
-        {!enrollment && Number(course.price) > 0 && (
-          <div className="bg-white rounded-2xl p-6 mb-8 shadow-sm">
-            <p className="font-bold" style={{ color: "#243036" }}>
-              Get full access
-            </p>
-            {offers.length === 0 ? (
-              <p className="text-sm" style={{ color: "#515d64" }}>
-                Enrollment for this course opens soon. Free preview lessons are available below.
-              </p>
-            ) : (
-              <div className="mt-3 flex flex-wrap gap-3">
-                {offers.map((o) => (
-                  <Link
-                    key={o.slug}
-                    href={`/checkout/${o.slug}`}
-                    className="kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm shadow-md"
-                    style={{ color: "#fff0e6" }}
-                  >
-                    {o.title} — {formatOfferPrice(o)}
-                  </Link>
-                ))}
+        {isMember ? (
+          <div className="mt-6 flex flex-wrap items-end justify-between gap-5">
+            <div className="w-full max-w-sm space-y-1.5">
+              <div className="flex justify-between text-xs text-white/80">
+                <span>
+                  {progress.completed} of {progress.total} lessons complete
+                </span>
+                <span className="font-bold text-white">{progress.percent}%</span>
               </div>
+              <ProgressBar percent={progress.percent} onDark />
+            </div>
+            {next && (
+              <Link href={`/learn/${courseId}/${next.id}`} className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
+                {progress.completed === 0 ? "Start training" : progress.next ? "Continue training" : "Watch again"} →
+              </Link>
             )}
           </div>
+        ) : (
+          <GetAccess courseId={courseId} isFree={course.price === 0} offers={offers} enrollFailed={enroll === "failed"} enrollFree={enrollFree} />
         )}
+      </section>
 
-        {!enrollment && Number(course.price) === 0 && (
-          <div className="bg-white rounded-2xl p-6 mb-8 flex items-center justify-between shadow-sm">
-            <div>
-              <p className="font-bold" style={{ color: "#243036" }}>
-                You&apos;re not enrolled yet
-              </p>
-              <p className="text-sm" style={{ color: "#515d64" }}>
-                Enroll to unlock all lessons.
-              </p>
-              {enrollFailed && (
-                <p role="alert" className="text-sm font-bold mt-1" style={{ color: "#b91c1c" }}>
-                  We couldn&apos;t enroll you just now. Please try again.
-                </p>
-              )}
-            </div>
-            <form
-              action={async () => {
-                "use server";
-                const supabase = await createClient();
-                // enroll_free() only admits published courses priced 0 (see phase0 migration).
-                const { error } = await supabase.rpc("enroll_free", { p_course_id: courseId });
-                if (error) {
-                  console.error("enroll_free failed", { courseId, error: error.message });
-                  redirect(`/learn/${courseId}?enroll=failed`);
-                }
-                redirect(`/learn/${courseId}`);
-              }}
-            >
-              <button
-                type="submit"
-                className="kinetic-gradient px-5 py-2.5 rounded-full font-bold text-sm shadow-md"
-                style={{ color: "#fff0e6" }}
-              >
-                Enroll for free
-              </button>
-            </form>
-          </div>
-        )}
+      <nav className="mt-6 inline-flex rounded-full bg-white p-1 shadow-sm" aria-label="Course sections">
+        {[
+          { label: "Home", href: `/learn/${courseId}`, active: !showMap },
+          { label: "Course map", href: `/learn/${courseId}?tab=map`, active: showMap },
+        ].map((t) => (
+          <Link
+            key={t.label}
+            href={t.href}
+            aria-current={t.active ? "page" : undefined}
+            className={`rounded-full px-4 py-1.5 text-sm font-semibold ${t.active ? "text-white" : "hover:bg-[#f3f9fd]"}`}
+            style={t.active ? { backgroundColor: LEARN.teal } : { color: LEARN.muted }}
+          >
+            {t.label}
+          </Link>
+        ))}
+      </nav>
 
-        <section className="bg-white rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100">
-            <h2
-              className="text-xl font-extrabold"
-              style={{ fontFamily: "var(--font-headline)", color: "#243036" }}
-            >
-              Lessons
-            </h2>
-          </div>
-          {lessonNumber.size === 0 ? (
-            <div className="p-10 text-center text-sm" style={{ color: "#515d64" }}>
+      {showMap ? (
+        <CourseMap courseId={courseId} data={data} numberOf={numberOf} />
+      ) : (
+        <div className="mt-6 space-y-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: LEARN.muted }}>
+            Your training
+          </p>
+          {lessons.length === 0 ? (
+            <div className="rounded-[16px] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
               Lessons are being prepared. Check back soon.
             </div>
           ) : (
-            <div className="divide-y divide-slate-100">
-              {outline.modules.map((m) => (
-                <div key={m.id}>
-                  <h3
-                    className="px-6 pt-5 pb-2 text-sm font-extrabold uppercase tracking-wider"
-                    style={{ color: "#8b4b00" }}
-                  >
-                    {m.title}
-                  </h3>
-                  {renderLessons(m.lessons)}
-                  {m.submodules.map((sub) => (
-                    <div key={sub.id} className="ms-6 border-s-2 border-slate-100">
-                      <h4 className="px-6 pt-3 pb-1 text-sm font-bold" style={{ color: "#243036" }}>
-                        {sub.title}
-                      </h4>
-                      {renderLessons(sub.lessons)}
-                    </div>
-                  ))}
-                </div>
-              ))}
-              {renderLessons(outline.unassigned)}
-            </div>
+            <UpNext courseId={courseId} lesson={next} number={next ? (numberOf.get(next.id) ?? 1) : 1} moduleTitle={next ? moduleTitleOf(outline, next.id) : null} enrolled={isMember} />
           )}
-        </section>
-      </main>
-      <Footer />
-    </>
+        </div>
+      )}
+    </LearnLayout>
   );
+}
+
+function moduleTitleOf(outline: CourseOutline<StudentLesson>, lessonId: string): string | null {
+  for (const m of outline.modules) {
+    if (m.lessons.some((l) => l.id === lessonId)) return m.title;
+    const sub = m.submodules.find((s) => s.lessons.some((l) => l.id === lessonId));
+    if (sub) return `${m.title} · ${sub.title}`;
+  }
+  return null;
+}
+
+function UpNext({ courseId, lesson, number, moduleTitle, enrolled }: { courseId: string; lesson: StudentLesson | null; number: number; moduleTitle: string | null; enrolled: boolean }) {
+  if (!lesson) return null;
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 rounded-[16px] bg-white p-6 shadow-sm">
+      <div className="min-w-0">
+        <p className="text-xs font-bold" style={{ color: LEARN.orange }}>
+          {enrolled ? "Up next" : "Start here"}
+          {moduleTitle ? ` · ${moduleTitle}` : ""}
+        </p>
+        <h2 className="mt-1 text-xl font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
+          {number}. {lesson.title}
+        </h2>
+      </div>
+      <Link href={`/learn/${courseId}?tab=map`} className="text-sm font-bold hover:underline" style={{ color: LEARN.teal }}>
+        See all lessons →
+      </Link>
+    </div>
+  );
+}
+
+function CourseMap({ courseId, data, numberOf }: { courseId: string; data: StudentCourse; numberOf: ReadonlyMap<string, number> }) {
+  const { outline, states, enrolledAt, isStaffPreview } = data;
+  const rows = (lessons: readonly StudentLesson[]) => (
+    <div className="divide-y divide-[#edf3f7]">
+      {lessons.map((l) => (
+        <CourseLessonRow
+          key={l.id}
+          courseId={courseId}
+          lesson={l}
+          number={numberOf.get(l.id) ?? 0}
+          state={states.get(l.id) ?? { kind: "locked" }}
+          showPreviewTag={!enrolledAt && !isStaffPreview}
+        />
+      ))}
+    </div>
+  );
+  if (numberOf.size === 0) {
+    return (
+      <div className="mt-6 rounded-[16px] bg-white p-8 text-center text-sm shadow-sm" style={{ color: LEARN.muted }}>
+        Lessons are being prepared. Check back soon.
+      </div>
+    );
+  }
+  return (
+    <div className="mt-6 space-y-4">
+      {outline.modules.map((m) => (
+        <section key={m.id} className="overflow-hidden rounded-[16px] bg-white shadow-sm">
+          <h2 className="border-b border-[#edf3f7] px-5 py-4 text-lg font-extrabold" style={{ fontFamily: "var(--font-headline)" }}>
+            {m.title}
+          </h2>
+          {rows(m.lessons)}
+          {m.submodules.map((s) => (
+            <div key={s.id}>
+              <h3 className="bg-[#f6fafd] px-5 py-2.5 text-sm font-bold" style={{ color: LEARN.teal }}>
+                {s.title}
+              </h3>
+              {rows(s.lessons)}
+            </div>
+          ))}
+        </section>
+      ))}
+      {outline.unassigned.length > 0 && <section className="overflow-hidden rounded-[16px] bg-white shadow-sm">{rows(outline.unassigned)}</section>}
+    </div>
+  );
+}
+
+function GetAccess({
+  courseId,
+  isFree,
+  offers,
+  enrollFailed,
+  enrollFree,
+}: {
+  courseId: string;
+  isFree: boolean;
+  offers: readonly PublishedOffer[];
+  enrollFailed: boolean;
+  enrollFree: () => Promise<void>;
+}) {
+  if (offers.length > 0) {
+    return (
+      <div className="mt-6 flex flex-wrap gap-3">
+        {offers.map((o) => (
+          <Link key={o.slug} href={`/checkout/${o.slug}`} className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
+            Get access · {o.title} — {formatOfferPrice(o)}
+          </Link>
+        ))}
+        <Link href={`/learn/${courseId}?tab=map`} className="rounded-full border border-white/40 px-5 py-2.5 text-sm font-bold hover:bg-white/10">
+          Browse lessons
+        </Link>
+      </div>
+    );
+  }
+  if (isFree) {
+    return (
+      <form action={enrollFree} className="mt-6 space-y-2">
+        <button type="submit" className={PILL_ORANGE} style={{ backgroundColor: LEARN.orange }}>
+          Enroll for free →
+        </button>
+        {enrollFailed && (
+          <p role="alert" className="text-sm font-bold text-[#ffd7c2]">
+            We couldn&apos;t enroll you just now. Please try again.
+          </p>
+        )}
+      </form>
+    );
+  }
+  return <p className="mt-6 text-sm text-white/85">Enrollment opens soon. Free preview lessons are available in the course map.</p>;
 }

@@ -33,7 +33,7 @@ export async function createCourse(formData: FormData) {
   if (error) {
     redirect("/admin/courses/new?error=" + encodeURIComponent(error.message));
   }
-  revalidatePath("/admin");
+  revalidatePath("/admin/courses");
   redirect(`/admin/courses/${parsed.data.id}`);
 }
 
@@ -41,18 +41,18 @@ export async function updateCourse(formData: FormData) {
   await requireAdmin();
   const parsed = CourseSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
-    redirect(`/admin/courses/${formData.get("id")}?error=` + encodeURIComponent(parsed.error.issues[0].message));
+    redirect(`/admin/courses/${formData.get("id")}?tab=details&error=` + encodeURIComponent(parsed.error.issues[0].message));
   }
   const sb = createServiceClient();
   const { id, ...rest } = parsed.data;
   const { error } = await sb.from("courses").update(rest).eq("id", id);
   if (error) {
-    redirect(`/admin/courses/${id}?error=` + encodeURIComponent(error.message));
+    redirect(`/admin/courses/${id}?tab=details&error=` + encodeURIComponent(error.message));
   }
-  revalidatePath("/admin");
+  revalidatePath("/admin/courses");
   revalidatePath(`/admin/courses/${id}`);
   revalidatePath(`/learn/${id}`);
-  redirect(`/admin/courses/${id}?saved=1`);
+  redirect(`/admin/courses/${id}?tab=details&saved=1`);
 }
 
 export async function deleteCourse(formData: FormData) {
@@ -61,6 +61,6 @@ export async function deleteCourse(formData: FormData) {
   if (typeof id !== "string") return;
   const sb = createServiceClient();
   await sb.from("courses").delete().eq("id", id);
-  revalidatePath("/admin");
-  redirect("/admin");
+  revalidatePath("/admin/courses");
+  redirect("/admin/courses");
 }

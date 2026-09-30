@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { COURSE_IMAGES_BUCKET, validateCourseImage } from "@/lib/lesson-files";
-import { finishCourseImageUpload, startCourseImageUpload } from "./image-actions";
+import { finishCourseImageUpload, saveCourseImageAlt, startCourseImageUpload } from "./image-actions";
+import { BTN_SECONDARY, Card, INPUT } from "@/app/admin/_components/ui";
 
 interface CourseImageUploadProps {
   courseId: string;
@@ -15,6 +16,7 @@ interface CourseImageUploadProps {
 export function CourseImageUpload({ courseId, currentUrl, currentAlt }: CourseImageUploadProps) {
   const [url, setUrl] = useState(currentUrl);
   const [alt, setAlt] = useState(currentAlt ?? "");
+  const [savedAlt, setSavedAlt] = useState(currentAlt ?? "");
   const [status, setStatus] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -47,28 +49,51 @@ export function CourseImageUpload({ courseId, currentUrl, currentAlt }: CourseIm
       return;
     }
     setUrl(finished.data.url);
+    setSavedAlt(alt);
     setStatus("Cover image updated.");
   }
 
   return (
-    <section className="bg-white rounded-xl p-6 shadow-sm flex flex-wrap items-center gap-6">
-      {url ? (
-        // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded/remote image
-        <img src={url} alt={alt} className="w-48 aspect-video object-cover rounded-lg bg-slate-100" />
-      ) : (
-        <div className="w-48 aspect-video rounded-lg bg-slate-100 flex items-center justify-center text-xs text-slate-500">No cover image</div>
-      )}
-      <div className="space-y-2 flex-1 min-w-56">
-        <h2 className="font-extrabold">Cover image</h2>
-        <input
-          value={alt}
-          onChange={(e) => setAlt(e.target.value)}
-          placeholder="Describe the image (for accessibility)"
-          maxLength={300}
-          className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-        />
-        <label className={`inline-block bg-orange-700 text-white px-4 py-2 rounded-full font-bold text-xs cursor-pointer ${busy ? "opacity-50" : ""}`}>
-          {busy ? "Uploading…" : "Upload image"}
+    <Card title="Cover image" description="Shown on course cards. JPG, PNG or WebP, 1280×720 recommended.">
+      <div className="space-y-3">
+        {url ? (
+          // eslint-disable-next-line @next/next/no-img-element -- admin preview of an uploaded/remote image
+          <img src={url} alt={alt} className="aspect-video w-full rounded-[8px] border border-[#e7e6e4] object-cover" />
+        ) : (
+          <div className="flex aspect-video w-full items-center justify-center rounded-[8px] border border-dashed border-[#d9d8d6] bg-[#fafaf9] text-xs text-[#6c6a69]">
+            No cover image
+          </div>
+        )}
+        <div className="flex gap-2">
+          <input
+            value={alt}
+            onChange={(e) => setAlt(e.target.value)}
+            placeholder="Describe the image (for accessibility)"
+            maxLength={300}
+            aria-label="Image description"
+            className={INPUT}
+          />
+          {url && alt !== savedAlt && (
+            <button
+              type="button"
+              disabled={busy}
+              className={BTN_SECONDARY}
+              onClick={async () => {
+                const res = await saveCourseImageAlt({ courseId, alt });
+                if (!res.ok) {
+                  setStatus(res.error);
+                  return;
+                }
+                setSavedAlt(alt);
+                setStatus("Description saved.");
+              }}
+            >
+              Save
+            </button>
+          )}
+        </div>
+        <label className={`${BTN_SECONDARY} cursor-pointer ${busy ? "opacity-50" : ""}`}>
+          {busy ? "Uploading…" : url ? "Replace image" : "Upload image"}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp"
@@ -82,11 +107,11 @@ export function CourseImageUpload({ courseId, currentUrl, currentAlt }: CourseIm
           />
         </label>
         {status && (
-          <p role="status" className="text-xs text-slate-600">
+          <p role="status" className="text-xs text-[#6c6a69]">
             {status}
           </p>
         )}
       </div>
-    </section>
+    </Card>
   );
 }

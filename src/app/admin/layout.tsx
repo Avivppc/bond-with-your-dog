@@ -1,49 +1,48 @@
 import Link from "next/link";
+import { Inter } from "next/font/google";
 import { requireStaff } from "@/lib/admin";
-import { canPerform, type StaffCapability } from "@/lib/staff";
+import { adminNavFor } from "@/lib/admin-nav";
+import { AdminSidebar } from "./_components/AdminSidebar";
 
 export const dynamic = "force-dynamic";
 
-const NAV: { href: string; label: string; needs: StaffCapability }[] = [
-  { href: "/admin", label: "Courses", needs: "content" },
-  { href: "/admin/offers", label: "Offers", needs: "sales" },
-  { href: "/admin/students", label: "Students", needs: "sales" },
-  { href: "/admin/orders", label: "Orders", needs: "sales" },
-  { href: "/admin/leads", label: "Leads", needs: "sales" },
-  { href: "/admin/videos", label: "Spotlight queue", needs: "content" },
-  { href: "/admin/team", label: "Team", needs: "staff" },
-];
+const inter = Inter({ subsets: ["latin"], variable: "--font-admin" });
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { role } = await requireStaff("content");
+  const { user, role } = await requireStaff("content");
+  const initial = (user.email ?? "?").charAt(0).toUpperCase();
+
   return (
-    <div className="min-h-screen" style={{ backgroundColor: "#f5f7fa" }}>
-      <nav className="bg-slate-900 text-white px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/admin" className="font-extrabold tracking-tighter text-lg">
-            Bonded · Admin
-          </Link>
-          {NAV.filter((item) => canPerform(role, item.needs)).map((item) => (
-            <Link key={item.href} href={item.href} className="text-sm text-slate-300 hover:text-white">
-              {item.label}
-            </Link>
-          ))}
-        </div>
-        <div className="flex items-center gap-4 text-sm">
-          <Link href="/" className="text-slate-300 hover:text-white">
+    <div className={`${inter.variable} min-h-screen bg-[#f8f8f8] text-[14px] text-[#1a1a19]`} style={{ fontFamily: "var(--font-admin), system-ui, sans-serif" }}>
+      <AdminSidebar groups={adminNavFor(role)} />
+      <div className="lg:pl-60">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-end gap-2 border-b border-[#ebeae8] bg-white/90 px-4 backdrop-blur">
+          <Link href="/" className="rounded-full px-3 py-1.5 text-sm text-[#3d3c3a] hover:bg-[#f3f3f2]">
             View site
           </Link>
-          <Link href="/dashboard" className="text-slate-300 hover:text-white">
+          <Link href="/dashboard" className="rounded-full px-3 py-1.5 text-sm text-[#3d3c3a] hover:bg-[#f3f3f2]">
             My learning
           </Link>
-          <form action="/auth/logout" method="post">
-            <button type="submit" className="text-slate-300 hover:text-white">
-              Sign out
-            </button>
-          </form>
-        </div>
-      </nav>
-      <main className="max-w-6xl mx-auto px-6 py-10">{children}</main>
+          <details className="relative">
+            <summary
+              className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#e7e6e4] py-1 pl-1 pr-3 text-sm"
+              aria-label="Account"
+            >
+              <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#1a1a19] text-xs font-semibold text-white">{initial}</span>
+              <span className="capitalize">{role}</span>
+            </summary>
+            <div className="absolute right-0 mt-2 w-56 rounded-[12px] border border-[#e7e6e4] bg-white p-1 shadow-lg">
+              <p className="truncate px-3 py-2 text-xs text-[#6c6a69]">{user.email}</p>
+              <form action="/auth/logout" method="post">
+                <button type="submit" className="w-full rounded-[8px] px-3 py-2 text-left text-sm hover:bg-[#f3f3f2]">
+                  Sign out
+                </button>
+              </form>
+            </div>
+          </details>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">{children}</main>
+      </div>
     </div>
   );
 }

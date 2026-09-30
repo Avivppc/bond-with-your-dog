@@ -59,3 +59,21 @@ export async function finishCourseImageUpload(input: z.input<typeof Finish>): Pr
   revalidatePath("/courses");
   return { ok: true, data: { url } };
 }
+
+const Alt = z.object({ courseId: z.string().min(1).max(100), alt: z.string().max(300) });
+
+/** Updates only the cover image's description (screen readers, SEO). */
+export async function saveCourseImageAlt(input: z.input<typeof Alt>): Promise<ImageActionResult> {
+  await requireStaff("content");
+  const parsed = Alt.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Description is too long." };
+  const { courseId, alt } = parsed.data;
+  const { error } = await createServiceClient().from("courses").update({ image_alt: alt.trim() || null }).eq("id", courseId);
+  if (error) {
+    console.error("course image alt save failed", { courseId, error: error.message });
+    return { ok: false, error: "Could not save the description." };
+  }
+  revalidatePath(`/admin/courses/${courseId}`);
+  revalidatePath(`/learn/${courseId}`);
+  return { ok: true, data: undefined };
+}

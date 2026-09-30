@@ -1,18 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { LessonForm } from "./LessonForm";
+import { requireStaff } from "@/lib/admin";
+import { buildOutline } from "@/lib/course-outline";
+import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, Card, Notice, PageHeader } from "@/app/admin/_components/ui";
+import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
+import { AccessCard, LESSON_FORM_ID, LessonDetailsCard, LessonFormRoot, StatusCard, ThumbnailCard, type ModuleChoice } from "./LessonForm";
 import { QuestionForm, type QuestionDefaults } from "./QuestionForm";
 import { VideoPanel } from "./VideoPanel";
 import { BodyEditor } from "./BodyEditor";
 import { FilesPanel } from "./FilesPanel";
 import type { LessonVideoSummary } from "./content-actions";
-import {
-  updateLesson,
-  deleteLesson,
-  deleteQuestion,
-} from "../actions";
-import { requireStaff } from "@/lib/admin";
+import { updateLesson, deleteLesson, deleteQuestion } from "../actions";
 
 export const dynamic = "force-dynamic";
 
@@ -28,17 +27,19 @@ export default async function EditLessonPage({
   const { saved, error } = await searchParams;
   const sb = createServiceClient();
 
-  const { data: lesson } = await sb.from("lessons").select("*").eq("id", lid).eq("course_id", courseId).single();
+  const { data: lesson } = await sb.from("lessons").select("*").eq("id", lid).eq("course_id", courseId).maybeSingle();
   if (!lesson) notFound();
 
-  const [videoRes, filesRes] = await Promise.all([
-    sb
-      .from("lesson_videos")
-      .select("provider, source_url, thumbnail_url, duration_seconds")
-      .eq("lesson_id", lid)
-      .maybeSingle(),
+  const [courseRes, modulesRes, videoRes, filesRes, questionsRes] = await Promise.all([
+    sb.from("courses").select("title").eq("id", courseId).single(),
+    sb.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
+    sb.from("lesson_videos").select("provider, source_url, thumbnail_url, duration_seconds").eq("lesson_id", lid).maybeSingle(),
     sb.from("lesson_files").select("id, file_name, size_bytes").eq("lesson_id", lid).order("position"),
+    lesson.kind === "quiz"
+      ? sb.from("quiz_questions").select("*").eq("lesson_id", lid).order("position", { ascending: true })
+      : Promise.resolve({ data: [] as never[] }),
   ]);
+
   const video: LessonVideoSummary | null = videoRes.data
     ? {
         provider: videoRes.data.provider as LessonVideoSummary["provider"],
@@ -47,160 +48,153 @@ export default async function EditLessonPage({
         durationSeconds: videoRes.data.duration_seconds,
       }
     : null;
-
-  const { data: questions } =
-    lesson.kind === "quiz"
-      ? await sb
-          .from("quiz_questions")
-          .select("*")
-          .eq("lesson_id", lid)
-          .order("position", { ascending: true })
-      : { data: [] };
+  const modules: ModuleChoice[] = buildOutline(modulesRes.data ?? [], []).modules.flatMap((m) => [
+    { id: m.id, label: m.title },
+    ...m.submodules.map((s) => ({ id: s.id, label: `${m.title} › ${s.title}` })),
+  ]);
+  const defaults = { ...lesson, course_id: courseId };
+  const questions = questionsRes.data ?? [];
 
   return (
-    <div className="space-y-10">
-      <Link
-        href={`/admin/courses/${courseId}`}
-        className="text-sm font-bold text-orange-700 inline-block"
-      >
-        ← Course
-      </Link>
-      <header className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-extrabold tracking-tighter">{lesson.title}</h1>
-        <span className="flex items-center gap-3">
-          <span
-            className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-              lesson.published ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-600"
-            }`}
-          >
-            {lesson.published ? "Published" : "Draft"}
-          </span>
-          <Link
-            href={`/learn/${courseId}/${lid}`}
-            target="_blank"
-            className="text-xs font-bold text-orange-700"
-          >
-            Preview ↗
-          </Link>
-        </span>
-        <span
-          className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${
-            lesson.kind === "quiz"
-              ? "bg-purple-100 text-purple-800"
-              : "bg-blue-100 text-blue-800"
-          }`}
-        >
-          {lesson.kind}
-        </span>
-      </header>
+    <div>
+      <PageHeader
+        title={lesson.title}
+        crumbs={[
+          { label: "Courses", href: "/admin/courses" },
+          { label: courseRes.data?.title ?? "Course", href: `/admin/courses/${courseId}` },
+          { label: lesson.title },
+        ]}
+        actions={
+          <>
+            <Link href={`/learn/${courseId}/${lid}`} target="_blank" className={BTN_SECONDARY}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                visibility
+              </span>
+              Preview
+            </Link>
+            <button type="submit" form={LESSON_FORM_ID} className={BTN_PRIMARY}>
+              Save
+            </button>
+          </>
+        }
+      />
 
-      {saved && (
-        <div className="p-3 rounded-lg bg-green-50 text-green-700 text-sm">Saved.</div>
-      )}
-      {error && (
-        <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-          {decodeURIComponent(error)}
+      {(saved || error) && <div className="mb-5">{error ? <Notice tone="error">{error}</Notice> : <Notice tone="success">Lesson saved.</Notice>}</div>}
+
+      <LessonFormRoot action={updateLesson} defaults={defaults} />
+
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-6">
+          <LessonDetailsCard defaults={defaults} modules={modules} />
+          {lesson.kind === "video" && <VideoPanel courseId={courseId} lessonId={lid} video={video} />}
+          {lesson.kind === "quiz" && (
+            <QuestionsCard courseId={courseId} lessonId={lid} passThreshold={lesson.pass_threshold} questions={questions} />
+          )}
+          <BodyEditor formId={LESSON_FORM_ID} initialHtml={lesson.body_html ?? ""} />
+          <FilesPanel courseId={courseId} lessonId={lid} files={filesRes.data ?? []} />
         </div>
-      )}
 
-      <LessonForm action={updateLesson} defaults={{ ...lesson, course_id: courseId }} />
+        <aside className="space-y-6">
+          <StatusCard published={lesson.published} />
+          <AccessCard defaults={defaults} />
+          {lesson.kind === "video" && <ThumbnailCard thumbnailUrl={video?.thumbnailUrl ?? null} durationSeconds={lesson.duration_seconds} />}
+          <Card title="Delete lesson" description="Removes the lesson, its files and students' progress on it.">
+            <form action={deleteLesson}>
+              <input type="hidden" name="id" value={lid} />
+              <input type="hidden" name="course_id" value={courseId} />
+              <ConfirmSubmit className={BTN_DANGER} message={`Delete "${lesson.title}"? Its files and students' progress on it are deleted too.`}>
+                Delete lesson
+              </ConfirmSubmit>
+            </form>
+          </Card>
+        </aside>
+      </div>
 
-      {lesson.kind === "video" && <VideoPanel courseId={courseId} lessonId={lid} video={video} />}
+      <div className="mt-6 flex justify-end border-t border-[#e7e6e4] pt-5">
+        <button type="submit" form={LESSON_FORM_ID} className={BTN_PRIMARY}>
+          Save
+        </button>
+      </div>
+    </div>
+  );
+}
 
-      <BodyEditor courseId={courseId} lessonId={lid} initialHtml={lesson.body_html ?? ""} />
+interface QuestionRow {
+  id: string;
+  position: number;
+  prompt: string;
+  kind: string;
+  options: unknown;
+  correct: unknown;
+  explanation: string | null;
+}
 
-      <FilesPanel courseId={courseId} lessonId={lid} files={filesRes.data ?? []} />
-
-      {lesson.kind === "quiz" && (
-        <section className="bg-white rounded-xl p-6 shadow-sm">
-          <header className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-extrabold tracking-tighter">Questions</h2>
-            <p className="text-xs text-slate-500">
-              Questions are auto-graded. Pass threshold: {lesson.pass_threshold}%.
-            </p>
-          </header>
-
-          <div className="space-y-3 mb-6">
-            {questions && questions.length > 0 ? (
-              questions.map((q) => (
-                <details
-                  key={q.id}
-                  className="bg-slate-50 rounded-lg p-4"
-                >
-                  <summary className="cursor-pointer flex items-center justify-between">
-                    <span className="font-bold text-sm">
-                      {q.position}. {q.prompt}
-                    </span>
-                    <span className="text-[10px] uppercase font-bold text-slate-500">
-                      {q.kind}
-                    </span>
-                  </summary>
-                  <div className="mt-4">
-                    <QuestionForm
-                      defaults={{
-                        id: q.id,
-                        lesson_id: lid,
-                        course_id: courseId,
-                        position: q.position,
-                        prompt: q.prompt,
-                        kind: q.kind,
-                        options: (q.options ?? []) as QuestionDefaults["options"],
-                        correct: (q.correct ?? []) as unknown[],
-                        explanation: q.explanation ?? "",
-                      }}
-                    />
-                    <form action={deleteQuestion} className="mt-3">
-                      <input type="hidden" name="id" value={q.id} />
-                      <input type="hidden" name="lesson_id" value={lid} />
-                      <input type="hidden" name="course_id" value={courseId} />
-                      <button
-                        type="submit"
-                        className="text-xs font-bold text-red-700 hover:underline"
-                      >
-                        Delete question
-                      </button>
-                    </form>
-                  </div>
-                </details>
-              ))
-            ) : (
-              <p className="text-sm text-slate-500">No questions yet.</p>
-            )}
-          </div>
-
-          <details className="bg-slate-50 rounded-lg p-4">
-            <summary className="cursor-pointer font-bold text-sm">+ Add question</summary>
-            <div className="mt-4">
+function QuestionsCard({
+  courseId,
+  lessonId,
+  passThreshold,
+  questions,
+}: {
+  courseId: string;
+  lessonId: string;
+  passThreshold: number;
+  questions: readonly QuestionRow[];
+}) {
+  return (
+    <Card title="Questions" description={`Auto-graded. Students pass with ${passThreshold}% or more.`}>
+      <div className="space-y-2">
+        {questions.length === 0 && <p className="text-sm text-[#6c6a69]">No questions yet.</p>}
+        {questions.map((q) => (
+          <details key={q.id} className="rounded-[8px] border border-[#efeeed]">
+            <summary className="flex cursor-pointer items-center justify-between gap-3 px-4 py-3 text-sm">
+              <span className="font-medium">
+                {q.position}. {q.prompt}
+              </span>
+              <span className="text-xs text-[#6c6a69]">{q.kind === "tf" ? "True / false" : q.kind === "multi" ? "Multiple answers" : "Single answer"}</span>
+            </summary>
+            <div className="border-t border-[#efeeed] p-4">
               <QuestionForm
                 defaults={{
-                  lesson_id: lid,
+                  id: q.id,
+                  lesson_id: lessonId,
                   course_id: courseId,
-                  position: (questions?.length ?? 0) + 1,
-                  prompt: "",
-                  kind: "single",
-                  options: [],
-                  correct: [],
-                  explanation: "",
+                  position: q.position,
+                  prompt: q.prompt,
+                  kind: q.kind as QuestionDefaults["kind"],
+                  options: (q.options ?? []) as QuestionDefaults["options"],
+                  correct: (q.correct ?? []) as unknown[],
+                  explanation: q.explanation ?? "",
                 }}
               />
+              <form action={deleteQuestion} className="mt-3">
+                <input type="hidden" name="id" value={q.id} />
+                <input type="hidden" name="lesson_id" value={lessonId} />
+                <input type="hidden" name="course_id" value={courseId} />
+                <button type="submit" className="text-sm text-red-700 hover:underline">
+                  Delete question
+                </button>
+              </form>
             </div>
           </details>
-        </section>
-      )}
-
-      <section className="bg-white rounded-xl p-6 shadow-sm border border-red-100">
-        <h2 className="font-bold text-red-700 mb-3">Danger zone</h2>
-        <form action={deleteLesson}>
-          <input type="hidden" name="id" value={lid} />
-          <input type="hidden" name="course_id" value={courseId} />
-          <button
-            type="submit"
-            className="bg-red-600 text-white px-4 py-2 rounded-full font-bold text-xs"
-          >
-            Delete lesson
-          </button>
-        </form>
-      </section>
-    </div>
+        ))}
+        <details className="rounded-[8px] border border-dashed border-[#d9d8d6]">
+          <summary className="cursor-pointer px-4 py-3 text-sm font-medium">+ Add question</summary>
+          <div className="border-t border-[#efeeed] p-4">
+            <QuestionForm
+              defaults={{
+                lesson_id: lessonId,
+                course_id: courseId,
+                position: questions.length + 1,
+                prompt: "",
+                kind: "single",
+                options: [],
+                correct: [],
+                explanation: "",
+              }}
+            />
+          </div>
+        </details>
+      </div>
+    </Card>
   );
 }

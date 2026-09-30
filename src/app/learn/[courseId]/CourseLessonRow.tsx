@@ -1,91 +1,62 @@
 import Link from "next/link";
-import { computeUnlockAt, isLockedNow, formatUnlockDate } from "@/lib/drip";
-import type { OutlineLessonRow } from "@/lib/course-outline";
-
-export interface MemberLessonRow extends OutlineLessonRow {
-  duration_seconds: number | null;
-}
+import { formatUnlockDate } from "@/lib/drip";
+import type { LessonState } from "@/lib/lesson-state";
+import type { StudentLesson } from "@/lib/student-course-server";
+import { LEARN } from "@/components/learn/CourseSidebar";
 
 interface CourseLessonRowProps {
   courseId: string;
-  lesson: MemberLessonRow;
+  lesson: StudentLesson;
   number: number;
-  enrolledAt: string | null;
-  completed: boolean;
+  state: LessonState;
+  /** Show the "Free preview" tag (only useful to people without access). */
+  showPreviewTag: boolean;
 }
 
-function QuizBadge() {
-  return (
-    <span
-      className="text-[10px] font-bold uppercase px-2 py-0.5 rounded-full"
-      style={{ backgroundColor: "#f3e8ff", color: "#6b21a8" }}
-    >
-      Quiz
-    </span>
-  );
+const ICON: Record<LessonState["kind"], string> = { open: "play_circle", completed: "check_circle", locked: "lock", scheduled: "schedule" };
+
+function minutes(seconds: number | null): string | null {
+  return seconds ? `${Math.max(1, Math.round(seconds / 60))} min` : null;
 }
 
-/** One lesson in the student course outline: locked (enrollment/drip) or a link to play it. */
-export function CourseLessonRow({ courseId, lesson, number, enrolledAt, completed }: CourseLessonRowProps) {
-  const unlockAt = computeUnlockAt(enrolledAt ?? undefined, lesson.available_after_days);
-  const drippedLocked = enrolledAt ? isLockedNow(unlockAt) : false;
-  const enrollLocked = !enrolledAt && !lesson.free_preview;
-
-  if (drippedLocked || enrollLocked) {
-    return (
-      <div className="px-6 py-4 flex items-center justify-between opacity-70">
-        <div className="flex items-center gap-4">
-          <span className="material-symbols-outlined" style={{ color: "#a2afb6" }}>
-            {drippedLocked ? "schedule" : "lock"}
+/** One lesson in the course map: a link when it can be opened, otherwise a locked/scheduled row. */
+export function CourseLessonRow({ courseId, lesson, number, state, showPreviewTag }: CourseLessonRowProps) {
+  const openable = state.kind === "open" || state.kind === "completed";
+  const meta =
+    state.kind === "scheduled"
+      ? `Unlocks ${formatUnlockDate(state.unlockAt)}`
+      : state.kind === "locked"
+        ? "Locked"
+        : [lesson.kind === "quiz" ? "Quiz" : null, minutes(lesson.duration_seconds)].filter(Boolean).join(" · ");
+  const content = (
+    <>
+      <span
+        className="material-symbols-outlined text-[22px]"
+        style={{ color: state.kind === "completed" ? LEARN.teal : openable ? LEARN.orange : "#a2afb6", fontVariationSettings: state.kind === "completed" ? "'FILL' 1" : undefined }}
+        aria-hidden
+      >
+        {lesson.kind === "quiz" && state.kind === "open" ? "quiz" : ICON[state.kind]}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate font-semibold">
+          {number}. {lesson.title}
+        </span>
+        {meta && (
+          <span className="block text-xs" style={{ color: LEARN.muted }}>
+            {meta}
           </span>
-          <div>
-            <p className="font-bold flex items-center gap-2" style={{ color: "#243036" }}>
-              {number}. {lesson.title}
-              {lesson.kind === "quiz" && <QuizBadge />}
-            </p>
-            {drippedLocked && unlockAt && (
-              <p className="text-xs" style={{ color: "#515d64" }}>
-                Unlocks {formatUnlockDate(unlockAt)}
-              </p>
-            )}
-          </div>
-        </div>
-        <span className="text-xs font-bold uppercase" style={{ color: "#a2afb6" }}>
-          {drippedLocked ? "Scheduled" : "Locked"}
-        </span>
-      </div>
-    );
-  }
-
-  return (
-    <Link
-      href={`/learn/${courseId}/${lesson.id}`}
-      className="px-6 py-4 flex items-center justify-between hover:bg-slate-50"
-    >
-      <div className="flex items-center gap-4">
-        <span className="material-symbols-outlined" style={{ color: completed ? "#0e666a" : "#8b4b00" }}>
-          {completed ? "check_circle" : lesson.kind === "quiz" ? "quiz" : "play_circle"}
-        </span>
-        <div>
-          <p className="font-bold flex items-center gap-2" style={{ color: "#243036" }}>
-            {number}. {lesson.title}
-            {lesson.kind === "quiz" && <QuizBadge />}
-          </p>
-          {lesson.duration_seconds ? (
-            <p className="text-xs" style={{ color: "#515d64" }}>
-              {Math.round(lesson.duration_seconds / 60)} min
-            </p>
-          ) : null}
-        </div>
-      </div>
-      {lesson.free_preview && !enrolledAt && (
-        <span
-          className="text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full"
-          style={{ backgroundColor: "#a6eff3", color: "#005b5f" }}
-        >
-          Free preview
-        </span>
+        )}
+      </span>
+      {showPreviewTag && lesson.free_preview && (
+        <span className="shrink-0 rounded-full bg-[#a6eff3] px-2.5 py-0.5 text-[11px] font-bold text-[#005b5f]">Free preview</span>
       )}
+    </>
+  );
+  return openable ? (
+    <Link href={`/learn/${courseId}/${lesson.id}`} className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#f3f9fd]">
+      {content}
     </Link>
+  ) : (
+    <div className="flex items-center gap-3 px-5 py-3.5 opacity-70">{content}</div>
   );
 }

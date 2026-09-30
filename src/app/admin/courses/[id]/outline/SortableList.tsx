@@ -92,11 +92,13 @@ export function DragHandle({ attributes, listeners, label }: DragHandleProps & {
     <button
       type="button"
       aria-label={`Drag to reorder ${label}`}
-      className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-700 px-1 select-none"
+      className="flex cursor-grab select-none items-center rounded text-[#b3b1ae] hover:text-[#1a1a19] active:cursor-grabbing"
       {...attributes}
       {...listeners}
     >
-      ⋮⋮
+      <span className="material-symbols-outlined text-[18px]" aria-hidden>
+        drag_indicator
+      </span>
     </button>
   );
 }

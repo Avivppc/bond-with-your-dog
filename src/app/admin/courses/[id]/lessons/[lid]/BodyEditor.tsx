@@ -1,13 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { saveLessonBody } from "./content-actions";
+import { Card } from "@/app/admin/_components/ui";
 
 interface BodyEditorProps {
-  courseId: string;
-  lessonId: string;
+  /** The lesson form this editor submits with (the page's single Save button). */
+  formId: string;
   initialHtml: string;
 }
 
@@ -24,7 +24,7 @@ function ToolbarButton({ label, active, onClick }: ToolbarButtonProps) {
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
       aria-pressed={active}
-      className={`px-2.5 py-1 rounded-md text-xs font-bold ${active ? "bg-slate-800 text-white" : "hover:bg-slate-100 text-slate-700"}`}
+      className={`rounded-[6px] px-2.5 py-1 text-xs font-semibold ${active ? "bg-[#343332] text-white" : "text-[#3d3c3a] hover:bg-[#f3f3f2]"}`}
     >
       {label}
     </button>
@@ -50,7 +50,7 @@ function Toolbar({ editor }: { editor: Editor }) {
   }
 
   return (
-    <div className="flex flex-wrap gap-1 border-b border-slate-100 p-2">
+    <div className="flex flex-wrap gap-1 border-b border-[#efeeed] p-1.5">
       <ToolbarButton label="B" active={editor.isActive("bold")} onClick={() => editor.chain().focus().toggleBold().run()} />
       <ToolbarButton label="I" active={editor.isActive("italic")} onClick={() => editor.chain().focus().toggleItalic().run()} />
       <ToolbarButton label="H2" active={editor.isActive("heading", { level: 2 })} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} />
@@ -63,65 +63,48 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
 }
 
-/** Rich lesson text (TipTap). Saved HTML is sanitized on the server before storage. */
-export function BodyEditor({ courseId, lessonId, initialHtml }: BodyEditorProps) {
-  const [status, setStatus] = useState<{ kind: "saved" | "error"; message: string } | null>(null);
-  const [dirty, setDirty] = useState(false);
-  const [pending, startTransition] = useTransition();
-  // Bumped on every edit, so typing during a save keeps the editor dirty.
-  const revision = useRef(0);
+/**
+ * Rich lesson text (TipTap). The HTML rides along with the lesson form in a hidden field and is
+ * sanitized on the server when the lesson is saved.
+ */
+export function BodyEditor({ formId, initialHtml }: BodyEditorProps) {
+  const [html, setHtml] = useState(initialHtml);
+  // The server stores a sanitized version whose markup can differ from TipTap's (attribute order,
+  // <br />), so "saved" means: the page came back with new content after we posted ours.
+  const [baseline, setBaseline] = useState({ server: initialHtml, editor: initialHtml });
+  if (baseline.server !== initialHtml) setBaseline({ server: initialHtml, editor: html });
+  const dirty = html !== baseline.editor;
 
   const editor = useEditor({
     extensions: [StarterKit.configure({ heading: { levels: [2, 3] }, link: { openOnClick: false } })],
     content: initialHtml,
     immediatelyRender: false, // required for SSR (Next.js) to avoid hydration mismatches
+    shouldRerenderOnTransaction: true, // keep the toolbar's bold/heading/link states current
     editorProps: {
-      attributes: { class: "lesson-prose min-h-48 px-4 py-3 focus:outline-none", "aria-label": "Lesson text" },
+      attributes: { class: "lesson-prose min-h-56 px-4 py-3 focus:outline-none", "aria-label": "Lesson text" },
     },
-    onUpdate: () => {
-      revision.current += 1;
-      setDirty(true);
-    },
+    onUpdate: ({ editor: e }) => setHtml(e.isEmpty ? "" : e.getHTML()),
   });
 
-  function save() {
-    if (!editor) return;
-    const savedRevision = revision.current;
-    startTransition(async () => {
-      const res = await saveLessonBody({ courseId, lessonId, html: editor.getHTML() });
-      if (res.ok) {
-        if (revision.current === savedRevision) setDirty(false);
-        setStatus({ kind: "saved", message: "Saved." });
-      } else {
-        setStatus({ kind: "error", message: res.error });
-      }
-    });
-  }
+  // Don't lose typed text by navigating away before pressing Save.
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
 
   return (
-    <section className="bg-white rounded-xl p-6 shadow-sm space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-extrabold tracking-tighter">Lesson text</h2>
-        <div className="flex items-center gap-3">
-          {status && (
-            <span role={status.kind === "error" ? "alert" : "status"} className={`text-xs ${status.kind === "error" ? "text-red-700" : "text-emerald-700"}`}>
-              {status.message}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={save}
-            disabled={pending || !dirty}
-            className="bg-orange-700 text-white px-5 py-2 rounded-full font-bold text-sm disabled:opacity-50"
-          >
-            {pending ? "Saving…" : "Save text"}
-          </button>
-        </div>
-      </div>
-      <div className="rounded-lg border border-slate-200">
+    <Card
+      title="Lesson text"
+      description="Notes, instructions or a transcript shown under the video."
+      actions={dirty ? <span className="text-xs font-medium text-amber-700">Unsaved changes</span> : undefined}
+    >
+      <input type="hidden" name="body_html" form={formId} value={html} />
+      <div className="overflow-hidden rounded-[8px] border border-[#d9d8d6] focus-within:border-[#343332]">
         {editor ? <Toolbar editor={editor} /> : null}
         <EditorContent editor={editor} />
       </div>
-    </section>
+    </Card>
   );
 }

@@ -1,73 +1,51 @@
 import Link from "next/link";
-import { createServiceClient } from "@/lib/supabase/admin";
-import { StatsOverview } from "./_components/StatsOverview";
 import { requireStaff } from "@/lib/admin";
+import { canPerform } from "@/lib/staff";
+import { StatsOverview } from "./_components/StatsOverview";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, PageHeader } from "./_components/ui";
+import { CourseTable } from "./_components/CourseTable";
+import { loadAdminCourses } from "./_components/course-stats";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminCoursesPage() {
-  await requireStaff("content");
-  const sb = createServiceClient();
-  const { data: courses } = await sb
-    .from("courses")
-    .select("id, title, level, category, published")
-    .order("created_at", { ascending: false });
+const RECENT_COURSES = 5;
+
+export default async function AdminDashboardPage() {
+  const { user, role } = await requireStaff("content");
+  const courses = await loadAdminCourses(RECENT_COURSES);
+  const canSell = canPerform(role, "sales");
+  const name = user.email?.split("@")[0] ?? "there";
 
   return (
-    <div>
-      <StatsOverview />
-      <header className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-extrabold tracking-tighter">Courses</h1>
-        <Link
-          href="/admin/courses/new"
-          className="bg-orange-700 text-white px-5 py-2.5 rounded-full font-bold text-sm"
-        >
-          + New course
-        </Link>
-      </header>
-
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {!courses || courses.length === 0 ? (
-          <div className="p-10 text-center text-slate-500">No courses yet.</div>
-        ) : (
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200">
-              <tr>
-                <th className="text-left px-6 py-3 font-bold text-slate-700">Title</th>
-                <th className="text-left px-6 py-3 font-bold text-slate-700">Category</th>
-                <th className="text-left px-6 py-3 font-bold text-slate-700">Level</th>
-                <th className="text-left px-6 py-3 font-bold text-slate-700">Status</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {courses.map((c) => (
-                <tr key={c.id} className="border-b border-slate-100 hover:bg-slate-50">
-                  <td className="px-6 py-4 font-bold">{c.title}</td>
-                  <td className="px-6 py-4 text-slate-600">{c.category}</td>
-                  <td className="px-6 py-4 text-slate-600">{c.level}</td>
-                  <td className="px-6 py-4">
-                    <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        c.published
-                          ? "bg-green-100 text-green-800"
-                          : "bg-slate-200 text-slate-700"
-                      }`}
-                    >
-                      {c.published ? "Published" : "Draft"}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link href={`/admin/courses/${c.id}`} className="font-bold text-orange-700">
-                      Edit →
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+    <div className="space-y-6">
+      <PageHeader
+        title={`Welcome back, ${name}`}
+        description="Here's what's happening in your academy."
+        actions={
+          <>
+            {canSell && (
+              <Link href="/admin/students" className={BTN_SECONDARY}>
+                Grant access
+              </Link>
+            )}
+            <Link href="/admin/courses/new" className={BTN_PRIMARY}>
+              <span aria-hidden>+</span> New course
+            </Link>
+          </>
+        }
+      />
+      {canSell && <StatsOverview />}
+      <Card
+        flush
+        title="Courses"
+        actions={
+          <Link href="/admin/courses" className="text-sm font-medium text-[#1a1a19] hover:underline">
+            View all
+          </Link>
+        }
+      >
+        {courses.length === 0 ? <EmptyState title="No courses yet." /> : <CourseTable courses={courses} />}
+      </Card>
     </div>
   );
 }

@@ -32,24 +32,24 @@ async function loadStats(): Promise<Stat[]> {
   const totalUsers = (users.data as unknown as { total?: number } | null)?.total;
 
   return [
-    { label: "Students", value: String(totalUsers ?? "—"), hint: "accounts" },
-    { label: "Active enrollments", value: String(activeEnrollments.count ?? "—"), hint: "course seats" },
-    { label: "Revenue", value: revenue, hint: `last ${WINDOW_DAYS} days` },
-    { label: "Orders", value: String(paidOrders.data?.length ?? 0), hint: `paid, last ${WINDOW_DAYS} days` },
-    { label: "Lessons completed", value: String(completions.count ?? "—"), hint: `last ${WINDOW_DAYS} days` },
-    { label: "New leads", value: String(leads.count ?? "—"), hint: `quiz, last ${WINDOW_DAYS} days` },
+    { label: "Net revenue", value: revenue, hint: `Last ${WINDOW_DAYS} days` },
+    { label: "Orders", value: String(paidOrders.data?.length ?? 0), hint: `Paid, last ${WINDOW_DAYS} days` },
+    { label: "Students", value: String(totalUsers ?? "—"), hint: "Accounts" },
+    { label: "Active enrollments", value: String(activeEnrollments.count ?? "—"), hint: "Course seats" },
+    { label: "Lessons completed", value: String(completions.count ?? "—"), hint: `Last ${WINDOW_DAYS} days` },
+    { label: "New leads", value: String(leads.count ?? "—"), hint: `Quiz, last ${WINDOW_DAYS} days` },
   ];
 }
 
 export async function StatsOverview() {
   const stats = await loadStats();
   return (
-    <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-10">
+    <section className="grid grid-cols-2 gap-3 md:grid-cols-3" aria-label="Key numbers">
       {stats.map((s) => (
-        <div key={s.label} className="bg-white rounded-xl p-4 shadow-sm">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">{s.label}</p>
-          <p className="text-2xl font-extrabold tracking-tight mt-1">{s.value}</p>
-          <p className="text-[11px] text-slate-400">{s.hint}</p>
+        <div key={s.label} className="rounded-[12px] border border-[#e7e6e4] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <p className="text-sm text-[#6c6a69]">{s.label}</p>
+          <p className="mt-1 text-2xl font-semibold tracking-tight text-[#1a1a19]">{s.value}</p>
+          <p className="mt-0.5 text-xs text-[#9b9997]">{s.hint}</p>
         </div>
       ))}
     </section>

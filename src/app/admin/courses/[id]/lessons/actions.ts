@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { LESSON_FILES_BUCKET } from "@/lib/lesson-files";
 import { buildAnswerKey } from "@/lib/quiz/answer-key";
+import { sanitizeLessonHtml } from "@/lib/sanitize";
 import { MAX_ANSWER_ROWS } from "./[lid]/QuestionForm";
 
 const checkbox = z.preprocess((v) => v === "on" || v === true, z.boolean());
@@ -15,7 +16,10 @@ const optionalInt = z.preprocess(
   z.number().int().min(0).nullable().optional()
 );
 
-// Lesson details. Position, module and video are managed in the outline / video panel.
+const MAX_BODY_CHARS = 200_000;
+
+// Lesson details + text, saved together by the editor's single Save button.
+// Video and downloads save instantly from their own panels; order lives in the outline.
 const LessonSchema = z.object({
   course_id: z.string().min(1),
   title: z.string().trim().min(2).max(200),
@@ -27,7 +31,34 @@ const LessonSchema = z.object({
   pass_threshold: z.preprocess((v) => (v === "" || v == null ? undefined : Number(v)), z.number().int().min(0).max(100).default(70)),
   free_preview: checkbox,
   published: checkbox,
+  module_id: z.preprocess((v) => (v === "" ? undefined : v), z.string().uuid().optional()),
+  body_html: z.string().max(MAX_BODY_CHARS, "The lesson text is too long.").optional(),
 });
+
+type LessonInput = z.infer<typeof LessonSchema>;
+
+function lessonUrl(courseId: string, lessonId: string, params: Record<string, string>): string {
+  return `/admin/courses/${courseId}/lessons/${lessonId}?${new URLSearchParams(params).toString()}`;
+}
+
+/** module_id is applied through placementFor (with a new position), never copied as-is. */
+function omitModule<T extends { module_id?: string }>(input: T): Omit<T, "module_id"> {
+  return Object.fromEntries(Object.entries(input).filter(([key]) => key !== "module_id")) as Omit<T, "module_id">;
+}
+
+/** Moving to another module appends the lesson at the end of it; the module must belong to the course. */
+async function placementFor(lessonId: string, input: LessonInput): Promise<{ module_id: string; position: number } | null | "invalid"> {
+  if (!input.module_id) return null;
+  const sb = createServiceClient();
+  const [{ data: current }, { data: target }] = await Promise.all([
+    sb.from("lessons").select("module_id").eq("id", lessonId).single(),
+    sb.from("modules").select("id").eq("id", input.module_id).eq("course_id", input.course_id).maybeSingle(),
+  ]);
+  if (!target) return "invalid";
+  if (current?.module_id === input.module_id) return null;
+  const { data: last } = await sb.from("lessons").select("position").eq("module_id", input.module_id).order("position", { ascending: false }).limit(1);
+  return { module_id: input.module_id, position: (last?.[0]?.position ?? 0) + 1 };
+}
 
 export async function updateLesson(formData: FormData) {
   await requireAdmin();
@@ -40,18 +71,29 @@ export async function updateLesson(formData: FormData) {
         encodeURIComponent(parsed.error.issues[0].message)
     );
   }
-  const sb = createServiceClient();
-  const { error } = await sb.from("lessons").update(parsed.data).eq("id", id);
+  const { body_html: bodyHtml, ...fields } = parsed.data;
+  const details = omitModule(fields);
+  const placement = await placementFor(id, parsed.data);
+  if (placement === "invalid") redirect(lessonUrl(details.course_id, id, { error: "Choose a module from this course." }));
+
+  const { error } = await createServiceClient()
+    .from("lessons")
+    .update({
+      ...details,
+      ...(placement ?? {}),
+      ...(bodyHtml !== undefined ? { body_html: sanitizeLessonHtml(bodyHtml) || null } : {}),
+    })
+    .eq("id", id)
+    .eq("course_id", details.course_id);
   if (error) {
-    redirect(
-      `/admin/courses/${parsed.data.course_id}/lessons/${id}?error=` +
-        encodeURIComponent(error.message)
-    );
+    console.error("updateLesson failed", { id, error: error.message });
+    redirect(lessonUrl(details.course_id, id, { error: "Could not save the lesson." }));
   }
-  revalidatePath(`/admin/courses/${parsed.data.course_id}`);
-  revalidatePath(`/admin/courses/${parsed.data.course_id}/lessons/${id}`);
-  revalidatePath(`/learn/${parsed.data.course_id}`);
-  redirect(`/admin/courses/${parsed.data.course_id}/lessons/${id}?saved=1`);
+  revalidatePath(`/admin/courses/${details.course_id}`);
+  revalidatePath(`/admin/courses/${details.course_id}/lessons/${id}`);
+  revalidatePath(`/learn/${details.course_id}`);
+  revalidatePath(`/learn/${details.course_id}/${id}`);
+  redirect(lessonUrl(details.course_id, id, { saved: "1" }));
 }
 
 export async function deleteLesson(formData: FormData) {

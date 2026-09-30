@@ -5,7 +5,9 @@ import { createClient } from "@/lib/supabase/server";
 import { claimPendingAccess } from "@/lib/access";
 import { isEnrollmentActive } from "@/lib/enrollment";
 import { loadLessonOrder } from "@/lib/course-outline-server";
+import { courseProgress } from "@/lib/course-progress";
 import MemberShell from "@/components/member/MemberShell";
+import { ProgressBar } from "@/components/learn/CourseSidebar";
 import AskCoachFab from "@/components/member/AskCoachFab";
 
 export const dynamic = "force-dynamic";
@@ -88,6 +90,17 @@ export default async function DashboardPage() {
 
   // Aggregate progress percent across all enrollments
   const totalCompleted = progress.filter((p) => p.completed_at).length;
+
+  // Per-course progress for the "My courses" cards (Kajabi library shows a bar on each course).
+  const completedIds = new Set(progress.filter((p) => p.completed_at).map((p) => p.lesson_id));
+  const percentByCourse = new Map(
+    await Promise.all(
+      enrollments.map(async (e) => {
+        const lessons = await loadLessonOrder(supabase, e.course_id);
+        return [e.course_id, courseProgress(lessons, completedIds).percent] as const;
+      })
+    )
+  );
 
   return (
     <MemberShell>
@@ -270,6 +283,13 @@ export default async function DashboardPage() {
                           <span className="material-symbols-outlined" style={{ color: "#8b4b00" }}>
                             arrow_forward
                           </span>
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-[11px] font-semibold" style={{ color: "#515d64" }}>
+                            <span>Progress</span>
+                            <span>{percentByCourse.get(course.id) ?? 0}%</span>
+                          </div>
+                          <ProgressBar percent={percentByCourse.get(course.id) ?? 0} />
                         </div>
                       </Link>
                     );

@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { LESSON_FILES_BUCKET, validateLessonFile } from "@/lib/lesson-files";
 import { deleteLessonFile, finishLessonFileUpload, startLessonFileUpload } from "./content-actions";
+import { BTN_SECONDARY, Card } from "@/app/admin/_components/ui";
 
 export interface LessonFileView {
   id: string;
@@ -78,32 +79,34 @@ export function FilesPanel({ courseId, lessonId, files }: FilesPanelProps) {
   }
 
   return (
-    <section className="bg-white rounded-xl p-6 shadow-sm space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-extrabold tracking-tighter">Downloads</h2>
-        <label className="bg-orange-700 text-white px-5 py-2 rounded-full font-bold text-sm cursor-pointer">
+    <Card
+      title="Downloads"
+      description="PDFs, worksheets, images and audio up to 200 MB. Students download them from the lesson."
+      actions={
+        <label className={`${BTN_SECONDARY} cursor-pointer ${uploading ? "opacity-60" : ""}`}>
+          <span className="material-symbols-outlined text-[18px]" aria-hidden>
+            upload
+          </span>
           {uploading ? `Uploading ${uploading}…` : "Upload files"}
-          <input
-            ref={inputRef}
-            type="file"
-            multiple
-            className="sr-only"
-            disabled={Boolean(uploading)}
-            onChange={(e) => void onPick(e.target.files)}
-          />
+          <input ref={inputRef} type="file" multiple className="sr-only" disabled={Boolean(uploading)} onChange={(e) => void onPick(e.target.files)} />
         </label>
-      </div>
-
+      }
+    >
       {files.length === 0 ? (
-        <p className="text-sm text-slate-500">No files. PDFs, worksheets, images and audio up to 200 MB.</p>
+        <p className="text-sm text-[#6c6a69]">No files yet.</p>
       ) : (
-        <ul className="divide-y divide-slate-100 text-sm">
+        <ul className="divide-y divide-[#efeeed] rounded-[8px] border border-[#efeeed] text-sm">
           {files.map((f) => (
-            <li key={f.id} className={`py-2 flex items-center justify-between gap-4 ${pending ? "opacity-60" : ""}`}>
-              <span className="font-semibold truncate">{f.file_name}</span>
-              <span className="flex items-center gap-4 shrink-0">
-                <span className="text-xs text-slate-500">{formatSize(f.size_bytes)}</span>
-                <button type="button" onClick={() => remove(f.id, f.file_name)} className="text-xs text-red-600 hover:text-red-800">
+            <li key={f.id} className={`flex items-center justify-between gap-4 px-3 py-2.5 ${pending ? "opacity-60" : ""}`}>
+              <span className="flex min-w-0 items-center gap-2">
+                <span className="material-symbols-outlined text-[18px] text-[#6c6a69]" aria-hidden>
+                  description
+                </span>
+                <span className="truncate">{f.file_name}</span>
+              </span>
+              <span className="flex shrink-0 items-center gap-4">
+                <span className="text-xs text-[#6c6a69]">{formatSize(f.size_bytes)}</span>
+                <button type="button" onClick={() => remove(f.id, f.file_name)} className="text-xs text-red-700 hover:underline">
                   Delete
                 </button>
               </span>
@@ -112,10 +115,10 @@ export function FilesPanel({ courseId, lessonId, files }: FilesPanelProps) {
         </ul>
       )}
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p role="alert" className="mt-3 text-sm text-red-700">
           {error}
         </p>
       )}
-    </section>
+    </Card>
   );
 }

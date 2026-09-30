@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { sanitizeLessonHtml } from "@/lib/sanitize";
 import { parseVimeoUrl } from "@/lib/video/vimeo";
 import { fetchVimeoMeta } from "@/lib/video/vimeo-oembed";
 import { LESSON_FILES_BUCKET, lessonFilePath, validateLessonFile } from "@/lib/lesson-files";
@@ -14,7 +13,6 @@ import { LESSON_FILES_BUCKET, lessonFilePath, validateLessonFile } from "@/lib/l
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
 const Ids = z.object({ courseId: z.string().min(1).max(100), lessonId: z.string().uuid() });
-const MAX_BODY_CHARS = 200_000;
 
 function fail(error: string): { ok: false; error: string } {
   return { ok: false, error };
@@ -34,29 +32,6 @@ async function lessonBelongsToCourse(lessonId: string, courseId: string): Promis
     .eq("course_id", courseId)
     .maybeSingle();
   return Boolean(data);
-}
-
-// ── Body ────────────────────────────────────────────────────
-
-const SaveBody = Ids.extend({ html: z.string().max(MAX_BODY_CHARS, "The lesson text is too long.") });
-
-export async function saveLessonBody(input: z.input<typeof SaveBody>): Promise<ActionResult> {
-  await requireStaff("content");
-  const parsed = SaveBody.safeParse(input);
-  if (!parsed.success) return fail(parsed.error.issues[0].message);
-  const { courseId, lessonId, html } = parsed.data;
-
-  const { error } = await createServiceClient()
-    .from("lessons")
-    .update({ body_html: sanitizeLessonHtml(html) || null })
-    .eq("id", lessonId)
-    .eq("course_id", courseId);
-  if (error) {
-    console.error("saveLessonBody failed", { lessonId, error: error.message });
-    return fail("Could not save the lesson text.");
-  }
-  refresh(courseId, lessonId);
-  return { ok: true, data: undefined };
 }
 
 // ── Video ───────────────────────────────────────────────────
