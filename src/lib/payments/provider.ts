@@ -28,6 +28,13 @@ function paddleApiBase(): string {
 }
 
 const TransactionResponse = z.object({ data: z.object({ id: z.string() }) });
+const SubscriptionResponse = z.object({
+  data: z.object({
+    id: z.string(),
+    scheduled_change: z.object({ action: z.string(), effective_at: z.string() }).nullable().optional(),
+    canceled_at: z.string().nullable().optional(),
+  }),
+});
 
 const paddle: PaymentProvider = {
   name: "paddle",
@@ -59,6 +66,24 @@ const paddle: PaymentProvider = {
     url.searchParams.set("order", request.orderId);
     return { url: url.toString(), providerRef: parsed.data.id };
   },
+  async cancelSubscription(subscriptionRef: string) {
+    const apiKey = process.env.PADDLE_API_KEY;
+    if (!apiKey) throw new Error("PADDLE_API_KEY is not configured");
+    const res = await fetch(`${paddleApiBase()}/subscriptions/${encodeURIComponent(subscriptionRef)}/cancel`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${apiKey}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ effective_from: "next_billing_period" }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    const json: unknown = await res.json().catch(() => null);
+    if (!res.ok) {
+      console.error("[paddle] cancel subscription failed", { status: res.status, body: JSON.stringify(json)?.slice(0, 500) });
+      throw new Error("Payment provider rejected the cancellation");
+    }
+    const parsed = SubscriptionResponse.safeParse(json);
+    const data = parsed.success ? parsed.data.data : null;
+    return { effectiveAt: data?.scheduled_change?.effective_at ?? data?.canceled_at ?? null };
+  },
 };
 
 const test: PaymentProvider = {
@@ -67,6 +92,10 @@ const test: PaymentProvider = {
     const url = new URL("/checkout/test-pay", request.successUrl);
     url.searchParams.set("order", request.orderId);
     return { url: url.toString(), providerRef: null };
+  },
+  // Local testing: nothing to call; the caller marks the subscription canceled.
+  async cancelSubscription() {
+    return { effectiveAt: null };
   },
 };
 

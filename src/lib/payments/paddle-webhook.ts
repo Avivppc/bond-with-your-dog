@@ -54,6 +54,8 @@ const Subscription = z.object({
   custom_data: CustomData,
   current_billing_period: Period,
   canceled_at: z.string().nullable().optional(),
+  // A member's "cancel at period end" (Membership page) arrives as a scheduled change.
+  scheduled_change: z.object({ action: z.string(), effective_at: z.string() }).nullable().optional(),
 });
 
 const Adjustment = z.object({
@@ -105,7 +107,7 @@ export function mapPaddleEvent(payload: unknown): BillingEvent {
       orderId: s.custom_data?.order_id ?? null,
       status: s.status as SubscriptionStatus,
       periodEnd: s.current_billing_period?.ends_at ?? null,
-      canceledAt: s.canceled_at ?? null,
+      canceledAt: s.canceled_at ?? (s.scheduled_change?.action === "cancel" ? s.scheduled_change.effective_at : null),
     };
   }
 
