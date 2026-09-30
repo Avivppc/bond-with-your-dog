@@ -101,7 +101,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Search 
     <>
       <TimeZoneSync />
       {header(
-        <AddSessionForm dogId={dog.id} days={dayOptions} lessons={lessonOptions} defaultMinutes={viewer.profile.session_minutes} />,
+        <AddSessionForm key={today /* re-seed the day once the viewer's time zone is known */} dogId={dog.id} days={dayOptions} lessons={lessonOptions} defaultMinutes={viewer.profile.session_minutes} />,
         isThisWeek ? "This week" : monday < mondayOf(today) ? "A past week" : "A week ahead",
       )}
       <div className="stack">

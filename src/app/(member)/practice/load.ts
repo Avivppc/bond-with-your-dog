@@ -54,11 +54,12 @@ export async function canAccessLesson(lessonId: string): Promise<boolean> {
 /** The move this session trains: the one asked for, else the lesson's only move. */
 export async function practiceMove(lessonId: string, slug: string | null): Promise<MoveRow | null> {
   const moves = await loadPublishedMoves();
+  const ofLesson = moves.filter((m) => m.lessonId === lessonId);
   if (slug) {
-    const asked = moves.find((m) => m.slug === slug);
+    // Only a move taught in this lesson can be credited with the session.
+    const asked = ofLesson.find((m) => m.slug === slug);
     if (asked) return asked;
   }
-  const ofLesson = moves.filter((m) => m.lessonId === lessonId);
   return ofLesson.length === 1 ? ofLesson[0] : null;
 }
 

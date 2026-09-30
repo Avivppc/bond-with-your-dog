@@ -94,7 +94,8 @@ export function moveBlock(items: readonly RoutineItem[], index: number, start: n
   const nextLane = Math.min(LANES - 1, Math.max(0, lane));
   const candidate = { ...it, start: nextStart, end: nextStart + length, lane: nextLane };
   if (!fits(items, candidate, index)) return { ok: false, items: [...items], error: "Another move is already there." };
-  return { ok: true, items: sortItems(items.map((x, i) => (i === index ? candidate : x))) };
+  // Order is kept (not re-sorted) so the caller's selection and keys keep pointing at this block.
+  return { ok: true, items: items.map((x, i) => (i === index ? candidate : x)) };
 }
 
 /** Changes a block's end, kept between the minimum length, the next block in its lane and the song's end. */

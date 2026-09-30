@@ -41,6 +41,9 @@ export function usePreview(url: string | null) {
       el.removeEventListener("ended", onStop);
       el.removeEventListener("error", onError);
       audio.current = null;
+      // The "pause" event from el.pause() arrives after the listeners are gone.
+      setPlaying(false);
+      setTime(0);
     };
   }, [url]);
 

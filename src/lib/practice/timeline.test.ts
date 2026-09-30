@@ -56,7 +56,8 @@ describe("timeline placement", () => {
   it("moves blocks within the song and refuses overlaps", () => {
     const items = [item(0, 8), item(10, 18)];
     const moved = moveBlock(items, 0, 30, 0, 40);
-    expect(moved.ok && moved.items.map((i) => i.start)).toEqual([10, 30]);
+    // The moved block keeps its index (selection stays on it); saving sorts.
+    expect(moved.ok && moved.items.map((i) => i.start)).toEqual([30, 10]);
     const clamped = moveBlock(items, 1, 100, 0, 40);
     expect(clamped.items.find((i) => i.end === 40)).toBeDefined();
     expect(moveBlock(items, 0, 12, 0, 40).ok).toBe(false);

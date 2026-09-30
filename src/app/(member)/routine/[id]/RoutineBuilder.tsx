@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, useTransition } from "react";
 import { Ms, Tip } from "@/components/app/ui";
 import type { SkillLevel } from "@/lib/member/viewer";
 import { activeBlockIndex, addBlock, fitToDuration, formatTimecode, LANES, moveBlock, plannedSeconds, removeBlock, resizeBlock, snap, SNAP_SECONDS, type RoutineItem } from "@/lib/practice/timeline";
-import { saveRoutine } from "../actions";
+import { discardMusicUpload, saveRoutine } from "../actions";
 import { BlockControls, type BlockCommand } from "./BlockControls";
 import { MusicPicker, type UploadedMusic } from "./MusicPicker";
 import { SendToRoni } from "./SendToRoni";
@@ -35,21 +35,29 @@ interface Props {
   dogName: string;
 }
 
+/** What "saved" means: the moves, the BPM and which song is attached. */
+function snapshot(items: RoutineItem[], bpm: number | null, music: BuilderRoutine["music"]): string {
+  return JSON.stringify({ items, bpm, music: music?.path ?? null });
+}
+
 const LEVEL_NOTE: Partial<Record<SkillLevel, string>> = { reliable: "Reliable", performance: "Ready" };
 
 export function RoutineBuilder({ routine, musicUrl, palette, names: nameRecord, dogName }: Props) {
   const [items, setItems] = useState(routine.items);
   const [music, setMusic] = useState(routine.music);
   const [bpm, setBpm] = useState<number | null>(routine.bpm);
-  const [saved, setSaved] = useState(() => JSON.stringify({ items: routine.items, bpm: routine.bpm }));
+  const [saved, setSaved] = useState(() => snapshot(routine.items, routine.bpm, routine.music));
+  // The page mints a fresh signed URL on every re-render; keep the first one so playback and the
+  // waveform don't restart after each save.
+  const [savedUrl] = useState(musicUrl);
   const [selected, setSelected] = useState<number | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [local, setLocal] = useState<{ url: string; file: File } | null>(null);
   const [pending, start] = useTransition();
   const names = useMemo(() => new Map(Object.entries(nameRecord)), [nameRecord]);
-  const preview = usePreview(local?.url ?? musicUrl);
+  const preview = usePreview(local?.url ?? savedUrl);
   const duration = music?.durationSeconds ?? 0;
-  const dirty = JSON.stringify({ items, bpm }) !== saved;
+  const dirty = snapshot(items, bpm, music) !== saved;
   const step = bpm ? Math.max(SNAP_SECONDS, snap(60 / bpm)) : SNAP_SECONDS;
   const activeIndex = preview.playing || preview.time > 0 ? activeBlockIndex(items, preview.time) : -1;
 
@@ -69,23 +77,35 @@ export function RoutineBuilder({ routine, musicUrl, palette, names: nameRecord, 
     setMessage(text ? { ok: false, text } : null);
   }
 
-  function persist(next: { items: RoutineItem[]; bpm: number | null; music: BuilderRoutine["music"] }, okText: string) {
+  function persist(next: { items: RoutineItem[]; bpm: number | null; music: BuilderRoutine["music"] }, okText: string, onFail?: () => void) {
     setMessage(null);
     start(async () => {
       const res = await saveRoutine({ id: routine.id, items: next.items, bpm: next.bpm, music: next.music });
-      if (!res.ok) return setMessage({ ok: false, text: res.error });
-      setSaved(JSON.stringify({ items: next.items, bpm: next.bpm }));
+      if (!res.ok) {
+        onFail?.();
+        return setMessage({ ok: false, text: res.error });
+      }
+      setSaved(snapshot(next.items, next.bpm, next.music));
       setMessage({ ok: true, text: okText });
     });
   }
 
   function onUploaded(m: UploadedMusic) {
+    const before = { items, music };
     const nextMusic = { path: m.path, name: m.name, durationSeconds: m.durationSeconds };
     const fitted = fitToDuration(items, m.durationSeconds);
     setLocal({ url: m.localUrl, file: m.file });
     setMusic(nextMusic);
     setItems(fitted);
-    persist({ items: fitted, bpm, music: nextMusic }, fitted.length < items.length ? "Music saved. Moves past the end of the new song were removed." : "Music saved.");
+    setSelected(null);
+    const text = fitted.length < items.length ? "Music saved. Moves past the end of the new song were removed." : "Music saved.";
+    persist({ items: fitted, bpm, music: nextMusic }, text, () => {
+      // Keep the previous song and drop the file that never got attached.
+      setMusic(before.music);
+      setItems(before.items);
+      setLocal(null); // the previous local file URL was already released
+      void discardMusicUpload(m.path);
+    });
   }
 
   function add(moveId: string) {
@@ -168,7 +188,7 @@ export function RoutineBuilder({ routine, musicUrl, palette, names: nameRecord, 
             <span id="bpm-help" className="sr-only">
               Optional. With a BPM, new moves span two bars and nudges move by one beat.
             </span>
-            <Timeline items={items} names={names} duration={duration} bpm={bpm} selected={selected} activeIndex={activeIndex} playhead={preview.playing || preview.time > 0 ? preview.time : null} waveSource={local?.file ?? musicUrl} onSelect={setSelected} onChange={change} />
+            <Timeline items={items} names={names} duration={duration} bpm={bpm} selected={selected} activeIndex={activeIndex} playhead={preview.playing || preview.time > 0 ? preview.time : null} waveSource={local?.file ?? savedUrl} onSelect={setSelected} onChange={change} />
             {selected !== null && items[selected] && <BlockControls item={items[selected]} name={names.get(items[selected].move_id) ?? "Move"} onCommand={command} />}
             <p className="sr-only" aria-live="polite">
               {preview.playing && activeIndex >= 0 ? `Now: ${names.get(items[activeIndex].move_id) ?? "Move"}` : ""}

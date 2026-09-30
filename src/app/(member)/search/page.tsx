@@ -3,6 +3,7 @@ import { requireMember } from "@/lib/member/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { LevelPill, Ms } from "@/components/app/ui";
 import { groupResults, normalizeQuery, resultCount, MAX_QUERY_LENGTH, type SearchGroup, type SearchHit } from "@/lib/practice/search";
+import { viewerTimeZone } from "@/lib/practice/server/zone";
 import { searchFeedback, searchLessons, searchMoves, searchRecordings, suggestionTerms, type MoveHit } from "./load";
 
 export const metadata = { title: "Search · Bonded" };
@@ -117,11 +118,12 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
     );
   }
 
+  const timeZone = await viewerTimeZone();
   const [lessons, moves, feedback, qa] = await Promise.all([
     searchLessons(supabase, viewer.userId, q),
     searchMoves(supabase, viewer.activeDog?.id ?? null, q),
-    searchFeedback(supabase, q),
-    searchRecordings(supabase, q),
+    searchFeedback(supabase, q, timeZone),
+    searchRecordings(supabase, q, timeZone),
   ]);
   const groups = groupResults({ lessons, moves, feedback, qa });
   const count = resultCount(groups);

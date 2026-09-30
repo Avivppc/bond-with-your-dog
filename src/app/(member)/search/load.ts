@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { loadStudentCourse } from "@/lib/student-course-server";
 import { excerpt, ilikePattern, rankLessons, type SearchHit } from "@/lib/practice/search";
 import { formatTimecode } from "@/lib/practice/timeline";
-import { longDateLabel } from "@/lib/practice/dates";
+import { isoDateInZone, longDateLabel } from "@/lib/practice/dates";
 import type { SkillLevel } from "@/lib/member/viewer";
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
@@ -22,13 +22,15 @@ function minutes(seconds: number | null): string | null {
 
 export async function searchLessons(supabase: ServerSupabase, userId: string, q: string): Promise<SearchHit[]> {
   const pattern = ilikePattern(q);
-  const { data, error } = await supabase
-    .from("lessons")
-    .select("id, title, course_id, duration_seconds, thumbnail_url")
-    .or(`title.ilike.${pattern},description.ilike.${pattern}`)
-    .limit(LIMIT * 2);
-  if (error) console.error("[search] lessons failed", error.message);
-  const rows = data ?? [];
+  const columns = "id, title, course_id, duration_seconds, thumbnail_url";
+  // Title matches are fetched on their own so description-only matches can't crowd them out.
+  const [byTitle, byDescription] = await Promise.all([
+    supabase.from("lessons").select(columns).ilike("title", pattern).order("title").limit(LIMIT),
+    supabase.from("lessons").select(columns).ilike("description", pattern).order("title").limit(LIMIT),
+  ]);
+  for (const res of [byTitle, byDescription]) if (res.error) console.error("[search] lessons failed", res.error.message);
+  const seen = new Set<string>();
+  const rows = [...(byTitle.data ?? []), ...(byDescription.data ?? [])].filter((r) => (seen.has(r.id as string) ? false : (seen.add(r.id as string), true)));
   const courseIds = [...new Set(rows.map((r) => r.course_id as string))].slice(0, MAX_COURSES);
   const courses = (await Promise.all(courseIds.map((id) => loadStudentCourse(supabase, id, userId)))).filter((c) => c !== null);
   const byCourse = new Map(courses.map((c) => [c.course.id, c]));
@@ -87,7 +89,7 @@ interface NoteRow {
 }
 
 /** The member's own videos and Roni's notes on them (RLS: own videos only). */
-export async function searchFeedback(supabase: ServerSupabase, q: string): Promise<SearchHit[]> {
+export async function searchFeedback(supabase: ServerSupabase, q: string, timeZone: string): Promise<SearchHit[]> {
   const pattern = ilikePattern(q);
   const [videos, notes] = await Promise.all([
     supabase.from("feedback_videos").select("id, title, note, created_at").or(`title.ilike.${pattern},note.ilike.${pattern}`).order("created_at", { ascending: false }).limit(LIMIT),
@@ -104,14 +106,14 @@ export async function searchFeedback(supabase: ServerSupabase, q: string): Promi
   const videoHits = (videos.data ?? []).map((v) => ({
     id: `video-${v.id}`,
     title: v.title as string,
-    subtitle: `Your video · ${longDateLabel((v.created_at as string).slice(0, 10))}`,
+    subtitle: `Your video · ${longDateLabel(isoDateInZone(new Date(v.created_at as string), timeZone))}`,
     href: `/feedback/${v.id}`,
   }));
   return [...noteHits, ...videoHits].slice(0, LIMIT);
 }
 
 /** Past live Q&As with a recording (RLS: community members). */
-export async function searchRecordings(supabase: ServerSupabase, q: string): Promise<SearchHit[]> {
+export async function searchRecordings(supabase: ServerSupabase, q: string, timeZone: string): Promise<SearchHit[]> {
   const pattern = ilikePattern(q);
   const { data, error } = await supabase
     .from("community_meetups")
@@ -125,7 +127,7 @@ export async function searchRecordings(supabase: ServerSupabase, q: string): Pro
   return (data ?? []).map((m) => ({
     id: m.id as string,
     title: m.title as string,
-    subtitle: [`Live Q&A · ${longDateLabel((m.starts_at as string).slice(0, 10))}`, m.recording_minutes ? `${m.recording_minutes} min recording` : "Recording"].join(" · "),
+    subtitle: [`Live Q&A · ${longDateLabel(isoDateInZone(new Date(m.starts_at as string), timeZone))}`, m.recording_minutes ? `${m.recording_minutes} min recording` : "Recording"].join(" · "),
     href: `/community/meetups/${m.id}`,
   }));
 }

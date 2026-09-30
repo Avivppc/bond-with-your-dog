@@ -6,7 +6,12 @@ import { TZ_COOKIE } from "../zone-cookie";
 /** The viewer's time zone (set by <TimeZoneSync/> in the browser), UTC until it is known. */
 export async function viewerTimeZone(): Promise<string> {
   const value = (await cookies()).get(TZ_COOKIE)?.value ?? "";
-  const decoded = decodeURIComponent(value);
+  let decoded = "";
+  try {
+    decoded = decodeURIComponent(value);
+  } catch {
+    return "UTC"; // malformed cookie
+  }
   return isValidTimeZone(decoded) ? decoded : "UTC";
 }
 

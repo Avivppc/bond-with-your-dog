@@ -8,7 +8,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { memberClient } from "@/lib/practice/server/auth";
 import { dbMessage, fail, ok, type ActionResult } from "@/lib/practice/result";
 import { isOwnMusicPath, MUSIC_TYPES, musicExtension, ROUTINE_MUSIC_BUCKET, routineMusicPath, validateMusicFile } from "@/lib/practice/music";
-import { MAX_ITEMS, MAX_ROUTINE_SECONDS, RoutineItemSchema, sortItems } from "@/lib/practice/timeline";
+import { formatTimecode, MAX_ITEMS, MAX_ROUTINE_SECONDS, RoutineItemSchema, sortItems } from "@/lib/practice/timeline";
 
 const uuid = z.string().uuid();
 const Name = z.string().trim().min(1, "Give your routine a name.").max(80, "Keep the name under 80 characters.");
@@ -78,6 +78,18 @@ export async function startMusicUpload(input: z.input<typeof Upload>): Promise<A
   return ok({ path: data.path, token: data.token, contentType: MUSIC_TYPES[musicExtension(parsed.data.fileName) ?? "mp3"] });
 }
 
+/** Removes an uploaded song that never got attached to a routine (e.g. the save failed). */
+export async function discardMusicUpload(path: string): Promise<ActionResult> {
+  const member = await memberClient();
+  if (!member) return fail("Please sign in again.");
+  if (!isOwnMusicPath(path, member.userId)) return fail("That file isn't yours.");
+  const { count } = await member.supabase.from("routines").select("id", { count: "exact", head: true }).eq("music_path", path);
+  if (count) return ok(undefined); // still in use
+  const { error } = await createServiceClient().storage.from(ROUTINE_MUSIC_BUCKET).remove([path]);
+  if (error) console.error("[routine] discard upload failed", error.message);
+  return ok(undefined);
+}
+
 const Save = z.object({
   id: uuid,
   items: z.array(RoutineItemSchema).max(MAX_ITEMS),
@@ -98,10 +110,17 @@ export async function saveRoutine(input: z.input<typeof Save>): Promise<ActionRe
   const member = await memberClient();
   if (!member) return fail("Please sign in again.");
   if (music && !isOwnMusicPath(music.path, member.userId)) return fail("That music file isn't yours.");
-  if (music && items.some((i) => i.end > music.durationSeconds + 0.5)) return fail("A move runs past the end of the song.");
 
-  const { data: before } = await member.supabase.from("routines").select("music_path").eq("id", id).maybeSingle();
+  const { data: before } = await member.supabase.from("routines").select("music_path, duration_seconds").eq("id", id).maybeSingle();
   if (!before) return fail("Routine not found.");
+  const songLength = music?.durationSeconds ?? (before.duration_seconds as number | null);
+  if (items.length > 0 && !songLength) return fail("Add music before placing moves.");
+  if (songLength && items.some((i) => i.end > songLength + 0.5)) return fail("A move runs past the end of the song.");
+  const moveIds = [...new Set(items.map((i) => i.move_id))];
+  if (moveIds.length) {
+    const { count } = await member.supabase.from("moves").select("id", { count: "exact", head: true }).in("id", moveIds);
+    if ((count ?? 0) < moveIds.length) return fail("One of those moves isn't in the library any more. Remove it and save again.");
+  }
   const patch = {
     items: sortItems(items),
     bpm,
@@ -139,7 +158,7 @@ export async function sendRoutineForFeedback(id: string, note: string): Promise<
   const moveIds = [...new Set(items.data.map((i) => i.move_id))];
   const { data: moves } = await supabase.from("moves").select("id, name").in("id", moveIds);
   const names = new Map((moves ?? []).map((m) => [m.id as string, m.name as string]));
-  const fmt = (s: number) => `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
+  const fmt = formatTimecode;
   const lines = sortItems(items.data).map((i) => `${fmt(i.start)}–${fmt(i.end)}  ${names.get(i.move_id) ?? "Move"}${i.lane ? " (second lane)" : ""}`);
   const body = [
     `Music: ${routine.music_name ?? "none"}${routine.duration_seconds ? ` (${fmt(routine.duration_seconds as number)})` : ""}${routine.bpm ? `, ${routine.bpm} BPM` : ""}`,
