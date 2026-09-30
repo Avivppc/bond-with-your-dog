@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
-import { BTN_PRIMARY, Card, EmptyState, INPUT, PageHeader } from "../_components/ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, INPUT, PageHeader } from "../_components/ui";
 import { CourseTable } from "../_components/CourseTable";
 import { loadAdminCourses } from "../_components/course-stats";
 
@@ -18,9 +18,14 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
       <PageHeader
         title="Courses"
         actions={
-          <Link href="/admin/courses/new" className={BTN_PRIMARY}>
-            <span aria-hidden>+</span> New course
-          </Link>
+          <>
+            <Link href="/admin/courses/import-kajabi" className={BTN_SECONDARY}>
+              Import from Kajabi
+            </Link>
+            <Link href="/admin/courses/new" className={BTN_PRIMARY}>
+              <span aria-hidden>+</span> New course
+            </Link>
+          </>
         }
       />
       <Card flush>
