@@ -15,6 +15,9 @@ const supportLinks = [
   { href: `mailto:${CONTACT_EMAIL}`, label: "Contact Us" },
   { href: "/#faq", label: "FAQ" },
   { href: "/login", label: "Member Login" },
+  { href: "/terms", label: "Terms" },
+  { href: "/refund-policy", label: "Refund Policy" },
+  { href: "/privacy", label: "Privacy" },
 ];
 
 const linkClass =
