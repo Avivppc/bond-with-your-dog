@@ -51,8 +51,11 @@ export default async function LoginPage({
               />
             </label>
             <label className="flex flex-col gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-600">
+              <span className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-600">
                 Password
+                <Link href="/forgot-password" className="normal-case tracking-normal" style={{ color: "#8b4b00" }}>
+                  Forgot password?
+                </Link>
               </span>
               <input
                 name="password"
