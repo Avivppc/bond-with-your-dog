@@ -59,4 +59,9 @@ export interface CheckoutSession {
 export interface PaymentProvider {
   name: ProviderName;
   createCheckout(request: CheckoutRequest): Promise<CheckoutSession>;
+  /**
+   * Stops renewal at the end of the paid period (the member keeps access until then).
+   * Returns when the provider has accepted it; the local row is updated by the caller/webhook.
+   */
+  cancelSubscription(subscriptionRef: string): Promise<{ effectiveAt: string | null }>;
 }

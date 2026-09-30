@@ -11,6 +11,7 @@ const FORMATS = {
   shortDate: { month: "short", day: "numeric" },
   longDate: { month: "long", day: "numeric" },
   monthYear: { month: "long", year: "numeric" },
+  fullDate: { month: "long", day: "numeric", year: "numeric" },
   month: { month: "short" },
   day: { day: "numeric" },
 } satisfies Record<string, Intl.DateTimeFormatOptions>;

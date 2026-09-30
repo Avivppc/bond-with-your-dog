@@ -111,6 +111,22 @@ describe("mapPaddleEvent", () => {
     });
   });
 
+  it("treats a cancellation scheduled for the period end as canceled-at-period-end", () => {
+    const event = mapPaddleEvent({
+      event_id: "evt_4",
+      event_type: "subscription.updated",
+      data: {
+        id: "sub_1",
+        status: "active",
+        custom_data: { order_id: order },
+        current_billing_period: { starts_at: "2026-10-01T00:00:00Z", ends_at: "2026-11-01T00:00:00Z" },
+        canceled_at: null,
+        scheduled_change: { action: "cancel", effective_at: "2026-11-01T00:00:00Z" },
+      },
+    });
+    expect(event).toMatchObject({ kind: "subscription.updated", status: "active", canceledAt: "2026-11-01T00:00:00Z" });
+  });
+
   it("maps approved refunds (with their amount) and ignores pending ones and other events", () => {
     expect(
       mapPaddleEvent({
