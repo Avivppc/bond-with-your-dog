@@ -2,47 +2,16 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { Resend } from "resend";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { issueTeamInviteLink, type TeamRoleName } from "./team-invite-email";
 import { roleChangeError } from "@/lib/team";
 import type { StaffRole } from "@/lib/staff";
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.bonded.dog";
 
 function back(params: Record<string, string>): never {
   redirect(`/admin/team?${new URLSearchParams(params).toString()}`);
-}
-
-/** Tells the invitee how to get in. Skipped (with a warning) when Resend isn't configured. */
-async function sendInviteEmail(email: string, role: string, inviterEmail: string | undefined): Promise<boolean> {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) {
-    console.warn("[team] Resend not configured; invite saved without email", { email });
-    return false;
-  }
-  const loginUrl = `${SITE_URL}/login?next=/admin`;
-  const { error } = await new Resend(apiKey).emails.send({
-    from,
-    to: email,
-    subject: "You've been invited to manage the Bonded academy",
-    text: [
-      `Hi,`,
-      ``,
-      `${inviterEmail ?? "The Bonded team"} invited you to the Bonded admin as ${role === "owner" ? "an owner" : "a content editor"}.`,
-      ``,
-      `1. Open ${loginUrl}`,
-      `2. Sign in — or create an account — using this email address (${email}).`,
-      `3. Confirm your email if asked. You'll land in the admin area.`,
-    ].join("\n"),
-  });
-  if (error) {
-    console.error("[team] invite email failed", { email, error: error.message });
-    return false;
-  }
-  return true;
 }
 
 const ChangeSchema = z.object({ user_id: z.string().uuid(), role: z.enum(["owner", "editor"]) });
@@ -87,8 +56,10 @@ export async function resendInvite(formData: FormData): Promise<void> {
     if (error) console.error("[team] invite lookup failed", { id: id.data, error: error.message });
     back({ error: "That invite is no longer pending." });
   }
-  const emailed = await sendInviteEmail(invite.email, invite.role, user.email);
-  back(emailed ? { ok: `Invite sent again to ${invite.email}.` } : { error: "Email isn't set up yet (Resend). Use “Send invite” above with the same email to get a fresh one-time link to send yourself." });
+  const { data: account } = await createServiceClient().rpc("find_account_by_email", { p_email: invite.email }).maybeSingle<{ user_id: string }>();
+  const issued = await issueTeamInviteLink(invite.email, invite.role as TeamRoleName, Boolean(account), user.email);
+  if (!issued.ok) back({ error: `Could not create a new link: ${issued.reason}` });
+  back(issued.emailed ? { ok: `Invite sent again to ${invite.email}, with a fresh link.` } : { error: "Email isn't set up yet (Resend). Use “Send invite” above with the same email to get a fresh one-time link to send yourself." });
 }
 
 export async function revokeInvite(formData: FormData): Promise<void> {
