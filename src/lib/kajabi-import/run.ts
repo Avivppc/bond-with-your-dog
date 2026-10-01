@@ -102,7 +102,9 @@ async function insertLesson(sb: Service, courseId: string, moduleId: string, l: 
       kind: "video",
       published: l.published,
       body_html: l.bodyHtml ? sanitizeLessonHtml(l.bodyHtml) : null,
-      thumbnail_url: await rehostImage(sb, l.thumbnailUrl),
+      // Kajabi lesson thumbnails were uploaded images there too: keep them as uploads, so a Vimeo
+      // video added later doesn't replace them (the lessons trigger copies this to thumbnail_url).
+      thumbnail_upload_url: await rehostImage(sb, l.thumbnailUrl),
       available_after_days: l.availableAfterDays,
       import_ref: l.ref,
     })
