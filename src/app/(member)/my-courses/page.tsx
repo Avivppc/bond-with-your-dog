@@ -3,6 +3,11 @@ import { requireMember } from "@/lib/member/viewer";
 import { loadMyCourses, type CourseCardData } from "@/lib/member/courses";
 import { STATUS_LABEL } from "@/lib/member/course-status";
 import { Ms, Ring } from "@/components/app/ui";
+import { STAGES } from "@/components/chapters/stages";
+import { loadChapterChoices } from "@/lib/member/chapter-choices-server";
+import { ChapterChoices } from "./ChapterChoices";
+
+const CHAPTER_IDS = new Set(STAGES.map((s) => s.courseId));
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "My Courses" };
@@ -96,19 +101,30 @@ function hrefFor(card: CourseCardData): string {
 
 export default async function MyCoursesPage() {
   const viewer = await requireMember("/my-courses");
-  const { cards, certificates } = await loadMyCourses(viewer.userId);
-  const owned = cards.filter((c) => c.status !== "not_owned").length;
+  const { cards: allCards, certificates } = await loadMyCourses(viewer.userId);
+  const ownedIds = new Set(allCards.filter((c) => c.status !== "not_owned").map((c) => c.id));
+  const owned = ownedIds.size;
+  // The three chapters a member doesn't have yet are shown the way the website presents them.
+  const choices = await loadChapterChoices(ownedIds);
+  const toChoose = STAGES.filter((s) => !ownedIds.has(s.courseId));
+  const cards = allCards.filter((c) => c.status !== "not_owned" || !CHAPTER_IDS.has(c.id));
   const firstUnfinished = cards.find((c) => c.status === "in_progress" || c.status === "not_started");
 
   return (
     <>
       <div className="head-block">
         <span className="eyebrow">Your journey</span>
-        <h1 className="h1">My Courses</h1>
-        <p className="lede">{cards.length > 1 ? `${cards.length} chapters, one partnership. Each builds on the last.` : "Your training, one step at a time."}</p>
+        <h1 className="h1">{owned === 0 ? "Choose where to start" : "My Courses"}</h1>
+        <p className="lede">
+          {owned === 0
+            ? "One journey, three chapters. Each builds on the one before it. Most teams begin with Foundations."
+            : cards.length > 1
+              ? `${cards.length} chapters, one partnership. Each builds on the last.`
+              : "Your training, one step at a time."}
+        </p>
       </div>
 
-      {cards.length === 0 && (
+      {cards.length === 0 && toChoose.length === 0 && (
         <div className="card state-card">
           <div className="big-ic">
             <Ms name="school" />
@@ -148,6 +164,18 @@ export default async function MyCoursesPage() {
             <Ms name="arrow_forward" />
           </span>
         </Link>
+      )}
+
+      {toChoose.length > 0 && (
+        <>
+          {owned > 0 && (
+            <div className="head-block" style={{ marginTop: 24 }}>
+              <span className="eyebrow">Keep going</span>
+              <h2 className="h2">More chapters</h2>
+            </div>
+          )}
+          <ChapterChoices stages={toChoose} choices={choices} />
+        </>
       )}
     </>
   );

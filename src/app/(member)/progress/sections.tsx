@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoonLink } from "@/components/app/SoonLink";
 import { Dots, Ms, Tip } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
 import type { Dog, SkillLevel } from "@/lib/member/viewer";
@@ -72,7 +73,7 @@ export function MovesCard({ rows, total }: { rows: SkillRow[]; total: number }) 
       ) : (
         <div className="list">
           {rows.map((m) => (
-            <Link key={m.id} className="skill-track" href={`/moves?move=${m.slug}`}>
+            <SoonLink key={m.id} className="skill-track" href={`/moves?move=${m.slug}`}>
               {/* eslint-disable-next-line @next/next/no-img-element -- move artwork */}
               <img src={m.image} alt="" />
               <div>
@@ -92,15 +93,15 @@ export function MovesCard({ rows, total }: { rows: SkillRow[]; total: number }) 
                 </div>
                 <span className="faint">{m.level ? LEVEL_LABEL[m.level] : "Not started"}</span>
               </div>
-            </Link>
+            </SoonLink>
           ))}
         </div>
       )}
       {total > rows.length && (
-        <Link className="link" href="/moves">
+        <SoonLink className="link" href="/moves">
           All {total} moves in the library
           <Ms name="arrow_forward" />
-        </Link>
+        </SoonLink>
       )}
     </div>
   );
@@ -119,10 +120,10 @@ export function MilestoneCard({ name, slug, sessions, averageReps }: { name: str
       <span className="faint num">
         {sessions === 0 ? "No sessions logged on this move yet" : `${averageReps} of 10 reps on average · ${sessions} ${sessions === 1 ? "session" : "sessions"}`}
       </span>
-      <Link className="link" href={`/moves?move=${slug}`}>
+      <SoonLink className="link" href={`/moves?move=${slug}`}>
         Mark it Reliable when it&apos;s there
         <Ms name="arrow_forward" />
-      </Link>
+      </SoonLink>
     </div>
   );
 }
@@ -133,10 +134,10 @@ export function NoMilestoneCard() {
       <span className="eyebrow muted">Next milestone</span>
       <b>Pick a move to work on</b>
       <p className="faint">Mark a move as Learning in the Moves Library and it becomes your next milestone.</p>
-      <Link className="link" href="/moves">
+      <SoonLink className="link" href="/moves">
         Open the Moves Library
         <Ms name="arrow_forward" />
-      </Link>
+      </SoonLink>
     </div>
   );
 }

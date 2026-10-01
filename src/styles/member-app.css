@@ -139,6 +139,12 @@
 .member-app .pill { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
 .member-app .pill.learning { background: var(--orange-soft); color: var(--cognac); }
 .member-app .pill.reliable { background: var(--teal-soft); color: var(--teal); }
+/* Sections that aren't open yet (src/lib/member/coming-soon.ts): visible, greyed out, not clickable. */
+.member-app .pill.soon { background: var(--tint-2); color: var(--ink-3); height: 20px; padding: 0 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+.member-app .is-soon { opacity: 0.6; cursor: default; }
+.member-app .is-soon .link, .member-app .is-soon > .ms:last-of-type { display: none; }
+.member-app .nav .nav-soon { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-radius: 999px; color: var(--ink-3); font-weight: 500; cursor: default; white-space: nowrap; }
+.member-app .nav .nav-soon .pill.soon { margin-left: auto; }
 .member-app .pill.perform { background: var(--gold-soft); color: var(--gold-ink); }
 .member-app .pill.neutral { background: var(--tint); color: var(--ink-2); }
 .member-app .pill.danger { background: var(--danger-soft); color: var(--danger); }

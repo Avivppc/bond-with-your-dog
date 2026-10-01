@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoonLink } from "@/components/app/SoonLink";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/member/viewer";
 import { dogSubtitle } from "@/components/app/Topbar";
@@ -105,11 +106,11 @@ export default async function ProfilePage() {
           { href: "/moves", icon: "auto_stories", label: "Moves Library", sub: "Every move with its cue" },
           { href: "/help", icon: "help", label: "Help", sub: "Questions and support" },
         ].map((l) => (
-          <Link key={l.href} className="card tight" href={l.href}>
+          <SoonLink key={l.href} className="card tight" href={l.href}>
             <Ms name={l.icon} color="var(--teal)" />
             <b>{l.label}</b>
             <span className="faint">{l.sub}</span>
-          </Link>
+          </SoonLink>
         ))}
       </div>
       <div className="row" style={{ gap: 20 }}>

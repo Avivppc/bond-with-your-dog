@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoonLink } from "@/components/app/SoonLink";
 import { redirect } from "next/navigation";
 import { dogName, requireMember, type MemberViewer } from "@/lib/member/viewer";
 import { loadHome, type HomeData } from "@/lib/member/home";
@@ -155,7 +156,7 @@ function DayOneHome({ viewer, data, dog, notice }: { viewer: MemberViewer; data:
                 <div className="faint">We&apos;ll guide you step by step</div>
               </div>
             </Link>
-            <Link className="list-row" href="/community">
+            <SoonLink className="list-row" href="/community">
               <span className="num-step" style={{ background: "var(--tint-2)", color: "var(--ink-2)" }}>
                 3
               </span>
@@ -163,7 +164,7 @@ function DayOneHome({ viewer, data, dog, notice }: { viewer: MemberViewer; data:
                 <div className="title">Say hi in the community</div>
                 <div className="faint">Meet the other members{data.whatsappUrl ? " (and the WhatsApp group)" : ""}</div>
               </div>
-            </Link>
+            </SoonLink>
           </div>
         </div>
         <div className="card">
@@ -229,17 +230,19 @@ function NoCourseHome({ viewer, notice, chosen }: { viewer: MemberViewer; notice
           </p>
           <div className="row" style={{ gap: 20 }}>
             {chosen?.offer ? (
-              <Link className="btn btn-primary" href={`/checkout/${chosen.offer.slug}`}>
-                <Ms name="lock_open" />
-                {unlockLabel(chosen.offer)}
-              </Link>
+              <>
+                <Link className="btn btn-primary" href={`/checkout/${chosen.offer.slug}`}>
+                  <Ms name="lock_open" />
+                  {unlockLabel(chosen.offer)}
+                </Link>
+                <ArrowLink href="/my-courses">See all courses</ArrowLink>
+              </>
             ) : (
               <Link className="btn btn-primary" href="/my-courses">
                 <Ms name="school" />
                 Choose your course
               </Link>
             )}
-            <ArrowLink href={chosen?.offer ? "/my-courses" : "/community"}>{chosen?.offer ? "See all courses" : "Visit the community"}</ArrowLink>
           </div>
         </div>
         <div className="media">

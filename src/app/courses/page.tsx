@@ -1,155 +1,11 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import TestimonialCard from "@/components/TestimonialCard";
-import { testimonialById } from "@/lib/testimonials";
 import PlanCtaLink from "@/components/analytics/PlanCtaLink";
-import type { Tier } from "@/lib/quiz/data";
+import { ChapterStage } from "@/components/chapters/ChapterStage";
+import { STAGES } from "@/components/chapters/stages";
 
 export const metadata = { title: "The Bonded Journey" };
-
-interface PerfectFor {
-  icon: string;
-  label: string;
-}
-
-interface Stage {
-  badge: string;
-  badgeBg: string;
-  badgeIcon: string;
-  title: string;
-  body: string;
-  learn: string[];
-  learnColor: string;
-  perfectFor: PerfectFor[];
-  perfectColor: string;
-  outcome: string;
-  outcomeColor: string;
-  outcomeBg: string;
-  /** Id of the student quote shown under the outcome. */
-  testimonialId: string;
-  /** Which chapter this stage sells; reported with the CTA click. */
-  plan: Tier;
-  ctaLabel: string;
-  ctaHref: string;
-  ctaBg: string;
-  img: string;
-  imgAlt: string;
-  /** Tailwind aspect class matching the photo's orientation. */
-  imgAspect: string;
-  sectionBg: string;
-  reverse: boolean;
-}
-
-// Copy per Roni's brief (Sept 2026).
-const stages: Stage[] = [
-  {
-    badge: "Chapter One · Foundations",
-    badgeBg: "bg-primary-container/20 text-primary-dim",
-    badgeIcon: "favorite",
-    title: "Build the foundation everything else grows from.",
-    body: "Foundations is where you and your dog learn how to learn together. You'll build trust, communication and engagement, then turn them into everyday skills, confident movement and your first experiences of dancing as one.",
-    learn: [
-      "A clear shared language",
-      "Engagement & focus",
-      "Calm, practical everyday skills",
-      "Understanding prey drive and how to play with your dog",
-      "Confident movement and body awareness",
-      "Tricks, the idea of sequences and mini dances",
-    ],
-    learnColor: "text-primary",
-    perfectFor: [
-      { icon: "pets", label: "New dogs and new partnerships" },
-      { icon: "diversity_1", label: "Dogs of every age and experience" },
-      { icon: "handshake", label: "Anyone ready to build a stronger bond" },
-    ],
-    perfectColor: "text-secondary",
-    outcome: "A dog who understands you, chooses you and is ready to learn with you.",
-    outcomeColor: "text-primary",
-    outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
-    testimonialId: "jessica",
-    plan: "foundations",
-    ctaLabel: "Start with Foundations",
-    ctaHref: "/chapter/foundations",
-    ctaBg: "bg-primary text-on-primary shadow-lg",
-    img: "/images/photos/borderonis-02.jpg",
-    imgAlt: "Roni sitting on a staircase, her dog resting a paw on her knee",
-    imgAspect: "aspect-[4/5]",
-    sectionBg: "bg-surface-container-low",
-    reverse: false,
-  },
-  {
-    badge: "Chapter Two · Moves",
-    badgeBg: "bg-secondary-container/30 text-secondary-dim",
-    badgeIcon: "directions_run",
-    title: "Discover how much your dog is capable of.",
-    body: "Moves expands the language you built in Foundations. You'll teach your dog a varied movement vocabulary, from expressive and contact tricks to backwards, sideways and jumping skills while building confidence, coordination and understanding.",
-    learn: [
-      "How to break down complex tricks",
-      "Ground, balance and expressive tricks",
-      "Backwards and sideways movement",
-      "Contact tricks performed together",
-      "Confident and carefully prepared jumps",
-    ],
-    learnColor: "text-secondary",
-    perfectFor: [
-      { icon: "school", label: "Teams who completed Bonded: Foundations" },
-      { icon: "explore", label: "Dogs ready to expand their movement vocabulary" },
-      { icon: "music_note", label: "Anyone preparing for the journey into dance" },
-    ],
-    perfectColor: "text-primary",
-    outcome: "A confident dog with a growing vocabulary of movements you can perform together.",
-    outcomeColor: "text-secondary",
-    outcomeBg: "bg-surface-container-low",
-    testimonialId: "mara",
-    plan: "moves",
-    ctaLabel: "Learn the Moves",
-    ctaHref: "/chapter/moves",
-    ctaBg: "bg-secondary text-on-secondary shadow-lg",
-    img: "/images/photos/borderonis-06.jpg",
-    imgAlt: "Border collie standing on a stair rail, nose to nose with Roni",
-    imgAspect: "aspect-[4/3]",
-    sectionBg: "bg-surface-container-lowest",
-    reverse: true,
-  },
-  {
-    badge: "Chapter Three · Let's Dance",
-    badgeBg: "bg-tertiary-container/30 text-tertiary-dim",
-    badgeIcon: "music_note",
-    title: "Turn your movements into a dance.",
-    body: "Let's Dance brings the pieces together. You'll prepare your dog's tricks for performance, develop your own movement and learn how to combine both with flow, expression and music—without losing your dog's confidence or connection.",
-    learn: [
-      "How to prepare tricks for dancing",
-      "Human movement and musical expression",
-      "How to move without distracting your dog",
-      "Distance, independence and delayed reward",
-      "Sequences that flow with the music",
-    ],
-    learnColor: "text-tertiary",
-    perfectFor: [
-      { icon: "school", label: "Teams who completed Bonded: Moves" },
-      { icon: "person", label: "Handlers ready to become part of the movement" },
-      {
-        icon: "celebration",
-        label: "Anyone ready to build their first dance or take their dog dancing to the next level",
-      },
-    ],
-    perfectColor: "text-secondary",
-    outcome: "A dance where you, your dog and the music move as one.",
-    outcomeColor: "text-tertiary",
-    outcomeBg: "bg-surface-container-lowest border border-surface-variant/50",
-    testimonialId: "sanna",
-    plan: "letsDance",
-    ctaLabel: "Build Your Dance",
-    ctaHref: "/chapter/lets-dance",
-    ctaBg: "bg-tertiary text-on-tertiary shadow-lg",
-    img: "/images/photos/borderonis-19.jpg",
-    imgAlt: "Roni in a dance pose with her border collie leaning on her leg",
-    imgAspect: "aspect-[4/3]",
-    sectionBg: "bg-surface-container-low",
-    reverse: false,
-  },
-];
 
 const overviewSteps = [
   { icon: "pets", iconBg: "bg-primary-container", iconColor: "text-on-primary-container", label: "Foundations" },
@@ -178,19 +34,6 @@ const principles = [
     body: "From everyday moments to new challenges, every experience becomes an opportunity to strengthen your bond.",
   },
 ];
-
-function PerfectForList({ items, color }: { items: PerfectFor[]; color: string }) {
-  return (
-    <ul className="space-y-3 font-body text-on-surface-variant">
-      {items.map(({ icon, label }) => (
-        <li key={label} className="flex items-start gap-2">
-          <span className={`material-symbols-outlined ${color} text-xl`}>{icon}</span>
-          {label}
-        </li>
-      ))}
-    </ul>
-  );
-}
 
 export default function CoursesPage() {
   return (
@@ -281,110 +124,23 @@ export default function CoursesPage() {
         </section>
 
         {/* Three Chapter Sections */}
-        {stages.map(
-          ({
-            badge, badgeBg, badgeIcon, title, body, learn, learnColor, perfectFor, perfectColor,
-            outcome, outcomeColor, outcomeBg, testimonialId, plan, ctaLabel, ctaHref, ctaBg, img, imgAlt, imgAspect, sectionBg, reverse,
-          }) => {
-            const testimonial = testimonialById(testimonialId);
-            return (
-            <section key={badge} className="max-w-7xl mx-auto px-6 py-24">
-              <div
-                className={`${sectionBg} rounded-[3rem] p-8 lg:p-16 flex flex-col ${reverse ? "lg:flex-row-reverse" : "lg:flex-row"} items-center gap-16 relative overflow-hidden`}
+        {STAGES.map((stage) => (
+          <ChapterStage
+            key={stage.badge}
+            stage={stage}
+            cta={
+              <PlanCtaLink
+                href={stage.ctaHref}
+                label={stage.ctaLabel}
+                plan={stage.plan}
+                location="courses_stage"
+                className={`${stage.ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2 w-full sm:w-auto`}
               >
-                {!reverse && (
-                  <div className="absolute top-0 right-0 w-96 h-96 bg-secondary-container/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4" />
-                )}
-                {badge.startsWith("Chapter Three") && (
-                  <div className="absolute bottom-0 left-0 w-96 h-96 bg-tertiary-container/20 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
-                )}
-                <div className="lg:w-1/2 relative z-10">
-                  <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full ${badgeBg} font-label text-sm font-bold mb-6`}>
-                    <span
-                      className="material-symbols-outlined text-sm"
-                      style={{ fontVariationSettings: '"FILL" 1' }}
-                    >
-                      {badgeIcon}
-                    </span>
-                    {badge}
-                  </div>
-                  <h2 className="font-display text-4xl lg:text-5xl font-bold text-on-background mb-6">
-                    {title}
-                  </h2>
-                  <p className="font-body text-lg text-on-surface-variant mb-8">{body}</p>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-                    <div>
-                      <h4 className="font-display text-lg font-bold text-on-surface mb-4">
-                        You&apos;ll Learn:
-                      </h4>
-                      <ul className="space-y-3 font-body text-on-surface-variant">
-                        {learn.map((item) => (
-                          <li key={item} className="flex items-start gap-2">
-                            <span className={`material-symbols-outlined ${learnColor} text-xl`}>
-                              check_circle
-                            </span>
-                            {item}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      {/* Desktop: always visible. Mobile: collapsed behind a toggle. */}
-                      <h4 className="hidden md:block font-display text-lg font-bold text-on-surface mb-4">
-                        Perfect For:
-                      </h4>
-                      <details className="group md:hidden">
-                        <summary className="list-none cursor-pointer font-display text-lg font-bold text-on-surface mb-4 flex items-center justify-between">
-                          Perfect For:
-                          <span className="material-symbols-outlined text-xl group-open:rotate-180 transition-transform">
-                            expand_more
-                          </span>
-                        </summary>
-                        <PerfectForList items={perfectFor} color={perfectColor} />
-                      </details>
-                      <div className="hidden md:block">
-                        <PerfectForList items={perfectFor} color={perfectColor} />
-                      </div>
-                    </div>
-                  </div>
-                  <div className={`${outcomeBg} p-6 rounded-2xl shadow-sm mb-8`}>
-                    <p className="font-display font-semibold text-on-surface">
-                      <span className={`${outcomeColor} mr-2`}>Outcome:</span>
-                      {outcome}
-                    </p>
-                  </div>
-                  {testimonial && (
-                    <div className="mb-8">
-                      <TestimonialCard testimonial={testimonial} variant="inline" />
-                    </div>
-                  )}
-                  <PlanCtaLink
-                    href={ctaHref}
-                    label={ctaLabel}
-                    plan={plan}
-                    location="courses_stage"
-                    className={`${ctaBg} font-label text-base font-semibold px-8 py-4 rounded-full hover:scale-105 transition-transform inline-flex items-center justify-center gap-2 w-full sm:w-auto`}
-                  >
-                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                  </PlanCtaLink>
-                </div>
-                <div className="lg:w-1/2 w-full order-first lg:order-none lg:self-center">
-                  <div className={`relative w-full ${imgAspect} max-h-[640px]`}>
-                    {reverse && (
-                      <div className="absolute -inset-4 bg-primary-container/20 rounded-2xl rotate-3 transform scale-105" />
-                    )}
-                    <img
-                      className="absolute inset-0 w-full h-full object-cover object-top rounded-2xl shadow-xl z-10"
-                      alt={imgAlt}
-                      src={img}
-                    />
-                  </div>
-                </div>
-              </div>
-            </section>
-            );
-          }
-        )}
+                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+              </PlanCtaLink>
+            }
+          />
+        ))}
 
         {/* Why It Works */}
         <section className="max-w-7xl mx-auto px-6 py-24 bg-surface rounded-[3rem]">
