@@ -11,8 +11,10 @@ describe("isPayingMember", () => {
     expect(isPayingMember([{ source: "subscription", expires_at: LATER }], NOW)).toBe(true);
   });
 
-  test("free access does not count", () => {
+  test("free access, admin grants and legacy rows do not count", () => {
     expect(isPayingMember([{ source: "free", expires_at: null }], NOW)).toBe(false);
+    expect(isPayingMember([{ source: "grant", expires_at: null }], NOW)).toBe(false);
+    expect(isPayingMember([{ source: "legacy", expires_at: null }], NOW)).toBe(false);
     expect(isPayingMember([], NOW)).toBe(false);
   });
 

@@ -9,18 +9,11 @@ export interface EnrollmentAccess {
 }
 
 /**
- * Which enrollment sources mean the member paid for Bonded.
- * - order, subscription: bought here (Paddle today, PayPlus next).
- * - grant: given by email from /admin/people/add, which is also how Kajabi buyers are migrated,
- *   but staff can grant free access the same way.
- * - legacy: enrollments from before the access rework.
- * - free: free courses and lessons.
+ * Enrollment sources that mean the member paid: bought here (order, subscription).
+ * Not paying: free access, grants from /admin (gifts and staff access) and legacy rows
+ * (there are no earlier paying customers; Bonded starts from zero).
  */
-export const PAID_SOURCES: ReadonlySet<EnrollmentSource> = new Set<EnrollmentSource>([
-  "order",
-  "subscription",
-  // TODO(Aviv): should "grant" and/or "legacy" count as paying? See the note above.
-]);
+export const PAID_SOURCES: ReadonlySet<EnrollmentSource> = new Set<EnrollmentSource>(["order", "subscription"]);
 
 export function isPayingMember(enrollments: readonly EnrollmentAccess[], now: Date): boolean {
   return enrollments.some(
