@@ -2,7 +2,9 @@ import Link from "next/link";
 import type { CommunityContext } from "@/lib/community/context";
 import { ArrowLink, Ms } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
+import { parseStoredChapters } from "@/lib/community/chapters";
 import { QaQuestionForm, StoryForm } from "./HubForms";
+import { RecordingChapters } from "./RecordingChapters";
 
 interface QaSession {
   id: string;
@@ -12,6 +14,7 @@ interface QaSession {
   recording_url: string | null;
   recording_minutes: number | null;
   cover_image_url: string | null;
+  recording_chapters?: unknown;
 }
 
 const RECORDING_IMAGES = ["/app/img/pack.jpg", "/app/img/walk.jpg", "/app/img/serafina.jpg"];
@@ -30,13 +33,15 @@ export async function Hub({ ctx, whatsappUrl, dogName }: { ctx: CommunityContext
       .limit(1),
     ctx.supabase
       .from("community_meetups")
-      .select("id, title, starts_at, duration_minutes, recording_url, recording_minutes, cover_image_url")
+      .select("id, title, starts_at, duration_minutes, recording_url, recording_minutes, cover_image_url, recording_chapters")
       .eq("kind", "live_qa")
       .not("recording_url", "is", null)
       .lt("starts_at", nowIso)
       .order("starts_at", { ascending: false })
       .limit(6),
   ]);
+  if (nextRes.error) console.error("[community] next Q&A load failed", nextRes.error.message);
+  if (pastRes.error) console.error("[community] Q&A recordings load failed", pastRes.error.message);
   const next = (nextRes.data?.[0] ?? null) as QaSession | null;
   const past = (pastRes.data ?? []) as QaSession[];
 
@@ -134,20 +139,23 @@ export async function Hub({ ctx, whatsappUrl, dogName }: { ctx: CommunityContext
           ) : (
             <div className="list">
               {past.map((q, i) => (
-                <a key={q.id} className="list-row" href={q.recording_url!} target="_blank" rel="noopener noreferrer">
-                  <div className="media" style={{ width: 112, aspectRatio: "16/10", borderRadius: 12, flexShrink: 0 }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element -- session cover */}
-                    <img src={q.cover_image_url || RECORDING_IMAGES[i % RECORDING_IMAGES.length]} alt="" />
-                  </div>
-                  <div className="grow">
-                    <div className="title">{q.title}</div>
-                    <div className="faint">
-                      <LocalTime iso={q.starts_at} format="monthYear" />
-                      {q.recording_minutes ? ` · ${q.recording_minutes} min` : ""}
+                <div key={q.id}>
+                  <a className="list-row" href={q.recording_url!} target="_blank" rel="noopener noreferrer">
+                    <div className="media" style={{ width: 112, aspectRatio: "16/10", borderRadius: 12, flexShrink: 0 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element -- session cover */}
+                      <img src={q.cover_image_url || RECORDING_IMAGES[i % RECORDING_IMAGES.length]} alt="" />
                     </div>
-                  </div>
-                  <Ms name="play_circle" color="var(--teal)" />
-                </a>
+                    <div className="grow">
+                      <div className="title">{q.title}</div>
+                      <div className="faint">
+                        <LocalTime iso={q.starts_at} format="monthYear" />
+                        {q.recording_minutes ? ` · ${q.recording_minutes} min` : ""}
+                      </div>
+                    </div>
+                    <Ms name="play_circle" color="var(--teal)" />
+                  </a>
+                  <RecordingChapters recordingUrl={q.recording_url!} chapters={parseStoredChapters(q.recording_chapters)} title={q.title} />
+                </div>
               ))}
             </div>
           )}
