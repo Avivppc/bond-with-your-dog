@@ -159,11 +159,11 @@ export function PathSection({ courses }: { courses: CatalogCourseView[] }) {
     <div className="stack">
       <div className="head-block">
         <span className="eyebrow muted">The path</span>
-        <h2 className="h2">{courses.length === 0 ? "Your path starts with a course" : `${total} ${total === 1 ? "lesson" : "lessons"}, ${countWord(courses.length)} ${unit}`}</h2>
+        <h2 className="h2">{courses.length === 0 ? "Your path starts with a chapter" : `${total} ${total === 1 ? "lesson" : "lessons"}, ${countWord(courses.length)} ${unit}`}</h2>
       </div>
       {courses.length === 0 ? (
         <Link className="btn btn-primary" href="/my-courses" style={{ alignSelf: "flex-start" }}>
-          Go to My Courses
+          Go to My Chapters
         </Link>
       ) : (
         <div className="journey">

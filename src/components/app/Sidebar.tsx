@@ -86,7 +86,7 @@ export function Tabbar() {
         return (
           <Link key={item.href} href={item.href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined}>
             <Ms name={item.icon} />
-            {item.label === "My Courses" ? "Courses" : item.label}
+            {item.label === "My Chapters" ? "Chapters" : item.label}
           </Link>
         );
       })}

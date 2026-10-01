@@ -21,7 +21,7 @@ function detail(lesson: StudentLesson, state: LessonState, isNext: boolean): Rea
         Opens <LocalTime iso={state.unlockAt.toISOString()} format="shortDate" />
       </span>,
     );
-  else if (state.kind === "upgrade") parts.push("In the full course");
+  else if (state.kind === "upgrade") parts.push("In the full chapter");
   else if (isNext) parts.push("Up next");
   return parts.map((p, i) => (
     <span key={i}>

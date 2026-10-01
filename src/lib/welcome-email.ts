@@ -30,7 +30,7 @@ const COLORS = {
 const NEXT_STEPS = [
   { title: "Tell me about your dog", body: "Name, age and anything I should know about their body. It shapes every lesson." },
   { title: "Choose your chapter", body: "Foundations, Moves or Let's Dance. Most teams start with Foundations." },
-  { title: "Keep it short", body: "10–15 minutes a day is all it takes. Short, happy sessions build the bond fastest." },
+  { title: "Keep it short", body: "Short, happy sessions build the bond fastest. Pick the length that suits you both." },
 ] as const;
 
 export function firstNameOf(fullName: string): string {
@@ -72,7 +72,7 @@ function verifyBlockHtml(verifyUrl: string): string {
   return `
           <div style="background:${COLORS.page};border-radius:14px;padding:20px;margin:0 0 28px 0;">
             <div style="font-weight:700;color:${COLORS.ink};font-size:15px;margin-bottom:6px;">One quick thing: confirm your email</div>
-            <div style="color:${COLORS.muted};font-size:14px;line-height:1.5;margin-bottom:14px;">You're already in. Confirming lets us unlock any courses that were bought or gifted to this address.</div>
+            <div style="color:${COLORS.muted};font-size:14px;line-height:1.5;margin-bottom:14px;">You're already in. Confirming lets us unlock any chapters that were bought or gifted to this address.</div>
             ${button(verifyUrl, "Confirm my email", true)}
           </div>`;
 }
@@ -119,7 +119,7 @@ export function welcomeEmail({ to, fullName, baseUrl, verifyUrl }: WelcomeEmailI
     "I'm so happy you're here. Everything we do starts with trust and communication between you and your dog. The tricks and the dancing come when you're both ready.",
     "",
     ...(verifyUrl
-      ? ["One quick thing: confirm your email so we can unlock any courses bought or gifted to this address:", verifyUrl, ""]
+      ? ["One quick thing: confirm your email so we can unlock any chapters bought or gifted to this address:", verifyUrl, ""]
       : []),
     ...NEXT_STEPS.map((step, i) => `${i + 1}. ${step.title}: ${step.body}`),
     "",
@@ -143,7 +143,7 @@ export function confirmEmail(to: string, verifyUrl: string): OutgoingEmail {
       "Here's your link to confirm this email address (it works once):",
       verifyUrl,
       "",
-      "Confirming unlocks any courses bought or gifted to this address.",
+      "Confirming unlocks any chapters bought or gifted to this address.",
       "",
       "Roni & the BONDED team",
     ].join("\n"),

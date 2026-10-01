@@ -77,7 +77,7 @@ export async function loadMembership(supabase: ServerSupabase, userId: string, n
       course_id: e.course_id as string,
       expires_at: (e.expires_at as string | null) ?? null,
       access_level: e.access_level as AccessLevel,
-      title: c.title ?? "Course",
+      title: c.title ?? "Chapter",
       image: c.image ?? null,
       image_alt: c.image_alt ?? null,
     };

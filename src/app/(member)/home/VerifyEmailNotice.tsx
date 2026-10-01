@@ -32,7 +32,7 @@ export function VerifyEmailNotice({ email, expired }: { email: string; expired: 
           <strong>{expired ? "That link has expired." : "Please confirm your email."}</strong>{" "}
           {state === "sent"
             ? `A new link is on its way to ${email}.`
-            : `It unlocks any courses bought or gifted to ${email}. The link is in your welcome email.`}
+            : `It unlocks any chapters bought or gifted to ${email}. The link is in your welcome email.`}
         </span>
         {state === "error" && error && <span>{error}</span>}
         {state !== "sent" && (

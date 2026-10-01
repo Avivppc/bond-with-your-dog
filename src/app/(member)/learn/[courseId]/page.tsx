@@ -85,10 +85,10 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
     <>
       {data.isStaffPreview && (
         <Tip icon="visibility">
-          <b>Preview mode.</b> You&apos;re seeing this course as a team member — every lesson is open to you. <Link href={`/admin/courses/${courseId}`} className="link">Back to admin</Link>
+          <b>Preview mode.</b> You&apos;re seeing this chapter as a team member — every lesson is open to you. <Link href={`/admin/courses/${courseId}`} className="link">Back to admin</Link>
         </Tip>
       )}
-      <Breadcrumbs items={[{ href: "/my-courses", label: "My Courses" }, { label: course.title }]} />
+      <Breadcrumbs items={[{ href: "/my-courses", label: "My Chapters" }, { label: course.title }]} />
       <div className="hero">
         <div className="media" style={{ aspectRatio: "16/11" }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- course cover */}
@@ -142,8 +142,8 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
         <div id="upgrade" className="card" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap" }}>
           <div className="stack" style={{ gap: 4 }}>
             <span className="eyebrow">You have limited access</span>
-            <h2 className="h3">Unlock the full course</h2>
-            <p className="faint">Lessons marked with a lock are part of the full course.</p>
+            <h2 className="h3">Unlock the full chapter</h2>
+            <p className="faint">Lessons marked with a lock are part of the full chapter.</p>
           </div>
           <div className="row">
             {offers.length > 0 ? (

@@ -59,7 +59,7 @@ export default async function PlanPage({ searchParams }: { searchParams: Search 
         <h1 className="h1">
           {which} with {dog?.name ?? "your dog"}
         </h1>
-        <p className="lede">Short and often beats long and rare. Roni recommends 3–5 sessions of 5–10 minutes.</p>
+        <p className="lede">Short and often beats long and rare. Pick the days and session length that suit you and your dog.</p>
       </div>
       {action}
     </div>

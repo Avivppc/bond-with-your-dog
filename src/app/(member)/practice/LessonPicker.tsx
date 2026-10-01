@@ -14,11 +14,11 @@ export function LessonPicker({ courses, lessons, note }: { courses: readonly Cat
         title="No lessons are open for you yet"
         action={
           <Link className="btn btn-primary" href="/my-courses">
-            Go to My Courses
+            Go to My Chapters
           </Link>
         }
       >
-        Practice mode follows your lessons. Once a course is open, pick a lesson here and practice it step by step.
+        Practice mode follows your lessons. Once a chapter is open, pick a lesson here and practice it step by step.
       </StateCard>
     );
   }

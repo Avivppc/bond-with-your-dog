@@ -11,7 +11,7 @@ import { plural } from "@/lib/feedback/format";
 const CHAPTER_IDS = new Set(STAGES.map((s) => s.courseId));
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: "My Courses" };
+export const metadata = { title: "My Chapters" };
 
 const FALLBACK = ["/app/img/hand-touch.jpg", "/app/img/stairs-jump.jpg", "/app/img/agt.jpg"];
 
@@ -115,7 +115,7 @@ export default async function MyCoursesPage() {
     <>
       <div className="head-block">
         <span className="eyebrow">Your journey</span>
-        <h1 className="h1">{owned === 0 ? "Choose where to start" : "My Courses"}</h1>
+        <h1 className="h1">{owned === 0 ? "Choose where to start" : "My Chapters"}</h1>
         <p className="lede">
           {owned === 0
             ? "One journey, three chapters. Each builds on the one before it. Most teams begin with Foundations."
@@ -131,7 +131,7 @@ export default async function MyCoursesPage() {
             <Ms name="school" />
           </div>
           <span className="eyebrow muted">Coming soon</span>
-          <h2 className="h3">Courses are being prepared</h2>
+          <h2 className="h3">Chapters are being prepared</h2>
           <p className="faint">Roni is putting the finishing touches on the lessons. You&apos;ll find them here.</p>
         </div>
       )}

@@ -45,7 +45,7 @@ export default async function CommunityLayout({ children }: { children: React.Re
         </div>
         <span className="eyebrow muted">Community</span>
         <h1 className="h2">Join the Bonded community</h1>
-        <p className="faint">Share your progress, ask Roni&apos;s team, join challenges and the live Q&amp;A. The community comes with our courses.</p>
+        <p className="faint">Share your progress, ask Roni&apos;s team, join challenges and the live Q&amp;A. The community comes with our chapters.</p>
         <div className="row" style={{ justifyContent: "center" }}>
           {offers.map((o) => (
             <Link key={o.slug} href={`/checkout/${o.slug}`} className="btn btn-primary btn-sm">
@@ -53,7 +53,7 @@ export default async function CommunityLayout({ children }: { children: React.Re
             </Link>
           ))}
           <Link href="/my-courses" className="btn btn-ghost btn-sm">
-            See the courses
+            See the chapters
           </Link>
         </div>
       </div>

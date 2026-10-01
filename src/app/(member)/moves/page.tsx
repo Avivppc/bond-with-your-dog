@@ -31,7 +31,7 @@ export default async function MovesPage({ searchParams }: { searchParams: Search
       <div className="head-block">
         <span className="eyebrow">Reference</span>
         <h1 className="h1">Moves Library</h1>
-        <p className="lede">Every move from the course, with its cue, steps{dog ? ` and ${dog.name}'s current level` : ""}.</p>
+        <p className="lede">Every move from your chapters, with its cue, steps{dog ? ` and ${dog.name}'s current level` : ""}.</p>
       </div>
     </div>
   );

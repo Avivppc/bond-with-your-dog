@@ -148,10 +148,10 @@ export function StepCourse({ courses, selectedId, onSelect }: { courses: CourseC
       {courses.length === 0 ? (
         <p className="tip">
           <Ms name="schedule" />
-          <span>The courses are being prepared. You can choose one from My Courses as soon as they open.</span>
+          <span>The chapters are being prepared. You can choose one from My Chapters as soon as they open.</span>
         </p>
       ) : (
-        <div className="stack" role="radiogroup" aria-label="Your course">
+        <div className="stack" role="radiogroup" aria-label="Your chapter">
           {courses.map((c) => {
             const on = c.id === selectedId;
             return (
@@ -206,7 +206,7 @@ export function StepPlan({ dogName, minutes, days, course }: { dogName: string; 
             <img src={first?.image || course.image || "/app/img/roni-kneel.jpg"} alt="" />
           </div>
           <div className="grow">
-            <span className="eyebrow muted">{first ? (first.number === 1 ? "First lesson" : `Lesson ${first.number}`) : "Your course"}</span>
+            <span className="eyebrow muted">{first ? (first.number === 1 ? "First lesson" : `Lesson ${first.number}`) : "Your chapter"}</span>
             <div className="title">{first ? first.title : course.title}</div>
             <div className="faint">{first ? course.title : course.offer ? course.offer.price : "Opening soon"}</div>
           </div>

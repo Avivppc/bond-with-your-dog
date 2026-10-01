@@ -47,7 +47,7 @@ export function DataCard() {
           <div className="stack" style={{ gap: 10 }}>
             <span>
               This can&apos;t be undone. Your dogs, lesson progress, practice history, videos and order history in Bonded are erased,
-              and you lose access to your courses. Paddle, our payment provider, keeps its own receipts as the law requires.
+              and you lose access to your chapters. Paddle, our payment provider, keeps its own receipts as the law requires.
             </span>
             <label className="label" htmlFor="delType">
               Type DELETE to confirm

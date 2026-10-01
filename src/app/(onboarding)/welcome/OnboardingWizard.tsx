@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { finishOnboarding, saveAboutYou, saveChosenCourse, saveDog, savePracticePrefs } from "@/app/(member)/member-actions";
@@ -12,7 +13,7 @@ const STEPS = [
   { label: "Welcome", img: "p-steps", quote: "Every dog dances differently. Tell me about yours.", next: "Let's begin" },
   { label: "Your dog", img: "p-hug", quote: "The bond comes first. Every move grows from it.", next: "Continue" },
   { label: "Your goals", img: "p-up", quote: "Dancing is just play with a shape to it.", next: "Continue" },
-  { label: "Your course", img: "p-steps", quote: "Foundations first. Everything else is built on it.", next: "Build my plan" },
+  { label: "Your chapter", img: "p-steps", quote: "Foundations first. Everything else is built on it.", next: "Build my plan" },
   { label: "Your plan", img: "p-back", quote: "Ten good minutes beat an hour of trying hard.", next: "Go to my home" },
 ] as const;
 
@@ -40,6 +41,8 @@ export function OnboardingWizard({ firstName, initial, courses }: { firstName: s
   const [prefs, setPrefs] = useState({ goals: initial.goals, minutes: initial.sessionMinutes, days: initial.practiceDays });
   const [courseId, setCourseId] = useState(initial.courseId);
   const chosen = courses.find((c) => c.id === courseId) ?? null;
+  // A picked chapter the member doesn't own yet, with an offer to unlock it.
+  const unlockOffer = chosen && !chosen.owned ? chosen.offer : null;
   const s = STEPS[step - 1];
 
   async function saveStep(): Promise<boolean> {
@@ -152,10 +155,15 @@ export function OnboardingWizard({ firstName, initial, courses }: { firstName: s
                   Start Lesson {chosen.firstLesson.number}
                 </button>
               )}
-              {step === LAST_STEP && chosen && !chosen.owned && chosen.offer && (
-                <button type="button" className="btn btn-ghost" onClick={() => next(`/checkout/${chosen.offer!.slug}`)} disabled={pending}>
-                  {unlockLabel(chosen.offer)}
+              {step === LAST_STEP && unlockOffer && (
+                <button type="button" className="btn btn-ghost" onClick={() => next(`/checkout/${unlockOffer.slug}`)} disabled={pending}>
+                  {unlockLabel(unlockOffer)}
                 </button>
+              )}
+              {step === LAST_STEP && !chosen?.firstLesson && !unlockOffer && (
+                <Link className="btn btn-ghost" href="/my-courses" onClick={() => void finishOnboarding()}>
+                  Choose a chapter
+                </Link>
               )}
               <button type="submit" className="btn btn-primary" disabled={pending || (step === 2 && !dog.name.trim()) || (step === 1 && !about.fullName.trim()) || (step === COURSE_STEP && courses.length > 0 && !courseId)}>
                 {pending ? "Saving…" : s.next}

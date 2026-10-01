@@ -27,7 +27,7 @@ function returningLede(data: HomeData, dog: string): string {
     const what = data.lastPractice.moveName ?? data.lastPractice.lessonTitle;
     return `You and ${dog} last practiced${what ? ` ${what}` : ""} on ${day}${data.lastPractice.minutes ? ` for ${data.lastPractice.minutes} min` : ""}. Today you'll carry on with “${next.title}”.`;
   }
-  return next ? `Pick up where you left off: “${next.title}”${lessonLength(data) ? `, ${lessonLength(data)} with Roni` : ""}.` : "Your course is being prepared. Check back soon.";
+  return next ? `Pick up where you left off: “${next.title}”${lessonLength(data) ? `, ${lessonLength(data)} with Roni` : ""}.` : "Your chapter is being prepared. Check back soon.";
 }
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ verified?: string; verify?: string }> }) {

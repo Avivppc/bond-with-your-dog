@@ -95,7 +95,7 @@ function Suggestions({ terms, withMoves }: { terms: string[]; withMoves: boolean
           <Ms name="arrow_forward" />
         </SoonLink>
         <Link className="link" href="/my-courses">
-          Go to My Courses
+          Go to My Chapters
           <Ms name="arrow_forward" />
         </Link>
       </div>

@@ -28,7 +28,7 @@ export function AskForm({ lessonId, courseId }: { lessonId: string; courseId: st
       <textarea id="ask-q" className="input" value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} required placeholder="What would you like to ask Roni?" />
       <div className="between" style={{ alignItems: "center" }}>
         <span className="faint" role="status" style={message && !message.ok ? { color: "var(--danger)" } : undefined}>
-          {message?.text ?? "Everyone in the course can read questions and answers."}
+          {message?.text ?? "Everyone in the chapter can read questions and answers."}
         </span>
         <button className="btn btn-primary btn-sm" type="submit" disabled={pending || body.trim().length < 3}>
           {pending ? "Sending…" : "Send question"}

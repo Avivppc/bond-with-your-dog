@@ -10,12 +10,12 @@ export const FAQ: readonly FaqItem[] = [
   {
     id: "session-length",
     question: "How long should a practice session be?",
-    answer: "Five to ten minutes is ideal. Two short sessions beat one long one. Stop while your dog still wants more. You can set 5, 10 or 15 minutes for your plan when you start.",
+    answer: "It's up to you and your dog. The lessons are short videos, and short sessions work best: stop while your dog still wants more. You can set 5, 10 or 15 minutes for your plan when you start.",
   },
   {
     id: "lessons-open",
     question: "When do new lessons open?",
-    answer: "Some lessons open a few days after you join a course, so each skill has time to settle. A locked lesson shows the day it opens. You can rewatch any open lesson at any time.",
+    answer: "Some lessons open a few days after you join a chapter, so each skill has time to settle. A locked lesson shows the day it opens. You can rewatch any open lesson at any time.",
   },
   {
     id: "two-dogs",
@@ -40,7 +40,7 @@ export const FAQ: readonly FaqItem[] = [
   {
     id: "purchases",
     question: "Where do I manage my purchase?",
-    answer: "Purchases are made right here in Bonded, with Paddle as our secure payment provider. Open Membership & purchases to see your courses, order history and any subscription, and to cancel a subscription.",
+    answer: "Purchases are made right here in Bonded, with Paddle as our secure payment provider. Open Membership & purchases to see your chapters, order history and any subscription, and to cancel a subscription.",
   },
   {
     id: "refunds",
