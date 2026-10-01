@@ -19,8 +19,8 @@ export const TOURS: Tour[] = [
     steps: [
       { target: "home-hero", title: "Your next step", body: "Everything starts here: continue your lesson, or start today's practice with your dog." },
       { target: "week", title: "Your week", body: "The days you picked for practice. Each session you log turns a day teal — open your plan to change days." },
-      { target: "nav-school", title: "My Courses", body: "All your chapters, in order. Each one opens after you finish the one before." },
-      { target: "nav-pets", title: "Practice mode", body: "Guided steps with a timer and a rep counter. Five to ten minutes is plenty." },
+      { target: "nav-school", title: "My Chapters", body: "All your chapters, in order. Each one opens after you finish the one before." },
+      { target: "nav-pets", title: "Practice mode", body: "Guided steps with a timer and a rep counter, at your own pace." },
       { target: "nav-auto_stories", title: "Moves Library", body: "Every move with its cue and a short clip. Mark each one Learning, then Reliable." },
       { target: "ask-roni", title: "Ask Roni", body: "Film 30–90 seconds of a move and Roni replies with notes pinned to moments in your clip." },
       { target: "dog-chip", title: "Your dog", body: "Training more than one dog? Switch here — each keeps their own progress." },
@@ -32,7 +32,7 @@ export const TOURS: Tour[] = [
     matches: (p) => /^\/learn\/[^/]+\/[0-9a-f-]{36}$/i.test(p),
     steps: [
       { target: "player", title: "Watch together", body: "Watch the lesson first — then try it with your dog while it's fresh." },
-      { target: "complete", title: "Mark it complete", body: "When you're done, mark the lesson complete to move along your course." },
+      { target: "complete", title: "Mark it complete", body: "When you're done, mark the lesson complete to move along your chapter." },
       { target: "practice-now", title: "Practice this now", body: "Short guided steps for this lesson, timed for you." },
       { target: "send-video", title: "Get Roni's eyes on it", body: "Stuck on something? Send Roni a short video of this lesson." },
     ],

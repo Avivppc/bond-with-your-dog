@@ -11,7 +11,7 @@ export function ComingSoon({ icon, section, children }: { icon: string; section:
       title="Coming soon"
       action={
         <Link className="btn btn-primary btn-sm" href="/my-courses">
-          Go to My Courses
+          Go to My Chapters
         </Link>
       }
     >

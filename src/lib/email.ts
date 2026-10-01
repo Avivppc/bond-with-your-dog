@@ -68,7 +68,7 @@ export function accessGrantedEmail(to: string, courses: readonly { id: string; t
   const lines = courses.map((c) => `• ${c.title}: ${siteUrl()}/learn/${c.id}`);
   return {
     to,
-    subject: courses.length === 1 ? `You're in: ${courses[0].title}` : "Your Bonded courses are ready",
+    subject: courses.length === 1 ? `You're in: ${courses[0].title}` : "Your Bonded chapters are ready",
     text: [
       "Welcome to Bonded!",
       "",

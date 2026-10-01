@@ -9,7 +9,7 @@ const COPY = {
     icon: "help",
     color: "var(--teal)",
     title: "Ask a question",
-    placeholder: "About your account, a course or a purchase…",
+    placeholder: "About your account, a chapter or a purchase…",
     button: "Send question",
     done: "Thanks. Roni's team will answer here and send you a notification.",
   },

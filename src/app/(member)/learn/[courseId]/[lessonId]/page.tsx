@@ -75,7 +75,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
           </Link>
         </Tip>
       )}
-      <Breadcrumbs items={[{ href: "/my-courses", label: "My Courses" }, { href: `/learn/${courseId}`, label: data.course.title }, { label: `Lesson ${number || ""}` }]} />
+      <Breadcrumbs items={[{ href: "/my-courses", label: "My Chapters" }, { href: `/learn/${courseId}`, label: data.course.title }, { label: `Lesson ${number || ""}` }]} />
       <div className="grid-main">
         <div className="stack-lg">
           {scheduled ? (

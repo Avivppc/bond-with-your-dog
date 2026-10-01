@@ -45,7 +45,7 @@ export function achievementHint(rule: string, ctx: AchievementContext): string {
     case "course_complete":
       return ctx.lessonsLeftInClosestCourse
         ? `${plural(ctx.lessonsLeftInClosestCourse.left, "lesson")} to go in ${ctx.lessonsLeftInClosestCourse.title}`
-        : "Finish every lesson of a course";
+        : "Finish every lesson of a chapter";
     case "first_practice":
       return "Finish a session in Practice mode";
     case "first_feedback":

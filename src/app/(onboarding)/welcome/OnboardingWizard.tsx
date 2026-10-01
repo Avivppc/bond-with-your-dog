@@ -146,7 +146,7 @@ export function OnboardingWizard({ firstName, initial, firstLesson }: { firstNam
               )}
               {step === 4 && !firstLesson && (
                 <Link className="btn btn-ghost" href="/my-courses" onClick={() => void finishOnboarding()}>
-                  Choose a course
+                  Choose a chapter
                 </Link>
               )}
               <button type="submit" className="btn btn-primary" disabled={pending || (step === 2 && !dog.name.trim()) || (step === 1 && !about.fullName.trim())}>

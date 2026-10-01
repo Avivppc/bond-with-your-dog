@@ -75,7 +75,7 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
                   Opens <LocalTime iso={nextState.unlockAt.toISOString()} format="longDate" />. Keep practicing until then.
                 </>
               ) : nextState.kind === "upgrade" ? (
-                "Part of the full course."
+                "Part of the full chapter."
               ) : (
                 "Ready when you are."
               )}

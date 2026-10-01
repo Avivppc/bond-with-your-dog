@@ -11,7 +11,7 @@ import { signup } from "./actions";
 
 export const metadata = {
   title: "Join BONDED",
-  description: "Create your free BONDED account and be the first to know when Bonded: Foundations opens.",
+  description: "Create your free Bonded account and start the journey with your dog.",
 };
 
 const SIGNUP_PHOTO = "/images/photos/borderonis-16.jpg";
@@ -19,9 +19,9 @@ const SIGNUP_TESTIMONIAL_ID = "lili";
 
 const perks = [
   { icon: "lock_open", text: "Free account. No card, no commitment." },
-  { icon: "notifications_active", text: "First to know when Bonded: Foundations opens." },
+  { icon: "pets", text: "Your dog's profile, practice plan and progress in one place." },
   { icon: "explore", text: "A clear starting point: Foundations, Moves or Let's Dance." },
-  { icon: "schedule", text: "10–15 minutes a day is all it takes." },
+  { icon: "schedule", text: "Short video lessons you practice at your own pace." },
 ];
 
 const inputClass =

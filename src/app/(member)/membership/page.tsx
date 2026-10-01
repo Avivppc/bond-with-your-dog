@@ -109,8 +109,8 @@ export default async function MembershipPage() {
         <p className="lede">Purchases happen right here in Bonded, with Paddle as our secure checkout. Your access shows here as soon as payment clears.</p>
       </div>
       {courses.length === 0 && available.length === 0 ? (
-        <StateCard icon="school" eyebrow="No courses yet" title="You don't have a course yet" action={<Link className="btn btn-ghost btn-sm" href="/courses">See the Bonded journey</Link>}>
-          When you join a course it shows up here with your access.
+        <StateCard icon="school" eyebrow="No chapters yet" title="You don't have a chapter yet" action={<Link className="btn btn-ghost btn-sm" href="/courses">See the Bonded journey</Link>}>
+          When you join a chapter it shows up here with your access.
         </StateCard>
       ) : (
         <div className="grid-3">

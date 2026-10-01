@@ -9,7 +9,7 @@ export interface MemberNavItem {
 
 export const MEMBER_NAV: MemberNavItem[] = [
   { href: "/home", label: "Home", icon: "home", match: ["/home", "/notifications"] },
-  { href: "/my-courses", label: "My Courses", icon: "school", match: ["/my-courses", "/learn", "/certificates"] },
+  { href: "/my-courses", label: "My Chapters", icon: "school", match: ["/my-courses", "/learn", "/certificates"] },
   { href: "/practice", label: "Practice", icon: "pets", match: ["/practice", "/plan", "/routine"] },
   { href: "/moves", label: "Moves Library", icon: "auto_stories", match: ["/moves", "/search"] },
   { href: "/feedback", label: "Feedback", icon: "rate_review", match: ["/feedback"] },
