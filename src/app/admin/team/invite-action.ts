@@ -4,8 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { sendEmail, siteUrl, type OutgoingEmail } from "@/lib/email";
-import { createInviteLink, createRecoveryLink } from "../people/_lib/auth-links";
+import { issueTeamInviteLink } from "./team-invite-email";
 
 export interface TeamInviteState {
   status: "idle" | "done" | "error";
@@ -19,24 +18,6 @@ const InviteSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   role: z.enum(["editor", "owner"]),
 });
-
-const ROLE_NAME = { owner: "an owner", editor: "a content editor" } as const;
-
-function staffInviteEmail(to: string, role: "owner" | "editor", link: string, inviter: string | undefined): OutgoingEmail {
-  return {
-    to,
-    subject: "You've been invited to manage the Bonded academy",
-    text: [
-      "Hi,",
-      "",
-      `${inviter ?? "The Bonded team"} invited you to the Bonded admin as ${ROLE_NAME[role]}.`,
-      "",
-      `Choose your password to get in (this link works once): ${link}`,
-      "",
-      `Afterwards, sign in any time at ${siteUrl()}/login with this email address.`,
-    ].join("\n"),
-  };
-}
 
 const fail = (email: string, message: string): TeamInviteState => ({ status: "error", message, link: null, email });
 
@@ -82,12 +63,10 @@ export async function inviteToTeam(_prev: TeamInviteState, formData: FormData): 
     console.error("[team] invite save failed", { email, error: inviteError.message });
     return fail(email, "Could not save the invite.");
   }
-  const created = account ? await createRecoveryLink(email) : await createInviteLink(email);
+  const issued = await issueTeamInviteLink(email, role, Boolean(account), user.email);
   revalidatePath("/admin/team");
-  if (!created.ok) return fail(email, `Invite saved, but ${created.reason.toLowerCase()} Try again in a minute.`);
-
-  const emailed = await sendEmail(staffInviteEmail(email, role, created.link, user.email));
-  return emailed
+  if (!issued.ok) return fail(email, `Invite saved, but ${issued.reason.toLowerCase()} Try again in a minute.`);
+  return issued.emailed
     ? { status: "done", message: `Invite sent to ${email}.`, link: null, email }
-    : { status: "done", message: `Invite saved. Email isn't set up yet, so send ${email} this one-time link yourself:`, link: created.link, email };
+    : { status: "done", message: `Invite saved. Email isn't set up yet, so send ${email} this one-time link yourself:`, link: issued.link, email };
 }

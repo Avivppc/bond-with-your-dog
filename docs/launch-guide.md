@@ -79,6 +79,7 @@ npm run dev -- --port 3100
    - **תבניות המייל (Authentication ← Emails ← Templates),** כדי שהקישור יעבוד גם כשפותחים אותו בטלפון ולא בדפדפן שבו נרשמו:
      - Confirm signup: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/home`
      - Reset password: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+     - עיצוב: במקום הטקסט של Supabase, להדביק בכל תבנית (לשונית Source) את הקובץ המעוצב המתאים: [confirm-signup.html](email-templates/confirm-signup.html) ו-[reset-password.html](email-templates/reset-password.html). הם כבר כוללים את הקישורים שלמעלה.
    - **התחברות עם Google:** הכפתור מופיע ב-`/login` וב-`/signup`. ב-Authentication ← Providers ← Google להדביק Client ID ו-Secret מ-Google Cloud Console (OAuth client מסוג Web, עם Redirect URI של Supabase שמופיע באותו מסך). בלי זה הכפתור מחזיר שגיאה.
 5. **Storage:** הבאקטים `lesson-files` (פרטי, עד 200MB לקובץ), `course-images` (ציבורי), `community-media` (פרטי, תמונות בקהילה עד 10MB), `profile-photos` (ציבורי, 5MB) ו-`routine-music` (פרטי, 20MB) נוצרים אוטומטית במיגרציות. לוודא שהם קיימים.
    - ⚠️ **מגבלת העלאה גלובלית:** ב-Storage → Settings יש "Upload file size limit" שגובר על הגדרת הבאקט. בתוכנית Free היא 50MB לכל היותר. אם יש קבצי הורדה גדולים יותר, צריך תוכנית Pro ולהעלות את המגבלה ל-200MB.

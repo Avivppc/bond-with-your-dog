@@ -10,6 +10,7 @@ import { UrlToast } from "../feedback/_components/Toast";
 import { Greeting } from "./Greeting";
 import { StudioQueue } from "./StudioQueue";
 import { ReviewPanel } from "./ReviewPanel";
+import { capitalizeFirst } from "@/lib/admin-helpers/display";
 
 export const metadata = { title: "Roni's Studio" };
 
@@ -57,7 +58,7 @@ export default async function StudioPage({ searchParams }: { searchParams: Searc
         <div className="head-block">
           <span className="eyebrow">Studio</span>
           <h1 className="h1">
-            <Greeting name={viewer?.firstName ?? "Roni"} />
+            <Greeting name={capitalizeFirst(viewer?.firstName ?? "Roni")} />
           </h1>
         </div>
         <div className="row" style={{ gap: 28, flexWrap: "wrap" }}>

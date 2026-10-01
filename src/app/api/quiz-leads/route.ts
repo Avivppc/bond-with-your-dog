@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
-import { siteUrl } from "@/lib/email";
+import { sendEmail, siteUrl } from "@/lib/email";
 import { TIER_RESULTS } from "@/lib/quiz/data";
 
 /**
@@ -67,9 +66,7 @@ export async function POST(request: Request) {
 
   const baseUrl = siteUrl();
 
-  const resend = new Resend(apiKey);
-  const { error: emailError } = await resend.emails.send({
-    from,
+  const emailed = await sendEmail({
     to: email,
     subject: `${firstName}, here's your BONDED journey: ${result.headline}`,
     text: [
@@ -90,12 +87,13 @@ export async function POST(request: Request) {
       "",
       "Welcome gift: " + result.welcomeOffer,
       "",
-      `Ready to start? ${result.cta.label}: ${baseUrl}${result.cta.href}`,
+      "Ready to start?",
+      "",
+      `${result.cta.label}: ${baseUrl}${result.cta.href}`,
     ].join("\n"),
   });
 
-  if (emailError) {
-    console.error("[quiz-leads] email failed", emailError.message);
+  if (!emailed) {
     return NextResponse.json({ error: "We couldn't email your results. Please try again." }, { status: 502 });
   }
 

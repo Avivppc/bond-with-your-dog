@@ -1,5 +1,6 @@
 import "server-only";
 import { Resend } from "resend";
+import { renderEmailHtml } from "./email-html";
 
 export interface OutgoingEmail {
   to: string;
@@ -20,7 +21,9 @@ export async function sendEmail(email: OutgoingEmail): Promise<boolean> {
     console.warn("[email] Resend not configured; skipped", { to: email.to, subject: email.subject });
     return false;
   }
-  const { error } = await new Resend(apiKey).emails.send({ from, to: email.to, subject: email.subject, text: email.text, html: email.html });
+  // Emails with their own design (the welcome) keep it; the rest get the shared branded wrapper.
+  const html = email.html ?? renderEmailHtml(email, siteUrl());
+  const { error } = await new Resend(apiKey).emails.send({ from, to: email.to, subject: email.subject, text: email.text, html });
   if (error) {
     console.error("[email] send failed", { to: email.to, subject: email.subject, error: error.message });
     return false;
@@ -46,7 +49,7 @@ export async function sendEmailBatch(emails: readonly OutgoingEmail[]): Promise<
   const resend = new Resend(apiKey);
   let sent = 0;
   for (let start = 0; start < emails.length; start += BATCH_LIMIT) {
-    const chunk = emails.slice(start, start + BATCH_LIMIT).map((e) => ({ from, to: e.to, subject: e.subject, text: e.text }));
+    const chunk = emails.slice(start, start + BATCH_LIMIT).map((e) => ({ from, to: e.to, subject: e.subject, text: e.text, html: renderEmailHtml(e, siteUrl()) }));
     try {
       const { error } = await resend.batch.send(chunk);
       if (error) {
