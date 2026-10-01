@@ -61,7 +61,7 @@ export async function loadStudentCourse(supabase: ServerSupabase, courseId: stri
       .select("id, title, description, category, level, image, image_alt, price, paywall_after_module_id, chapter_number, requires_course_id, what_you_need, before_you_start, trailer_url")
       .eq("id", courseId)
       .maybeSingle(),
-    supabase.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
+    supabase.from("modules").select("id, parent_id, title, description, position, published").eq("course_id", courseId),
     supabase
       .from("lessons")
       .select("id, module_id, position, title, published, kind, duration_seconds, free_preview, available_after_days, description, thumbnail_url")
