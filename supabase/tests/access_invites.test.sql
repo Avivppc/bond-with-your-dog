@@ -4,7 +4,12 @@
 insert into auth.users (id, email, email_confirmed_at) values
   ('00000000-0000-0000-0000-0000000000c1', 'Existing@Student.dev', now()),
   ('00000000-0000-0000-0000-0000000000c2', 'late@student.dev', now()),
-  ('00000000-0000-0000-0000-0000000000c3', 'unverified@student.dev', null);
+  ('00000000-0000-0000-0000-0000000000c3', 'unverified@student.dev', null),
+  ('00000000-0000-0000-0000-0000000000c4', 'squatted@student.dev', now());  -- auto-confirmed signup, inbox never proven
+-- Inbox proof (written by the server after an emailed link or Google sign-in).
+insert into public.email_verifications (user_id, email) values
+  ('00000000-0000-0000-0000-0000000000c1', 'existing@student.dev'),
+  ('00000000-0000-0000-0000-0000000000c2', 'late@student.dev');
 
 insert into public.courses (id, title, description, level, category, price, published)
   values ('inv-course', 'Invite course', 'd', 'Beginner', 'Foundations', 49, true);
@@ -18,7 +23,8 @@ select t.ok(public.find_user_id_by_email('nobody@student.dev') is null, 'unknown
 
 insert into public.access_invites (email, offer_id, days_of_access) values
   ('late@student.dev', 'a2000000-0000-0000-0000-000000000001', 30),
-  ('unverified@student.dev', 'a2000000-0000-0000-0000-000000000001', null);
+  ('unverified@student.dev', 'a2000000-0000-0000-0000-000000000001', null),
+  ('squatted@student.dev', 'a2000000-0000-0000-0000-000000000001', null);
 select t.fails_with($$insert into public.access_invites (email, offer_id) values ('LATE@student.dev', 'a2000000-0000-0000-0000-000000000001')$$,
                     '23505', 'one pending invite per email and offer');
 
@@ -29,6 +35,9 @@ select t.denied($$select count(*) from public.access_invites$$, 'access invites 
 
 select t.login('00000000-0000-0000-0000-0000000000c3');
 select t.ok(public.claim_access_invites() = 0, 'unverified email claims nothing');
+
+select t.login('00000000-0000-0000-0000-0000000000c4');
+select t.ok(public.claim_access_invites() = 0, 'instant signup without inbox proof claims nothing');
 
 select t.login('00000000-0000-0000-0000-0000000000c2');
 select t.ok(public.claim_access_invites() = 1, 'verified invitee claims their access');

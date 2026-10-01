@@ -4,6 +4,7 @@ import { safeNext } from "@/lib/auth/safe-next";
 import { MARKETING_CONSENT_COOKIE } from "@/lib/auth/marketing-consent";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
 import { claimReferralCode } from "@/lib/referrals-server";
+import { markEmailVerified } from "@/lib/auth/email-verification";
 
 
 export async function GET(request: NextRequest) {
@@ -20,6 +21,8 @@ export async function GET(request: NextRequest) {
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`);
   }
+  // Every way here proves the inbox: Google (verified address), a confirmation or reset link.
+  await markEmailVerified(data.user);
 
   const response = NextResponse.redirect(`${origin}${next}`);
 

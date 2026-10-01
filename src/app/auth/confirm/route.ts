@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { markEmailVerified } from "@/lib/auth/email-verification";
 
 /**
  * Link types we accept: admin invitations and password resets (Contacts), plus Supabase's own
@@ -25,7 +26,8 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+  if (!error) await markEmailVerified(data.user); // the link arrived in their inbox
   if (error) {
     console.error("[auth/confirm] verify failed", { type, error: error.message });
     const expired = type === "recovery" ? "/forgot-password?error=That+link+has+expired.+Request+a+new+one." : "/login?error=link-expired";
