@@ -3,8 +3,8 @@ import { isNotifPrefKey, readNotifPrefs, withNotifPref } from "./prefs";
 
 describe("readNotifPrefs", () => {
   test("uses the design's defaults when nothing is stored", () => {
-    expect(readNotifPrefs({})).toEqual({ practice_reminders: true, feedback: true, new_lesson: true, live_qa: false });
-    expect(readNotifPrefs(null)).toEqual({ practice_reminders: true, feedback: true, new_lesson: true, live_qa: false });
+    expect(readNotifPrefs({})).toEqual({ practice_reminders: true, feedback: true, new_lesson: true, live_qa: false, reminder_emails: false });
+    expect(readNotifPrefs(null)).toEqual({ practice_reminders: true, feedback: true, new_lesson: true, live_qa: false, reminder_emails: false });
   });
 
   test("reads stored values and older key names", () => {
@@ -13,6 +13,7 @@ describe("readNotifPrefs", () => {
       feedback: false,
       new_lesson: false,
       live_qa: true,
+      reminder_emails: false,
     });
     expect(readNotifPrefs({ live_qa: false, live_sessions: true }).live_qa).toBe(false);
   });

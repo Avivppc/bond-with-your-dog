@@ -5,6 +5,7 @@ export const NOTIF_PREFS = [
   { key: "feedback", label: "Feedback from Roni", hint: "When Roni replies to a video", fallback: true },
   { key: "new_lesson", label: "New lesson opens", hint: "When a new lesson opens in your course", fallback: true },
   { key: "live_qa", label: "Live Q&A reminders", hint: "Before each Live Q&A session", fallback: false },
+  { key: "reminder_emails", label: "Reminders by email", hint: "Practice and Live Q&A reminders also go to your inbox", fallback: false },
 ] as const;
 
 export type NotifPrefKey = (typeof NOTIF_PREFS)[number]["key"];
