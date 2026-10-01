@@ -18,6 +18,13 @@ import { asTab, parsePracticeSteps } from "./lesson-data";
 
 export const dynamic = "force-dynamic";
 
+/** The browser tab shows the lesson's name instead of the marketing site's title. */
+export async function generateMetadata({ params }: { params: Promise<{ lessonId: string }> }) {
+  const { lessonId } = await params;
+  const { data } = await (await createClient()).from("lessons").select("title").eq("id", lessonId).maybeSingle();
+  return { title: (data?.title as string | undefined) ?? "Lesson" };
+}
+
 export default async function LessonPage({ params, searchParams }: { params: Promise<{ courseId: string; lessonId: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { courseId, lessonId } = await params;
   const tab = asTab((await searchParams).tab);
@@ -118,7 +125,9 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
                 Previous
               </Link>
             ) : (
-              <span />
+              <span className="faint" style={{ paddingLeft: 8 }}>
+                Lesson {number} of {data.lessons.length}
+              </span>
             )}
             <div className="row">
               {!scheduled && lesson.kind !== "quiz" && <CompleteLessonButton lessonId={lesson.id} completed={completed} doneHref={`${base}/complete`} />}

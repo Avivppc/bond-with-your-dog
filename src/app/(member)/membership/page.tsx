@@ -11,9 +11,15 @@ export const metadata = { title: "Membership & purchases" };
 
 function CourseMedia({ src, alt }: { src: string | null; alt: string }) {
   return (
-    <div className="media" style={{ aspectRatio: "16/10" }}>
+    <div className="media" style={{ aspectRatio: "16/9" }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- course artwork */}
-      {src && <img src={src} alt={alt} />}
+      {src ? (
+        <img src={src} alt={alt} />
+      ) : (
+        <span className="media-ph" aria-hidden>
+          <Ms name="school" />
+        </span>
+      )}
     </div>
   );
 }

@@ -26,7 +26,7 @@ export default async function DogsPage() {
       <div className="head-block">
         <span className="eyebrow">Your dogs</span>
         <h1 className="h1">{names.length === 0 ? "Add your dog" : names.length <= 3 ? names.join(" & ") : `${names.length} dogs`}</h1>
-        <p className="lede">Each dog keeps their own practice, skills and feedback. Switch anytime from the dog chip at the top.</p>
+        <p className="lede">Each dog keeps their own practice, skills and feedback. Switch anytime by tapping your dog&apos;s name at the top.</p>
       </div>
       <div className="grid-3">
         {viewer.dogs.map((d) => {

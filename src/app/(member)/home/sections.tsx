@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SoonLink } from "@/components/app/SoonLink";
+import { isComingSoon } from "@/lib/member/coming-soon";
 import { ArrowLink, Days, LevelPill, Ms, ProgressLine, formatMinutes } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
 import { TimeAgo } from "@/components/community/bits";
@@ -112,7 +113,7 @@ export function SkillsStrip({ data, dog }: { data: HomeData; dog: string }) {
       </div>
       <div className="skills-strip">
         {data.skills.slice(0, 8).map((s) => (
-          <SoonLink key={s.moveId} className="skill" href={`/moves?move=${s.moveId}`}>
+          <SoonLink key={s.moveId} className="skill" href={`/moves?move=${s.moveId}`} quiet>
             {/* eslint-disable-next-line @next/next/no-img-element -- move image */}
             <img src={s.image || "/app/img/basic-skills.jpg"} alt="" />
             <b>{s.name}</b>
@@ -165,7 +166,7 @@ export function LiveAndLibrary({ data }: { data: HomeData }) {
             <h3 className="h3">Share a win, ask a quick question</h3>
             <p className="faint">Members and Roni&apos;s team, in one place{data.whatsappUrl ? " — plus the WhatsApp group" : ""}.</p>
           </div>
-          <Ms name="arrow_forward" />
+          {!isComingSoon("/community") && <Ms name="arrow_forward" />}
         </SoonLink>
       )}
       {data.movesCount > 0 ? (

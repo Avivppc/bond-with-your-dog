@@ -73,12 +73,12 @@ export function MovesCard({ rows, total }: { rows: SkillRow[]; total: number }) 
       ) : (
         <div className="list">
           {rows.map((m) => (
-            <SoonLink key={m.id} className="skill-track" href={`/moves?move=${m.slug}`}>
+            <SoonLink key={m.id} className="skill-track" href={`/moves?move=${m.slug}`} quiet>
               {/* eslint-disable-next-line @next/next/no-img-element -- move artwork */}
               <img src={m.image} alt="" />
               <div>
                 <b>{m.name}</b>
-                <div className="faint">{m.subtitle}</div>
+                {m.subtitle && <div className="faint">{m.subtitle}</div>}
                 {m.history && (
                   <div className="faint" style={{ color: "var(--ink-2)", fontSize: 12.5 }}>
                     {m.history}

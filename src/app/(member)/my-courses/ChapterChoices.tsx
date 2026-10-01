@@ -25,7 +25,7 @@ function ChoiceButton({ stage, choice }: { stage: Stage; choice: ChapterChoice }
 /** The chapters a member can still choose, as compact cards in the website's style. */
 export function ChapterChoices({ stages, choices }: { stages: readonly Stage[]; choices: ReadonlyMap<string, ChapterChoice> }) {
   return (
-    <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+    <div className={`grid grid-cols-1 gap-5 md:grid-cols-2 ${stages.length > 2 ? "xl:grid-cols-3" : ""}`}>
       {stages.map((stage) => {
         const choice = choices.get(stage.courseId);
         if (!choice) return null;

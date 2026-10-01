@@ -47,8 +47,8 @@ export function OverviewTab({ description, bodyHtml, cues, takeaways, dog }: { d
     return <p className="faint">Watch the lesson together with {dog}, then try it in a short practice session.</p>;
   }
   return (
-    <div className="grid-2">
-      <div className="stack">
+    <div className={takeaways.length > 0 ? "grid-2" : "stack"}>
+      <div className="stack" style={takeaways.length > 0 ? undefined : { maxWidth: "70ch" }}>
         <h3 className="h3">What this lesson is about</h3>
         {description && <p className="muted">{description}</p>}
         {bodyHtml && <LessonContent lessonId="" bodyHtml={bodyHtml} files={[]} />}
