@@ -117,7 +117,8 @@ function captureMessage(distinctId: string, { event, props = {}, dedupeKey, occu
   return {
     distinctId,
     event,
-    properties: { ...props, surface, $source: "server" },
+    // production / preview / development, so test runs can be filtered out like localhost in the browser.
+    properties: { ...props, surface, $source: "server", app_env: process.env.VERCEL_ENV ?? "development" },
     uuid: dedupeKey ? eventUuid(event, dedupeKey) : undefined,
     timestamp: occurredAt ? new Date(occurredAt) : undefined,
     // The request comes from Vercel, so its IP says nothing about the member.

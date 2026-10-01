@@ -92,7 +92,7 @@ describe("analytics-server", () => {
       expect.objectContaining({
         distinctId: "member@example.com",
         event: "lesson_completed",
-        properties: expect.objectContaining({ lesson_position: 3, surface: "app", $source: "server" }),
+        properties: expect.objectContaining({ lesson_position: 3, surface: "app", $source: "server", app_env: "development" }),
         disableGeoip: true,
       }),
     );
