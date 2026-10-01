@@ -9,6 +9,7 @@ import { dogName, requireMember } from "@/lib/member/viewer";
 import { Breadcrumbs, Ms, StateCard, Tip } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
 import LessonPlayer from "./LessonPlayer";
+import { resumePoint } from "@/lib/member/resume";
 import QuizPlayer from "./QuizPlayer";
 import { CompleteLessonButton } from "./CompleteLessonButton";
 import { LessonAside } from "./LessonAside";
@@ -31,13 +32,15 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
   if (!lesson || lesson.course_id !== courseId) notFound();
 
   // Same rule as playback/API: free preview, live content + unexpired enrollment + drip, or staff preview.
-  const [data, { data: canAccess }, videoRes, filesRes, questionsRes] = await Promise.all([
+  const [data, { data: canAccess }, videoRes, filesRes, questionsRes, progressRes] = await Promise.all([
     loadStudentCourse(supabase, courseId, viewer.userId),
     supabase.rpc("can_access_lesson", { p_lesson_id: lessonId }),
     createServiceClient().from("lesson_videos").select("lesson_id").eq("lesson_id", lessonId).maybeSingle(),
     supabase.from("lesson_files").select("id, file_name, size_bytes").eq("lesson_id", lessonId).order("position"),
     supabase.rpc("lesson_questions_for", { p_lesson_id: lessonId }),
+    supabase.from("lesson_progress").select("watch_seconds").eq("user_id", viewer.userId).eq("lesson_id", lessonId).maybeSingle(),
   ]);
+  if (progressRes.error) console.error("[lesson] progress load failed", progressRes.error.message);
   if (!data) notFound();
 
   const state = data.states.get(lessonId);
@@ -85,7 +88,11 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
             <QuizPlayer lessonId={lesson.id} passThreshold={lesson.pass_threshold ?? 70} lessonNumber={number} nextHref={next ? lessonHref(next.id) : `/learn/${courseId}`} />
           ) : (
             <div className="player" data-tour="player">
-              <LessonPlayer lessonId={lesson.id} hasPlayback={Boolean(videoRes.data)} />
+              <LessonPlayer
+                lessonId={lesson.id}
+                hasPlayback={Boolean(videoRes.data)}
+                resumeAt={resumePoint({ watchSeconds: (progressRes.data?.watch_seconds as number | null | undefined) ?? null, completed })}
+              />
             </div>
           )}
 

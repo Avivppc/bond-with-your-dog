@@ -31,6 +31,8 @@ export function PracticeSession({ lesson, dog, moveId, stages, chips, media }: P
   const [completed, setCompleted] = useState<ReadonlySet<number>>(new Set());
   const [reps, setReps] = useState<number[]>(() => stages.map(() => 0));
   const [startedAt, setStartedAt] = useState<number | null>(null);
+  // One id per session: if the save is retried (lost connection, double tap) it's stored once.
+  const [clientId, setClientId] = useState(() => crypto.randomUUID());
   const [now, setNow] = useState(0);
   const [saved, setSaved] = useState<{ summary: Summary; stopped: boolean } | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export function PracticeSession({ lesson, dog, moveId, stages, chips, media }: P
     const summary = summarizeSession(stages, done, reps, startedAt === null ? 0 : (Date.now() - startedAt) / 1000);
     setError(null);
     startTransition(async () => {
-      const res = await savePracticeSession({ lessonId: lesson.id, moveId, dogId: dog.id, practicedOn: localIsoDate(), ...summary });
+      const res = await savePracticeSession({ clientId, lessonId: lesson.id, moveId, dogId: dog.id, practicedOn: localIsoDate(), ...summary });
       if (res.ok) setSaved({ summary, stopped });
       else setError(res.error);
     });
@@ -89,6 +91,7 @@ export function PracticeSession({ lesson, dog, moveId, stages, chips, media }: P
     setReps(stages.map(() => 0));
     setStartedAt(null);
     setSaved(null);
+    setClientId(crypto.randomUUID());
   }
 
   const head = (
