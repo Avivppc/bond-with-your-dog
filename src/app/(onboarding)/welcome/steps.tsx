@@ -4,6 +4,10 @@ import { PhotoDrop } from "@/components/app/PhotoDrop";
 import { Days, Ms, WEEKDAYS, WEEK_ORDER } from "@/components/app/ui";
 import { AGE_GROUPS, GOALS, LIMITATIONS, SESSION_LENGTHS } from "@/lib/member/schemas";
 import type { Goal } from "@/lib/member/viewer";
+import { countWord } from "@/lib/practice/achievements";
+
+/** "Three 10-minute sessions a week". */
+const countTitle = (n: number) => countWord(n).replace(/^./, (c) => c.toUpperCase());
 
 export type AgeGroup = "puppy" | "adult" | "senior";
 export type Limitation = "joints" | "injury" | "other";
@@ -124,7 +128,7 @@ export function StepGoals({ goals, minutes, days, onChange }: { goals: Goal[]; m
         <div className="seg" role="radiogroup" aria-label="Time per session">
           {SESSION_LENGTHS.map((m) => (
             <button key={m} type="button" role="radio" aria-checked={minutes === m} className={minutes === m ? "on" : undefined} onClick={() => onChange({ minutes: m })}>
-              {m === 15 ? "15+ min" : `${m} min`}
+              {`${m} min`}
             </button>
           ))}
         </div>
@@ -150,8 +154,8 @@ export function StepPlan({ dogName, minutes, days, first }: { dogName: string; m
       <span className="eyebrow">Step 4 of 4</span>
       <h1 className="h1">Your plan with {dogName}</h1>
       <p className="lede">
-        {first ? `You'll start with ${first.courseTitle}. ` : "Pick a course and your first lesson will be waiting. "}
-        {count > 0 ? `${count === 1 ? "One" : count} ${minutes}-minute session${count === 1 ? "" : "s"} a week.` : "Pick practice days any time from your plan."}
+        {first ? `You'll start with ${first.courseTitle}. ` : "Pick a chapter and your first lesson will be waiting. "}
+        {count > 0 ? `${countTitle(count)} ${minutes}-minute session${count === 1 ? "" : "s"} a week.` : "Pick practice days any time from your plan."}
       </p>
       <div className="card flat tight">
         <Days days={days.map((d) => ({ weekday: d, planned: true, minutes }))} />

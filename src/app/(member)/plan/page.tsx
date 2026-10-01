@@ -25,7 +25,7 @@ import { WeekStrip } from "./WeekStrip";
 import { MonthCard } from "./MonthCard";
 import { loadPlanData } from "./load";
 
-export const metadata = { title: "Weekly plan · Bonded" };
+export const metadata = { title: "Weekly plan" };
 
 /** How many days ahead "Add a session" offers. */
 const PLAN_DAYS_OFFERED = 14;
@@ -43,7 +43,7 @@ function PlanTip({ sessions, timeZone, dogName }: { sessions: MonthSession[]; ti
   }
   return (
     <Tip icon="insights">
-      Short and often beats long and rare. After a few more sessions you&apos;ll see here what time of day you practise most.
+      Short and often beats long and rare. After a few more sessions you&apos;ll see here what time of day you practice most.
     </Tip>
   );
 }

@@ -40,7 +40,7 @@ function snapshot(items: RoutineItem[], bpm: number | null, music: BuilderRoutin
   return JSON.stringify({ items, bpm, music: music?.path ?? null });
 }
 
-const LEVEL_NOTE: Partial<Record<SkillLevel, string>> = { reliable: "Reliable", performance: "Ready" };
+const LEVEL_NOTE: Partial<Record<SkillLevel, string>> = { reliable: "Reliable", performance: "Performance-ready" };
 
 export function RoutineBuilder({ routine, musicUrl, palette, names: nameRecord, dogName }: Props) {
   const [items, setItems] = useState(routine.items);

@@ -20,7 +20,7 @@ describe("buildWeek", () => {
     sessionMinutes: 10,
   });
 
-  it("starts on Monday and marks practised days and today", () => {
+  it("starts on Monday and marks practiced days and today", () => {
     expect(week.map((d) => d.date)[0]).toBe("2026-09-28");
     expect(week.filter((d) => d.done).map((d) => d.date)).toEqual(["2026-09-28", "2026-09-30", "2026-10-01"]);
     expect(week.find((d) => d.today)?.date).toBe("2026-10-01");

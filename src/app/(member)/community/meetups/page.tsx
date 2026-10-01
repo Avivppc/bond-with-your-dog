@@ -21,7 +21,7 @@ export default async function MeetupsPage({ searchParams }: { searchParams: Prom
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">Meetups</h1>
-          <p className="text-sm text-[#6c6a69]">Live sessions with the coaches and the community.</p>
+          <p className="text-sm text-[#6c6a69]">Live sessions with Roni and the community.</p>
         </div>
         <nav className="inline-flex rounded-full border border-[#e7e6e4] bg-white p-1 text-sm">
           <Link href="/community/meetups" className={`rounded-full px-3 py-1 font-medium ${!past ? "bg-[#1a1a19] text-white" : "text-[#6c6a69]"}`}>

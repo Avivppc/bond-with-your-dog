@@ -82,14 +82,14 @@ select n.id, u.student, n.kind, n.title, n.body, n.href, now() - n.age
   from seed_users u, (values
     ('fee00000-0000-4000-8000-000000000401'::uuid, 'feedback', 'Roni replied to your Spin video', '3 notes and a summary',
      '/feedback/fee00000-0000-4000-8000-000000000101', interval '2 hours'),
-    ('fee00000-0000-4000-8000-000000000403'::uuid, 'support', 'Roni''s team replied', 'How often should we practise?', '/help', interval '12 days')
+    ('fee00000-0000-4000-8000-000000000403'::uuid, 'support', 'Roni''s team replied', 'How often should we practice?', '/help', interval '12 days')
   ) as n(id, kind, title, body, href, age)
 on conflict (id) do nothing;
 
 -- A help request with the team's answer.
 insert into public.support_requests (id, user_id, kind, subject, body, page_url, status, answer, answered_by, answered_at, created_at)
-select 'fee00000-0000-4000-8000-000000000501', student, 'question', 'How often should we practise?',
-       'How often should we practise the spin each week?', '/help', 'answered',
+select 'fee00000-0000-4000-8000-000000000501', student, 'question', 'How often should we practice?',
+       'How often should we practice the spin each week?', '/help', 'answered',
        'Three or four short sessions a week is plenty. Keep each one under ten minutes.', owner,
        now() - interval '12 days', now() - interval '13 days'
   from seed_users

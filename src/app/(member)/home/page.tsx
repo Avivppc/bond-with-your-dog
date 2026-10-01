@@ -17,12 +17,12 @@ function greetingName(viewer: MemberViewer): React.ReactNode {
 function returningLede(data: HomeData, dog: string): string {
   const next = data.next;
   if (data.current && !data.current.progress.next) {
-    return `You've finished every lesson in ${data.current.course.title}. Rewatch a favourite, or keep ${dog}'s moves sharp in practice.`;
+    return `You've finished every lesson in ${data.current.course.title}. Rewatch a favorite, or keep ${dog}'s moves sharp in practice.`;
   }
   if (data.lastPractice && next) {
     const day = WEEKDAYS[new Date(`${data.lastPractice.practicedOn}T12:00:00`).getDay()];
     const what = data.lastPractice.moveName ?? data.lastPractice.lessonTitle;
-    return `You and ${dog} last practised${what ? ` ${what}` : ""} on ${day}${data.lastPractice.minutes ? ` for ${data.lastPractice.minutes} min` : ""}. Today you'll carry on with “${next.title}”.`;
+    return `You and ${dog} last practiced${what ? ` ${what}` : ""} on ${day}${data.lastPractice.minutes ? ` for ${data.lastPractice.minutes} min` : ""}. Today you'll carry on with “${next.title}”.`;
   }
   return next ? `Pick up where you left off: “${next.title}”${lessonLength(data) ? `, ${lessonLength(data)} with Roni` : ""}.` : "Your course is being prepared. Check back soon.";
 }
@@ -198,7 +198,7 @@ function NoCourseHome({ viewer }: { viewer: MemberViewer }) {
           <div className="row" style={{ gap: 20 }}>
             <Link className="btn btn-primary" href="/my-courses">
               <Ms name="school" />
-              Choose your course
+              Choose your chapter
             </Link>
           </div>
         </div>

@@ -6,7 +6,7 @@ import { LocalTime } from "@/components/ui/LocalTime";
 import { parseRoutineItems, formatTimecode } from "@/lib/practice/timeline";
 import { NewRoutineForm } from "./NewRoutineForm";
 
-export const metadata = { title: "Routines · Bonded" };
+export const metadata = { title: "Routines" };
 
 interface RoutineRow {
   id: string;
@@ -47,7 +47,7 @@ export default async function RoutinesPage() {
             </div>
             <div>
               <b>Your first routine</b>
-              <div className="faint">Name it, upload a song (MP3, M4A, WAV, up to 20 MB) and place moves on the timeline.</div>
+              <div className="faint">Name it, upload a song (MP3, M4A, AAC, WAV or OGG, up to 20 MB) and place moves on the timeline.</div>
             </div>
           </div>
           <NewRoutineForm dogId={viewer.activeDog?.id ?? null} />

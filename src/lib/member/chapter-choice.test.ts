@@ -25,7 +25,7 @@ describe("chapterChoice", () => {
   });
 
   it("explains the chapter order", () => {
-    expect(chapterChoice({ ...base, requiresTitle: "Bonded: Foundations" }).note).toBe("Best after Bonded: Foundations");
+    expect(chapterChoice({ ...base, requiresTitle: "Bonded: Foundations" }).note).toBe("Opens after you finish Bonded: Foundations");
     expect(chapterChoice(base).note).toBeUndefined();
   });
 });

@@ -41,7 +41,7 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
       <p className="lede">
         {courseDone
           ? `You and ${dog} finished every lesson of ${data.course.title}.${certRes.data ? " Your certificate is ready." : ""}`
-          : `“${lesson.title}” is done. Practise it a couple of times before moving on — short sessions stick best.`}
+          : `“${lesson.title}” is done. Practice it a couple of times before moving on — short sessions stick best.`}
       </p>
       <div className="grid-3" style={{ width: "100%", maxWidth: 620, textAlign: "left" }}>
         <div className="stat">
@@ -72,7 +72,7 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
             <div className="faint">
               {nextState.kind === "scheduled" ? (
                 <>
-                  Opens <LocalTime iso={nextState.unlockAt.toISOString()} format="longDate" />. Keep practising until then.
+                  Opens <LocalTime iso={nextState.unlockAt.toISOString()} format="longDate" />. Keep practicing until then.
                 </>
               ) : nextState.kind === "upgrade" ? (
                 "Part of the full course."
@@ -100,7 +100,7 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
           </Link>
         )}
         <Link className="btn btn-ghost" href={`/practice?lesson=${lessonId}`}>
-          Practise this lesson
+          Practice this lesson
         </Link>
         <Link className="btn btn-ghost" href={`/feedback/new?lesson=${lessonId}`}>
           Send a video to Roni

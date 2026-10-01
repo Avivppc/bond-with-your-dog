@@ -7,6 +7,7 @@ import { chapterLock } from "@/lib/member/chapter-lock";
 import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { Breadcrumbs, Ms, ProgressLine, Tip, formatMinutes } from "@/components/app/ui";
 import { LessonList } from "./LessonList";
+import { plural } from "@/lib/feedback/format";
 
 export const dynamic = "force-dynamic";
 
@@ -106,7 +107,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
           <p className="lede">{course.description}</p>
           <div className="row faint">
             <Ms name="video_library" size="sm" />
-            {lessons.length} lessons
+            {plural(lessons.length, "lesson")}
             {totalSeconds > 0 && (
               <>
                 <span>·</span>
@@ -198,7 +199,7 @@ export default async function CourseOverviewPage({ params, searchParams }: { par
               </div>
               <div>
                 <b>Certificate of completion</b>
-                <div className="faint">{certRes.data ? "Earned — view and share it" : `Earned with lesson ${lessons.length || ""}`}</div>
+                <div className="faint">{certRes.data ? "Earned — view and share it" : "Earned when you finish every lesson"}</div>
               </div>
             </Link>
           )}

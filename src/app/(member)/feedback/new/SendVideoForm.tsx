@@ -102,7 +102,7 @@ export function SendVideoForm({
         <div className="row">
           <span className="num-step">1</span>
           <label htmlFor="upMove">
-            <b>Which move is this?</b>
+            <b>What&apos;s this video about?</b>
           </label>
         </div>
         <select className="input" id="upMove" value={subject} onChange={(e) => setSubject(e.target.value)} disabled={busy}>

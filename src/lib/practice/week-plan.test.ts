@@ -20,13 +20,13 @@ describe("buildWeek", () => {
     });
 
     expect(week.map((d) => d.date)).toEqual(["2026-09-28", "2026-09-29", "2026-09-30", "2026-10-01", "2026-10-02", "2026-10-03", "2026-10-04"]);
-    // Monday: practised, so the default isn't added on top.
+    // Monday: practiced, so the default isn't added on top.
     expect(week[0].items).toEqual([{ kind: "done", id: "s1", title: "Eye Contact", minutes: 8 }]);
     // Tuesday: not a practice day → rest.
     expect(week[1].isRest).toBe(true);
     // Wednesday: a practice day in the past with nothing logged.
     expect(week[2].items).toEqual([{ kind: "default", title: DEFAULT_SESSION_TITLE, minutes: 10, past: true }]);
-    // Thursday: today, practised even though it isn't a practice day.
+    // Thursday: today, practiced even though it isn't a practice day.
     expect(week[3].isToday).toBe(true);
     expect(week[3].items[0]).toMatchObject({ kind: "done", minutes: 6 });
     // Saturday: the explicit plan replaces the default.

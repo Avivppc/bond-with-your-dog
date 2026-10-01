@@ -53,7 +53,7 @@ function logError(what: string, error: { message: string } | null): void {
   if (error) console.error(`[membership] ${what} load failed`, error.message);
 }
 
-/** Everything on "Courses & purchases", read with the member's own session (RLS). */
+/** Everything on "Membership & purchases", read with the member's own session (RLS). */
 export async function loadMembership(supabase: ServerSupabase, userId: string, now: Date) {
   const [enrollRes, ordersRes, subsRes, offersRes] = await Promise.all([
     supabase.from("enrollments").select("course_id, expires_at, access_level, enrolled_at, courses(title, image, image_alt)").eq("user_id", userId).order("enrolled_at"),

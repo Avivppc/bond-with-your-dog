@@ -21,7 +21,7 @@ export function Topbar({ viewer }: { viewer: MemberViewer }) {
       <form action="/search" role="search" style={{ flex: 1, minWidth: 0 }}>
         <label className="search" htmlFor="q">
           <Ms name="search" size="sm" />
-          <input id="q" name="q" type="search" placeholder="Search lessons, moves..." autoComplete="off" maxLength={80} />
+          <input id="q" name="q" type="search" placeholder="Search lessons and notes…" autoComplete="off" maxLength={80} />
         </label>
       </form>
       <div className="top-right">

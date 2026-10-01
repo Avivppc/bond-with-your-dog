@@ -9,6 +9,7 @@ import { savePracticeSession } from "./actions";
 import { PracticeTimer } from "./PracticeTimer";
 import { SessionChecklist } from "./SessionChecklist";
 import { SessionSummary } from "./SessionSummary";
+import { plural } from "@/lib/feedback/format";
 
 export interface PracticeSessionProps {
   lesson: { id: string; title: string; href: string; eyebrow: string };
@@ -61,7 +62,7 @@ export function PracticeSession({ lesson, dog, moveId, stages, chips, media }: P
     markStarted();
     const next = Math.min(MAX_REPS_PER_STAGE, reps[current] + 1);
     setReps((prev) => prev.map((r, i) => (i === current ? Math.min(MAX_REPS_PER_STAGE, r + 1) : r)));
-    if (stage.reps && next === stage.reps) setAnnounce(`${next} reps. Take a short break.`);
+    if (stage.reps && next === stage.reps) setAnnounce(`${plural(next, "rep")}. Take a short break.`);
   }
 
   function save(done: ReadonlySet<number>, stopped: boolean) {

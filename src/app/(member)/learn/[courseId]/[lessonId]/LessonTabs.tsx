@@ -4,6 +4,7 @@ import { TimeAgo } from "@/components/community/bits";
 import { LessonContent } from "./LessonContent";
 import { AskForm } from "./AskForm";
 import type { LessonTab, PracticeStep } from "./lesson-data";
+import { plural } from "@/lib/feedback/format";
 
 export interface QuestionRow {
   id: string;
@@ -82,7 +83,7 @@ export function PracticeTab({ steps, lessonId, minutes }: { steps: PracticeStep[
       <Tip icon="pets">
         Roni hasn&apos;t added guided steps to this lesson yet. You can still log a free practice session.{" "}
         <Link className="link" href={`/practice?lesson=${lessonId}`}>
-          Practise now
+          Practice now
         </Link>
       </Tip>
     );
@@ -97,7 +98,7 @@ export function PracticeTab({ steps, lessonId, minutes }: { steps: PracticeStep[
               <div className="title">{s.title}</div>
               {s.body && <div className="faint">{s.body}</div>}
             </div>
-            <span className="faint">{[s.seconds ? `${Math.round(s.seconds / 60) || 1} min` : null, s.reps ? `${s.reps} reps` : null].filter(Boolean).join(" · ")}</span>
+            <span className="faint">{[s.seconds ? `${Math.round(s.seconds / 60) || 1} min` : null, s.reps ? plural(s.reps, "rep") : null].filter(Boolean).join(" · ")}</span>
           </div>
         ))}
       </div>
@@ -120,7 +121,7 @@ export function QuestionsTab({ questions, lessonId, courseId }: { questions: Que
   return (
     <div className="grid-main">
       <div className="stack">
-        {questions.length === 0 && <p className="faint">No questions yet. Ask the first one — Roni&apos;s team answers here.</p>}
+        {questions.length === 0 && <p className="faint">No questions yet. Ask the first one — Roni answers here.</p>}
         {questions.map((q) => (
           <div key={q.id} className="card tight">
             <div className="between" style={{ alignItems: "center" }}>

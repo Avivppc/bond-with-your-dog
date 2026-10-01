@@ -22,7 +22,7 @@ export default async function SettingsPage() {
     <>
       <div className="head-block">
         <span className="eyebrow">Settings</span>
-        <h1 className="h1">Account &amp; privacy</h1>
+        <h1 className="h1">Settings &amp; privacy</h1>
       </div>
       <div className="grid-2">
         <div className="card">

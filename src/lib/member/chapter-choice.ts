@@ -23,7 +23,7 @@ export interface ChapterChoice {
 }
 
 export function chapterChoice(input: ChapterChoiceInput): ChapterChoice {
-  const note = input.requiresTitle ? { note: `Best after ${input.requiresTitle}` } : {};
+  const note = input.requiresTitle ? { note: `Opens after you finish ${input.requiresTitle}` } : {};
   if (input.owned) return { kind: "owned", href: `/learn/${input.courseId}`, label: "Continue", ...note };
   if (!input.published) return { kind: "soon", href: null, label: "Opening soon", ...note };
   if (input.offer) return { kind: "buy", href: `/checkout/${input.offer.slug}`, label: `${input.ctaLabel} · ${input.offer.price}`, ...note };

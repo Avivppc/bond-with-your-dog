@@ -10,7 +10,7 @@ import { fail, ok, type ActionResult } from "@/lib/member/result";
 
 const MESSAGES: Record<string, string> = {
   "42501": "The Q&A is for community members.",
-  "22023": "That Q&A isn't taking questions any more.",
+  "22023": "That Q&A isn't taking questions anymore.",
   "54000": "You've sent the most questions allowed for this session.",
 };
 

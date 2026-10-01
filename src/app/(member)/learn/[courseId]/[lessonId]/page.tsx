@@ -81,7 +81,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
           {scheduled ? (
             <StateCard icon="lock_clock" tone="orange" eyebrow="Locked lesson" title={`${lesson.title} opens soon`}>
               <>
-                Opens <LocalTime iso={scheduled.unlockAt.toISOString()} format="longDate" />. Keep practising the lessons before it until then — it&apos;s how each skill settles.
+                Opens <LocalTime iso={scheduled.unlockAt.toISOString()} format="longDate" />. Keep practicing the lessons before it until then — it&apos;s how each skill settles.
               </>
             </StateCard>
           ) : lesson.kind === "quiz" ? (

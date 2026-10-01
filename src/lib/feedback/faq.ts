@@ -20,12 +20,12 @@ export const FAQ: readonly FaqItem[] = [
   {
     id: "two-dogs",
     question: "Can I train two dogs on one account?",
-    answer: "Yes. Add each dog under Your dogs and switch between them from the dog button at the top. Each dog keeps its own progress, practice and feedback.",
+    answer: "Yes. Add each dog under Your dogs and switch between them by tapping your dog's name at the top. Each dog keeps its own progress, practice and feedback.",
   },
   {
     id: "puppy",
     question: "My dog is a puppy. Is Bonded safe?",
-    answer: "Foundations is gentle, but for puppies under 12 months skip jumps and paws-up moves, and check with your vet first. Moves that load the joints are marked in the Moves Library with a gentler alternative.",
+    answer: "Foundations is gentle, but for puppies under 12 months skip jumps and paws-up moves, and check with your vet first. Ask Roni before trying a move that loads the joints.",
   },
   {
     id: "filming",
@@ -35,7 +35,7 @@ export const FAQ: readonly FaqItem[] = [
   {
     id: "feedback-time",
     question: "When will Roni reply to my video?",
-    answer: "Roni's team reviews videos in the order they arrive. You'll get a notification (and an email, if you keep that switched on in Settings) as soon as her notes are ready.",
+    answer: "Roni reviews videos in the order they arrive. You'll get a notification (and an email, if you keep that switched on in Settings) as soon as her notes are ready.",
   },
   {
     id: "purchases",

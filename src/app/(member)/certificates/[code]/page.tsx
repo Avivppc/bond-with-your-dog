@@ -64,7 +64,7 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
           </h2>
           <p className="muted" style={{ maxWidth: "48ch" }}>
             {cert.dog_name ? "have" : "has"} completed {lessons ? `all ${lessons} lessons of ` : ""}
-            <b>{cert.course_title}</b>, building focus, trust and body awareness together.
+            <b>{cert.course_title}</b>.
           </p>
           <div className="cert-meta">
             <div>

@@ -16,7 +16,7 @@ describe("splitBody", () => {
     });
   });
   it("keeps a Vimeo link that sits inside real text", () => {
-    expect(splitBody("<p>Watch https://vimeo.com/1 first, then practise.</p>").vimeoUrl).toBeNull();
+    expect(splitBody("<p>Watch https://vimeo.com/1 first, then practice.</p>").vimeoUrl).toBeNull();
   });
   it("keeps real text and drops empty bodies", () => {
     expect(splitBody("<p>Hello</p>").bodyHtml).toBe("<p>Hello</p>");

@@ -39,7 +39,7 @@ function Item({ item, isToday }: { item: WeekItem; isToday: boolean }) {
   );
 }
 
-/** The design's Mon–Sun strip: practised (teal), planned, rest days, today outlined. */
+/** The design's Mon–Sun strip: practiced (teal), planned, rest days, today outlined. */
 export function WeekStrip({ days }: { days: WeekDay[] }) {
   return (
     <div className="week">

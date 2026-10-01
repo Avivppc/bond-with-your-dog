@@ -16,7 +16,7 @@ export interface LessonOption {
 
 const MINUTES = [5, 10, 15, 20] as const;
 
-/** "Add a session": pick a day, a length and (optionally) the lesson to practise. */
+/** "Add a session": pick a day, a length and (optionally) the lesson to practice. */
 export function AddSessionForm({ dogId, days, lessons, defaultMinutes }: { dogId: string; days: DayOption[]; lessons: LessonOption[]; defaultMinutes: number }) {
   const [open, setOpen] = useState(false);
   const [day, setDay] = useState(days[0]?.value ?? "");
@@ -75,7 +75,7 @@ export function AddSessionForm({ dogId, days, lessons, defaultMinutes }: { dogId
             </div>
           </div>
           <div className="field">
-            <label htmlFor={ids.lesson}>Lesson to practise</label>
+            <label htmlFor={ids.lesson}>Lesson to practice</label>
             <select id={ids.lesson} className="input" value={lessonId} onChange={(e) => setLessonId(e.target.value)}>
               <option value="">Free practice (no lesson)</option>
               {lessons.map((l) => (

@@ -1,7 +1,7 @@
 import { addDays, weekdayOf } from "./dates";
 
 /**
- * The weekly plan strip: what was practised, what was planned explicitly (practice_plan), and
+ * The weekly plan strip: what was practiced, what was planned explicitly (practice_plan), and
  * the member's default rhythm (profiles.practice_days × session_minutes). Pure.
  */
 export interface DoneSession {
@@ -29,7 +29,7 @@ export interface WeekDay {
   weekday: number;
   isToday: boolean;
   isPast: boolean;
-  /** Nothing practised, nothing planned and not one of the member's practice days. */
+  /** Nothing practiced, nothing planned and not one of the member's practice days. */
   isRest: boolean;
   items: WeekItem[];
 }
@@ -71,7 +71,7 @@ export function buildWeek(input: WeekInput): WeekDay[] {
   });
 }
 
-/** Minutes practised and planned sessions left this week, for the page summary. */
+/** Minutes practiced and planned sessions left this week, for the page summary. */
 export function weekTotals(days: readonly WeekDay[]): { doneMinutes: number; doneSessions: number; upcoming: number } {
   let doneMinutes = 0;
   let doneSessions = 0;

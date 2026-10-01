@@ -35,7 +35,7 @@ interface WeekInput {
   sessionMinutes: number;
 }
 
-/** Seven days, Monday first: practised, planned (explicit or a usual day still ahead), today. */
+/** Seven days, Monday first: practiced, planned (explicit or a usual day still ahead), today. */
 export function buildWeek({ today, practicedOn, planned, practiceDays, sessionMinutes }: WeekInput): WeekDay[] {
   const monday = startOfWeek(today);
   const todayIso = isoDate(today);
@@ -59,7 +59,7 @@ export function buildWeek({ today, practicedOn, planned, practiceDays, sessionMi
   });
 }
 
-/** "3 of 4 sessions done": practised days vs. practised + still-planned days. */
+/** "3 of 4 sessions done": practiced days vs. practiced + still-planned days. */
 export function weekTally(week: readonly WeekDay[]): { done: number; target: number } {
   const done = week.filter((d) => d.done).length;
   return { done, target: done + week.filter((d) => d.planned).length };

@@ -6,6 +6,7 @@ import { Ms, Ring } from "@/components/app/ui";
 import { STAGES } from "@/components/chapters/stages";
 import { loadChapterChoices } from "@/lib/member/chapter-choices-server";
 import { ChapterChoices } from "./ChapterChoices";
+import { plural } from "@/lib/feedback/format";
 
 const CHAPTER_IDS = new Set(STAGES.map((s) => s.courseId));
 
@@ -48,7 +49,7 @@ function CardBody({ card }: { card: CourseCardData }) {
             <div>
               <b>{card.status === "completed" ? "Every lesson complete" : next ? `Lesson ${nextNumber} · ${next.title}` : "Lessons are being prepared"}</b>
               <div className="faint">
-                {c.progress.total} lessons · {c.progress.completed} complete
+                {plural(c.progress.total, "lesson")} · {c.progress.completed} complete
               </div>
             </div>
           </div>

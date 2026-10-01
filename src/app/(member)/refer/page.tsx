@@ -23,7 +23,7 @@ export default async function ReferPage() {
   const supabase = await createClient();
   const settings = await loadReferralSettings();
   if (!settings.enabled) {
-    return <StateCard icon="card_giftcard" eyebrow="Refer a friend" title="The referral program isn't open right now">Check back soon — Roni&apos;s team will announce it in the community.</StateCard>;
+    return <StateCard icon="card_giftcard" eyebrow="Refer a friend" title="The referral program isn't open right now">Check back soon — we&apos;ll let you know by email when it opens.</StateCard>;
   }
 
   const { error: codeError } = await supabase.rpc("get_or_create_referral_code");

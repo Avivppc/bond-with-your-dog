@@ -8,6 +8,7 @@ import type { PlaybackResponse } from "@/app/api/lessons/[lessonId]/playback/rou
 import { resumeFrom } from "@/lib/member/resume";
 
 const PROGRESS_EVERY_SECONDS = 15;
+const VIDEO_ERROR = "We couldn't load this video. Refresh the page to try again.";
 
 interface LessonPlayerProps {
   lessonId: string;
@@ -135,10 +136,10 @@ export default function LessonPlayer({ lessonId, hasPlayback, resumeAt }: Lesson
       try {
         const res = await fetch(`/api/lessons/${lessonId}/playback`);
         const json = (await res.json().catch(() => ({}))) as PlaybackResponse | { error?: string };
-        if (!res.ok) throw new Error(("error" in json && json.error) || `HTTP ${res.status}`);
+        if (!res.ok) throw new Error(("error" in json && json.error) || VIDEO_ERROR);
         if (!cancelled) setData(json as PlaybackResponse);
       } catch (e: unknown) {
-        if (!cancelled) setError(e instanceof Error ? e.message : "Failed to load video");
+        if (!cancelled) setError(e instanceof Error && !(e instanceof TypeError) && e.message ? e.message : VIDEO_ERROR);
       }
     })();
     return () => {

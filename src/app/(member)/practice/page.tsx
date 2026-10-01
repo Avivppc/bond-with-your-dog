@@ -11,7 +11,7 @@ import { PracticeSession } from "./PracticeSession";
 import { PracticeMedia } from "./PracticeMedia";
 import { canAccessLesson, loadLessonDetail, pickMedia, practiceMove, type LessonDetail } from "./load";
 
-export const metadata = { title: "Practice · Bonded" };
+export const metadata = { title: "Practice" };
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -54,12 +54,12 @@ export default async function PracticePage({ searchParams }: { searchParams: Sea
 
   const requested = z.string().uuid().safeParse(one(sp.lesson)).success ? (one(sp.lesson) as string) : null;
   const catalog = await loadPracticeCatalog(viewer.userId);
-  const title = `Practise with ${dog.name}`;
+  const title = `Practice with ${dog.name}`;
 
   if (one(sp.pick)) {
     return (
       <>
-        <Header eyebrow="Practice" title={title} lede="Choose the lesson you want to practise today." />
+        <Header eyebrow="Practice" title={title} lede="Choose the lesson you want to practice today." />
         <LessonPicker courses={catalog.courses} lessons={catalog.lessons} />
       </>
     );
@@ -69,7 +69,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Sea
   const inCatalog = requested ? catalog.lessons.find((l) => l.id === requested) ?? null : null;
   const requestedOpen = requested ? (inCatalog ? inCatalog.accessible : await canAccessLesson(requested)) : false;
   const chosenId = requestedOpen ? requested : pickPracticeLesson(catalog.lessons, null)?.id ?? null;
-  const note = requested && !requestedOpen ? "That lesson isn't open for you yet, so here are the lessons you can practise." : undefined;
+  const note = requested && !requestedOpen ? "That lesson isn't open for you yet, so here are the lessons you can practice." : undefined;
 
   if (!chosenId || (requested && !requestedOpen)) {
     return (
@@ -111,7 +111,7 @@ export default async function PracticePage({ searchParams }: { searchParams: Sea
             </div>
           }
         >
-          Steps are added lesson by lesson. Until then, practise along with the video.
+          Steps are added lesson by lesson. Until then, practice along with the video.
         </StateCard>
       </>
     );
