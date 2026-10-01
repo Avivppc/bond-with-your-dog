@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { memberViewer } from "@/lib/member/viewer";
@@ -22,6 +23,16 @@ const TABS = [
   { value: "waiting", label: "Waiting" },
   { value: "done", label: "Done" },
 ];
+
+/** A header number that opens where that work is done. */
+function StudioStat({ value, label, href }: { value: number; label: string; href: string }) {
+  return (
+    <Link href={href} className="stat" style={{ color: "inherit", textDecoration: "none" }}>
+      <b>{value}</b>
+      <span>{label}</span>
+    </Link>
+  );
+}
 
 export default async function StudioPage({ searchParams }: { searchParams: Search }) {
   await requireStaff("content");
@@ -49,19 +60,11 @@ export default async function StudioPage({ searchParams }: { searchParams: Searc
             <Greeting name={viewer?.firstName ?? "Roni"} />
           </h1>
         </div>
-        <div className="row" style={{ gap: 28 }}>
-          <div className="stat">
-            <b>{stats.waiting}</b>
-            <span>Videos waiting</span>
-          </div>
-          <div className="stat">
-            <b>{stats.stories}</b>
-            <span>Stories to approve</span>
-          </div>
-          <div className="stat">
-            <b>{stats.questions}</b>
-            <span>Q&amp;A questions</span>
-          </div>
+        <div className="row" style={{ gap: 28, flexWrap: "wrap" }}>
+          <StudioStat value={stats.waiting} label="Videos waiting" href="/studio" />
+          {stats.replies > 0 && <StudioStat value={stats.replies} label="Members wrote back" href="/studio" />}
+          <StudioStat value={stats.stories} label="Stories to approve" href="/admin/inbox?tab=story" />
+          <StudioStat value={stats.questions} label="Q&A questions" href="/admin/coaching/live-qa" />
         </div>
       </div>
       <div className="grid-7-5">

@@ -68,6 +68,28 @@ export function hasUnansweredMessage(messages: readonly { from_staff: boolean; c
   return Boolean(last && !last.from_staff);
 }
 
+export interface VideoMessage {
+  video_id: string;
+  from_staff: boolean;
+  created_at: string;
+}
+
+/**
+ * Videos whose newest message is the member's (they wrote back after Roni), ordered by how
+ * long that message has waited, oldest first. These go back into the Studio's Waiting queue.
+ */
+export function videosAwaitingReply(messages: readonly VideoMessage[]): string[] {
+  const latest = new Map<string, VideoMessage>();
+  for (const m of messages) {
+    const current = latest.get(m.video_id);
+    if (!current || m.created_at > current.created_at) latest.set(m.video_id, m);
+  }
+  return [...latest.values()]
+    .filter((m) => !m.from_staff)
+    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+    .map((m) => m.video_id);
+}
+
 /** Coach levels offered in the Studio ("Ready" = performance-ready). */
 export const COACH_LEVELS = [
   { value: "learning", label: "Learning" },
