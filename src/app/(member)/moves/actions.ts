@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { memberClient } from "@/lib/practice/server/auth";
 import { dbMessage, fail, ok, type ActionResult } from "@/lib/practice/result";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 const SetLevel = z.object({
   dogId: z.string().uuid(),
@@ -26,6 +27,12 @@ export async function setMoveLevel(input: z.input<typeof SetLevel>): Promise<Act
     console.error("[moves] set level failed", error.message);
     return fail(dbMessage(error.code));
   }
+  trackMember({ id: member.userId, email: member.email }, EVENTS.skillLevelChanged, {
+    dog_id: parsed.data.dogId,
+    move_id: parsed.data.moveId,
+    to_level: parsed.data.level ?? "not_started",
+    set_by: "member",
+  });
   for (const path of ["/moves", "/progress", "/home"]) revalidatePath(path);
   return ok(undefined);
 }

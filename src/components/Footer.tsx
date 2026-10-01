@@ -1,4 +1,5 @@
 import Link from "next/link";
+import CookieSettingsButton from "@/components/consent/CookieSettingsButton";
 
 const LOGO_URL = "/images/logo.png";
 
@@ -64,6 +65,9 @@ export default function Footer() {
                   </a>
                 </li>
               ))}
+              <li>
+                <CookieSettingsButton className={linkClass} />
+              </li>
             </ul>
           </div>
         </div>

@@ -2,6 +2,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
+import { trackLessonCompleted } from "@/lib/member/lesson-analytics";
 
 // Bounded: the answers are stored verbatim in quiz_attempts by the service role.
 const MAX_QUESTIONS = 100;
@@ -104,6 +106,15 @@ export async function POST(
     console.error("quiz attempt insert failed", { lessonId, error: attemptError.message });
     return NextResponse.json({ error: "could not save your attempt" }, { status: 500 });
   }
+  // Which questions were missed, but never the answers themselves.
+  trackMember(user, EVENTS.checkpointSubmitted, {
+    lesson_id: lessonId,
+    course_id: lesson.course_id as string,
+    score,
+    passed,
+    question_count: questions.length,
+    missed_question_ids: perQuestion.filter((p) => !p.correct).map((p) => p.id as string),
+  });
 
   // If passed, complete the lesson (fires achievement / certificate triggers)
   if (passed) {
@@ -117,6 +128,7 @@ export async function POST(
         { status: 500 }
       );
     }
+    await trackLessonCompleted(supabase, user, lessonId);
   }
 
   return NextResponse.json({ score, passed, perQuestion });

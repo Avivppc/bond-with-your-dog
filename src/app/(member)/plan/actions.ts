@@ -5,6 +5,7 @@ import { z } from "zod";
 import { addDays, isIsoDate } from "@/lib/practice/dates";
 import { memberClient } from "@/lib/practice/server/auth";
 import { dbMessage, fail, ok, type ActionResult } from "@/lib/practice/result";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 /** How far ahead a session can be planned. */
 const PLAN_AHEAD_DAYS = 60;
@@ -31,7 +32,7 @@ export async function addPlannedSession(input: z.input<typeof AddPlanned>): Prom
 
   const member = await memberClient();
   if (!member) return fail("Please sign in again.");
-  const { supabase, userId } = member;
+  const { supabase, userId, email } = member;
 
   if (p.lessonId) {
     const { data: canAccess } = await supabase.rpc("can_access_lesson", { p_lesson_id: p.lessonId });
@@ -45,6 +46,12 @@ export async function addPlannedSession(input: z.input<typeof AddPlanned>): Prom
     console.error("[plan] add failed", error.message);
     return fail(dbMessage(error.code));
   }
+  trackMember({ id: userId, email }, EVENTS.sessionPlanned, {
+    dog_id: p.dogId,
+    lesson_id: p.lessonId,
+    minutes: p.minutes,
+    weekday: new Date(`${p.plannedOn}T12:00:00Z`).getUTCDay(),
+  });
   refresh();
   return ok(undefined);
 }

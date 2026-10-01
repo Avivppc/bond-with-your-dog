@@ -7,6 +7,7 @@ import type { SubjectOption } from "@/lib/feedback/subjects";
 import { checkVideoDuration, checkVideoFile, formatBytes, VIDEO_ACCEPT } from "@/lib/feedback/video-file";
 import { formatClock } from "@/lib/feedback/format";
 import { abandonUpload, confirmUpload, readVideoDuration, startUpload, uploadToMux } from "./upload-client";
+import { EVENTS, track } from "@/lib/analytics";
 
 interface Chosen {
   file: File;
@@ -68,6 +69,12 @@ export function SendVideoForm({
     setError(null);
     setPhase("uploading");
     setProgress(0);
+    let stage: "start" | "upload" | "processing" = "start";
+    track(EVENTS.videoUploadStarted, {
+      move_id: option?.moveId ?? null,
+      file_mb: Math.round((chosen.file.size / 1_048_576) * 10) / 10,
+      duration_seconds: chosen.duration,
+    });
     try {
       const { videoId, uploadUrl } = await startUpload({
         dogId,
@@ -77,6 +84,7 @@ export function SendVideoForm({
         file: chosen.file,
         durationSeconds: chosen.duration,
       });
+      stage = "upload";
       try {
         await uploadToMux(uploadUrl, chosen.file, setProgress);
       } catch (uploadError) {
@@ -84,9 +92,11 @@ export function SendVideoForm({
         throw uploadError;
       }
       setPhase("processing");
+      stage = "processing";
       await confirmUpload(videoId);
       router.push("/feedback?sent=1");
     } catch (err) {
+      track(EVENTS.videoUploadFailed, { stage });
       setPhase("idle");
       setError(err instanceof Error ? err.message : "The upload didn't finish. Please try again.");
     }

@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { isOwnStoryPhotoPath, MAX_STORY_PHOTOS, STORY_MEDIA_BUCKET, storyPhotoPath, storyPhotoType, validateStoryPhoto } from "@/lib/community/story-media";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
+import { EVENTS } from "@/lib/analytics-events";
+import { trackSignedIn } from "@/lib/analytics-member";
 
 const MESSAGES: Record<string, string> = {
   "42501": "The Q&A is for community members.",
@@ -26,6 +28,7 @@ export async function sendQaQuestion(input: z.input<typeof Question>): Promise<A
     console.error("[community] qa question failed", { meetupId: parsed.data.meetupId, error: error.message });
     return fail(MESSAGES[error.code ?? ""] ?? "Could not send your question. Please try again.");
   }
+  trackSignedIn(EVENTS.qaQuestionSubmitted, { meetup_id: parsed.data.meetupId });
   revalidatePath("/community");
   return ok(undefined);
 }
@@ -104,5 +107,6 @@ export async function shareStory(input: z.input<typeof Story>): Promise<ActionRe
     console.error("[community] story failed", { photos: mediaPaths.length, error: error.message });
     return fail(STORY_ERRORS[error.code ?? ""] ?? "Could not send your story. Please try again.");
   }
+  trackSignedIn(EVENTS.storySubmitted, { consent_public: parsed.data.consentPublic });
   return ok(undefined);
 }

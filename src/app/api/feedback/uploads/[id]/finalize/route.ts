@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { settleUpload, type UploadingRow } from "@/lib/feedback/upload-server";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 /**
  * Called by the browser after the Mux upload finishes (and polled while Mux encodes).
@@ -30,5 +31,9 @@ export async function POST(_req: NextRequest, { params }: { params: Promise<{ id
   if (!row) return NextResponse.json({ error: "not found" }, { status: 404 });
 
   const status = await settleUpload(row);
+  // Polled while the video encodes: count it once, when it first reaches Roni's queue.
+  if (row.status === "uploading" && status === "waiting") {
+    trackMember(user, EVENTS.videoSubmitted, { video_id: row.id }, { dedupeKey: row.id });
+  }
   return NextResponse.json({ status });
 }

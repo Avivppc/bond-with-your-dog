@@ -5,6 +5,7 @@ import { LevelPill, Ms } from "@/components/app/ui";
 import { groupResults, normalizeQuery, resultCount, MAX_QUERY_LENGTH, type SearchGroup, type SearchHit } from "@/lib/practice/search";
 import { viewerTimeZone } from "@/lib/practice/server/zone";
 import { searchFeedback, searchLessons, searchMoves, searchRecordings, suggestionTerms, type MoveHit } from "./load";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 export const metadata = { title: "Search · Bonded" };
 
@@ -127,6 +128,15 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   ]);
   const groups = groupResults({ lessons, moves, feedback, qa });
   const count = resultCount(groups);
+  // The query itself is never sent: only its length and what it found.
+  trackMember({ id: viewer.userId, email: viewer.email }, EVENTS.searchPerformed, {
+    query_length: q.length,
+    results_count: count,
+    lessons: lessons.length,
+    moves: moves.length,
+    feedback: feedback.length,
+    recordings: qa.length,
+  });
   const levels = new Map(moves.map((m) => [m.id, m.level]));
 
   return (

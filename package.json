@@ -28,11 +28,13 @@
     "driver.js": "^1.8.0",
     "next": "16.2.4",
     "posthog-js": "^1.434.15",
+    "posthog-node": "^5.55.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "resend": "^6.12.3",
     "sanitize-html": "^2.17.7",
     "server-only": "^0.0.1",
+    "vanilla-cookieconsent": "^3.1.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

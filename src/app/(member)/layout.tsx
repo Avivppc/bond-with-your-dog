@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import MemberAnalytics from "@/components/analytics/MemberAnalytics";
 import { GuidedTour } from "@/components/app/GuidedTour";
 import { Mrs_Saint_Delafield } from "next/font/google";
 import { memberViewer } from "@/lib/member/viewer";
@@ -31,6 +32,7 @@ export default async function MemberLayout({ children }: { children: React.React
         </main>
       </div>
       <Tabbar />
+      <MemberAnalytics dogId={viewer.activeDog?.id ?? null} dogCount={viewer.dogs.length} isStaff={viewer.isStaff} />
       {!viewer.profile.timezone && <TimeZoneCapture />}
       <Suspense fallback={null}>
         <GuidedTour seen={viewer.profile.tours_seen} onboarded={Boolean(viewer.profile.onboarded_at)} />

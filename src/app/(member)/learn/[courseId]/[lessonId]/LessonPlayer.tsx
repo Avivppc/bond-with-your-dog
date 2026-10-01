@@ -6,6 +6,9 @@ import VimeoPlayer from "@vimeo/player";
 import { createClient } from "@/lib/supabase/client";
 import type { PlaybackResponse } from "@/app/api/lessons/[lessonId]/playback/route";
 import { resumeFrom } from "@/lib/member/resume";
+import { EVENTS, track } from "@/lib/analytics";
+import { reachedMilestones } from "@/lib/video-milestones";
+import { reportLessonCompleted } from "./analytics-actions";
 
 const PROGRESS_EVERY_SECONDS = 15;
 
@@ -20,6 +23,12 @@ interface LessonPlayerProps {
 function useProgressRecorder(lessonId: string) {
   const reportedComplete = useRef(false);
   const lastReported = useRef(0);
+  const sentMilestones = useRef(new Set<number>());
+
+  function trackMilestone(percent: number): void {
+    sentMilestones.current.add(percent);
+    track(EVENTS.lessonVideoProgress, { lesson_id: lessonId, percent });
+  }
 
   async function record(seconds: number, complete: boolean): Promise<boolean> {
     const supabase = createClient();
@@ -32,16 +41,19 @@ function useProgressRecorder(lessonId: string) {
       console.error("complete_lesson failed", done.error.message);
       return false;
     }
+    if (done) void reportLessonCompleted(lessonId);
     return true;
   }
 
   return {
-    onTime(seconds: number) {
+    onTime(seconds: number, duration: number) {
+      reachedMilestones(seconds, duration, sentMilestones.current).forEach(trackMilestone);
       if (seconds - lastReported.current < PROGRESS_EVERY_SECONDS) return;
       lastReported.current = seconds;
       void record(seconds, false);
     },
     onEnded(seconds: number) {
+      if (!sentMilestones.current.has(100)) trackMilestone(100);
       if (reportedComplete.current) return;
       reportedComplete.current = true;
       void record(seconds, true).then((saved) => {
@@ -73,7 +85,7 @@ function VimeoLessonVideo({ embedUrl, lessonId, resumeAt }: { embedUrl: string; 
         })
         .catch((err: unknown) => console.error("[lesson] resume failed", err instanceof Error ? err.message : String(err)));
     }
-    player.on("timeupdate", (data: { seconds: number }) => progressRef.current.onTime(data.seconds));
+    player.on("timeupdate", (data: { seconds: number; duration: number }) => progressRef.current.onTime(data.seconds, data.duration));
     player.on("ended", (data: { seconds: number }) => progressRef.current.onEnded(data.seconds));
     return () => {
       // Only detach listeners: player.destroy() removes the iframe element itself,
@@ -113,7 +125,10 @@ function MuxLessonVideo({ playbackId, token, lessonId, resumeAt }: { playbackId:
         const start = resumeFrom(resumeAt, video.duration || 0);
         if (start > 0) video.currentTime = start;
       }}
-      onTimeUpdate={(e) => progress.onTime((e.target as HTMLMediaElement).currentTime)}
+      onTimeUpdate={(e) => {
+        const video = e.target as HTMLMediaElement;
+        progress.onTime(video.currentTime, video.duration);
+      }}
       onEnded={(e) => progress.onEnded((e.target as HTMLMediaElement).currentTime)}
       style={{ aspectRatio: "16/9", width: "100%" }}
     />

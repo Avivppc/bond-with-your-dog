@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { z } from "zod";
-import { requireMember } from "@/lib/member/viewer";
+import { requireMember, type MemberViewer } from "@/lib/member/viewer";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 import { createClient } from "@/lib/supabase/server";
 import { Breadcrumbs } from "@/components/app/ui";
 import type { SkillLevel } from "@/lib/member/viewer";
@@ -37,13 +38,16 @@ const VIDEO_COLUMNS =
   "id, title, note, status, summary, member_read_at, duration_seconds, mux_playback_id, dog_id, move_id, lesson_id, moves(name, lesson_id), dogs(name)";
 
 /** Opening Roni's reply marks it read, and clears the matching notification. */
-async function markRead(supabase: Supabase, video: VideoRow): Promise<void> {
+async function markRead(supabase: Supabase, video: VideoRow, viewer: MemberViewer): Promise<void> {
   if (video.status !== "replied") return;
   const [readRes, notifRes] = await Promise.all([
     video.member_read_at ? null : supabase.rpc("mark_feedback_read", { p_video_id: video.id }),
     supabase.from("notifications").select("id").eq("href", `/feedback/${video.id}`).is("read_at", null),
   ]);
   if (readRes?.error) console.error("[feedback] mark read failed", readRes.error.message);
+  else if (readRes) {
+    trackMember({ id: viewer.userId, email: viewer.email }, EVENTS.feedbackViewed, { video_id: video.id }, { dedupeKey: video.id });
+  }
   const ids = (notifRes.data ?? []).map((n) => n.id as string);
   if (ids.length === 0) return;
   const { error } = await supabase.rpc("mark_notifications_read", { p_ids: ids });
@@ -75,7 +79,7 @@ export default async function FeedbackViewPage({ params }: { params: Promise<{ i
     supabase.from("feedback_notes").select("id, at_seconds, body").eq("video_id", id).order("at_seconds"),
     supabase.from("feedback_messages").select("id, body, from_staff, created_at").eq("video_id", id).order("created_at"),
     coachLevel(supabase, video),
-    markRead(supabase, video),
+    markRead(supabase, video, viewer),
   ]);
   const notes = (notesRes.data ?? []).map((n) => ({ id: n.id as string, at_seconds: Number(n.at_seconds), body: n.body as string }));
   const messages = (messagesRes.data ?? []) as ConversationMessage[];

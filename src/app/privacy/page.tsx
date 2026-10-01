@@ -33,6 +33,27 @@ export default function PrivacyPage() {
         We use trusted providers to run the service: hosting and database (Vercel, Supabase), video (Vimeo, Mux), email
         (Resend), payments (Paddle) and analytics (PostHog).
       </p>
+      <h2 id="cookies">Cookies and analytics</h2>
+      <p>
+        Necessary cookies keep you signed in, keep checkout secure and remember your cookie choice. They are always on.
+      </p>
+      <p>
+        Analytics cookies are set by PostHog so we can see how people use the site and the app, for example which
+        lessons are finished and where people get stuck. When you are signed in, this activity is linked to your
+        account email. Where the law asks for it (such as in the EU, UK, Switzerland and Brazil) we ask before setting
+        them; elsewhere they are on unless you turn them off. If you say no, we still count visits, anonymously and
+        without cookies. You can change your choice any time from &ldquo;Cookie settings&rdquo; at the bottom of every
+        page. We keep a record of each choice (when, what and which region&apos;s rule applied) as proof.
+      </p>
+      <p>
+        If you are a paying member, we also analyse your activity in the courses you bought (such as lessons completed,
+        practice sessions and videos sent to Roni) on our own servers, to run and improve the service. This uses no
+        cookies and continues even if you turn analytics cookies off.
+      </p>
+      <p>
+        We do not sell or share your personal information. If your browser sends a Global Privacy Control signal, we
+        treat it as a request to turn analytics cookies off, as California and other US state laws require.
+      </p>
       <h2>Your rights</h2>
       <p>
         You can ask to see, correct or delete your data by emailing <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
