@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ageLabel, feedbackCountsLine, feedbackPill, hasUnansweredMessage, inTab, isOverdue, parseFeedbackTab } from "./status";
+import { ageLabel, feedbackCountsLine, feedbackPill, hasUnansweredMessage, inTab, isOverdue, parseFeedbackTab, videosAwaitingReply } from "./status";
 
 describe("feedbackPill", () => {
   test("shows the design's pills", () => {
@@ -55,6 +55,18 @@ test("hasUnansweredMessage looks at who spoke last", () => {
       { from_staff: true, created_at: "2026-09-30T11:00:00Z" },
     ])
   ).toBe(false);
+});
+
+test("videosAwaitingReply lists videos where the member wrote last, oldest wait first", () => {
+  const ids = videosAwaitingReply([
+    { video_id: "a", from_staff: false, created_at: "2026-09-30T10:00:00Z" },
+    { video_id: "a", from_staff: true, created_at: "2026-09-30T11:00:00Z" },
+    { video_id: "b", from_staff: true, created_at: "2026-09-30T10:00:00Z" },
+    { video_id: "b", from_staff: false, created_at: "2026-09-30T12:00:00Z" },
+    { video_id: "c", from_staff: false, created_at: "2026-09-29T09:00:00Z" },
+  ]);
+  expect(ids).toEqual(["c", "b"]);
+  expect(videosAwaitingReply([])).toEqual([]);
 });
 
 test("isOverdue after two days in the queue", () => {

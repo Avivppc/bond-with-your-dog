@@ -30,7 +30,8 @@ export const MeetupSchema = z.object({
   duration_minutes: z.coerce.number().int().min(5, "Length: 5–720 minutes.").max(720, "Length: 5–720 minutes."),
   location: optionalText(200),
   meeting_url: optionalUrl,
-  cover_image_url: optionalUrl,
+  /** Checked against the storage URL in the action (uploaded images or https links). */
+  cover_image_url: text.pipe(z.string().max(500, "The cover image link is too long.")),
   published: checkbox,
   canceled: checkbox,
   recording_url: optionalUrl,

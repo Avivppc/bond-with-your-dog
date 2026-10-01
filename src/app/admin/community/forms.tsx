@@ -1,5 +1,6 @@
 import { BTN_DANGER, BTN_PRIMARY, INPUT, LABEL } from "@/app/admin/_components/ui";
 import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
+import { CoverImageField } from "./CoverImageField";
 import { LocalDateTime } from "./LocalDateTime";
 import { deleteChallenge, deleteChannel, deleteStep, saveChallenge, saveChannel, saveStep } from "./actions";
 import { Area, Check, Text } from "./fields";
@@ -102,7 +103,7 @@ export function ChallengeForm({ challenge }: { challenge?: ChallengeRecord }) {
           <span className={LABEL}>Points for completing</span>
           <input name="points" type="number" min={0} max={10000} defaultValue={challenge?.points ?? 100} className={INPUT} />
         </label>
-        <Text label="Cover image URL (optional)" name="cover_image_url" value={challenge?.cover_image_url} max={500} placeholder="https://…" />
+        <CoverImageField label="Cover image (optional)" defaultValue={challenge?.cover_image_url} />
         <Check label="Published (members can see and join)" name="published" checked={challenge?.published ?? false} />
         <div className="sm:col-span-2">
           <button type="submit" className={BTN_PRIMARY}>
