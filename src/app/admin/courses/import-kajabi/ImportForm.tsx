@@ -37,7 +37,7 @@ export function ImportForm({ demoCourses }: { demoCourses: DemoCourse[] }) {
           {state.results.map((r) => (
             <Notice key={r.course} tone={r.status === "failed" ? "error" : "success"}>
               <b>{r.course}:</b> {r.message}
-              {r.status !== "skipped" && ` ${r.modules} modules, ${r.lessons} lessons, ${r.images} images.`}
+              {r.status !== "skipped" && ` ${r.modules} modules, ${r.lessons} lessons, ${r.images} images, ${r.files} downloads.`}
             </Notice>
           ))}
           {state.hidden.length > 0 && <Notice tone="success">Hidden: {state.hidden.join(", ")}.</Notice>}
