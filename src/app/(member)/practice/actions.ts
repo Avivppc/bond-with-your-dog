@@ -8,6 +8,8 @@ import { memberClient } from "@/lib/practice/server/auth";
 import { dbMessage, fail, ok, type ActionResult } from "@/lib/practice/result";
 
 const SaveSession = z.object({
+  /** One id per session from the browser, so a retried save is stored once. */
+  clientId: z.string().uuid(),
   lessonId: z.string().uuid(),
   moveId: z.string().uuid().nullable(),
   dogId: z.string().uuid(),
@@ -43,24 +45,36 @@ export async function savePracticeSession(input: z.input<typeof SaveSession>): P
   }
   if (!canAccess) return fail("This lesson isn't open for you, so the session can't be saved.");
 
-  // RLS checks that the dog is the member's own.
-  const { data, error } = await supabase
+  // RLS checks that the dog is the member's own. A retry of the same session changes nothing.
+  const { error } = await supabase
     .from("practice_sessions")
-    .insert({
-      user_id: userId,
-      dog_id: s.dogId,
-      lesson_id: s.lessonId,
-      move_id: s.moveId,
-      practiced_on: s.practicedOn,
-      duration_seconds: s.durationSeconds,
-      reps: s.reps,
-      steps_done: s.stepsDone,
-    })
+    .upsert(
+      {
+        client_id: s.clientId,
+        user_id: userId,
+        dog_id: s.dogId,
+        lesson_id: s.lessonId,
+        move_id: s.moveId,
+        practiced_on: s.practicedOn,
+        duration_seconds: s.durationSeconds,
+        reps: s.reps,
+        steps_done: s.stepsDone,
+      },
+      { onConflict: "user_id,client_id", ignoreDuplicates: true },
+    );
+  if (error) {
+    console.error("[practice] save session failed", error.message);
+    return fail(dbMessage(error.code));
+  }
+  const { data, error: readError } = await supabase
+    .from("practice_sessions")
     .select("id")
+    .eq("user_id", userId)
+    .eq("client_id", s.clientId)
     .single();
-  if (error || !data) {
-    console.error("[practice] save session failed", error?.message);
-    return fail(dbMessage(error?.code));
+  if (readError || !data) {
+    console.error("[practice] saved session not found", readError?.message);
+    return fail(dbMessage(readError?.code));
   }
   for (const path of ["/plan", "/progress", "/home"]) revalidatePath(path);
   return ok({ id: data.id as string });

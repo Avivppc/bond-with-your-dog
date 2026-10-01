@@ -8,13 +8,17 @@ import { loadPracticeCatalog } from "@/lib/practice/server/catalog";
 import { levelMap, loadDogSkills, loadPublishedMoves, MOVE_FALLBACK_IMAGE } from "@/lib/practice/server/moves";
 import { NoDogCard } from "../practice/_components/NoDogCard";
 import { TimeZoneSync } from "../practice/_components/TimeZoneSync";
-import { loadProgressData } from "./load";
+import { historyLine, recentMilestones, summarizeSkillHistory } from "@/lib/practice/skill-history";
+import { loadProgressData, loadSkillEvents } from "./load";
+import { RecentMilestonesCard } from "./history";
 import { AchievementsSection, DogHeader, MilestoneCard, MovesCard, MultiDogTip, NoMilestoneCard, PathSection } from "./sections";
 
 export const metadata = { title: "Progress · Bonded" };
 
 /** Moves shown on the progress card before "All N moves". */
 const MOVES_SHOWN = 8;
+/** Step-ups listed under "Recent milestones". */
+const MILESTONES_SHOWN = 4;
 const ACHIEVEMENT_ORDER = ["first_practice", "first_lesson", "three_lessons", "rhythm_6", "first_feedback", "ten_lessons", "course_complete", "first_routine"];
 
 function orderDefs(defs: AchievementDef[]): AchievementDef[] {
@@ -37,12 +41,13 @@ export default async function ProgressPage() {
     );
   }
 
-  const [{ timeZone }, catalog, moves, skills, data] = await Promise.all([
+  const [{ today, timeZone }, catalog, moves, skills, data, skillEvents] = await Promise.all([
     viewerToday(),
     loadPracticeCatalog(viewer.userId),
     loadPublishedMoves(),
     loadDogSkills(dog.id),
     loadProgressData(viewer.userId),
+    loadSkillEvents(dog.id),
   ]);
   const levels = levelMap(skills);
   const dogSessions = data.sessions.filter((s) => s.dogId === dog.id);
@@ -54,6 +59,7 @@ export default async function ProgressPage() {
 
   const courseTitle = new Map(catalog.courses.map((c) => [c.id, c.title]));
   const lessonNumber = new Map(catalog.lessons.map((l) => [l.id, l.number]));
+  const history = summarizeSkillHistory(skillEvents, levels, timeZone);
   const ordered = progressOrder(moves, levels);
   const rows = ordered.slice(0, MOVES_SHOWN).map((m) => ({
     id: m.id,
@@ -62,7 +68,14 @@ export default async function ProgressPage() {
     subtitle: [m.courseId ? courseTitle.get(m.courseId) : null, m.lessonId && lessonNumber.get(m.lessonId) ? `Lesson ${lessonNumber.get(m.lessonId)}` : null].filter(Boolean).join(" · ") || "Moves Library",
     image: m.imageUrl ?? MOVE_FALLBACK_IMAGE,
     level: levels.get(m.id) ?? null,
+    history: history.has(m.id) ? historyLine(history.get(m.id)!, today) : null,
   }));
+  const moveById = new Map(moves.map((m) => [m.id, m]));
+  const milestones = recentMilestones(
+    skillEvents.filter((e) => moveById.has(e.moveId)),
+    timeZone,
+    MILESTONES_SHOWN
+  ).map((e) => ({ ...e, name: moveById.get(e.moveId)!.name, slug: moveById.get(e.moveId)!.slug }));
   const milestone = nextMilestone(levels, aggregatePractice(dogSessions.map((s) => ({ move_id: s.moveId, reps: s.reps }))));
   const milestoneMove = milestone ? moves.find((m) => m.id === milestone.moveId) : null;
 
@@ -90,6 +103,7 @@ export default async function ProgressPage() {
           ) : (
             <NoMilestoneCard />
           )}
+          <RecentMilestonesCard rows={milestones} todayIso={today} />
           {viewer.dogs.length > 1 && <MultiDogTip names={viewer.dogs.map((d) => d.name)} />}
         </div>
       </div>

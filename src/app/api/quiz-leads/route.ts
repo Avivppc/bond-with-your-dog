@@ -2,10 +2,20 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { Resend } from "resend";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/admin";
+import { siteUrl } from "@/lib/email";
 import { TIER_RESULTS } from "@/lib/quiz/data";
 
+/**
+ * Anyone can take the quiz, so this route sends email to an address a stranger typed. Keep it
+ * useless for spam or phishing: a name can't carry a link, the email's link is always our own
+ * site, and one address gets at most a few results emails a day.
+ */
+const NAME = /^[\p{L}\p{M}][\p{L}\p{M}' .-]{0,59}$/u;
+const MAX_EMAILS_PER_ADDRESS_PER_DAY = 3;
+
 const Body = z.object({
-  firstName: z.string().min(1).max(100),
+  firstName: z.string().trim().regex(NAME),
   email: z.string().email(),
   tier: z.enum(["foundations", "moves", "letsDance"]),
   scores: z.record(z.string(), z.number()),
@@ -31,7 +41,8 @@ export async function POST(request: Request) {
     answers,
   });
   if (dbError) {
-    return NextResponse.json({ error: dbError.message }, { status: 502 });
+    console.error("[quiz-leads] insert failed", dbError.message);
+    return NextResponse.json({ error: "Please try again." }, { status: 502 });
   }
 
   const apiKey = process.env.RESEND_API_KEY;
@@ -41,7 +52,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, dev: true });
   }
 
-  const baseUrl = request.headers.get("origin") ?? new URL(request.url).origin;
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count, error: countError } = await createServiceClient()
+    .from("quiz_leads")
+    .select("id", { count: "exact", head: true })
+    .eq("email", email)
+    .gte("created_at", since);
+  if (countError) {
+    console.error("[quiz-leads] rate check failed", countError.message);
+    return NextResponse.json({ ok: true, emailed: false });
+  }
+  // The row just saved counts too.
+  if ((count ?? 0) > MAX_EMAILS_PER_ADDRESS_PER_DAY) return NextResponse.json({ ok: true, emailed: false });
+
+  const baseUrl = siteUrl();
 
   const resend = new Resend(apiKey);
   const { error: emailError } = await resend.emails.send({
@@ -71,7 +95,8 @@ export async function POST(request: Request) {
   });
 
   if (emailError) {
-    return NextResponse.json({ error: emailError.message }, { status: 502 });
+    console.error("[quiz-leads] email failed", emailError.message);
+    return NextResponse.json({ error: "We couldn't email your results. Please try again." }, { status: 502 });
   }
 
   return NextResponse.json({ ok: true });

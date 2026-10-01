@@ -59,6 +59,8 @@
 .member-app .side-foot .small-links { display: flex; flex-direction: column; gap: 2px; }
 .member-app .side-foot .small-links a { display: flex; align-items: center; gap: 12px; padding: 8px 14px; border-radius: 999px; color: var(--ink-3); font-size: 13.5px; }
 .member-app .side-foot .small-links a:hover, .member-app .side-foot .small-links a.active { color: var(--ink); background: var(--tint); }
+.member-app .side-foot .small-links .sign-out { display: flex; align-items: center; gap: 12px; width: 100%; padding: 8px 14px; border-radius: 999px; color: var(--ink-3); font-size: 13.5px; background: none; border: 0; cursor: pointer; text-align: left; }
+.member-app .side-foot .small-links .sign-out:hover { color: var(--ink); background: var(--tint); }
 .member-app .main { margin-left: var(--side); min-height: 100vh; }
 .member-app .topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 14px 48px; background: rgba(255, 255, 255, 0.82); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); box-shadow: 0 1px 0 var(--line); }
 .member-app .search { display: flex; align-items: center; gap: 10px; background: var(--tint); border-radius: 999px; padding: 0 16px; height: 42px; width: min(380px, 100%); color: var(--ink-3); min-width: 0; }

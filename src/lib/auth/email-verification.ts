@@ -33,8 +33,8 @@ export async function createVerifyLink(email: string, baseUrl: string): Promise<
 }
 
 /** Records that this member controls their current email address. */
-export async function markEmailVerified(user: Pick<User, "id" | "email">): Promise<void> {
-  if (!user.email) return;
+export async function markEmailVerified(user: Pick<User, "id" | "email"> | null | undefined): Promise<void> {
+  if (!user?.email) return;
   const { error } = await createServiceClient()
     .from("email_verifications")
     .upsert({ user_id: user.id, email: user.email.toLowerCase(), verified_at: new Date().toISOString() });

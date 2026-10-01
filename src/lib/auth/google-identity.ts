@@ -24,3 +24,8 @@ export function hasVerifiedGoogleEmail(user: UserLike): boolean {
 export function hasPasswordIdentity(user: UserLike): boolean {
   return (user.identities ?? []).some((identity) => identity.provider === "email");
 }
+
+/** True when the account has any Google login, verified or not. */
+export function hasGoogleIdentity(user: UserLike | null | undefined): boolean {
+  return (user?.identities ?? []).some((identity) => identity.provider === "google");
+}

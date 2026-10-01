@@ -13,6 +13,7 @@ interface Certificate {
   student_name: string;
   course_title: string;
   issued_at: string;
+  dog_name: string | null;
 }
 
 export default async function CertificatePage({ params }: { params: Promise<{ code: string }> }) {
@@ -59,10 +60,10 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
           </p>
           <h2 className="display" style={{ fontSize: 40 }}>
             {cert.student_name}
-            {own && viewer.activeDog ? ` & ${viewer.activeDog.name}` : ""}
+            {cert.dog_name ? ` & ${cert.dog_name}` : ""}
           </h2>
           <p className="muted" style={{ maxWidth: "48ch" }}>
-            {own && viewer.activeDog ? "have" : "has"} completed {lessons ? `all ${lessons} lessons of ` : ""}
+            {cert.dog_name ? "have" : "has"} completed {lessons ? `all ${lessons} lessons of ` : ""}
             <b>{cert.course_title}</b>, building focus, trust and body awareness together.
           </p>
           <div className="cert-meta">

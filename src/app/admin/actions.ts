@@ -60,7 +60,11 @@ export async function deleteCourse(formData: FormData) {
   const id = formData.get("id");
   if (typeof id !== "string") return;
   const sb = createServiceClient();
-  await sb.from("courses").delete().eq("id", id);
+  const { error } = await sb.from("courses").delete().eq("id", id);
+  if (error) {
+    console.error("[admin] course delete failed", { id, error: error.message });
+    redirect(`/admin/courses/${id}?tab=details&error=` + encodeURIComponent("This course couldn't be deleted. If members are enrolled, unpublish it instead."));
+  }
   revalidatePath("/admin/courses");
   redirect("/admin/courses");
 }

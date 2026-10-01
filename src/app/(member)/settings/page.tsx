@@ -1,7 +1,9 @@
 import { requireMember } from "@/lib/member/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { NOTIF_PREFS, readNotifPrefs } from "@/lib/feedback/prefs";
+import { timeZoneOptions } from "@/lib/reminders/timezone-input";
 import { SwitchRow } from "./SwitchRow";
+import { TimeZoneRow } from "./TimeZoneRow";
 import { SignInCard } from "./SignInCard";
 import { DataCard } from "./DataCard";
 
@@ -30,6 +32,7 @@ export default async function SettingsPage() {
               <SwitchRow key={p.key} prefKey={p.key} label={p.label} hint={p.hint} initial={prefs[p.key]} />
             ))}
             <SwitchRow prefKey="newsletter" label="Bonded newsletter" hint="Tips and news, about twice a month" initial={viewer.profile.marketing_opt_in} />
+            <TimeZoneRow initial={viewer.profile.timezone} options={timeZoneOptions(viewer.profile.timezone)} />
           </div>
         </div>
         <div className="stack-lg">

@@ -3,6 +3,23 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { TimeZoneInput } from "@/lib/reminders/timezone-input";
+
+/**
+ * Saves the browser's time zone the first time we see it (reminders use it). Never overwrites a zone
+ * the member already has; they change it in Settings.
+ */
+export async function rememberTimeZone(timeZone: string): Promise<void> {
+  const parsed = TimeZoneInput.safeParse(timeZone);
+  if (!parsed.success) return;
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+  const { error } = await supabase.from("profiles").update({ timezone: parsed.data }).eq("id", user.id).is("timezone", null);
+  if (error) console.error("[member] save time zone failed", { userId: user.id, error: error.message });
+}
 
 /** Switch the dog the whole app shows (progress, plan, feedback). The DB checks ownership. */
 export async function setActiveDog(dogId: string): Promise<void> {

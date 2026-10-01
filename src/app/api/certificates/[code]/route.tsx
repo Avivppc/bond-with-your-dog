@@ -95,11 +95,13 @@ const styles = StyleSheet.create({
 
 function CertificateDoc({
   studentName,
+  dogName,
   courseTitle,
   issuedAt,
   code,
 }: {
   studentName: string;
+  dogName: string | null;
   courseTitle: string;
   issuedAt: string;
   code: string;
@@ -113,11 +115,11 @@ function CertificateDoc({
     <Document>
       <Page size="A4" orientation="landscape" style={styles.page}>
         <View style={styles.border}>
-          <Text style={styles.brand}>KETA TOV ACADEMY</Text>
+          <Text style={styles.brand}>BONDED</Text>
           <Text style={styles.heading}>Certificate of Completion</Text>
           <Text style={styles.preName}>This certifies that</Text>
-          <Text style={styles.name}>{studentName}</Text>
-          <Text style={styles.body}>has successfully completed the course</Text>
+          <Text style={styles.name}>{dogName ? `${studentName} & ${dogName}` : studentName}</Text>
+          <Text style={styles.body}>{dogName ? "have" : "has"} successfully completed the course</Text>
           <Text style={styles.course}>{courseTitle}</Text>
           <View style={styles.footerRow}>
             <View style={styles.footerCol}>
@@ -161,7 +163,7 @@ export async function GET(
   // Public verification by code; the certificates table itself is own-rows only.
   const { data: cert, error } = await supabase
     .rpc("verify_certificate", { p_code: code })
-    .maybeSingle<{ code: string; student_name: string; course_title: string; issued_at: string }>();
+    .maybeSingle<{ code: string; student_name: string; course_title: string; issued_at: string; dog_name: string | null }>();
 
   if (error || !cert) {
     return NextResponse.json({ error: "certificate not found" }, { status: 404 });
@@ -170,6 +172,7 @@ export async function GET(
   const stream = await renderToStream(
     <CertificateDoc
       studentName={cert.student_name}
+      dogName={cert.dog_name}
       courseTitle={cert.course_title}
       issuedAt={cert.issued_at}
       code={cert.code}
@@ -188,7 +191,7 @@ export async function GET(
   return new Response(webStream, {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="keta-tov-${code}.pdf"`,
+      "Content-Disposition": `inline; filename="bonded-certificate-${code}.pdf"`,
     },
   });
 }

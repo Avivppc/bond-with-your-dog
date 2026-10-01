@@ -6,6 +6,7 @@ import { INBOX_STATUSES, INBOX_TABS, inboxHref, parseInboxStatus, parseInboxTab,
 import { BTN_SECONDARY, EmptyState, Notice, PageHeader } from "../_components/ui";
 import { Pagination } from "../_components/list-kit";
 import { InboxItem, type SupportRequestRow } from "./InboxItem";
+import { signStoryPhotos } from "./story-photos";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function InboxPage({
   const status = parseInboxStatus(params.status);
   const requested = parsePage(params.page);
   const [counts, list] = await Promise.all([loadCounts(), loadRequestsClamped(tab, status, requested)]);
+  const photoUrls = await signStoryPhotos(list.rows.flatMap((r) => r.media_paths ?? []));
   const win = pageWindow(list.total, requested, PER_PAGE);
   const view = { tab, status, page: win.page };
 
@@ -112,7 +114,7 @@ export default async function InboxPage({
       ) : (
         <ul className="space-y-3">
           {list.rows.map((item) => (
-            <InboxItem key={item.id} item={item} view={view} />
+            <InboxItem key={item.id} item={item} view={view} photoUrls={photoUrls} />
           ))}
         </ul>
       )}

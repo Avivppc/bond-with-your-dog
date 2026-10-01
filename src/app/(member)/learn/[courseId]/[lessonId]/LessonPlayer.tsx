@@ -5,12 +5,15 @@ import MuxPlayer from "@mux/mux-player-react";
 import VimeoPlayer from "@vimeo/player";
 import { createClient } from "@/lib/supabase/client";
 import type { PlaybackResponse } from "@/app/api/lessons/[lessonId]/playback/route";
+import { resumeFrom } from "@/lib/member/resume";
 
 const PROGRESS_EVERY_SECONDS = 15;
 
 interface LessonPlayerProps {
   lessonId: string;
   hasPlayback: boolean;
+  /** Where the member stopped last time (see resumePoint); null starts from the top. */
+  resumeAt: number | null;
 }
 
 /** Progress writes go through DB functions that check access; watch time never clears a completion. */
@@ -48,7 +51,7 @@ function useProgressRecorder(lessonId: string) {
   };
 }
 
-function VimeoLessonVideo({ embedUrl, lessonId }: { embedUrl: string; lessonId: string }) {
+function VimeoLessonVideo({ embedUrl, lessonId, resumeAt }: { embedUrl: string; lessonId: string; resumeAt: number | null }) {
   const frame = useRef<HTMLIFrameElement>(null);
   const progress = useProgressRecorder(lessonId);
   const progressRef = useRef(progress);
@@ -60,6 +63,16 @@ function VimeoLessonVideo({ embedUrl, lessonId }: { embedUrl: string; lessonId: 
   useEffect(() => {
     if (!frame.current) return;
     const player = new VimeoPlayer(frame.current);
+    if (resumeAt !== null) {
+      player
+        .ready()
+        .then(() => player.getDuration())
+        .then((duration) => {
+          const start = resumeFrom(resumeAt, duration);
+          return start > 0 ? player.setCurrentTime(start) : undefined;
+        })
+        .catch((err: unknown) => console.error("[lesson] resume failed", err instanceof Error ? err.message : String(err)));
+    }
     player.on("timeupdate", (data: { seconds: number }) => progressRef.current.onTime(data.seconds));
     player.on("ended", (data: { seconds: number }) => progressRef.current.onEnded(data.seconds));
     return () => {
@@ -68,6 +81,8 @@ function VimeoLessonVideo({ embedUrl, lessonId }: { embedUrl: string; lessonId: 
       player.off("timeupdate");
       player.off("ended");
     };
+    // Resume once per video, not when the saved point changes under it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [embedUrl]);
 
   return (
@@ -82,14 +97,22 @@ function VimeoLessonVideo({ embedUrl, lessonId }: { embedUrl: string; lessonId: 
   );
 }
 
-function MuxLessonVideo({ playbackId, token, lessonId }: { playbackId: string; token: string | null; lessonId: string }) {
+function MuxLessonVideo({ playbackId, token, lessonId, resumeAt }: { playbackId: string; token: string | null; lessonId: string; resumeAt: number | null }) {
   const progress = useProgressRecorder(lessonId);
+  const resumed = useRef(false);
   return (
     <MuxPlayer
       streamType="on-demand"
       playbackId={playbackId}
       tokens={token ? { playback: token } : undefined}
       metadata={{ video_id: lessonId }}
+      onLoadedMetadata={(e) => {
+        if (resumed.current) return;
+        resumed.current = true;
+        const video = e.target as HTMLMediaElement;
+        const start = resumeFrom(resumeAt, video.duration || 0);
+        if (start > 0) video.currentTime = start;
+      }}
       onTimeUpdate={(e) => progress.onTime((e.target as HTMLMediaElement).currentTime)}
       onEnded={(e) => progress.onEnded((e.target as HTMLMediaElement).currentTime)}
       style={{ aspectRatio: "16/9", width: "100%" }}
@@ -101,7 +124,7 @@ function Message({ children }: { children: React.ReactNode }) {
   return <div className="aspect-video flex items-center justify-center text-white text-sm px-6 text-center">{children}</div>;
 }
 
-export default function LessonPlayer({ lessonId, hasPlayback }: LessonPlayerProps) {
+export default function LessonPlayer({ lessonId, hasPlayback, resumeAt }: LessonPlayerProps) {
   const [data, setData] = useState<PlaybackResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -128,8 +151,8 @@ export default function LessonPlayer({ lessonId, hasPlayback }: LessonPlayerProp
   if (!data) return <Message>Loading…</Message>;
 
   return data.provider === "vimeo" ? (
-    <VimeoLessonVideo embedUrl={data.embedUrl} lessonId={lessonId} />
+    <VimeoLessonVideo embedUrl={data.embedUrl} lessonId={lessonId} resumeAt={resumeAt} />
   ) : (
-    <MuxLessonVideo playbackId={data.playbackId} token={data.token} lessonId={lessonId} />
+    <MuxLessonVideo playbackId={data.playbackId} token={data.token} lessonId={lessonId} resumeAt={resumeAt} />
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { hasPasswordIdentity, hasVerifiedGoogleEmail } from "./google-identity";
+import { hasGoogleIdentity, hasPasswordIdentity, hasVerifiedGoogleEmail } from "./google-identity";
 
 const google = (email: string, verified: boolean) => ({
   provider: "google",
@@ -28,5 +28,16 @@ describe("hasPasswordIdentity", () => {
   test("spots a password login linked to the account", () => {
     expect(hasPasswordIdentity({ identities: [google("a@b.c", true), { provider: "email" }] })).toBe(true);
     expect(hasPasswordIdentity({ identities: [google("a@b.c", true)] })).toBe(false);
+  });
+});
+
+describe("hasGoogleIdentity", () => {
+  test("is true for any linked Google login, even an unverified one", () => {
+    expect(hasGoogleIdentity({ identities: [google("a@b.c", false)] })).toBe(true);
+  });
+
+  test("is false for password-only accounts and missing users", () => {
+    expect(hasGoogleIdentity({ identities: [{ provider: "email" }] })).toBe(false);
+    expect(hasGoogleIdentity(null)).toBe(false);
   });
 });

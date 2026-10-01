@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { sendQaQuestion, shareStory } from "./hub-actions";
 import { Ms } from "@/components/app/ui";
+import { StoryPhotos, type StoryPhoto } from "./StoryPhotos";
 
 type Status = { ok: boolean; text: string } | null;
 
@@ -52,8 +53,14 @@ export function QaQuestionForm({ meetupId, calendarHref }: { meetupId: string; c
 export function StoryForm() {
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ title: "", body: "", consent: false });
+  const [photos, setPhotos] = useState<StoryPhoto[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState<Status>(null);
   const [pending, start] = useTransition();
+  const clearPhotos = () => {
+    photos.forEach((p) => p.preview && URL.revokeObjectURL(p.preview));
+    setPhotos([]);
+  };
   if (!open) {
     return (
       <div>
@@ -70,10 +77,11 @@ export function StoryForm() {
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const res = await shareStory({ title: form.title || undefined, body: form.body, consentPublic: form.consent });
+          const res = await shareStory({ title: form.title || undefined, body: form.body, consentPublic: form.consent, mediaPaths: photos.map((p) => p.path) });
           setStatus(res.ok ? { ok: true, text: "Thank you — Roni reads every story." } : { ok: false, text: res.error });
           if (res.ok) {
             setForm({ title: "", body: "", consent: false });
+            clearPhotos();
             setOpen(false);
           }
         });
@@ -85,11 +93,12 @@ export function StoryForm() {
         <input type="checkbox" checked={form.consent} onChange={(e) => setForm((f) => ({ ...f, consent: e.target.checked }))} />
         Roni may share it on the Bonded site
       </label>
+      <StoryPhotos photos={photos} setPhotos={setPhotos} onBusyChange={setUploading} />
       <div className="row">
-        <button type="submit" className="btn btn-primary btn-sm" disabled={pending || form.body.trim().length < 20}>
+        <button type="submit" className="btn btn-primary btn-sm" disabled={pending || uploading || form.body.trim().length < 20}>
           {pending ? "Sending…" : "Send story"}
         </button>
-        <button type="button" className="btn btn-ghost btn-sm" style={{ background: "#fff" }} onClick={() => setOpen(false)}>
+        <button type="button" className="btn btn-ghost btn-sm" style={{ background: "#fff" }} onClick={() => setOpen(false)} disabled={uploading}>
           Cancel
         </button>
       </div>
