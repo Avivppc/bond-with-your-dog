@@ -5,6 +5,7 @@ import path from "node:path";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeLessonHtml } from "@/lib/sanitize";
 import { parseVimeoUrl } from "@/lib/video/vimeo";
+import { fetchVimeoMeta } from "@/lib/video/vimeo-oembed";
 import { COURSE_IMAGES_BUCKET, LESSON_FILES_BUCKET, lessonFilePath } from "@/lib/lesson-files";
 import type { PlannedCourse, PlannedLesson, PlannedModule } from "./plan";
 
@@ -113,8 +114,22 @@ async function insertLesson(sb: Service, courseId: string, moduleId: string, l: 
   if (error || !data) throw new Error(`lesson "${l.title}": ${error?.message ?? "not created"}`);
   const ref = l.vimeoUrl ? parseVimeoUrl(l.vimeoUrl) : null;
   if (ref && l.vimeoUrl) {
-    const { error: videoError } = await sb.from("lesson_videos").insert({ lesson_id: data.id, provider: "vimeo", external_id: ref.id, external_hash: ref.hash, source_url: l.vimeoUrl });
+    // Same details the lesson editor fills in (length, Vimeo frame), when Vimeo shares them.
+    const meta = await fetchVimeoMeta(ref);
+    const { error: videoError } = await sb.from("lesson_videos").insert({
+      lesson_id: data.id,
+      provider: "vimeo",
+      external_id: ref.id,
+      external_hash: ref.hash,
+      source_url: l.vimeoUrl,
+      duration_seconds: meta?.durationSeconds ?? null,
+      thumbnail_url: meta?.thumbnailUrl ?? null,
+    });
     if (videoError) console.error("[kajabi-import] video link failed", { lesson: l.title, error: videoError.message });
+    if (meta?.durationSeconds != null) {
+      const { error: lengthError } = await sb.from("lessons").update({ duration_seconds: meta.durationSeconds }).eq("id", data.id);
+      if (lengthError) console.error("[kajabi-import] video length failed", { lesson: l.title, error: lengthError.message });
+    }
   }
   return { image: Boolean(l.thumbnailUrl), files: await attachFiles(sb, data.id, l) };
 }

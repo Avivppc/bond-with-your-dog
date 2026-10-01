@@ -20,6 +20,7 @@ export default async function ImportKajabiPage() {
     <div className="space-y-6">
       <PageHeader title="Import from Kajabi" description="Brings Bonded: Foundations, Moves and Let's Dance over from the Kajabi account as draft courses." />
       <Card title="What will be imported">
+        <div className="relative overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="text-left text-xs text-[#6c6a69]">
             <tr>
@@ -51,6 +52,7 @@ export default async function ImportKajabiPage() {
             })}
           </tbody>
         </table>
+        </div>
         <ul className="mt-4 list-disc space-y-1 pl-5 text-xs text-[#6c6a69]">
           <li>Courses arrive as drafts. Review them, add the Vimeo link to each lesson, then publish.</li>
           <li>Module and lesson publish states, sub-modules, lesson text, thumbnails and the Foundations paywall come across as in Kajabi.</li>
