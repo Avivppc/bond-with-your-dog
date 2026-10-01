@@ -5,6 +5,7 @@ import { buildTeamRows, type TeamInvite, type TeamMember, type TeamRow } from "@
 import type { StaffRole } from "@/lib/staff";
 import { Card, Notice, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
 import { Avatar, MENU_ITEM, OptionsMenu, shortDate } from "../_components/list-kit";
+import { ConfirmSubmit } from "../_components/ConfirmSubmit";
 import { changeStaffRole, removeStaffMember, resendInvite, revokeInvite } from "./actions";
 import { InviteForm } from "./InviteForm";
 
@@ -67,7 +68,9 @@ function RowActions({ row, isMe }: { row: TeamRow; isMe: boolean }) {
         </form>
         <form action={revokeInvite}>
           <input type="hidden" name="id" value={row.inviteId} />
-          <button type="submit" className={`${MENU_ITEM} text-red-700`}>Revoke invite</button>
+          <ConfirmSubmit message={`Revoke the invite for ${row.email}? Their link stops giving admin access.`} className={`${MENU_ITEM} text-red-700`}>
+            Revoke invite
+          </ConfirmSubmit>
         </form>
       </OptionsMenu>
     );
@@ -84,7 +87,9 @@ function RowActions({ row, isMe }: { row: TeamRow; isMe: boolean }) {
       </form>
       <form action={removeStaffMember}>
         <input type="hidden" name="user_id" value={row.userId} />
-        <button type="submit" className={`${MENU_ITEM} text-red-700`}>Remove access</button>
+        <ConfirmSubmit message={`Remove admin access for ${row.email}? Their member account stays.`} className={`${MENU_ITEM} text-red-700`}>
+          Remove access
+        </ConfirmSubmit>
       </form>
     </OptionsMenu>
   );
@@ -109,7 +114,8 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       </Card>
 
       <Card title={`Users (${rows.length})`} flush>
-        <div className="relative overflow-x-auto">
+        {/* Visible overflow on wider screens so the last rows' ⋯ menus aren't clipped. */}
+        <div className="relative overflow-x-auto md:overflow-visible">
           <table className={TABLE}>
             <thead className={THEAD}>
               <tr>
