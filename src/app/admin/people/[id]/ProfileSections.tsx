@@ -3,6 +3,8 @@ import { formatAmounts } from "@/lib/admin-helpers/money";
 import { Card, StatusPill } from "../../_components/ui";
 import { Avatar, shortDate } from "../../_components/list-kit";
 import type { PersonDetail } from "../_lib/person-data";
+import { AnswersEditor } from "./AnswersEditor";
+import { DogsEditor } from "./DogsEditor";
 
 const GOALS: Record<string, string> = {
   bond: "Build our bond",
@@ -59,24 +61,12 @@ export function DogsAndOnboarding({ person }: { person: PersonDetail }) {
         <Row label="Practice days">{profile.practiceDays.length ? [...profile.practiceDays].sort().map((d) => DAYS[d] ?? d).join(", ") : "—"}</Row>
         {profile.location && <Row label="Location">{profile.location}</Row>}
       </dl>
+      <AnswersEditor
+        userId={person.userId}
+        answers={{ goals: profile.goals, sessionMinutes: profile.sessionMinutes, practiceDays: profile.practiceDays, location: profile.location, onboardedAt: profile.onboardedAt }}
+      />
       <h3 className="mt-5 text-[14px] font-semibold">Dogs</h3>
-      {person.dogs.length === 0 ? (
-        <p className="mt-1 text-[14px] text-[#6c6a69]">No dogs added yet.</p>
-      ) : (
-        <ul className="mt-2 space-y-2">
-          {person.dogs.map((d) => (
-            <li key={d.id} className="rounded-[8px] border border-[#efeeed] px-3 py-2 text-[14px]">
-              <b>{d.name}</b>
-              <span className="text-[#6c6a69]">{[d.breed, d.age_group, d.size].filter(Boolean).map((v) => ` · ${v}`).join("")}</span>
-              {(d.limitations?.length || d.limitation_note) && (
-                <p className="mt-0.5 text-[12px] text-[#8a5a00]">
-                  Limitations: {[...(d.limitations ?? []), d.limitation_note].filter(Boolean).join(" — ")}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+      <DogsEditor userId={person.userId} dogs={person.dogs} />
     </Card>
   );
 }
