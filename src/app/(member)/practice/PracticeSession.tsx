@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { EVENTS, track } from "@/lib/analytics";
 import { Ms, Tip } from "@/components/app/ui";
 import { localIsoDate } from "@/lib/practice/dates";
 import { formatClock, summarizeSession, type SessionSummary as Summary, type Stage } from "@/lib/practice/session";
@@ -48,10 +49,34 @@ export function PracticeSession({ lesson, dog, moveId, stages, chips, media }: P
   const stage = stages[current];
   const isLast = current === stages.length - 1;
   const stepCount = stages.filter((s) => s.kind === "step").length;
+
+  // Left mid-session without saving (closed the tab or navigated away): one beacon on the way out.
+  const inProgress = useRef<{ stage: number; startedAt: number } | null>(null);
+  useEffect(() => {
+    inProgress.current = startedAt !== null && !saved ? { stage: current + 1, startedAt } : null;
+  });
+  useEffect(() => {
+    function reportAbandoned() {
+      const live = inProgress.current;
+      if (!live) return;
+      inProgress.current = null;
+      track(
+        EVENTS.practiceSessionAbandoned,
+        { lesson_id: lesson.id, dog_id: dog.id, stage: live.stage, seconds_in: Math.round((Date.now() - live.startedAt) / 1000) },
+        true,
+      );
+    }
+    window.addEventListener("pagehide", reportAbandoned);
+    return () => {
+      window.removeEventListener("pagehide", reportAbandoned);
+      reportAbandoned();
+    };
+  }, [lesson.id, dog.id]);
   const elapsed = startedAt === null ? 0 : Math.max(0, (now - startedAt) / 1000);
 
   function markStarted() {
     if (startedAt !== null) return;
+    track(EVENTS.practiceStarted, { lesson_id: lesson.id, move_id: moveId, dog_id: dog.id });
     const t = Date.now();
     setStartedAt(t);
     setNow(t);
@@ -78,6 +103,7 @@ export function PracticeSession({ lesson, dog, moveId, stages, chips, media }: P
     markStarted();
     const done = new Set(completed).add(current);
     setCompleted(done);
+    track(EVENTS.practiceStepCompleted, { lesson_id: lesson.id, stage: current + 1, reps: reps[current] });
     if (isLast) save(done, false);
     else {
       setCurrent(current + 1);

@@ -3,6 +3,7 @@ import { resetAnalytics } from "@/lib/analytics";
 import { syncAnalyticsConsent } from "@/lib/analytics-consent";
 import { surfaceForPath } from "@/lib/analytics-surface";
 import { currentAnalyticsDecision } from "@/lib/consent/policy";
+import { maskReplayText } from "@/lib/replay-privacy";
 
 /** Same-origin path rewritten to PostHog in next.config.ts, so ad blockers don't drop events. */
 const POSTHOG_PROXY_PATH = "/tails";
@@ -23,6 +24,11 @@ if (posthogKey) {
     // still counts them, but with a server-side hash instead of cookies.
     cookieless_mode: "on_reject",
     opt_out_capturing_by_default: consent !== "granted",
+    // Inputs are masked by default; on private pages the visible text is masked too.
+    session_recording: {
+      maskTextSelector: "*",
+      maskTextFn: (text) => maskReplayText(text, window.location.pathname),
+    },
     // Site, app or admin on every event, so funnels, sessions and replays can be split by it.
     before_send: (event) => {
       if (event) event.properties.surface = surfaceForPath(window.location.pathname);
