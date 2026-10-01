@@ -1,13 +1,17 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { publicBucketBase } from "@/lib/supabase/public-url";
+import { COURSE_IMAGES_BUCKET, validateCourseImage } from "@/lib/lesson-files";
+import { communityCoverPath, isAllowedImageUrl } from "@/lib/community/images";
 import { MeetupSchema, meetupReturnUrl, parseMeetupReturn } from "./meetup-schema";
 
-/** Admin → Community: settings, channels, challenges (with steps) and meetups. */
+/** Admin → Community: settings, channels, challenges (with steps), meetups and cover image uploads. */
 type Tab = "settings" | "channels" | "challenges";
 
 function back(tab: Tab, params: Record<string, string>): never {
@@ -29,6 +33,15 @@ const optionalUrl = z
   .transform((v) => v || null);
 const isoDate = z.string().datetime({ offset: true, message: "Pick a date and time." });
 const uuid = z.string().uuid();
+/** Validated against the storage URL after parsing (see coverImageOrError). */
+const coverImage = z.preprocess((v) => (typeof v === "string" ? v : ""), z.string().trim().max(500, "The cover image link is too long."));
+const COVER_IMAGE_ERROR = "Cover image: upload an image or paste a link that starts with https://";
+
+/** The cover as stored (null when blank), or an error for links we don't accept. */
+function coverImageOrError(url: string): { value: string | null } | { error: string } {
+  const base = publicBucketBase(createServiceClient(), COURSE_IMAGES_BUCKET);
+  return isAllowedImageUrl(url, base) ? { value: url || null } : { error: COVER_IMAGE_ERROR };
+}
 
 function done(tab: Tab): never {
   revalidatePath("/admin/community");
@@ -48,7 +61,7 @@ async function write(tab: Tab, what: string, op: PromiseLike<{ error: { message:
 const Settings = z.object({
   name: z.string().trim().min(1, "Give the community a name").max(80),
   description: optionalText(500),
-  cover_image_url: optionalUrl,
+  cover_image_url: coverImage,
   guidelines: optionalText(4000),
   whatsapp_url: optionalUrl,
   open_to_students: checkbox,
@@ -59,7 +72,10 @@ export async function saveCommunitySettings(formData: FormData): Promise<void> {
   await requireStaff("content");
   const parsed = Settings.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back("settings", { error: parsed.error.issues[0].message });
-  await write("settings", "settings", createServiceClient().from("community_settings").update({ ...parsed.data, updated_at: new Date().toISOString() }).eq("id", 1));
+  const cover = coverImageOrError(parsed.data.cover_image_url);
+  if ("error" in cover) back("settings", { error: cover.error });
+  const row = { ...parsed.data, cover_image_url: cover.value, updated_at: new Date().toISOString() };
+  await write("settings", "settings", createServiceClient().from("community_settings").update(row).eq("id", 1));
   done("settings");
 }
 
@@ -103,7 +119,7 @@ const Challenge = z
     id: uuid.optional(),
     title: z.string().trim().min(1, "Give the challenge a title").max(120),
     description: optionalText(4000),
-    cover_image_url: optionalUrl,
+    cover_image_url: coverImage,
     starts_at: isoDate,
     ends_at: isoDate,
     points: z.coerce.number().int().min(0).max(10000),
@@ -115,7 +131,10 @@ export async function saveChallenge(formData: FormData): Promise<void> {
   await requireStaff("content");
   const parsed = Challenge.safeParse(Object.fromEntries(formData));
   if (!parsed.success) back("challenges", { error: parsed.error.issues[0].message });
-  const { id, ...fields } = parsed.data;
+  const { id, cover_image_url: coverUrl, ...rest } = parsed.data;
+  const cover = coverImageOrError(coverUrl);
+  if ("error" in cover) back("challenges", { error: cover.error });
+  const fields = { ...rest, cover_image_url: cover.value };
   const sb = createServiceClient();
   await write("challenges", "challenge", id ? sb.from("community_challenges").update(fields).eq("id", id) : sb.from("community_challenges").insert(fields));
   done("challenges");
@@ -164,7 +183,10 @@ export async function saveMeetup(formData: FormData): Promise<void> {
     const editing = uuid.safeParse(formData.get("id"));
     redirect(meetupReturnUrl(returnTo, { error: parsed.error.issues[0].message }, editing.success ? editing.data : undefined));
   }
-  const { id, ...fields } = parsed.data;
+  const { id, cover_image_url: coverUrl, ...rest } = parsed.data;
+  const cover = coverImageOrError(coverUrl);
+  if ("error" in cover) redirect(meetupReturnUrl(returnTo, { error: cover.error }, id));
+  const fields = { ...rest, cover_image_url: cover.value };
   const sb = createServiceClient();
   const { data, error } = id
     ? await sb.from("community_meetups").update(fields).eq("id", id).select("id").maybeSingle()
@@ -195,4 +217,32 @@ function revalidateMeetups(): void {
   revalidatePath("/admin/community");
   revalidatePath("/admin/coaching/live-qa");
   revalidatePath("/community", "layout");
+}
+
+// ── Cover image uploads ─────────────────────────────────────
+const StartUpload = z.object({
+  fileName: z.string().min(1).max(255),
+  size: z.number().int().nonnegative(),
+  contentType: z.string().max(100),
+});
+
+export type CoverUploadResult = { ok: true; path: string; token: string; publicUrl: string } | { ok: false; error: string };
+
+/** A one-time signed upload URL for a community cover image (public course-images bucket, community/ folder). */
+export async function startCommunityImageUpload(input: z.input<typeof StartUpload>): Promise<CoverUploadResult> {
+  await requireStaff("content");
+  const parsed = StartUpload.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "Invalid upload." };
+  const { fileName, size, contentType } = parsed.data;
+  const invalid = validateCourseImage({ name: fileName, size, type: contentType });
+  if (invalid) return { ok: false, error: invalid };
+
+  const sb = createServiceClient();
+  const { data, error } = await sb.storage.from(COURSE_IMAGES_BUCKET).createSignedUploadUrl(communityCoverPath(fileName, randomUUID()));
+  if (error || !data) {
+    console.error("[admin/community] upload url failed", { error: error?.message });
+    return { ok: false, error: "Could not start the upload." };
+  }
+  const publicUrl = sb.storage.from(COURSE_IMAGES_BUCKET).getPublicUrl(data.path).data.publicUrl;
+  return { ok: true, path: data.path, token: data.token, publicUrl };
 }

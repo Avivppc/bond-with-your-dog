@@ -1,6 +1,7 @@
 import { BTN_DANGER, BTN_PRIMARY, INPUT, LABEL } from "@/app/admin/_components/ui";
 import { formatChapters, parseStoredChapters } from "@/lib/community/chapters";
 import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
+import { CoverImageField } from "./CoverImageField";
 import { LocalDateTime } from "./LocalDateTime";
 import { deleteMeetup, saveMeetup } from "./actions";
 import { Area, Check, Text } from "./fields";
@@ -68,7 +69,7 @@ export function MeetupForm({ meetup, returnTo = "community" }: MeetupFormProps) 
         </label>
         <Text label="Meeting link (Zoom…)" name="meeting_url" value={meetup?.meeting_url} max={500} placeholder="https://zoom.us/j/…" />
         <Text label="Location (optional)" name="location" value={meetup?.location} max={200} placeholder="Online" />
-        <Text label="Cover image URL (optional)" name="cover_image_url" value={meetup?.cover_image_url} max={500} placeholder="https://…" />
+        <CoverImageField label="Cover image (optional)" defaultValue={meetup?.cover_image_url} />
         <div className="flex flex-col justify-end gap-2 pb-1">
           <Check label="Published" name="published" checked={meetup?.published ?? true} />
           {meetup && <Check label="Canceled" name="canceled" checked={meetup.canceled} />}

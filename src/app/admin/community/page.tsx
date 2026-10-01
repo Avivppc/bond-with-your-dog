@@ -1,21 +1,34 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { parsePage } from "@/lib/content/pagination";
+import { LocalTime } from "@/components/ui/LocalTime";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, INPUT, LABEL, Notice, PageHeader, StatusPill, Tabs, type TabItem } from "@/app/admin/_components/ui";
+import { StatCard } from "@/app/admin/_components/list-kit";
 import { saveCommunitySettings } from "./actions";
+import { CoverImageField } from "./CoverImageField";
 import { ChallengeForm, ChannelForm, StepForm, type ChallengeRecord, type ChannelRecord, type StepRecord } from "./forms";
 import { MeetupForm, type MeetupRecord } from "./MeetupForm";
+import { MembersTab } from "./MembersTab";
+import { ModerationTab } from "./ModerationTab";
 
 export const dynamic = "force-dynamic";
 
-const TABS = ["settings", "channels", "challenges", "meetups"] as const;
+const TABS = ["settings", "channels", "challenges", "meetups", "members", "moderation"] as const;
 type TabKey = (typeof TABS)[number];
+const MAX_SEARCH = 100;
 
-const when = (iso: string) => new Date(iso).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "UTC" }) + " UTC";
+interface CommunitySearch {
+  tab?: string;
+  saved?: string;
+  error?: string;
+  q?: string;
+  page?: string;
+}
 
-export default async function AdminCommunityPage({ searchParams }: { searchParams: Promise<{ tab?: string; saved?: string; error?: string }> }) {
+export default async function AdminCommunityPage({ searchParams }: { searchParams: Promise<CommunitySearch> }) {
   await requireStaff("content");
-  const { tab: tabParam, saved, error } = await searchParams;
+  const { tab: tabParam, saved, error, q, page } = await searchParams;
   const tab: TabKey = (TABS as readonly string[]).includes(tabParam ?? "") ? (tabParam as TabKey) : "settings";
   const sb = createServiceClient();
 
@@ -26,18 +39,23 @@ export default async function AdminCommunityPage({ searchParams }: { searchParam
     sb.from("community_comments").select("id", { count: "exact", head: true }).eq("removed", false),
   ]);
   const settings = settingsRes.data;
-  const tabs: TabItem[] = TABS.map((key) => ({ key, label: key[0].toUpperCase() + key.slice(1), href: `/admin/community?tab=${key}` }));
+  const toReview = reviewRes.count ?? 0;
+  const tabs: TabItem[] = TABS.map((key) => ({
+    key,
+    label: key === "moderation" && toReview > 0 ? `Moderation (${toReview})` : key[0].toUpperCase() + key.slice(1),
+    href: `/admin/community?tab=${key}`,
+  }));
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Community"
-        description="Feed, channels, challenges and meetups for your members."
+        description="Feed, channels, challenges, meetups and members of your community."
         actions={
           <>
-            {(reviewRes.count ?? 0) > 0 && (
-              <Link href="/community/review" className={BTN_SECONDARY}>
-                Review feed ({reviewRes.count})
+            {toReview > 0 && (
+              <Link href="/admin/community?tab=moderation" className={BTN_SECONDARY}>
+                Review posts ({toReview})
               </Link>
             )}
             <Link href="/community" target="_blank" className={BTN_PRIMARY}>
@@ -47,16 +65,9 @@ export default async function AdminCommunityPage({ searchParams }: { searchParam
         }
       />
       <section className="grid gap-4 sm:grid-cols-3">
-        {[
-          { label: "Posts", value: postsRes.count ?? 0 },
-          { label: "Comments", value: commentsRes.count ?? 0 },
-          { label: "Waiting for review", value: reviewRes.count ?? 0 },
-        ].map((s) => (
-          <div key={s.label} className="rounded-[12px] border border-[#e7e6e4] bg-white p-5">
-            <p className="text-sm text-[#6c6a69]">{s.label}</p>
-            <p className="mt-1 text-2xl font-semibold">{s.value}</p>
-          </div>
-        ))}
+        <StatCard label="Posts" value={String(postsRes.count ?? 0)} />
+        <StatCard label="Comments" value={String(commentsRes.count ?? 0)} />
+        <StatCard label="Waiting for review" value={String(toReview)} href="/admin/community?tab=moderation" />
       </section>
       <Tabs items={tabs} active={tab} />
       {saved && <Notice tone="success">Saved.</Notice>}
@@ -69,10 +80,7 @@ export default async function AdminCommunityPage({ searchParams }: { searchParam
               <span className={LABEL}>Name</span>
               <input name="name" defaultValue={settings?.name ?? ""} required maxLength={80} className={INPUT} />
             </label>
-            <label className="flex flex-col gap-1.5">
-              <span className={LABEL}>Cover image URL</span>
-              <input name="cover_image_url" defaultValue={settings?.cover_image_url ?? ""} maxLength={500} placeholder="https://…" className={INPUT} />
-            </label>
+            <CoverImageField label="Cover image" defaultValue={settings?.cover_image_url} />
             <label className="flex flex-col gap-1.5 sm:col-span-2">
               <span className={LABEL}>Description</span>
               <textarea name="description" defaultValue={settings?.description ?? ""} rows={2} maxLength={500} className={INPUT} />
@@ -119,6 +127,8 @@ export default async function AdminCommunityPage({ searchParams }: { searchParam
       {tab === "channels" && <ChannelsTab />}
       {tab === "challenges" && <ChallengesTab />}
       {tab === "meetups" && <MeetupsTab />}
+      {tab === "members" && <MembersTab search={(q ?? "").trim().slice(0, MAX_SEARCH)} page={parsePage(page)} />}
+      {tab === "moderation" && <ModerationTab />}
     </div>
   );
 }
@@ -182,7 +192,7 @@ async function ChallengesTab() {
                     <summary className="flex cursor-pointer list-none flex-wrap items-center justify-between gap-3 px-5 py-3">
                       <span className="font-medium">{c.title}</span>
                       <span className="flex items-center gap-2 text-xs text-[#6c6a69]">
-                        {when(c.starts_at)} · {mine.length} steps · {joined.length} joined · {joined.filter((p) => p.completed_at).length} completed
+                        <LocalTime iso={c.starts_at} format="dateTime" zoneLabel /> · {mine.length} steps · {joined.length} joined · {joined.filter((p) => p.completed_at).length} completed
                         <StatusPill tone={c.published ? "published" : "draft"}>{c.published ? "Published" : "Draft"}</StatusPill>
                       </span>
                     </summary>
@@ -232,7 +242,7 @@ async function MeetupsTab() {
                     <span className="font-medium">{m.title}</span>
                     <span className="flex items-center gap-2 text-xs text-[#6c6a69]">
                       {m.kind === "live_qa" && <StatusPill tone="info">Live Q&amp;A</StatusPill>}
-                      {when(m.starts_at)} · {rsvps.filter((r) => r.meetup_id === m.id).length} going
+                      <LocalTime iso={m.starts_at} format="dateTime" zoneLabel /> · {rsvps.filter((r) => r.meetup_id === m.id).length} going
                       {m.canceled ? <StatusPill tone="danger">Canceled</StatusPill> : <StatusPill tone={m.published ? "published" : "draft"}>{m.published ? "Published" : "Draft"}</StatusPill>}
                     </span>
                   </summary>
