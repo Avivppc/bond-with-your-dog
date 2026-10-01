@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MEMBER_FOOT_NAV, MEMBER_NAV, MEMBER_TABS, isActive } from "./nav";
 import { Ms } from "./ui";
+import { SoonPill } from "./SoonLink";
+import { isComingSoon } from "@/lib/member/coming-soon";
 
 /** Left rail on desktop (logo, main nav, Ask Roni, settings/help, team links). */
 export function Sidebar({ isStaff }: { isStaff: boolean }) {
@@ -20,6 +22,15 @@ export function Sidebar({ isStaff }: { isStaff: boolean }) {
       <nav className="nav">
         {MEMBER_NAV.map((item) => {
           const active = isActive(item, pathname);
+          if (isComingSoon(item.href)) {
+            return (
+              <span key={item.href} className="nav-soon" aria-disabled="true" title="Coming soon">
+                <Ms name={item.icon} />
+                {item.label}
+                <SoonPill />
+              </span>
+            );
+          }
           return (
             <Link key={item.href} href={item.href} className={active ? "active" : undefined} aria-current={active ? "page" : undefined} data-tour={`nav-${item.icon}`}>
               <Ms name={item.icon} />

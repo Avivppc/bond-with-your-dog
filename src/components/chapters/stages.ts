@@ -36,6 +36,8 @@ export interface Stage {
   imgAlt: string;
   /** Tailwind aspect class matching the photo's orientation. */
   imgAspect: string;
+  /** Where the compact card (a wide crop) centres the photo. */
+  cardImgPosition: string;
   sectionBg: string;
   reverse: boolean;
 }
@@ -74,6 +76,7 @@ export const STAGES: readonly Stage[] = [
     img: "/images/photos/borderonis-02.jpg",
     imgAlt: "Roni sitting on a staircase, her dog resting a paw on her knee",
     imgAspect: "aspect-[4/5]",
+    cardImgPosition: "object-[50%_64%]",
     sectionBg: "bg-surface-container-low",
     reverse: false,
   },
@@ -109,6 +112,7 @@ export const STAGES: readonly Stage[] = [
     img: "/images/photos/borderonis-06.jpg",
     imgAlt: "Border collie standing on a stair rail, nose to nose with Roni",
     imgAspect: "aspect-[4/3]",
+    cardImgPosition: "object-[50%_35%]",
     sectionBg: "bg-surface-container-lowest",
     reverse: true,
   },
@@ -147,6 +151,7 @@ export const STAGES: readonly Stage[] = [
     img: "/images/photos/borderonis-19.jpg",
     imgAlt: "Roni in a dance pose with her border collie leaning on her leg",
     imgAspect: "aspect-[4/3]",
+    cardImgPosition: "object-[50%_35%]",
     sectionBg: "bg-surface-container-low",
     reverse: false,
   },

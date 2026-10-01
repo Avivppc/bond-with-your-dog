@@ -5,6 +5,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { CommunityNav } from "@/components/community/CommunityNav";
 import { Ms } from "@/components/app/ui";
+import { isComingSoon } from "@/lib/member/coming-soon";
+import { ComingSoon, TeamPreviewNote } from "@/components/app/ComingSoon";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +25,16 @@ async function communityOffers() {
 /** Community inside the Member App shell: channel navigation beside the page. */
 export default async function CommunityLayout({ children }: { children: React.ReactNode }) {
   const ctx = await communityContext();
+  const soon = isComingSoon("/community");
+
+  // Members see "Coming soon" while the community isn't open; the team keeps the real hub.
+  if (soon && !ctx.viewer.isStaff) {
+    return (
+      <ComingSoon icon="groups" section="Community">
+        Share your progress, ask Roni&apos;s team, join challenges and the live Q&amp;A. The community opens soon.
+      </ComingSoon>
+    );
+  }
 
   if (!ctx.viewer.canAccess) {
     const offers = await communityOffers();
@@ -75,6 +87,7 @@ export default async function CommunityLayout({ children }: { children: React.Re
         </div>
       </aside>
       <div className="min-w-0 flex-1 stack-lg">
+        {soon && <TeamPreviewNote section="the community" />}
         <details className="card tight xl:hidden">
           <summary className="row" style={{ cursor: "pointer", listStyle: "none", justifyContent: "space-between" }}>
             <b>Channels &amp; more</b>

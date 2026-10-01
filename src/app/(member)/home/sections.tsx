@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoonLink } from "@/components/app/SoonLink";
 import { ArrowLink, Days, LevelPill, Ms, ProgressLine, formatMinutes } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
 import { TimeAgo } from "@/components/community/bits";
@@ -83,7 +84,7 @@ export function SkillsStrip({ data, dog }: { data: HomeData; dog: string }) {
   if (data.skills.length === 0) {
     if (data.movesCount === 0) return null;
     return (
-      <Link className="card flat" href="/moves" style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
+      <SoonLink className="card flat" href="/moves" style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
         <div className="sketch" style={{ width: 72, height: 72, flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- illustration */}
           <img src="/app/img/intro.jpg" alt="" style={{ width: 62 }} />
@@ -96,7 +97,7 @@ export function SkillsStrip({ data, dog }: { data: HomeData; dog: string }) {
             <Ms name="arrow_forward" />
           </span>
         </div>
-      </Link>
+      </SoonLink>
     );
   }
   return (
@@ -110,12 +111,12 @@ export function SkillsStrip({ data, dog }: { data: HomeData; dog: string }) {
       </div>
       <div className="skills-strip">
         {data.skills.slice(0, 8).map((s) => (
-          <Link key={s.moveId} className="skill" href={`/moves?move=${s.moveId}`}>
+          <SoonLink key={s.moveId} className="skill" href={`/moves?move=${s.moveId}`}>
             {/* eslint-disable-next-line @next/next/no-img-element -- move image */}
             <img src={s.image || "/app/img/basic-skills.jpg"} alt="" />
             <b>{s.name}</b>
             <LevelPill level={s.level} />
-          </Link>
+          </SoonLink>
         ))}
       </div>
     </div>
@@ -143,9 +144,9 @@ export function LiveAndLibrary({ data }: { data: HomeData }) {
             <p className="faint">Send your question ahead and Roni will answer it live.</p>
           </div>
           <div className="row">
-            <Link className="btn btn-ghost btn-sm" href="/community#live-qa">
+            <SoonLink className="btn btn-ghost btn-sm" href="/community#live-qa">
               Send a question
-            </Link>
+            </SoonLink>
             {data.whatsappUrl && (
               <ArrowLink href={data.whatsappUrl} external>
                 WhatsApp group
@@ -154,7 +155,7 @@ export function LiveAndLibrary({ data }: { data: HomeData }) {
           </div>
         </div>
       ) : (
-        <Link className="card" href="/community" style={{ flexDirection: "row", alignItems: "center", gap: 22 }}>
+        <SoonLink className="card" href="/community" style={{ flexDirection: "row", alignItems: "center", gap: 22 }}>
           <div className="sketch" style={{ width: 64, height: 64, background: "var(--teal-soft)", color: "var(--teal)" }}>
             <Ms name="groups" fill />
           </div>
@@ -164,10 +165,10 @@ export function LiveAndLibrary({ data }: { data: HomeData }) {
             <p className="faint">Members and Roni&apos;s team, in one place{data.whatsappUrl ? " — plus the WhatsApp group" : ""}.</p>
           </div>
           <Ms name="arrow_forward" />
-        </Link>
+        </SoonLink>
       )}
       {data.movesCount > 0 ? (
-        <Link className="card flat" href="/moves" style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
+        <SoonLink className="card flat" href="/moves" style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
           <div className="sketch" style={{ width: 92, height: 92, flexShrink: 0 }}>
             {/* eslint-disable-next-line @next/next/no-img-element -- illustration */}
             <img src="/app/img/drunk-bunny.jpg" alt="" style={{ width: 80 }} />
@@ -182,7 +183,7 @@ export function LiveAndLibrary({ data }: { data: HomeData }) {
               <Ms name="arrow_forward" />
             </span>
           </div>
-        </Link>
+        </SoonLink>
       ) : (
         <Link className="card flat" href="/help" style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
           <div className="sketch" style={{ width: 92, height: 92, flexShrink: 0 }}>

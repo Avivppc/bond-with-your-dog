@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoonLink } from "@/components/app/SoonLink";
 import { redirect } from "next/navigation";
 import { dogName, requireMember, type MemberViewer } from "@/lib/member/viewer";
 import { loadHome, type HomeData } from "@/lib/member/home";
@@ -148,7 +149,7 @@ function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeDat
                 <div className="faint">We&apos;ll guide you step by step</div>
               </div>
             </Link>
-            <Link className="list-row" href="/community">
+            <SoonLink className="list-row" href="/community">
               <span className="num-step" style={{ background: "var(--tint-2)", color: "var(--ink-2)" }}>
                 3
               </span>
@@ -156,7 +157,7 @@ function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeDat
                 <div className="title">Say hi in the community</div>
                 <div className="faint">Meet the other members{data.whatsappUrl ? " (and the WhatsApp group)" : ""}</div>
               </div>
-            </Link>
+            </SoonLink>
           </div>
         </div>
         <div className="card">
@@ -199,7 +200,6 @@ function NoCourseHome({ viewer }: { viewer: MemberViewer }) {
               <Ms name="school" />
               Choose your course
             </Link>
-            <ArrowLink href="/community">Visit the community</ArrowLink>
           </div>
         </div>
         <div className="media">

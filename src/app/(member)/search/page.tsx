@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { SoonLink } from "@/components/app/SoonLink";
 import { requireMember } from "@/lib/member/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { LevelPill, Ms } from "@/components/app/ui";
@@ -85,10 +86,10 @@ function Suggestions({ terms }: { terms: string[] }) {
         </div>
       )}
       <div className="row" style={{ justifyContent: "center" }}>
-        <Link className="link" href="/moves">
+        <SoonLink className="link" href="/moves">
           Browse the Moves Library
           <Ms name="arrow_forward" />
-        </Link>
+        </SoonLink>
         <Link className="link" href="/my-courses">
           Go to My Courses
           <Ms name="arrow_forward" />
