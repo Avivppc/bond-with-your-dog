@@ -27,11 +27,11 @@ export default async function EditCoursePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ tab?: string; saved?: string; error?: string }>;
+  searchParams: Promise<{ tab?: string; saved?: string; error?: string; deleted?: string }>;
 }) {
   const { role } = await requireStaff("content");
   const { id } = await params;
-  const { tab: tabParam, saved, error } = await searchParams;
+  const { tab: tabParam, saved, error, deleted } = await searchParams;
   const canSell = canPerform(role, "sales");
 
   const sb = createServiceClient();
@@ -81,7 +81,8 @@ export default async function EditCoursePage({
         </div>
       </div>
 
-      {saved && <Notice tone="success">Course details saved.</Notice>}
+      {saved && <Notice tone="success">{saved === "created" ? "Course created. Add your first module below." : "Course details saved."}</Notice>}
+      {deleted === "lesson" && <Notice tone="success">Lesson deleted.</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
 
       {activeTab === "outline" && <OutlineTab courseId={id} paywallAfterModuleId={course.paywall_after_module_id ?? null} />}
@@ -116,7 +117,7 @@ export default async function EditCoursePage({
 async function OutlineTab({ courseId, paywallAfterModuleId }: { courseId: string; paywallAfterModuleId: string | null }) {
   const sb = createServiceClient();
   const [modulesRes, lessonsRes] = await Promise.all([
-    sb.from("modules").select("id, parent_id, title, position, published").eq("course_id", courseId),
+    sb.from("modules").select("id, parent_id, title, description, position, published").eq("course_id", courseId),
     sb.from("lessons").select("id, module_id, title, position, published, kind, free_preview, available_after_days").eq("course_id", courseId),
   ]);
   if (modulesRes.error || lessonsRes.error) {
