@@ -94,7 +94,7 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
         </Link>
       </header>
       {canSell && (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
           <MetricCard ctx={ctx} rangeKey={rangeKey} metric={parseMetric(params.metric)} />
           <StatsOverview currency={ctx.currency} to={ctx.range.to} />
         </div>

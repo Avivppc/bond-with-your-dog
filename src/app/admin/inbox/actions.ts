@@ -22,9 +22,11 @@ function back(formData: FormData, params: Record<string, string>): never {
   redirect(inboxHref(view, params));
 }
 
+/** The inbox, the top bar's open count (every admin page) and the member's Help page. */
 function done(): void {
   revalidatePath("/admin/inbox");
   revalidatePath("/admin", "layout");
+  revalidatePath("/help");
 }
 
 async function memberEmail(userId: string | null): Promise<string | null> {
@@ -73,10 +75,10 @@ export async function setRequestStatus(formData: FormData): Promise<void> {
   const id = Id.safeParse(formData.get("id"));
   const status = StatusChange.safeParse(formData.get("new_status"));
   if (!id.success || !status.success) back(formData, { error: "Invalid request." });
-  const { error } = await createServiceClient().from("support_requests").update({ status: status.data }).eq("id", id.data);
-  if (error) {
-    console.error("[inbox] status change failed", { id: id.data, error: error.message });
-    back(formData, { error: "Could not update the item." });
+  const { data, error } = await createServiceClient().from("support_requests").update({ status: status.data }).eq("id", id.data).select("id");
+  if (error || !data?.length) {
+    console.error("[inbox] status change failed", { id: id.data, error: error?.message ?? "not found" });
+    back(formData, { error: error ? "Could not update the item." : "This item no longer exists." });
   }
   done();
   back(formData, { ok: status.data === "closed" ? "Closed." : "Reopened." });
@@ -89,14 +91,16 @@ export async function approveStory(formData: FormData): Promise<void> {
   const note = ApprovalNote.safeParse(formData.get("note") ?? undefined);
   if (!id.success || !note.success) back(formData, { error: "Invalid request." });
   const answer = note.data || "Thank you for sharing your story — Roni's team approved it.";
-  const { error } = await createServiceClient()
+  const { data, error } = await createServiceClient()
     .from("support_requests")
     .update({ status: "closed", answer, answered_by: user.id, answered_at: new Date().toISOString() })
     .eq("id", id.data)
-    .eq("kind", "story");
-  if (error) {
-    console.error("[inbox] approve story failed", { id: id.data, error: error.message });
-    back(formData, { error: "Could not approve the story." });
+    .eq("kind", "story")
+    .eq("consent_public", true)
+    .select("id");
+  if (error || !data?.length) {
+    console.error("[inbox] approve story failed", { id: id.data, error: error?.message ?? "not a shareable story" });
+    back(formData, { error: error ? "Could not approve the story." : "Only stories the member agreed to share can be approved." });
   }
   done();
   back(formData, { ok: "Story marked approved." });

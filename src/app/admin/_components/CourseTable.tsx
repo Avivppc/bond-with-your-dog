@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { StatusPill } from "./ui";
+import { StatusPill, TABLE, TD, TH, THEAD, TROW } from "./ui";
+import { shortDate } from "./list-kit";
 import type { AdminCourseRow } from "./course-stats";
 
 export function CourseThumb({ src, className = "h-10 w-16" }: { src: string | null; className?: string }) {
@@ -17,37 +18,35 @@ export function CourseThumb({ src, className = "h-10 w-16" }: { src: string | nu
 export function CourseTable({ courses }: { courses: readonly AdminCourseRow[] }) {
   return (
     <div className="relative overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="border-y border-[#efeeed] text-left text-[#6c6a69]">
+      <table className={TABLE}>
+        <thead className={THEAD}>
           <tr>
-            <th className="px-5 py-3 font-medium">Title</th>
-            <th className="px-3 py-3 font-medium">Students</th>
-            <th className="px-3 py-3 font-medium">Lessons</th>
-            <th className="px-3 py-3 font-medium">Created</th>
-            <th className="px-3 py-3 font-medium">Status</th>
-            <th className="px-5 py-3">
+            <th className={TH}>Title</th>
+            <th className={TH}>Students</th>
+            <th className={TH}>Lessons</th>
+            <th className={TH}>Created</th>
+            <th className={TH}>Status</th>
+            <th className={TH}>
               <span className="sr-only">Actions</span>
             </th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-[#efeeed]">
+        <tbody>
           {courses.map((c) => (
-            <tr key={c.id} className="hover:bg-[#fafaf9]">
-              <td className="px-5 py-3">
+            <tr key={c.id} className={TROW}>
+              <td className={TD}>
                 <Link href={`/admin/courses/${c.id}`} className="flex items-center gap-3 font-medium text-[#1a1a19] hover:underline">
                   <CourseThumb src={c.image} />
                   <span className="min-w-0">{c.title}</span>
                 </Link>
               </td>
-              <td className="px-3 py-3 tabular-nums">{c.stats.activeStudents}</td>
-              <td className="px-3 py-3 tabular-nums">{c.stats.lessons}</td>
-              <td className="whitespace-nowrap px-3 py-3 text-[#6c6a69]">
-                {new Date(c.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-              </td>
-              <td className="px-3 py-3">
+              <td className={`${TD} tabular-nums`}>{c.stats.activeStudents}</td>
+              <td className={`${TD} tabular-nums`}>{c.stats.lessons}</td>
+              <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(c.created_at)}</td>
+              <td className={TD}>
                 <StatusPill tone={c.published ? "published" : "draft"}>{c.published ? "Published" : "Draft"}</StatusPill>
               </td>
-              <td className="px-5 py-3 text-right">
+              <td className={`${TD} text-right`}>
                 <Link href={`/admin/courses/${c.id}`} className="text-sm font-medium text-[#1a1a19] hover:underline">
                   Edit
                 </Link>

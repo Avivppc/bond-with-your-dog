@@ -7,6 +7,7 @@ import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { notifyAccessGranted } from "@/lib/payments/billing";
 import { sendEmail, siteUrl } from "@/lib/email";
+import { DaysOfAccess } from "@/lib/admin-helpers/form-fields";
 import { findUserId, grantOffer, saveAccessInvite } from "../people/_lib/access-server";
 
 /** Where these forms live now: the Contacts list or one contact's page. */
@@ -26,7 +27,7 @@ function revalidateContacts(): void {
 const GrantSchema = z.object({
   email: z.string().trim().toLowerCase().email("Enter a valid email address"),
   offer_id: z.string().uuid("Choose an offer"),
-  days: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().int().positive().max(36500).nullable()),
+  days: DaysOfAccess,
 });
 
 function signupInvite(email: string) {

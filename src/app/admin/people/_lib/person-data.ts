@@ -43,6 +43,7 @@ const titleOf = (v: unknown) => (v as Titled)?.title ?? null;
 export async function loadPerson(userId: string): Promise<PersonDetail | null> {
   const sb = createServiceClient();
   const { data: auth, error: authError } = await sb.auth.admin.getUserById(userId);
+  if (authError && authError.status !== 404) console.error("[person] account lookup failed", { userId, error: authError.message });
   if (authError || !auth.user) return null;
   const user = auth.user;
 
@@ -61,7 +62,11 @@ export async function loadPerson(userId: string): Promise<PersonDetail | null> {
     loadPersonExtras(userId),
   ]);
   logIfError("profile", userId, profile.error);
+  logIfError("staff role", userId, staff.error);
   logIfError("dogs", userId, dogs.error);
+  logIfError("access invites", userId, invites.error);
+  logIfError("lesson count", userId, lessons.error);
+  logIfError("community points", userId, points.error);
   logIfError("enrollments", userId, enrollments.error);
   logIfError("orders", userId, orders.error);
   logIfError("payments", userId, payments.error);
