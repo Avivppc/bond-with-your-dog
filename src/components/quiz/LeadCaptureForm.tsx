@@ -72,6 +72,7 @@ export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadC
             type="text"
             required
             autoComplete="given-name"
+            maxLength={60}
             value={firstName}
             onChange={(event) => setFirstName(event.target.value)}
             className={inputClass}

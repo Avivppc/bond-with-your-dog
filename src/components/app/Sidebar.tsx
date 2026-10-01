@@ -52,6 +52,12 @@ export function Sidebar({ isStaff }: { isStaff: boolean }) {
               </Link>
             </>
           )}
+          <form action="/auth/logout" method="post">
+            <button type="submit" className="sign-out">
+              <Ms name="logout" size="sm" />
+              Sign out
+            </button>
+          </form>
         </div>
       </div>
     </aside>

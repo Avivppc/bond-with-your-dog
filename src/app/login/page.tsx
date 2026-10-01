@@ -33,7 +33,7 @@ export default async function LoginPage({
 
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-700 text-sm">
-              {decodeURIComponent(error)}
+              {loginErrorMessage(error)}
             </div>
           )}
 
@@ -92,4 +92,14 @@ export default async function LoginPage({
       <Footer />
     </>
   );
+}
+
+const LOGIN_ERRORS: Record<string, string> = {
+  "auth-callback-failed": "That sign-in link didn't work. Please sign in below, or request a new link.",
+  "link-expired": "That link has expired or was already used. Please sign in, or request a new link.",
+};
+
+/** Known codes get a readable sentence; anything else is shown as sent (already human-readable). */
+function loginErrorMessage(code: string): string {
+  return LOGIN_ERRORS[code] ?? decodeURIComponent(code);
 }
