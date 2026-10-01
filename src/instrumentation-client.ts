@@ -1,5 +1,6 @@
 import posthog from "posthog-js";
 import { resetAnalytics } from "@/lib/analytics";
+import { surfaceForPath } from "@/lib/analytics-surface";
 
 /** Same-origin path rewritten to PostHog in next.config.ts, so ad blockers don't drop events. */
 const POSTHOG_PROXY_PATH = "/tails";
@@ -14,6 +15,11 @@ if (posthogKey) {
     ui_host: "https://us.posthog.com",
     defaults: "2026-08-30",
     person_profiles: "identified_only",
+    // Site, app or admin on every event, so funnels, sessions and replays can be split by it.
+    before_send: (event) => {
+      if (event) event.properties.surface = surfaceForPath(window.location.pathname);
+      return event;
+    },
   });
 
   // Logout is a plain form POST handled on the server, so the client never

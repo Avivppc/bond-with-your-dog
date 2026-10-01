@@ -1,5 +1,5 @@
 import posthog from "posthog-js";
-import type { EventName, EventProps } from "./analytics-events";
+import { analyticsId, type EventName, type EventProps } from "./analytics-events";
 
 export * from "./analytics-events";
 
@@ -22,9 +22,25 @@ export function track(name: EventName, props: EventProps = {}, beacon = false): 
  */
 export function identifyByEmail(email: string, traits: EventProps = {}): void {
   if (!isEnabled()) return;
-  const id = email.trim().toLowerCase();
+  const id = analyticsId(email);
   if (!id || posthog.get_distinct_id() === id) return;
   posthog.identify(id, { email: id, ...traits });
+}
+
+export interface MemberContext {
+  dogId: string | null;
+  dogCount: number;
+  isStaff: boolean;
+}
+
+/**
+ * Attach the active dog to every following event, and flag staff so their
+ * own clicks around the app can be filtered out of the dashboards.
+ */
+export function registerMemberContext({ dogId, dogCount, isStaff }: MemberContext): void {
+  if (!isEnabled()) return;
+  posthog.register({ dog_id: dogId, dog_count: dogCount });
+  posthog.setPersonProperties({ is_staff: isStaff, dog_count: dogCount });
 }
 
 export function resetAnalytics(): void {

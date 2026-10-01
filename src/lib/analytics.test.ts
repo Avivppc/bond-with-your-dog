@@ -5,12 +5,14 @@ const posthogMock = vi.hoisted(() => ({
   capture: vi.fn(),
   identify: vi.fn(),
   reset: vi.fn(),
+  register: vi.fn(),
+  setPersonProperties: vi.fn(),
   get_distinct_id: vi.fn(() => "anon-123"),
 }));
 
 vi.mock("posthog-js", () => ({ default: posthogMock }));
 
-import { EVENTS, identifyByEmail, resetAnalytics, track } from "./analytics";
+import { EVENTS, identifyByEmail, registerMemberContext, resetAnalytics, track } from "./analytics";
 
 describe("analytics", () => {
   beforeEach(() => {
@@ -81,5 +83,18 @@ describe("analytics", () => {
     identifyByEmail("   ");
 
     expect(posthogMock.identify).not.toHaveBeenCalled();
+  });
+
+  test("every app event carries the active dog, and the person is flagged as staff or member", () => {
+    registerMemberContext({ dogId: "dog-1", dogCount: 2, isStaff: true });
+
+    expect(posthogMock.register).toHaveBeenCalledWith({ dog_id: "dog-1", dog_count: 2 });
+    expect(posthogMock.setPersonProperties).toHaveBeenCalledWith({ is_staff: true, dog_count: 2 });
+  });
+
+  test("a member without a dog yet sends a null dog id", () => {
+    registerMemberContext({ dogId: null, dogCount: 0, isStaff: false });
+
+    expect(posthogMock.register).toHaveBeenCalledWith({ dog_id: null, dog_count: 0 });
   });
 });
