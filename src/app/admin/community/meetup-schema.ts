@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseChapters } from "@/lib/community/chapters";
 
 /** Validation for community_meetups rows (meetups and Live Q&A sessions) and where to return after saving. */
 export const MEETUP_RETURNS = ["community", "live-qa"] as const;
@@ -12,6 +13,13 @@ const optionalUrl = text
   .refine((v) => v === "" || /^https:\/\/\S+$/.test(v), "Links must start with https://")
   .transform((v) => v || null);
 const checkbox = z.preprocess((v) => v === "on", z.boolean());
+/** The "mm:ss Title" per line textarea → [{ t, title }] sorted by time (missing → none). */
+const chapters = text.pipe(z.string().max(10_000)).transform((v, ctx) => {
+  const parsed = parseChapters(v);
+  if (parsed.ok) return parsed.chapters;
+  ctx.addIssue({ code: "custom", message: `Chapters — ${parsed.error}` });
+  return z.NEVER;
+});
 
 export const MeetupSchema = z.object({
   id: z.preprocess((v) => (v === "" ? undefined : v), z.string().uuid().optional()),
@@ -30,6 +38,7 @@ export const MeetupSchema = z.object({
     (v) => (v === "" || v == null ? null : Number(v)),
     z.number({ message: "Recording length must be a number." }).int("Recording length: whole minutes.").min(1, "Recording length: 1–600 minutes.").max(600, "Recording length: 1–600 minutes.").nullable()
   ),
+  recording_chapters: chapters,
 });
 
 export function parseMeetupReturn(value: unknown): MeetupReturn {
