@@ -1,13 +1,13 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { parseVimeoUrl } from "@/lib/video/vimeo";
 import { fetchVimeoMeta } from "@/lib/video/vimeo-oembed";
 import { LESSON_FILES_BUCKET, lessonFilePath, validateLessonFile } from "@/lib/lesson-files";
+import { revalidateCourseContent } from "@/app/admin/courses/revalidate";
 
 /** Lesson content editing called from client components; returns results, never throws. */
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -19,9 +19,7 @@ function fail(error: string): { ok: false; error: string } {
 }
 
 function refresh(courseId: string, lessonId: string): void {
-  revalidatePath(`/admin/courses/${courseId}/lessons/${lessonId}`);
-  revalidatePath(`/admin/courses/${courseId}`);
-  revalidatePath(`/learn/${courseId}/${lessonId}`);
+  revalidateCourseContent(courseId, lessonId);
 }
 
 async function lessonBelongsToCourse(lessonId: string, courseId: string): Promise<boolean> {
@@ -74,6 +72,7 @@ export async function setLessonVideo(input: z.input<typeof SetVideo>): Promise<A
 
   // Keep the public lesson row in sync for outlines/cards (duration, thumbnail are not secret).
   // When Vimeo won't share metadata (private video, outage) keep what the editor entered by hand.
+  // An uploaded custom thumbnail always wins: the DB trigger ignores this thumbnail while one exists.
   const synced = {
     ...(meta?.durationSeconds != null ? { duration_seconds: meta.durationSeconds } : {}),
     ...(meta?.thumbnailUrl ? { thumbnail_url: meta.thumbnailUrl } : {}),
@@ -102,11 +101,15 @@ export async function removeLessonVideo(input: z.input<typeof Ids>): Promise<Act
   const { courseId, lessonId } = parsed.data;
   if (!(await lessonBelongsToCourse(lessonId, courseId))) return fail("Lesson not found.");
 
-  const { error } = await createServiceClient().from("lesson_videos").delete().eq("lesson_id", lessonId);
+  const sb = createServiceClient();
+  const { error } = await sb.from("lesson_videos").delete().eq("lesson_id", lessonId);
   if (error) {
     console.error("removeLessonVideo failed", { lessonId, error: error.message });
     return fail("Could not remove the video.");
   }
+  // The old Vimeo thumbnail would otherwise linger on cards (a custom upload is kept by the trigger).
+  const { error: thumbError } = await sb.from("lessons").update({ thumbnail_url: null }).eq("id", lessonId);
+  if (thumbError) console.error("removeLessonVideo thumbnail reset failed", { lessonId, error: thumbError.message });
   refresh(courseId, lessonId);
   return { ok: true, data: undefined };
 }

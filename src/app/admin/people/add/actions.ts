@@ -6,6 +6,7 @@ import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { MAX_EMAILS_PER_BATCH, parseEmailList } from "@/lib/admin-helpers/email-list";
 import { mapWithConcurrency } from "@/lib/admin-helpers/concurrency";
+import { DaysOfAccess } from "@/lib/admin-helpers/form-fields";
 import { addContact, type ContactOutcome } from "../_lib/access-server";
 
 export interface AddContactsValues {
@@ -30,7 +31,7 @@ const PARALLEL = 4;
 const FormSchema = z.object({
   emails: z.string().max(40_000, "That list is too long."),
   offer_id: z.union([z.literal(""), z.string().uuid("Choose an offer")]),
-  days: z.preprocess((v) => (v === "" || v == null ? null : Number(v)), z.number().int().positive().max(36500).nullable()),
+  days: DaysOfAccess,
   send_invite: z.preprocess((v) => v === "on", z.boolean()),
 });
 

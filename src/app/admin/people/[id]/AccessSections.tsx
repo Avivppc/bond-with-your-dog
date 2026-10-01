@@ -1,5 +1,6 @@
 import { formatMoney } from "@/lib/pricing";
-import { BTN_PRIMARY, BTN_SECONDARY, Card, INPUT, LABEL, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../../_components/ui";
+import { ORDER_TONE, orderStatusLabel } from "@/lib/admin-helpers/orders";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, INPUT, LABEL, StatusPill, TABLE, TD, TH, THEAD, TROW, type PillTone } from "../../_components/ui";
 import { shortDate } from "../../_components/list-kit";
 import { ConfirmSubmit } from "../../_components/ConfirmSubmit";
 import { cancelAccessInvite, grantAccessByEmail, revokeCourseAccess } from "../../students/actions";
@@ -97,21 +98,46 @@ export function CoursesSection({ person, offers }: { person: PersonDetail; offer
   );
 }
 
-const ORDER_TONE: Record<string, "published" | "warning" | "danger" | "draft" | "info"> = {
-  paid: "published",
-  pending: "warning",
-  refunded: "info",
-  failed: "danger",
-  canceled: "draft",
-};
+interface LedgerRow {
+  key: string;
+  date: string;
+  offer: string | null;
+  amount: string;
+  tone: PillTone;
+  label: string;
+}
+
+/** Orders plus the refunds and renewals that followed them, newest first. */
+function ledgerRows(person: PersonDetail): LedgerRow[] {
+  const orders = person.orders.map((o): LedgerRow => ({
+    key: `o-${o.id}`,
+    date: o.created_at,
+    offer: o.offer,
+    amount: o.amount_cents === 0 ? "Free" : formatMoney(o.amount_cents, o.currency),
+    tone: ORDER_TONE[o.status] ?? "draft",
+    label: `Order · ${orderStatusLabel(o.status).toLowerCase()}`,
+  }));
+  const payments = person.payments
+    .filter((p) => p.kind === "refund" || p.is_renewal)
+    .map((p): LedgerRow => ({
+      key: `p-${p.id}`,
+      date: p.occurred_at,
+      offer: p.offer,
+      amount: `${p.kind === "refund" ? "−" : ""}${formatMoney(p.amount_cents, p.currency)}`,
+      tone: p.kind === "refund" ? "danger" : "info",
+      label: p.kind === "refund" ? "Refund" : "Renewal",
+    }));
+  return [...orders, ...payments].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));
+}
 
 export function OrdersSection({ person }: { person: PersonDetail }) {
+  const rows = ledgerRows(person);
   return (
     <Card title="Orders & payments" flush>
-      {person.orders.length === 0 && person.payments.length === 0 ? (
+      {rows.length === 0 ? (
         <p className="px-5 pb-5 text-[14px] text-[#6c6a69]">No orders yet.</p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
           <table className={TABLE}>
             <thead className={THEAD}>
               <tr>
@@ -122,28 +148,16 @@ export function OrdersSection({ person }: { person: PersonDetail }) {
               </tr>
             </thead>
             <tbody>
-              {person.orders.map((o) => (
-                <tr key={`o-${o.id}`} className={TROW}>
-                  <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(o.created_at)}</td>
-                  <td className={TD}>{o.offer ?? "—"}</td>
-                  <td className={`${TD} tabular-nums`}>{formatMoney(o.amount_cents, o.currency)}</td>
+              {rows.map((r) => (
+                <tr key={r.key} className={TROW}>
+                  <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(r.date)}</td>
+                  <td className={TD}>{r.offer ?? "—"}</td>
+                  <td className={`${TD} whitespace-nowrap tabular-nums`}>{r.amount}</td>
                   <td className={TD}>
-                    <StatusPill tone={ORDER_TONE[o.status] ?? "draft"}>Order · {o.status}</StatusPill>
+                    <StatusPill tone={r.tone}>{r.label}</StatusPill>
                   </td>
                 </tr>
               ))}
-              {person.payments
-                .filter((p) => p.kind === "refund" || p.is_renewal)
-                .map((p) => (
-                  <tr key={`p-${p.id}`} className={TROW}>
-                    <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(p.occurred_at)}</td>
-                    <td className={TD}>{p.offer ?? "—"}</td>
-                    <td className={`${TD} tabular-nums`}>{`${p.kind === "refund" ? "−" : ""}${formatMoney(p.amount_cents, p.currency)}`}</td>
-                    <td className={TD}>
-                      <StatusPill tone={p.kind === "refund" ? "danger" : "info"}>{p.kind === "refund" ? "Refund" : "Renewal"}</StatusPill>
-                    </td>
-                  </tr>
-                ))}
             </tbody>
           </table>
         </div>

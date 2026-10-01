@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import * as q from "@/lib/analytics/queries";
 import type { Bucket } from "@/lib/analytics/range";
 import type { DashboardMetric, MetricBucket } from "@/lib/admin-helpers/dashboard-metrics";
+import { displayFirstName } from "@/lib/admin-helpers/display";
 
 type Window = { from: Date; to: Date };
 
@@ -50,10 +51,10 @@ export async function netRevenueAllTime(currency: string, to: Date): Promise<num
   return totals.gross - totals.refunds;
 }
 
-/** "Roni" from the profile's full name; falls back to the account's metadata, then the email. */
+/** "Roni" from the profile's full name (capitalised); falls back to the account's metadata, then the email. */
 export async function staffFirstName(userId: string, email: string | undefined, metadataName: unknown): Promise<string> {
-  const { data } = await createServiceClient().from("profiles").select("full_name").eq("id", userId).maybeSingle();
+  const { data, error } = await createServiceClient().from("profiles").select("full_name").eq("id", userId).maybeSingle();
+  if (error) console.error("[admin] staff name lookup failed", { userId, error: error.message });
   const full = (data?.full_name as string | null) ?? (typeof metadataName === "string" ? metadataName : null);
-  const first = full?.trim().split(/\s+/)[0];
-  return first || email?.split("@")[0] || "there";
+  return displayFirstName(full, email);
 }

@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { SkillLevel } from "@/lib/member/viewer";
 import { settleUploads, type UploadingRow } from "./upload-server";
-import { hasUnansweredMessage, type FeedbackStatus } from "./status";
+import { hasUnansweredMessage, videosAwaitingReply, type FeedbackStatus, type VideoMessage } from "./status";
 
 /** Roni's Studio data. Callers must have passed requireStaff() first (service role, no RLS). */
 
@@ -32,6 +32,8 @@ export interface QueueVideo {
 
 export interface StudioStats {
   waiting: number;
+  /** Replied videos the member wrote back on, waiting for Roni's answer. */
+  replies: number;
   stories: number;
   questions: number;
 }
@@ -44,19 +46,39 @@ interface Row extends Omit<QueueVideo, "memberName" | "dogName" | "dogPhoto" | "
 const COLUMNS =
   "id, user_id, dog_id, move_id, title, note, status, summary, created_at, replied_at, duration_seconds, mux_playback_id, dogs(name, photo_url), moves(name)";
 const DONE_LIMIT = 50;
+const REPLY_SCAN_LIMIT = 500;
 
 function count(res: { count: number | null; error: { message: string } | null }, what: string): number {
   if (res.error) console.error(`[studio] ${what} count failed`, res.error.message);
   return res.count ?? 0;
 }
 
+/**
+ * Replied videos where the member wrote back after Roni, oldest wait first. Only the newest
+ * messages are scanned (bounded); a video whose last word is older than that is long settled.
+ */
+export async function loadAwaitingReplyIds(sb: Service): Promise<string[]> {
+  const { data, error } = await sb
+    .from("feedback_messages")
+    .select("video_id, from_staff, created_at")
+    .order("created_at", { ascending: false })
+    .limit(REPLY_SCAN_LIMIT)
+    .returns<VideoMessage[]>();
+  if (error) console.error("[studio] recent messages load failed", error.message);
+  return videosAwaitingReply(data ?? []);
+}
+
 export async function loadStudioStats(sb: Service): Promise<StudioStats> {
-  const [waiting, stories, questions] = await Promise.all([
+  const [waiting, stories, questions, awaitingIds] = await Promise.all([
     sb.from("feedback_videos").select("id", { count: "exact", head: true }).eq("status", "waiting"),
     sb.from("support_requests").select("id", { count: "exact", head: true }).eq("kind", "story").eq("status", "open"),
     sb.from("qa_questions").select("id", { count: "exact", head: true }).eq("answered", false),
+    loadAwaitingReplyIds(sb),
   ]);
-  return { waiting: count(waiting, "waiting"), stories: count(stories, "stories"), questions: count(questions, "questions") };
+  const replies = awaitingIds.length
+    ? count(await sb.from("feedback_videos").select("id", { count: "exact", head: true }).eq("status", "replied").in("id", awaitingIds), "replies")
+    : 0;
+  return { waiting: count(waiting, "waiting"), replies, stories: count(stories, "stories"), questions: count(questions, "questions") };
 }
 
 /** Uploads still "processing" are checked with Mux here too, so nothing waits unseen. */
@@ -88,14 +110,29 @@ async function unansweredVideos(sb: Service, videoIds: string[]): Promise<Set<st
   return new Set([...byVideo].filter(([, msgs]) => hasUnansweredMessage(msgs)).map(([id]) => id));
 }
 
+async function selectRows(query: PromiseLike<{ data: Row[] | null; error: { message: string } | null }>, what: string): Promise<Row[]> {
+  const { data, error } = await query;
+  if (error) console.error(`[studio] ${what} load failed`, error.message);
+  return data ?? [];
+}
+
+/** Waiting = new videos (oldest first), then replied videos the member wrote back on (oldest message first). */
+async function waitingRows(sb: Service): Promise<Row[]> {
+  const [fresh, awaitingIds] = await Promise.all([
+    selectRows(sb.from("feedback_videos").select(COLUMNS).eq("status", "waiting").order("created_at").returns<Row[]>(), "queue"),
+    loadAwaitingReplyIds(sb),
+  ]);
+  if (awaitingIds.length === 0) return fresh;
+  const replied = await selectRows(sb.from("feedback_videos").select(COLUMNS).eq("status", "replied").in("id", awaitingIds).returns<Row[]>(), "follow-ups");
+  const byId = new Map(replied.map((r) => [r.id, r]));
+  return [...fresh, ...awaitingIds.flatMap((id) => byId.get(id) ?? [])];
+}
+
 export async function loadQueue(sb: Service, tab: StudioTab): Promise<QueueVideo[]> {
-  const query =
+  const rows =
     tab === "waiting"
-      ? sb.from("feedback_videos").select(COLUMNS).eq("status", "waiting").order("created_at")
-      : sb.from("feedback_videos").select(COLUMNS).eq("status", "replied").order("replied_at", { ascending: false }).limit(DONE_LIMIT);
-  const { data, error } = await query.returns<Row[]>();
-  if (error) console.error("[studio] queue load failed", error.message);
-  const rows = data ?? [];
+      ? await waitingRows(sb)
+      : await selectRows(sb.from("feedback_videos").select(COLUMNS).eq("status", "replied").order("replied_at", { ascending: false }).limit(DONE_LIMIT).returns<Row[]>(), "queue");
   const [names, unanswered] = await Promise.all([
     memberNames(sb, [...new Set(rows.map((r) => r.user_id))]),
     unansweredVideos(sb, rows.map((r) => r.id)),

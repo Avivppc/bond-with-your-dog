@@ -1,54 +1,122 @@
 import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { pageWindow, parsePage } from "@/lib/admin-helpers/pagination";
+import { ilikePattern, parseSearch } from "@/lib/admin-helpers/search";
+import { leadTierLabel } from "@/lib/admin-helpers/display";
+import { BTN_SECONDARY, Card, EmptyState, INPUT, PageHeader, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
+import { Pagination, shortDate } from "../_components/list-kit";
 
 export const dynamic = "force-dynamic";
 
-const LIMIT = 500;
+const PER_PAGE = 50;
+const RANGE_NOT_SATISFIABLE = "PGRST103";
 
-export default async function LeadsPage() {
-  await requireStaff("sales");
-  const { data: leads, error } = await createServiceClient()
+interface LeadRow {
+  id: string;
+  first_name: string;
+  email: string;
+  tier: string;
+  created_at: string;
+}
+
+interface LeadsPage {
+  rows: LeadRow[];
+  total: number;
+  failed: boolean;
+}
+
+async function loadLeads(search: string, page: number): Promise<LeadsPage> {
+  const offset = (page - 1) * PER_PAGE;
+  let query = createServiceClient()
     .from("quiz_leads")
-    .select("id, first_name, email, tier, created_at")
+    .select("id, first_name, email, tier, created_at", { count: "exact" })
     .order("created_at", { ascending: false })
-    .limit(LIMIT);
-  if (error) console.error("[leads] list failed", error.message);
+    .range(offset, offset + PER_PAGE - 1);
+  const pattern = ilikePattern(search);
+  if (pattern) query = query.or(`email.ilike.${pattern},first_name.ilike.${pattern}`);
+  const { data, count, error } = await query;
+  // Past the end PostgREST answers 416; page 1 then tells the caller the real total.
+  if (error?.code === RANGE_NOT_SATISFIABLE && page > 1) return loadLeads(search, 1);
+  if (error) {
+    console.error("[leads] list failed", { search, page, error: error.message });
+    return { rows: [], total: 0, failed: true };
+  }
+  return { rows: (data ?? []) as LeadRow[], total: count ?? 0, failed: false };
+}
+
+export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+  await requireStaff("sales");
+  const params = await searchParams;
+  const q = parseSearch(params.q);
+  const requested = parsePage(params.page);
+  const first = await loadLeads(q, requested);
+  // Past the last page (e.g. after a search narrowed the list): show the last real page.
+  const win = pageWindow(first.total, requested, PER_PAGE);
+  const result = win.page === requested || first.failed ? first : await loadLeads(q, win.page);
+  const hrefFor = (page: number) => `/admin/leads?${new URLSearchParams({ ...(q ? { q } : {}), page: String(page) }).toString()}`;
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="text-sm text-[#6c6a69]">People who took the &ldquo;Find your journey&rdquo; quiz (latest {LIMIT}).</p>
+    <div className="space-y-5">
+      <PageHeader
+        title="Leads"
+        description="People who took the “Find your journey” quiz. They don't have an account until they sign up."
+        actions={
+          <Link href="/admin/leads/export" className={BTN_SECONDARY} prefetch={false}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>
+              download
+            </span>
+            Download CSV
+          </Link>
+        }
+      />
+      <Card flush>
+        <form className="-mt-1 px-5 pt-4" role="search">
+          <label className="relative block max-w-sm">
+            <span className="sr-only">Search leads</span>
+            <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9b9997]" aria-hidden>
+              search
+            </span>
+            <input name="q" type="search" defaultValue={q} placeholder="Search by name or email" className={`${INPUT} pl-9`} />
+          </label>
+        </form>
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-[14px] text-[#6c6a69]">
+          <span>
+            Displaying {win.first}–{win.last} of <b className="text-[#1a1a19]">{result.total.toLocaleString("en-US")}</b> leads
+          </span>
+          <Pagination page={win.page} pages={win.pages} hrefFor={hrefFor} />
         </div>
-        <Link href="/admin/leads/export" className="bg-[#343332] text-white hover:bg-black px-4 py-2 rounded-full font-medium text-xs" prefetch={false}>
-          Download CSV
-        </Link>
-      </header>
-      <section className="bg-white rounded-[12px] border border-[#e7e6e4] shadow-[0_1px_2px_rgba(0,0,0,0.04)] overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-left text-sm text-[#6c6a69] border-b border-[#efeeed]">
-            <tr>
-              <th className="px-4 py-2">Date</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-[#efeeed]">
-            {(leads ?? []).map((l) => (
-              <tr key={l.id}>
-                <td className="px-4 py-2.5 text-[#6c6a69]">{new Date(l.created_at).toLocaleDateString("en-US")}</td>
-                <td>{l.first_name}</td>
-                <td>{l.email}</td>
-                <td className="capitalize">{l.tier}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        {(leads ?? []).length === 0 && <p className="p-6 text-sm text-[#6c6a69]">No leads yet.</p>}
-      </section>
+        {result.failed ? (
+          <EmptyState title="Leads couldn't be loaded.">Please refresh the page.</EmptyState>
+        ) : result.rows.length === 0 ? (
+          <EmptyState title={q ? "No leads match your search." : "No leads yet."}>{!q && "Leads appear here when someone finishes the quiz."}</EmptyState>
+        ) : (
+          <div className="relative overflow-x-auto">
+            <table className={TABLE}>
+              <thead className={THEAD}>
+                <tr>
+                  <th className={TH}>Name</th>
+                  <th className={TH}>Email</th>
+                  <th className={TH}>Quiz result</th>
+                  <th className={TH}>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.rows.map((l) => (
+                  <tr key={l.id} className={TROW}>
+                    <td className={`${TD} font-medium`}>{l.first_name}</td>
+                    <td className={`${TD} text-[#3d3c3a]`}>{l.email}</td>
+                    <td className={TD}>
+                      <span className="whitespace-nowrap rounded-full bg-[#f0efee] px-2.5 py-0.5 text-[12px] font-medium text-[#4b4a48]">{leadTierLabel(l.tier)}</span>
+                    </td>
+                    <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(l.created_at)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

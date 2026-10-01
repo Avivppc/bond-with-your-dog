@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { toCsv } from "@/lib/csv";
+import { leadTierLabel } from "@/lib/admin-helpers/display";
 
 export const dynamic = "force-dynamic";
 
@@ -14,11 +15,14 @@ export async function GET() {
     .order("created_at", { ascending: false });
   if (error) {
     console.error("[leads export] failed", error.message);
-    return NextResponse.json({ error: "export failed" }, { status: 500 });
+    return new NextResponse("The leads couldn't be exported. Please go back and try again.", {
+      status: 500,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
   }
   const csv = toCsv(
-    ["created_at", "first_name", "email", "tier"],
-    (data ?? []).map((l) => [l.created_at, l.first_name, l.email, l.tier])
+    ["created_at", "first_name", "email", "tier", "quiz_result"],
+    (data ?? []).map((l) => [l.created_at, l.first_name, l.email, l.tier, leadTierLabel(l.tier)])
   );
   return new NextResponse(csv, {
     headers: {

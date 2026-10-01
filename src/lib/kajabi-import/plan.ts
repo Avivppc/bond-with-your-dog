@@ -21,6 +21,13 @@ export interface KajabiLesson {
   b: string | null; // body html
   i: string | null; // thumbnail file
   v: 0 | 1; // had a (Wistia) video in Kajabi
+  f?: KajabiDownload[]; // the lesson's downloads in Kajabi
+}
+
+/** A lesson download, saved from Kajabi into data/kajabi/files. */
+export interface KajabiDownload {
+  n: string; // name shown to members
+  file: string; // file name under data/kajabi/files
 }
 
 export interface KajabiCourse {
@@ -44,6 +51,7 @@ export interface PlannedLesson {
   bodyHtml: string | null;
   vimeoUrl: string | null;
   thumbnailUrl: string | null;
+  files: { name: string; file: string }[];
   hadVideo: boolean;
   availableAfterDays: number | null;
 }
@@ -80,14 +88,26 @@ const COURSE_META: Record<string, { id: string; chapter: number; level: string; 
   dance: { id: "bonded-lets-dance", chapter: 3, level: "Advanced", category: "Let's Dance", requires: "bonded-moves" },
 };
 
-const VIMEO_ONLY = /^<p>\s*(https:\/\/(?:www\.)?vimeo\.com\/[^\s<]+)\s*<\/p>$/i;
+const VIMEO_ONLY = /^(https:\/\/(?:www\.)?vimeo\.com\/\S+)$/i;
 
-/** A body that is only a Vimeo link becomes the lesson video; anything else stays as text. */
+/** The visible text of a small HTML body: tags dropped, the few entities Kajabi writes decoded. */
+function visibleText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .trim();
+}
+
+/**
+ * A body that is only a Vimeo link becomes the lesson video (Kajabi often wraps it in
+ * <p><span style=…>); anything else stays as text.
+ */
 export function splitBody(body: string | null): { bodyHtml: string | null; vimeoUrl: string | null } {
   const trimmed = body?.trim() ?? "";
   if (!trimmed) return { bodyHtml: null, vimeoUrl: null };
-  const m = trimmed.match(VIMEO_ONLY);
-  if (m) return { bodyHtml: null, vimeoUrl: m[1].replace(/&amp;/g, "&") };
+  const m = visibleText(trimmed).match(VIMEO_ONLY);
+  if (m) return { bodyHtml: null, vimeoUrl: m[1] };
   return { bodyHtml: trimmed, vimeoUrl: null };
 }
 
@@ -107,6 +127,7 @@ export function planCourse(key: string, course: KajabiCourse, imgBase: string): 
           bodyHtml,
           vimeoUrl,
           thumbnailUrl: img(l.i),
+          files: (l.f ?? []).map((f) => ({ name: f.n.trim(), file: f.file })),
           hadVideo: l.v === 1,
           availableAfterDays: null,
         };
@@ -147,9 +168,15 @@ export function planImport(data: KajabiExport): PlannedCourse[] {
     .sort((a, b) => a.chapterNumber - b.chapterNumber);
 }
 
-export function countPlan(course: PlannedCourse): { modules: number; lessons: number; withText: number; withThumb: number } {
+export function countPlan(course: PlannedCourse): { modules: number; lessons: number; withText: number; withThumb: number; files: number } {
   const all = (mods: PlannedModule[]): PlannedModule[] => mods.flatMap((m) => [m, ...all(m.children)]);
   const mods = all(course.modules);
   const lessons = mods.flatMap((m) => m.lessons);
-  return { modules: mods.length, lessons: lessons.length, withText: lessons.filter((l) => l.bodyHtml).length, withThumb: lessons.filter((l) => l.thumbnailUrl).length };
+  return {
+    modules: mods.length,
+    lessons: lessons.length,
+    withText: lessons.filter((l) => l.bodyHtml).length,
+    withThumb: lessons.filter((l) => l.thumbnailUrl).length,
+    files: lessons.reduce((n, l) => n + l.files.length, 0),
+  };
 }

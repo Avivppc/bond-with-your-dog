@@ -57,7 +57,7 @@ export default async function OffersPage() {
         {offers.length === 0 ? (
           <EmptyState title="No offers yet.">Create an offer to start selling a course.</EmptyState>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className={TABLE}>
               <thead className={THEAD}>
                 <tr>

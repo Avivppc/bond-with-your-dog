@@ -8,6 +8,8 @@ export interface OutlineModuleRow {
   title: string;
   position: number;
   published: boolean;
+  /** Shown under the module heading in the member app (optional so older selects still type-check). */
+  description?: string | null;
 }
 
 export interface OutlineLessonRow {

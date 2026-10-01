@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { publicBucketBase } from "@/lib/supabase/public-url";
 import { COURSE_IMAGES_BUCKET, validateCourseImage } from "@/lib/lesson-files";
 import { MOVE_STEPS } from "@/lib/content/limits";
 import { parseTextList } from "@/lib/content/lists";
@@ -41,10 +42,7 @@ const MoveSchema = z.object({
   published: checkbox,
 });
 
-function imagesBase(sb: ServiceClient): string {
-  const probe = sb.storage.from(COURSE_IMAGES_BUCKET).getPublicUrl("x").data.publicUrl;
-  return probe.slice(0, -1);
-}
+const imagesBase = (sb: ServiceClient) => publicBucketBase(sb, COURSE_IMAGES_BUCKET);
 
 /** The course/lesson pair must be real and consistent; a lesson alone implies its course. */
 async function resolvePlacement(sb: ServiceClient, courseId: string | null, lessonId: string | null): Promise<{ course_id: string | null; lesson_id: string | null } | { error: string }> {

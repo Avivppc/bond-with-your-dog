@@ -17,6 +17,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // The Kajabi import copies lesson downloads saved in the repo; bundle them with that route.
+  outputFileTracingIncludes: {
+    "/admin/courses/import-kajabi": ["./data/kajabi/files/**"],
+  },
   // PostHog's API paths end in a slash; without this Next would redirect them away.
   skipTrailingSlashRedirect: true,
   // Reverse proxy for PostHog (US cloud). The path must match POSTHOG_PROXY_PATH

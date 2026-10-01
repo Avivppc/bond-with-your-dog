@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import type { OutlineModule } from "@/lib/course-outline";
-import { createLessonInModule, createModule, deleteModule, reorderLessons, reorderModules, updateModule } from "../outline-actions";
+import { createLessonInModule, createModule, deleteModule, reorderLessons, reorderModules, setOutlinePublished, updateModule } from "../outline-actions";
 import { DragHandle, SortableList, type DragHandleProps } from "./SortableList";
 import { LessonItem, type ModuleOption } from "./LessonItem";
 import { InlineAddForm } from "./InlineAdd";
 import { PublishToggle } from "./PublishToggle";
+import { ModuleDetailsForm } from "./ModuleDetailsForm";
 import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
 
 /** Bumped by "Expand all / Collapse all" in the editor; every module follows the latest value. */
@@ -41,6 +42,7 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
   const open = override && override.version === expandSignal.version ? override.open : expandSignal.open;
   const setOpen = (next: boolean) => setOverride({ open: next, version: expandSignal.version });
   const [adding, setAdding] = useState<Adding>(null);
+  const [editingDetails, setEditingDetails] = useState(false);
   const isTopLevel = module.parent_id === null;
   const itemCount = module.lessons.length + module.submodules.length;
 
@@ -49,6 +51,17 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
       const res = await action();
       if (!res.ok && res.error) onError(res.error);
     });
+  }
+
+  function startRename() {
+    setTitle(module.title);
+    setEditingTitle(true);
+  }
+
+  function publishAll(published: boolean) {
+    const scope = isTopLevel ? "this module, its submodules and all their lessons" : "this submodule and all its lessons";
+    if (!window.confirm(`${published ? "Publish" : "Set to draft"} ${scope}?`)) return;
+    run(() => setOutlinePublished({ courseId, moduleId: module.id, published }));
   }
 
   function saveTitle() {
@@ -116,7 +129,7 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
         <button
           type="button"
           onClick={() => setOpen(!open)}
-          onDoubleClick={() => setEditingTitle(true)}
+          onDoubleClick={startRename}
           aria-expanded={open}
           className="min-w-0 flex-1 truncate text-left text-sm font-medium text-[#1a1a19]"
           title="Click to expand, double-click to rename"
@@ -173,8 +186,17 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
       >
         {(close) => (
           <>
-            <button type="button" className={MENU_ITEM} onClick={() => (close(), setEditingTitle(true))}>
+            <button type="button" className={MENU_ITEM} onClick={() => (close(), startRename())}>
               Rename
+            </button>
+            <button type="button" className={MENU_ITEM} onClick={() => (close(), setEditingDetails(true), setOpen(true))}>
+              Edit details
+            </button>
+            <button type="button" className={MENU_ITEM} onClick={() => (close(), publishAll(true))}>
+              Publish all
+            </button>
+            <button type="button" className={MENU_ITEM} onClick={() => (close(), publishAll(false))}>
+              Set all to draft
             </button>
             <button type="button" className={`${MENU_ITEM} sm:hidden`} onClick={() => (startAdding("lesson"), close())}>
               Add lesson
@@ -201,6 +223,17 @@ export function ModuleCard({ courseId, module, handle, moduleOptions, expandSign
 
   const body = open && (
     <div className="divide-y divide-[#efeeed] border-t border-[#efeeed]">
+      {editingDetails ? (
+        <ModuleDetailsForm
+          courseId={courseId}
+          moduleId={module.id}
+          title={module.title}
+          description={module.description ?? null}
+          onDone={() => setEditingDetails(false)}
+        />
+      ) : (
+        module.description && <p className="whitespace-pre-line px-4 py-2.5 text-xs text-[#6c6a69]">{module.description}</p>
+      )}
       {module.lessons.length > 0 && (
         <SortableList
           key={orderKey(module.lessons)}

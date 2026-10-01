@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useTransition } from "react";
 import type { OutlineLessonRow } from "@/lib/course-outline";
-import { moveLesson, setLessonPublished } from "../outline-actions";
+import { deleteLessonInOutline, duplicateLessonInOutline, moveLesson, setLessonPublished } from "../outline-actions";
 import { DragHandle, type DragHandleProps } from "./SortableList";
 import { PublishToggle } from "./PublishToggle";
 import { ActionMenu, MENU_ITEM } from "@/components/ui/ActionMenu";
@@ -31,6 +31,21 @@ export function LessonItem({ courseId, lesson, handle, moduleOptions, onError }:
   function setPublished(published: boolean) {
     startTransition(async () => {
       const res = await setLessonPublished({ courseId, id: lesson.id, published });
+      if (!res.ok) onError(res.error);
+    });
+  }
+
+  function duplicate() {
+    startTransition(async () => {
+      const res = await duplicateLessonInOutline({ courseId, id: lesson.id });
+      if (!res.ok) onError(res.error);
+    });
+  }
+
+  function remove() {
+    if (!window.confirm(`Delete "${lesson.title}"? Its files and students' progress on it are deleted too. This can't be undone.`)) return;
+    startTransition(async () => {
+      const res = await deleteLessonInOutline({ courseId, id: lesson.id });
       if (!res.ok) onError(res.error);
     });
   }
@@ -75,6 +90,9 @@ export function LessonItem({ courseId, lesson, handle, moduleOptions, onError }:
             <Link href={`/learn/${courseId}/${lesson.id}`} target="_blank" className={MENU_ITEM} onClick={close}>
               Preview
             </Link>
+            <button type="button" className={MENU_ITEM} onClick={() => (close(), duplicate())} disabled={pending}>
+              Duplicate
+            </button>
             <label className="block px-3 pb-2 pt-1">
               <span className="mb-1 block text-xs text-[#6c6a69]">Move to</span>
               <select
@@ -97,6 +115,9 @@ export function LessonItem({ courseId, lesson, handle, moduleOptions, onError }:
                   ))}
               </select>
             </label>
+            <button type="button" className={`${MENU_ITEM} text-red-700`} onClick={() => (close(), remove())} disabled={pending}>
+              Delete lesson
+            </button>
           </>
         )}
       </ActionMenu>
