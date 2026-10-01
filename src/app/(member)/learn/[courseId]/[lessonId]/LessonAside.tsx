@@ -2,6 +2,9 @@ import Link from "next/link";
 import { Ms, Ring, StateIc, formatMinutes, type LessonMark } from "@/components/app/ui";
 import type { StudentCourse } from "@/lib/student-course-server";
 
+/** Lessons shown on each side of the current one when the rail is under the lesson (phones). */
+const NEARBY_LESSONS = 2;
+
 function markFor(kind: string, current: boolean): LessonMark {
   if (current) return "next";
   if (kind === "completed") return "done";
@@ -12,6 +15,9 @@ function markFor(kind: string, current: boolean): LessonMark {
 /** Right rail on the lesson page: course ring + every lesson, and the "Practice this now" card. */
 export function LessonAside({ data, lessonId, hasSteps, checkpointHref }: { data: StudentCourse; lessonId: string; hasSteps: boolean; checkpointHref: string | null }) {
   const { course, lessons, progress, states } = data;
+  const currentIndex = lessons.findIndex((l) => l.id === lessonId);
+  // On a phone the rail sits under the lesson: only the lessons around this one, then "See all".
+  const far = (i: number) => Math.abs(i - currentIndex) > NEARBY_LESSONS;
   return (
     <div className="stack-lg sticky">
       <div className="card tight">
@@ -24,7 +30,7 @@ export function LessonAside({ data, lessonId, hasSteps, checkpointHref }: { data
             </div>
           </div>
         </div>
-        <div className="list mini-lessons" style={{ maxHeight: 420, overflowY: "auto" }}>
+        <div className="list mini-lessons">
           {lessons.map((l, i) => {
             const state = states.get(l.id)?.kind ?? "locked";
             const current = l.id === lessonId;
@@ -39,16 +45,20 @@ export function LessonAside({ data, lessonId, hasSteps, checkpointHref }: { data
               </>
             );
             return open ? (
-              <Link key={l.id} className={`list-row ${current ? "current" : ""}`} href={`/learn/${course.id}/${l.id}`} aria-current={current ? "page" : undefined}>
+              <Link key={l.id} className={`list-row ${current ? "current" : ""} ${far(i) ? "far" : ""}`} href={`/learn/${course.id}/${l.id}`} aria-current={current ? "page" : undefined}>
                 {inner}
               </Link>
             ) : (
-              <div key={l.id} className="list-row" style={{ opacity: 0.5 }}>
+              <div key={l.id} className={`list-row ${far(i) ? "far" : ""}`} style={{ opacity: 0.5 }}>
                 {inner}
               </div>
             );
           })}
         </div>
+        <Link className="link narrow-only" href={`/learn/${course.id}`}>
+          See all {lessons.length} lessons
+          <Ms name="arrow_forward" />
+        </Link>
       </div>
       <div className="card tight" style={{ background: "var(--orange-soft)", boxShadow: "none" }} data-tour="practice-now">
         <b>Practice this now</b>

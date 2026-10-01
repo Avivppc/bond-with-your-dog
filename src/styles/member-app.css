@@ -49,7 +49,7 @@
 .member-app .sidebar { position: fixed; inset: 0 auto 0 0; width: var(--side); background: var(--card); display: flex; flex-direction: column; padding: 28px 18px 24px; gap: 28px; z-index: 30; box-shadow: 1px 0 0 var(--line); }
 .member-app .brand { display: flex; flex-direction: column; gap: 10px; padding-inline: 8px; }
 .member-app .brand img { width: 150px; height: auto; }
-.member-app .member-pill { align-self: flex-start; font-size: 10.5px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cognac); background: var(--orange-soft); padding: 4px 10px; border-radius: 999px; }
+.member-app .member-pill { align-self: flex-start; font-size: 11px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--cognac); background: var(--orange-soft); padding: 4px 10px; border-radius: 999px; }
 .member-app .nav { display: flex; flex-direction: column; gap: 4px; }
 .member-app .nav a { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-radius: 999px; color: var(--ink-2); font-weight: 500; transition: background .2s, color .2s; }
 .member-app .nav a:hover { background: var(--tint); color: var(--ink); }
@@ -91,7 +91,7 @@
 .member-app.bare .sidebar, .member-app.bare .topbar, .member-app.bare .tabbar { display: none; }
 .member-app.bare .main { margin-left: 0; }
 .member-app.bare .content { max-width: 1180px; padding-top: 28px; }
-.member-app .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cognac); }
+.member-app .eyebrow { font-size: 12px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--cognac); }
 .member-app .eyebrow.muted { color: var(--ink-3); }
 .member-app .display { font-size: clamp(34px, 4.2vw, 50px); font-weight: 800; line-height: 1.04; letter-spacing: -0.03em; }
 .member-app .display em { font-style: normal; color: var(--cognac); }
@@ -136,11 +136,11 @@
 .member-app .chip { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 14px; border-radius: 999px; background: var(--tint); font-size: 13.5px; font-weight: 500; color: var(--ink); white-space: nowrap; }
 .member-app button.chip:hover { background: var(--tint-2); }
 .member-app .chip.on { background: var(--ink); color: #f3fbff; }
-.member-app .pill { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
+.member-app .pill { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 600; letter-spacing: 0.02em; white-space: nowrap; }
 .member-app .pill.learning { background: var(--orange-soft); color: var(--cognac); }
 .member-app .pill.reliable { background: var(--teal-soft); color: var(--teal); }
 /* Sections that aren't open yet (src/lib/member/coming-soon.ts): visible, greyed out, not clickable. */
-.member-app .pill.soon { background: var(--tint-2); color: var(--ink-3); height: 20px; padding: 0 8px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; }
+.member-app .pill.soon { background: var(--tint-2); color: var(--ink-3); height: 20px; padding: 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
 .member-app .is-soon { opacity: 0.6; cursor: default; }
 .member-app .is-soon .link, .member-app .is-soon > .ms:last-of-type { display: none; }
 .member-app .nav .nav-soon { display: flex; align-items: center; gap: 14px; padding: 11px 14px; border-radius: 999px; color: var(--ink-3); font-weight: 500; cursor: default; white-space: nowrap; }
@@ -204,9 +204,9 @@
 .member-app .course-card .media { border-radius: 0; min-height: 300px; }
 .member-app .course-card .body { padding: 38px; display: flex; flex-direction: column; gap: 16px; justify-content: center; }
 .member-app .course-card.dim .media img { filter: saturate(.55) brightness(1.05); opacity: .75; }
-.member-app .lesson-row { display: grid; grid-template-columns: 34px 88px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 14px 0; }
+.member-app .lesson-row { display: grid; grid-template-columns: 34px 96px minmax(0, 1fr) auto; align-items: center; gap: 18px; padding: 14px 0; }
 .member-app .lesson-row .n { font-family: var(--display); font-weight: 700; color: var(--ink-3); font-size: 14px; }
-.member-app .lesson-row .th { width: 88px; height: 58px; border-radius: 12px; overflow: hidden; background: var(--tint); }
+.member-app .lesson-row .th { width: 96px; height: 54px; border-radius: 12px; overflow: hidden; background: var(--tint); }
 .member-app .lesson-row .th img { width: 100%; height: 100%; object-fit: cover; }
 .member-app .lesson-row.current { background: var(--orange-soft); margin-inline: -16px; padding-inline: 16px; border-radius: 18px; border-top-color: transparent !important; }
 .member-app .lesson-row.current + .lesson-row { border-top-color: transparent; }
@@ -229,6 +229,8 @@
 .member-app .tabs button { height: 40px; padding: 0 18px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
 .member-app .tabs button.on { background: var(--ink); color: #f3fbff; }
 .member-app .mini-lessons .list-row { padding: 10px 0; font-size: 14px; }
+.member-app .mini-lessons { max-height: 420px; overflow-y: auto; }
+.member-app .narrow-only { display: none; }
 .member-app .mini-lessons .list-row.current { color: var(--cognac); font-weight: 600; }
 .member-app .steps-dots { display: flex; gap: 8px; }
 .member-app .steps-dots i { height: 6px; flex: 1; border-radius: 999px; background: var(--tint-2); }
@@ -405,6 +407,10 @@
 .member-app .toast { position: fixed; left: 50%; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 90; background: var(--ink); color: #fff; padding: 12px 20px; border-radius: 999px; font-size: 14px; font-weight: 500; box-shadow: var(--shadow-lift); }
 @media (max-width: 1100px) {
 .member-app .grid-main { grid-template-columns: minmax(0, 1fr); }
+.member-app .mini-lessons { max-height: none; overflow: visible; }
+.member-app .mini-lessons .far { display: none; }
+.member-app .mini-lessons > .far + :not(.far) { border-top-color: transparent; }
+.member-app .narrow-only { display: inline-flex; }
 .member-app .sticky { position: static; }
 .member-app .week { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
@@ -468,6 +474,24 @@
 .member-app .tabs a:hover { background: var(--tint); }
 .member-app .tabs a.on { background: var(--ink); color: #f3fbff; }
 .member-app .player iframe, .member-app .player video { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+/* Lesson player overlays: artwork while loading, resume note, end card. */
+.member-app .player-poster { position: absolute; inset: 0; display: grid; place-items: center; background: #0f171b; color: #f3fbff; z-index: 2; }
+.member-app .player-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55; }
+.member-app .player-poster-msg { position: relative; max-width: min(46ch, calc(100% - 32px)); text-align: center; font-size: 14.5px; font-weight: 500; }
+.member-app .player-poster-msg:not(:has(.player-spinner)) { padding: 10px 18px; border-radius: 18px; background: rgba(15, 23, 27, .8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.member-app .player-spinner { display: block; width: 44px; height: 44px; border-radius: 50%; border: 3px solid rgba(255,255,255,.3); border-top-color: #fff; animation: ma-spin .9s linear infinite; }
+@keyframes ma-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .member-app .player-spinner { animation: none; border-top-color: rgba(255,255,255,.3); } }
+.member-app .player-note { position: absolute; top: 14px; left: 14px; z-index: 3; display: inline-flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 999px; background: rgba(15, 23, 27, .78); color: #f3fbff; font-size: 13px; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.member-app .player-note button { height: 30px; padding: 0 12px; border-radius: 999px; background: rgba(255,255,255,.16); color: #fff; font-weight: 600; font-size: 13px; }
+.member-app .player-note button:hover { background: rgba(255,255,255,.26); }
+.member-app .player-note .player-note-x { width: 30px; padding: 0; display: grid; place-items: center; background: none; }
+.member-app .end-card { position: absolute; inset: 0; z-index: 3; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 16px; text-align: center; background: rgba(10, 18, 22, .82); color: #f3fbff; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+.member-app .end-card b { font-family: var(--display); font-size: 20px; letter-spacing: -0.01em; }
+.member-app .end-card p { color: #cfe3ea; font-size: 14px; }
+.member-app .end-card .btn-ghost { background: rgba(255,255,255,.14); color: #fff; }
+.member-app .end-card .btn-ghost:hover { background: rgba(255,255,255,.24); }
+@media (max-width: 520px) { .member-app .end-card-extra { display: none; } .member-app .end-card b { font-size: 17px; } .member-app .end-card { gap: 6px; } }
 .member-app .lesson-prose { color: var(--ink); line-height: 1.7; }
 .member-app .lesson-prose p { margin: 0 0 12px; }
 .member-app .lesson-prose ul, .member-app .lesson-prose ol { margin: 0 0 12px; padding-left: 22px; }

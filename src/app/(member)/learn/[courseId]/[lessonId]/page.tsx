@@ -99,6 +99,11 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
                 lessonId={lesson.id}
                 hasPlayback={Boolean(videoRes.data)}
                 resumeAt={resumePoint({ watchSeconds: (progressRes.data?.watch_seconds as number | null | undefined) ?? null, completed })}
+                poster={data.lessons[idx]?.thumbnail_url || data.course.image}
+                completed={completed}
+                next={next ? { href: lessonHref(next.id), title: next.title } : null}
+                doneHref={`${base}/complete`}
+                practiceHref={`/practice?lesson=${lessonId}`}
               />
             </div>
           )}
