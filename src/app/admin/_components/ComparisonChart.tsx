@@ -1,3 +1,4 @@
+import { axisTicks, niceAxisMax } from "@/lib/admin-helpers/chart-axis";
 import { CHART_COLORS } from "./charts";
 
 export interface ComparisonChartPoint {
@@ -9,6 +10,8 @@ export interface ComparisonChartPoint {
 const W = 600;
 const PREVIOUS_COLOR = "#b8b6b4";
 const GRID = [0, 0.5, 1] as const;
+/** Scale used when every value is 0: the lines sit on the baseline. */
+const EMPTY_SCALE = 1;
 
 function linePath(values: readonly (number | null)[], x: (i: number) => number, y: (v: number) => number): string {
   const parts = values.flatMap((v, i) => (v === null ? [] : [`${x(i).toFixed(1)},${y(v).toFixed(1)}`]));
@@ -44,7 +47,8 @@ export function ComparisonChart({
   height?: number;
 }) {
   if (points.length === 0) return null;
-  const max = Math.max(1, ...points.map((p) => Math.max(p.current, p.previous ?? 0)));
+  const axisMax = niceAxisMax(Math.max(...points.map((p) => Math.max(p.current, p.previous ?? 0))));
+  const max = axisMax || EMPTY_SCALE;
   const top = 10;
   const bottom = height - 4;
   const x = (i: number) => (points.length > 1 ? (i / (points.length - 1)) * W : W / 2);
@@ -55,8 +59,8 @@ export function ComparisonChart({
     <div>
       <div className="flex gap-2">
         <div className="flex w-14 shrink-0 flex-col justify-between py-1 text-right text-[11px] tabular-nums text-[#9b9997]" style={{ height }}>
-          {[...GRID].reverse().map((g) => (
-            <span key={g}>{format(Math.round(max * g))}</span>
+          {axisTicks(axisMax).map((tick, i) => (
+            <span key={i}>{tick === null ? "" : format(tick)}</span>
           ))}
         </div>
         <svg

@@ -5,6 +5,7 @@ import { BTN_SECONDARY, Card, EmptyState, PageHeader } from "@/app/admin/_compon
 import { AnalyticsFilters } from "@/app/admin/_components/AnalyticsFilters";
 import { AreaChart, BarChart } from "@/app/admin/_components/charts";
 import { analyticsContext, type AnalyticsSearchParams } from "@/app/admin/_components/analytics-context";
+import { StatCard } from "@/app/admin/_components/list-kit";
 import { buildReport } from "../report-data";
 
 export const dynamic = "force-dynamic";
@@ -44,12 +45,9 @@ export default async function ReportPage({
       />
       <AnalyticsFilters range={ctx.range.key} from={ctx.fromDay} to={ctx.toDay} currency={ctx.currency} currencies={ctx.currencies} />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {data.summary.map((s) => (
-          <div key={s.label} className="rounded-[12px] border border-[#e7e6e4] bg-white p-5">
-            <p className="text-sm text-[#6c6a69]">{s.label}</p>
-            <p className="mt-1 text-2xl font-semibold">{s.value}</p>
-          </div>
+          <StatCard key={s.label} label={s.label} value={s.value} />
         ))}
       </div>
 
@@ -61,7 +59,7 @@ export default async function ReportPage({
         {data.rows.length === 0 ? (
           <EmptyState title="No data to show" />
         ) : (
-          <div className="overflow-x-auto">
+          <div className="relative overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="border-b border-[#efeeed] text-left text-[#6c6a69]">
                 <tr>

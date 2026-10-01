@@ -4,11 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { addContacts, type AddContactsState } from "./actions";
 import type { ContactOutcome } from "../_lib/access-server";
-
-const INPUT =
-  "w-full rounded-[8px] border border-[#d9d8d6] bg-white px-3 py-2 text-[14px] placeholder:text-[#9b9997] focus:border-[#343332] focus:outline-none focus:ring-2 focus:ring-black/5";
-const BTN_PRIMARY =
-  "inline-flex h-[38px] items-center justify-center rounded-full bg-[#343332] px-4 py-2 text-[14px] font-medium text-white hover:bg-[#1a1a19] disabled:opacity-50";
+import { BTN_PRIMARY, INPUT } from "../../_components/ui";
 
 function outcomeText(r: ContactOutcome): { label: string; tone: string; detail?: string } {
   switch (r.status) {
@@ -101,7 +97,7 @@ export function AddContactsForm({ offers, emailConfigured, initial }: Props) {
           </label>
         </div>
         <label className="flex items-start gap-2 text-[14px]">
-          <input type="checkbox" name="send_invite" defaultChecked={values.sendInvite} className="mt-1" />
+          <input type="checkbox" name="send_invite" defaultChecked={values.sendInvite} className="mt-0.5 h-4 w-4 accent-[#343332]" />
           <span>
             Send invitation email to people without an account
             <span className="block text-[12px] text-[#6c6a69]">

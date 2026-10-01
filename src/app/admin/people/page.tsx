@@ -115,7 +115,8 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
           <EmptyState title={q ? "No contacts match your search." : "No contacts in this segment yet."} />
         ) : (
           // Visible overflow on wide screens so the last rows' ⋯ menus aren't clipped.
-          <div className="overflow-x-auto xl:overflow-visible">
+          // `relative` keeps the absolutely positioned sr-only header inside the scroll box on phones.
+          <div className="relative overflow-x-auto xl:overflow-visible">
             <table className={TABLE}>
               <thead className={THEAD}>
                 <tr>

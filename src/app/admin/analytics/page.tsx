@@ -140,7 +140,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
         </Tile>
 
         <Tile title="Top customers" report={reportHref("top-customers")}>
-          {customers.length ? <BarList color="#f28b54" items={customers.map((c) => ({ label: c.email, value: c.net, display: money(c.net) }))} /> : <NoData />}
+          {customers.length ? <BarList color="#f28b54" items={customers.map((c) => ({ label: c.email, value: c.net, display: money(c.net), href: `/admin/people/${c.userId}` }))} /> : <NoData />}
         </Tile>
 
         <Tile title="New contacts" report={reportHref("new-contacts")}>
@@ -173,7 +173,7 @@ export default async function AnalyticsPage({ searchParams }: { searchParams: Pr
 
         <Tile title="Subscription retention" report={reportHref("subscription-retention")}>
           {retention.length ? (
-            <div className="overflow-x-auto">
+            <div className="relative overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="text-left text-[#6c6a69]">
                   <tr>
