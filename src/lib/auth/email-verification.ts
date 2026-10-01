@@ -52,19 +52,24 @@ export async function isEmailVerified(supabase: ServerSupabase): Promise<boolean
 }
 
 /**
- * Google just proved the address. If the account also has a password nobody has proven
- * (someone could have signed up with this address before its owner), the owner now takes
- * it over: the unknown password is replaced and every other session is signed out.
+ * The inbox owner just proved the address. If the account also has a password set before
+ * anyone proved the inbox, someone else may have registered this address and know that
+ * password, so it is replaced and every other session is signed out. Returns true when the
+ * password was replaced (the owner then needs to choose one, unless they use Google).
  */
+export async function secureUnprovenAccount(supabase: ServerSupabase, user: User): Promise<boolean> {
+  if (!hasPasswordIdentity(user) || (await isEmailVerified(supabase))) return false;
+  const { error } = await createServiceClient().auth.admin.updateUserById(user.id, {
+    password: randomBytes(32).toString("base64url"),
+  });
+  if (error) console.error("[verify-email] could not replace unproven password", { userId: user.id, error: error.message });
+  const { error: signOutError } = await supabase.auth.signOut({ scope: "others" });
+  if (signOutError) console.error("[verify-email] sign-out of other sessions failed", signOutError.message);
+  return !error;
+}
+
+/** Google proved the address: secure the account, then record the proof. */
 export async function claimAccountViaGoogle(supabase: ServerSupabase, user: User): Promise<void> {
-  const wasProven = await isEmailVerified(supabase);
-  if (!wasProven && hasPasswordIdentity(user)) {
-    const { error } = await createServiceClient().auth.admin.updateUserById(user.id, {
-      password: randomBytes(32).toString("base64url"),
-    });
-    if (error) console.error("[verify-email] password reset on Google claim failed", { userId: user.id, error: error.message });
-    const { error: signOutError } = await supabase.auth.signOut({ scope: "others" });
-    if (signOutError) console.error("[verify-email] sign-out of other sessions failed", signOutError.message);
-  }
+  await secureUnprovenAccount(supabase, user);
   await markEmailVerified(user);
 }

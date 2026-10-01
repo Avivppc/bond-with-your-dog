@@ -9,6 +9,7 @@ import { safeNext } from "@/lib/auth/safe-next";
 import { MARKETING_CONSENT_COOKIE } from "@/lib/auth/marketing-consent";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
 import { claimReferralCode } from "@/lib/referrals-server";
+import { SIGNUP_COMPLETED_COOKIE, SIGNUP_MARKER_MAX_AGE_SECONDS } from "@/lib/signup-marker";
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -25,11 +26,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`);
   }
   const user = data.user;
+  let isGoogleSignup = false;
   if (user && hasVerifiedGoogleEmail(user)) {
     // Must run before the proof is recorded: it checks whether the account was proven yet.
     await claimAccountViaGoogle(supabase, user);
     // A first Google login is a signup: send the welcome (no confirm step needed).
     if (isFirstSignIn(user) && user.email) {
+      isGoogleSignup = true;
       const to = user.email;
       const fullName = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "");
       after(() => sendEmail(welcomeEmail({ to, fullName, baseUrl: origin, verifyUrl: null })));
@@ -40,6 +43,9 @@ export async function GET(request: NextRequest) {
   }
 
   const response = NextResponse.redirect(`${origin}${next}`);
+  if (isGoogleSignup) {
+    response.cookies.set(SIGNUP_COMPLETED_COOKIE, "google", { maxAge: SIGNUP_MARKER_MAX_AGE_SECONDS, path: "/", sameSite: "lax" });
+  }
 
   // Newsletter consent ticked before a Google sign-up travels via a short-lived cookie.
   const consented = request.cookies.get(MARKETING_CONSENT_COOKIE)?.value === "1";

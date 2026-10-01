@@ -47,7 +47,7 @@ export default async function AddContactsPage({ searchParams }: { searchParams: 
         <AddContactsForm offers={offers} emailConfigured={emailConfigured} initial={initial} />
       </Card>
       {invites.length > 0 && (
-        <Card title="Waiting for sign-up" description="Offers saved for emails without an account. They unlock when that person signs up." flush>
+        <Card title="Waiting for sign-up" description="Offers saved for emails without a confirmed account. They unlock once that person signs up and confirms their email." flush>
           <ul className="divide-y divide-[#efeeed] text-[14px]">
             {invites.map((inv) => (
               <li key={inv.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-2.5">

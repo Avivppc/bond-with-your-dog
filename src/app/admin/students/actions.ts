@@ -65,9 +65,16 @@ export async function grantAccessByEmail(formData: FormData): Promise<void> {
 
   if (account && !account.verified) {
     const held = await holdUntilVerified(email, { offerId, offerTitle: null, days, staffId: staff.id });
-    if (held === "failed") back(returnTo, { error: "Could not save the invitation." });
+    if (!held.saved) back(returnTo, { error: "Could not save the invitation." });
     revalidateContacts();
-    back(returnTo, { ok: `${email} hasn't confirmed their email yet. We sent them a link; access unlocks once they confirm.` });
+    back(
+      returnTo,
+      held.emailed
+        ? { ok: `${email} hasn't confirmed their email yet. We sent them a link; access unlocks once they confirm.` }
+        : {
+            error: `${email} hasn't confirmed their email yet. Access is saved, but the confirm email could not be sent. Ask them to sign in and press “Send me a new link” on their Home page.`,
+          }
+    );
   }
 
   if (account) {

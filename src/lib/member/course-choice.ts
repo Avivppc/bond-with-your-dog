@@ -67,8 +67,9 @@ export function toCourseChoice(card: CourseCardData): CourseChoice {
     owned,
     lockedByTitle: card.status === "locked" || !owned ? card.lockedByTitle : null,
     offer: card.offers[0] ? { slug: card.offers[0].slug, price: card.offers[0].price, free: card.offers[0].free } : null,
+    // A chapter locked behind an unfinished one can't be started, so it gets no lesson link.
     firstLesson:
-      owned && course && lesson
+      owned && card.status !== "locked" && course && lesson
         ? {
             title: lesson.title,
             href: `/learn/${course.course.id}/${lesson.id}`,

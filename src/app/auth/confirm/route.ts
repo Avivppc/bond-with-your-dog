@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
-import { markEmailVerified } from "@/lib/auth/email-verification";
+import { markEmailVerified, secureUnprovenAccount } from "@/lib/auth/email-verification";
 
 /**
  * Link types we accept: admin invitations and password resets (Contacts), the welcome email's
@@ -28,6 +28,10 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
+  // Already signed in to this same account here? Then the clicker is also whoever set its password.
+  const {
+    data: { user: signedInBefore },
+  } = await supabase.auth.getUser();
   const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) {
     console.error("[auth/confirm] verify failed", { type, error: error.message });
@@ -39,6 +43,13 @@ export async function GET(request: NextRequest) {
           : "/login?error=link-expired";
     return NextResponse.redirect(`${origin}${expired}`);
   }
-  if (data.user) await markEmailVerified(data.user);
+  const user = data.user;
+  if (!user) return NextResponse.redirect(`${origin}${next}`);
+  // Opened elsewhere: an unproven password may belong to someone who registered this address.
+  const passwordReplaced = signedInBefore?.id !== user.id && (await secureUnprovenAccount(supabase, user));
+  await markEmailVerified(user);
+  if (passwordReplaced && next !== "/reset-password") {
+    return NextResponse.redirect(`${origin}/reset-password?notice=secured`);
+  }
   return NextResponse.redirect(`${origin}${next}`);
 }

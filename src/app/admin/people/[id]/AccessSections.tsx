@@ -77,7 +77,7 @@ export function CoursesSection({ person, offers }: { person: PersonDetail; offer
           <ul className="mt-3 space-y-1 text-[14px]">
             {person.pendingInvites.map((inv) => (
               <li key={inv.id} className="flex items-center justify-between gap-3 rounded-[8px] bg-[#fdf1dc] px-3 py-2 text-[#8a5a00]">
-                <span>Waiting for sign-up: {inv.offer ?? "an offer"} (since {shortDate(inv.created_at)})</span>
+                <span>Waiting for them to confirm their email: {inv.offer ?? "an offer"} (since {shortDate(inv.created_at)})</span>
                 <form action={cancelAccessInvite}>
                   <input type="hidden" name="id" value={inv.id} />
                   <input type="hidden" name="return_to" value={returnTo} />

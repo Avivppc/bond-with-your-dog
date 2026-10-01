@@ -8,6 +8,8 @@ import { isOwnPhotoUrl } from "@/lib/member/photos";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
 import { AboutYouInput, DogInput, PracticePrefsInput } from "@/lib/member/schemas";
 import { createVerifyLink, isEmailVerified } from "@/lib/auth/email-verification";
+import { nextResend } from "@/lib/auth/resend-throttle";
+import { createServiceClient } from "@/lib/supabase/admin";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { confirmEmail } from "@/lib/welcome-email";
 
@@ -131,11 +133,26 @@ export async function saveChosenCourse(courseId: string): Promise<ActionResult> 
   return ok(undefined);
 }
 
-/** Emails a fresh confirm-your-email link (Home reminder). */
+/** Emails a fresh confirm-your-email link (Home reminder), at most every few minutes. */
 export async function resendVerifyEmail(): Promise<ActionResult> {
   const { supabase, user } = await signedIn();
   if (!user?.email) return fail("Please sign in again.");
   if (await isEmailVerified(supabase)) return ok(undefined);
+
+  // Send times live in app_metadata, which only the server can write.
+  const decision = nextResend(user.app_metadata?.verify_link_sends ?? [], Date.now());
+  if (!decision.allowed) {
+    const minutes = Math.ceil(decision.retryInSeconds / 60);
+    return fail(`We just sent you a link. You can ask for another in ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+  }
+  const { error: recordError } = await createServiceClient().auth.admin.updateUserById(user.id, {
+    app_metadata: { verify_link_sends: decision.history },
+  });
+  if (recordError) {
+    console.error("[verify-email] could not record resend", { userId: user.id, error: recordError.message });
+    return fail("We couldn't send the email right now. Please try again in a few minutes.");
+  }
+
   const origin = (await headers()).get("origin") ?? siteUrl();
   const link = await createVerifyLink(user.email, origin);
   if (!link || !(await sendEmail(confirmEmail(user.email, link)))) {

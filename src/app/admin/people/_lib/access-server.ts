@@ -18,6 +18,8 @@ export type ContactOutcome =
   | { email: string; status: "granted" }
   | { email: string; status: "exists" }
   | { email: string; status: "pending" }
+  /** Account exists but its owner hasn't confirmed the email yet; the offer waits for that. */
+  | { email: string; status: "confirm_pending"; emailed: boolean }
   | { email: string; status: "already_invited" }
   | { email: string; status: "invited"; emailed: boolean; link: string | null }
   | { email: string; status: "failed"; reason: string };
@@ -67,13 +69,14 @@ export async function saveAccessInvite(email: string, opts: AccessOptions): Prom
  * The account exists but nobody has proven its inbox (signup no longer waits for that), so it
  * may belong to someone squatting the address. Keep the grant waiting and email the address a
  * link: opening it proves the inbox, and the grant is claimed on their next page load.
+ * The link is never handed to staff: it would sign them in to that member's account.
  */
-export async function holdUntilVerified(email: string, opts: AccessOptions): Promise<"pending" | "already_invited" | "failed"> {
+export async function holdUntilVerified(email: string, opts: AccessOptions): Promise<{ saved: boolean; emailed: boolean }> {
   const saved = await saveAccessInvite(email, opts);
-  if (saved === "failed") return "failed";
+  if (saved === "failed") return { saved: false, emailed: false };
   const link = await createVerifyLink(email, siteUrl());
-  if (link) await sendEmail(confirmToUnlockEmail(email, link, opts.offerTitle));
-  return saved === "exists" ? "already_invited" : "pending";
+  const emailed = link !== null && (await sendEmail(confirmToUnlockEmail(email, link, opts.offerTitle)));
+  return { saved: true, emailed };
 }
 
 async function inviteNewPerson(email: string, opts: AccessOptions): Promise<ContactOutcome> {
@@ -101,8 +104,8 @@ export async function addContact(email: string, opts: AccessOptions & { sendInvi
       if (!opts.offerId) return { email, status: "exists" };
       if (!account.verified) {
         const held = await holdUntilVerified(email, opts);
-        if (held === "failed") return { email, status: "failed", reason: "Could not save the invitation." };
-        return { email, status: held };
+        if (!held.saved) return { email, status: "failed", reason: "Could not save the invitation." };
+        return { email, status: "confirm_pending", emailed: held.emailed };
       }
       const grantError = await grantOffer(account.userId, opts.offerId, opts.days);
       if (grantError) return { email, status: "failed", reason: grantError };
