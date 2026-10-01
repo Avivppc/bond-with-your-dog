@@ -5,7 +5,7 @@ import Link from "next/link";
 import { replyToFeedback } from "../actions";
 import { useToast } from "../_components/Toast";
 
-/** "Reply to Roni" card: sends a message under the video, then "Practise these notes". */
+/** "Reply to Roni" card: sends a message under the video, then "Practice these notes". */
 export function ReplyBox({ videoId, practiceHref, placeholder }: { videoId: string; practiceHref: string; placeholder: string }) {
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,7 +41,7 @@ export function ReplyBox({ videoId, practiceHref, placeholder }: { videoId: stri
           {pending ? "Sending…" : "Send reply"}
         </button>
         <Link className="btn btn-primary btn-sm" href={practiceHref}>
-          Practise these notes
+          Practice these notes
         </Link>
       </div>
       {toast}

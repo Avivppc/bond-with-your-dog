@@ -37,7 +37,7 @@ export function achievementHint(rule: string, ctx: AchievementContext): string {
   }
   const streak = STREAK_RULE.exec(rule);
   if (streak) {
-    return ctx.longestRhythm > 0 ? `Best so far: ${plural(ctx.longestRhythm, "day")} in a row` : `Practise ${streak[1]} days in a row`;
+    return ctx.longestRhythm > 0 ? `Best so far: ${plural(ctx.longestRhythm, "day")} in a row` : `Practice ${streak[1]} days in a row`;
   }
   switch (rule) {
     case "first_lesson":

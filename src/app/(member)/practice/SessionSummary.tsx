@@ -51,7 +51,7 @@ export function SessionSummary({
           Back to the lesson
         </Link>
         <button type="button" className="link" onClick={onAgain}>
-          Practise again
+          Practice again
           <Ms name="replay" />
         </button>
       </div>

@@ -105,7 +105,7 @@ export default async function MembershipPage() {
     <>
       <div className="head-block">
         <span className="eyebrow">Membership</span>
-        <h1 className="h1">Courses &amp; purchases</h1>
+        <h1 className="h1">Membership &amp; purchases</h1>
         <p className="lede">Purchases happen right here in Bonded, with Paddle as our secure checkout. Your access shows here as soon as payment clears.</p>
       </div>
       {courses.length === 0 && available.length === 0 ? (

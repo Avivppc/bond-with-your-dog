@@ -11,7 +11,7 @@ import { levelMap, loadDogSkills, loadPublishedMoves, MOVE_FALLBACK_IMAGE } from
 import { RoutineBuilder } from "./RoutineBuilder";
 import { RoutineSettings } from "./RoutineSettings";
 
-export const metadata = { title: "Routine builder · Bonded" };
+export const metadata = { title: "Routine builder" };
 
 const MUSIC_URL_SECONDS = 60 * 60 * 2;
 

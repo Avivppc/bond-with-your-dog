@@ -61,7 +61,7 @@ select t.ok((select count(*) from public.notifications where kind = 'achievement
 select t.denied($$insert into public.practice_sessions (user_id, duration_seconds) values ('00000000-0000-0000-0000-0000000d0002', 60)$$, 'sessions are logged only for yourself');
 
 -- ── Lesson questions ──
-select public.ask_lesson_question('d1000000-0000-0000-0000-000000000001', 'How long should we practise?');
+select public.ask_lesson_question('d1000000-0000-0000-0000-000000000001', 'How long should we practice?');
 select t.ok((select asker from public.lesson_questions_for('d1000000-0000-0000-0000-000000000001') limit 1) = 'Maya', 'questions show the asker''s first name');
 select t.denied($$select * from public.lesson_questions$$, 'the questions table is not readable directly');
 select t.login('00000000-0000-0000-0000-0000000d0002');

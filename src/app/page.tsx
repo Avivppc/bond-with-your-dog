@@ -154,7 +154,7 @@ const faqs = [
   },
   {
     q: "Do I need any equipment?",
-    a: "No. Some treats your dog loves, a favourite toy and a little space at home are all you need to begin.",
+    a: "No. Some treats your dog loves, a favorite toy and a little space at home are all you need to begin.",
   },
   {
     q: "What language are the lessons in?",

@@ -78,7 +78,7 @@ export function ActivitySection({ person }: { person: PersonDetail }) {
   const stats = [
     { label: "Lessons completed", value: activity.lessonsCompleted },
     { label: "Practice sessions", value: activity.practiceSessions },
-    { label: "Minutes practised", value: activity.practiceMinutes },
+    { label: "Minutes practiced", value: activity.practiceMinutes },
     { label: "Community points", value: activity.communityPoints },
   ];
   return (

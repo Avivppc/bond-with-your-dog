@@ -119,7 +119,7 @@ export async function saveRoutine(input: z.input<typeof Save>): Promise<ActionRe
   const moveIds = [...new Set(items.map((i) => i.move_id))];
   if (moveIds.length) {
     const { count } = await member.supabase.from("moves").select("id", { count: "exact", head: true }).in("id", moveIds);
-    if ((count ?? 0) < moveIds.length) return fail("One of those moves isn't in the library any more. Remove it and save again.");
+    if ((count ?? 0) < moveIds.length) return fail("One of those moves isn't in the library anymore. Remove it and save again.");
   }
   const patch = {
     items: sortItems(items),

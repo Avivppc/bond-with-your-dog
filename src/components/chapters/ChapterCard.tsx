@@ -3,7 +3,7 @@ import type { Stage } from "./stages";
 interface ChapterCardProps {
   stage: Stage;
   cta: React.ReactNode;
-  /** A small line under the title, e.g. "Best after Bonded: Foundations". */
+  /** A small line under the title, e.g. "Opens after you finish Bonded: Foundations". */
   note?: string;
 }
 

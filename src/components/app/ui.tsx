@@ -73,7 +73,7 @@ export interface DayState {
   minutes?: number;
 }
 
-/** Mon–Sun strip: teal check = practised, orange ring = planned. */
+/** Mon–Sun strip: teal check = practiced, orange ring = planned. */
 export function Days({ days }: { days: DayState[] }) {
   const byDay = new Map(days.map((d) => [d.weekday, d]));
   return (

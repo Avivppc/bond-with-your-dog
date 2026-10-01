@@ -33,8 +33,9 @@ export function checkVideoDuration(seconds: number | null | undefined): string |
     return "We couldn't read this video's length. Please choose an MP4 or MOV clip.";
   }
   if (seconds > MAX_VIDEO_SECONDS + DURATION_SLACK_SECONDS) {
-    const m = Math.floor(seconds / 60);
-    const s = String(Math.round(seconds % 60)).padStart(2, "0");
+    const whole = Math.round(seconds);
+    const m = Math.floor(whole / 60);
+    const s = String(whole % 60).padStart(2, "0");
     return `This clip is ${m}:${s} long. Please trim it to 2 minutes or less.`;
   }
   return null;

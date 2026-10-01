@@ -6,6 +6,7 @@ import { dogSubtitle } from "@/components/app/Topbar";
 import { ArrowLink, Ms } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
 import { PracticePrefsCard, ProfileHeaderActions } from "./ProfileForms";
+import { plural } from "@/lib/feedback/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Profile" };
@@ -69,7 +70,7 @@ export default async function ProfilePage() {
                   <div className="grow">
                     <div className="title">{d.name}</div>
                     <div className="faint">
-                      {[dogSubtitle(d), `${sessionsByDog.get(d.id) ?? 0} practice sessions`].filter(Boolean).join(" · ")}
+                      {[dogSubtitle(d), plural(sessionsByDog.get(d.id) ?? 0, "practice session")].filter(Boolean).join(" · ")}
                     </div>
                   </div>
                   {viewer.activeDog?.id === d.id && <span className="pill reliable">Active</span>}

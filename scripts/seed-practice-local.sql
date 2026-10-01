@@ -56,7 +56,7 @@ values
   ('bunny-hop', 'Bunny Hop', 'kinetic-basics', '2df3e168-92ba-47c8-a3d6-257b437146aa', 'Hop',
    'From sit pretty, lure slightly forward for one small hop.',
    '["Start from sit pretty", "Lure slightly forward", "Reward one small hop"]', '/app/img/drunk-bunny.jpg', true,
-   'Skip the hop: practise a steady sit pretty with front paws resting on your arm.', 6, true)
+   'Skip the hop: practice a steady sit pretty with front paws resting on your arm.', 6, true)
 on conflict (slug) do update
   set name = excluded.name, course_id = excluded.course_id, lesson_id = excluded.lesson_id, cue = excluded.cue,
       summary = excluded.summary, steps = excluded.steps, image_url = excluded.image_url,

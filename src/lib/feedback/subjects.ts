@@ -1,4 +1,4 @@
-/** "Which move is this?" options for Send a video: published moves, then open lessons. Pure. */
+/** "What's this video about?" options for Send a video: published moves, then open lessons. Pure. */
 
 export interface MoveOption {
   id: string;

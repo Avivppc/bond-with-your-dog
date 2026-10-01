@@ -18,7 +18,7 @@ export function LessonPicker({ courses, lessons, note }: { courses: readonly Cat
           </Link>
         }
       >
-        Practice mode follows your lessons. Once a course is open, pick a lesson here and practise it step by step.
+        Practice mode follows your lessons. Once a course is open, pick a lesson here and practice it step by step.
       </StateCard>
     );
   }
@@ -30,8 +30,8 @@ export function LessonPicker({ courses, lessons, note }: { courses: readonly Cat
         <div>
           {note ? <b style={{ display: "block" }}>{note}</b> : null}
           {withSteps === 0
-            ? "None of your open lessons has practice steps yet. Roni adds them lesson by lesson, and they'll appear here as soon as they're ready. Meanwhile, watch a lesson and practise along with the video."
-            : "Pick a lesson to practise. Roni adds practice steps lesson by lesson; lessons without them yet open in the lesson player."}
+            ? "None of your open lessons has practice steps yet. Roni adds them lesson by lesson, and they'll appear here as soon as they're ready. Meanwhile, watch a lesson and practice along with the video."
+            : "Pick a lesson to practice. Roni adds practice steps lesson by lesson; lessons without them yet open in the lesson player."}
         </div>
       </div>
       {courses.map((course) => {

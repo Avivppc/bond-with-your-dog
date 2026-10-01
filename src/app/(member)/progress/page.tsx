@@ -13,7 +13,7 @@ import { loadProgressData, loadSkillEvents } from "./load";
 import { RecentMilestonesCard } from "./history";
 import { AchievementsSection, DogHeader, MilestoneCard, MovesCard, MultiDogTip, NoMilestoneCard, PathSection } from "./sections";
 
-export const metadata = { title: "Progress · Bonded" };
+export const metadata = { title: "Progress" };
 
 /** Moves shown on the progress card before "All N moves". */
 const MOVES_SHOWN = 8;

@@ -149,7 +149,7 @@ export default async function SignupPage({
 
               <p className="text-xs text-outline mt-5 leading-relaxed">
                 We&apos;ll only email you about your account, plus Roni&apos;s tips if you
-                tick the box above. You can unsubscribe at any time.
+                check the box above. You can unsubscribe at any time.
               </p>
 
               <p className="text-sm text-center mt-6 text-on-surface-variant">

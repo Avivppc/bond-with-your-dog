@@ -26,8 +26,8 @@ interface ComposerProps {
   moderated?: boolean;
 }
 
-/** "Write post…" box that expands into the full composer: channel, title, text, image or poll. */
-export function Composer({ me, channels, defaultChannelId, challengeId = null, placeholder = "Write post…", moderated = false }: ComposerProps) {
+/** "Write a post…" box that expands into the full composer: channel, title, text, image or poll. */
+export function Composer({ me, channels, defaultChannelId, challengeId = null, placeholder = "Write a post…", moderated = false }: ComposerProps) {
   const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);

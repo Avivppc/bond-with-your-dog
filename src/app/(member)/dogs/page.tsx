@@ -5,6 +5,7 @@ import { dogSubtitle } from "@/components/app/Topbar";
 import { Ms, Tip } from "@/components/app/ui";
 import { LIMITATIONS } from "@/lib/member/schemas";
 import { MakeActive } from "./MakeActive";
+import { plural } from "@/lib/feedback/format";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your dogs" };
@@ -62,7 +63,7 @@ export default async function DogsPage() {
                 )}
                 <div className="between" style={{ alignItems: "center" }}>
                   <span className="faint">
-                    {count(sessionsRes.data, d.id)} sessions · {ready(d.id)} moves ready
+                    {plural(count(sessionsRes.data, d.id), "session")} · {plural(ready(d.id), "move")} ready
                   </span>
                   <Link className="link" href={`/dogs/${d.id}`}>
                     Edit

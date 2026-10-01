@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { SoonLink } from "@/components/app/SoonLink";
+import { isComingSoon } from "@/lib/member/coming-soon";
 import { requireMember } from "@/lib/member/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { LevelPill, Ms } from "@/components/app/ui";
@@ -7,7 +8,10 @@ import { groupResults, normalizeQuery, resultCount, MAX_QUERY_LENGTH, type Searc
 import { viewerTimeZone } from "@/lib/practice/server/zone";
 import { searchFeedback, searchLessons, searchMoves, searchRecordings, suggestionTerms, type MoveHit } from "./load";
 
-export const metadata = { title: "Search · Bonded" };
+export const metadata = { title: "Search" };
+
+/** "a, b and c". */
+const listJoin = (items: string[]) => (items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`);
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 
@@ -62,20 +66,20 @@ function SearchBox({ q }: { q: string }) {
       <label className="search" htmlFor="bigSearch" style={{ width: "100%", height: 60, fontSize: 18, background: "var(--card)", boxShadow: "var(--shadow)" }}>
         <Ms name="search" />
         <span className="sr-only">Search</span>
-        <input id="bigSearch" name="q" type="search" defaultValue={q} maxLength={MAX_QUERY_LENGTH} placeholder="Search lessons, moves, notes…" autoComplete="off" />
+        <input id="bigSearch" name="q" type="search" defaultValue={q} maxLength={MAX_QUERY_LENGTH} placeholder="Search lessons and notes…" autoComplete="off" />
       </label>
     </form>
   );
 }
 
-function Suggestions({ terms }: { terms: string[] }) {
+function Suggestions({ terms, withMoves }: { terms: string[]; withMoves: boolean }) {
   return (
     <div className="card state-card">
       <div className="big-ic">
         <Ms name="search_off" />
       </div>
       <h2 className="h3">No results</h2>
-      <p className="faint">Try a move name or a word from a lesson title.</p>
+      <p className="faint">{withMoves ? "Try a move name or a word from a lesson title." : "Try a word from a lesson title."}</p>
       {terms.length > 0 && (
         <div className="row" style={{ justifyContent: "center" }}>
           {terms.map((t) => (
@@ -105,16 +109,19 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   const q = normalizeQuery(sp.q);
   const raw = typeof sp.q === "string" ? sp.q.slice(0, MAX_QUERY_LENGTH) : "";
   const supabase = await createClient();
+  // Sections still "Coming soon" stay out of members' results (the team keeps them for previewing).
+  const withMoves = viewer.isStaff || !isComingSoon("/moves");
+  const withRecordings = viewer.isStaff || !isComingSoon("/community");
 
   if (!q) {
+    const sources = ["lessons", withMoves && "moves", "Roni's notes on your videos", withRecordings && "Q&A recordings"].filter(Boolean) as string[];
     return (
       <>
         <div className="head-block">
           <span className="eyebrow">Search</span>
           <SearchBox q={raw} />
-          <p className="faint">Search lessons, moves, Roni&apos;s notes on your videos and Q&amp;A recordings. Type at least two letters.</p>
+          <p className="faint">Search {listJoin(sources)}. Type at least two letters.</p>
         </div>
-        <Suggestions terms={await suggestionTerms(supabase)} />
       </>
     );
   }
@@ -122,9 +129,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
   const timeZone = await viewerTimeZone();
   const [lessons, moves, feedback, qa] = await Promise.all([
     searchLessons(supabase, viewer.userId, q),
-    searchMoves(supabase, viewer.activeDog?.id ?? null, q),
+    withMoves ? searchMoves(supabase, viewer.activeDog?.id ?? null, q) : Promise.resolve([] as MoveHit[]),
     searchFeedback(supabase, q, timeZone),
-    searchRecordings(supabase, q, timeZone),
+    withRecordings ? searchRecordings(supabase, q, timeZone) : Promise.resolve([] as Awaited<ReturnType<typeof searchRecordings>>),
   ]);
   const groups = groupResults({ lessons, moves, feedback, qa });
   const count = resultCount(groups);
@@ -140,7 +147,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Searc
         </p>
       </div>
       {count === 0 ? (
-        <Suggestions terms={await suggestionTerms(supabase)} />
+        <Suggestions terms={withMoves ? await suggestionTerms(supabase) : []} withMoves={withMoves} />
       ) : (
         <div className="grid-2">
           {groups.map((g) => (

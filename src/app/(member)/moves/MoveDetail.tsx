@@ -73,7 +73,7 @@ export function MoveDetail({ move, dog }: { move: MoveView; dog: MovesDog | null
       )}
       {jointsWarning && (
         <Tip icon="health_and_safety" warm>
-          This move puts load on the joints. With {dog?.name}&apos;s limitations, ask Roni before practising it.
+          This move puts load on the joints. With {dog?.name}&apos;s limitations, ask Roni before practicing it.
         </Tip>
       )}
       {move.summary && <p className="muted">{move.summary}</p>}
@@ -95,7 +95,7 @@ export function MoveDetail({ move, dog }: { move: MoveView; dog: MovesDog | null
       {move.lessonId && dog && (
         <Link className="btn btn-primary" href={`/practice?lesson=${move.lessonId}&move=${move.slug}`}>
           <Ms name="pets" size="sm" />
-          Practise {move.name.toLowerCase()}
+          Practice {move.name.toLowerCase()}
         </Link>
       )}
       {move.lessonId && move.courseId && (

@@ -11,7 +11,7 @@ export interface MonthSession {
 
 export type HeatLevel = 0 | 1 | 2 | 3;
 
-/** Minutes practised in a day → heat level (Less … More legend). */
+/** Minutes practiced in a day → heat level (Less … More legend). */
 export const HEAT_THRESHOLDS = { l2: 10, l3: 20 } as const;
 
 export function heatLevel(minutes: number, sessions: number): HeatLevel {

@@ -85,7 +85,7 @@ describe("moves helpers", () => {
     expect(gentleFirst(["joints"], { loadsJoints: true, gentleAlternative: null })).toBe(false);
   });
 
-  it("picks the most practised learning move as the next milestone", () => {
+  it("picks the most practiced learning move as the next milestone", () => {
     const stats = aggregatePractice([
       { move_id: "c", reps: 6 },
       { move_id: "c", reps: 5 },
@@ -117,7 +117,7 @@ describe("achievements", () => {
     expect(achievementHint("lessons_count_10", ctx)).toBe("3 lessons to go");
     expect(achievementHint("lessons_count_3", { ...ctx, completedLessons: 2 })).toBe("1 lesson to go");
     expect(achievementHint("practice_streak_6", ctx)).toBe("Best so far: 4 days in a row");
-    expect(achievementHint("practice_streak_6", { ...ctx, longestRhythm: 0 })).toBe("Practise 6 days in a row");
+    expect(achievementHint("practice_streak_6", { ...ctx, longestRhythm: 0 })).toBe("Practice 6 days in a row");
     expect(achievementHint("course_complete", ctx)).toBe("3 lessons to go in Foundations");
     expect(achievementHint("first_feedback", { ...ctx, feedbackVideos: 1 })).toBe("Roni is reviewing your video");
   });

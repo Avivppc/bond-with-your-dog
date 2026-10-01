@@ -6,6 +6,7 @@ import { TimeAgo } from "@/components/community/bits";
 import type { HomeData } from "@/lib/member/home";
 import { nextPlanned, weekTally } from "@/lib/member/week";
 import { WEEKDAYS } from "@/components/app/ui";
+import { plural } from "@/lib/feedback/format";
 
 const FALLBACK_MEDIA = "/app/img/hand-touch.jpg";
 
@@ -25,7 +26,7 @@ export function WeekCard({ data }: { data: HomeData }) {
       <div className="card-head">
         <div className="head-block">
           <span className="eyebrow muted">This week</span>
-          <h2 className="h3">{tally.target > 0 ? `${tally.done} of ${tally.target} sessions done` : `${tally.done} sessions so far`}</h2>
+          <h2 className="h3">{tally.target > 0 ? `${tally.done} of ${tally.target} sessions done` : `${plural(tally.done, "session")} so far`}</h2>
         </div>
         <ArrowLink href="/plan">Open plan</ArrowLink>
       </div>

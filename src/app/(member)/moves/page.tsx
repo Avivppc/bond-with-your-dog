@@ -9,7 +9,7 @@ import { loadDogSkills, loadPublishedMoves, MOVE_FALLBACK_IMAGE, type MoveRow } 
 import { MovesBrowser } from "./MovesBrowser";
 import type { MoveView } from "./types";
 
-export const metadata = { title: "Moves Library · Bonded" };
+export const metadata = { title: "Moves Library" };
 
 type Search = Promise<Record<string, string | string[] | undefined>>;
 

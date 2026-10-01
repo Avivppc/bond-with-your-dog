@@ -26,7 +26,7 @@ export async function addPlannedSession(input: z.input<typeof AddPlanned>): Prom
   const p = parsed.data;
   const utcToday = new Date().toISOString().slice(0, 10);
   if (p.plannedOn < addDays(utcToday, -1) || p.plannedOn > addDays(utcToday, PLAN_AHEAD_DAYS)) {
-    return fail("Pick a day from today onwards.");
+    return fail("Pick a day from today onward.");
   }
 
   const member = await memberClient();

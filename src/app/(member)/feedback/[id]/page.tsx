@@ -126,7 +126,7 @@ export default async function FeedbackViewPage({ params }: { params: Promise<{ i
           <Conversation messages={messages} />
         </div>
       )}
-      <ReplyBox videoId={video.id} practiceHref={practiceHref} placeholder={`Thank you! Should ${dogName} also try it off-lead?`} />
+      <ReplyBox videoId={video.id} practiceHref={practiceHref} placeholder={`Thank you! Should ${dogName} also try it off-leash?`} />
     </>
   );
 

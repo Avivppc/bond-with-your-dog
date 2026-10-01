@@ -17,7 +17,7 @@ export function ModerationActions({ postId, actions }: { postId: string; actions
   const [error, setError] = useState<string | null>(null);
 
   function run(action: AdminModeration) {
-    if (action === "remove" && !window.confirm("Remove this post? Members won't see it any more.")) return;
+    if (action === "remove" && !window.confirm("Remove this post? Members won't see it anymore.")) return;
     setError(null);
     start(async () => {
       const res = await moderatePost({ postId, action });

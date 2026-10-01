@@ -73,7 +73,7 @@ export async function searchMoves(supabase: ServerSupabase, dogId: string | null
   return (data ?? []).map((m) => ({
     id: m.id as string,
     title: m.name as string,
-    subtitle: [m.cue ? `Cue "${m.cue}"` : null, m.summary ? excerpt(m.summary as string, q, 40) : null].filter(Boolean).join(" · "),
+    subtitle: [m.cue ? `Cue: “${m.cue}”` : null, m.summary ? excerpt(m.summary as string, q, 40) : null].filter(Boolean).join(" · "),
     href: `/moves?move=${m.slug}`,
     image: (m.image_url as string | null) || null,
     level: levels.get(m.id as string) ?? null,
@@ -100,7 +100,7 @@ export async function searchFeedback(supabase: ServerSupabase, q: string, timeZo
   const noteHits = ((notes.data ?? []) as unknown as NoteRow[]).map((n) => ({
     id: `note-${n.id}`,
     title: `“${excerpt(n.body, q, 50)}”`,
-    subtitle: [n.feedback_videos ? `On your ${n.feedback_videos.title} video` : "Roni's note", `at ${formatTimecode(Number(n.at_seconds))}`].join(" · "),
+    subtitle: [n.feedback_videos ? `On your “${n.feedback_videos.title}” video` : "Roni's note", `at ${formatTimecode(Number(n.at_seconds))}`].join(" · "),
     href: `/feedback/${n.video_id}`,
   }));
   const videoHits = (videos.data ?? []).map((v) => ({
