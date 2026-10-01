@@ -1,17 +1,37 @@
 import "server-only";
 import { createHash } from "node:crypto";
+import { cookies, headers } from "next/headers";
 import { after } from "next/server";
 import { PostHog } from "posthog-node";
 import { analyticsId, type EventName, type EventProps } from "./analytics-events";
 import type { Surface } from "./analytics-surface";
+import {
+  CONSENT_COOKIE,
+  REGION_COOKIE,
+  analyticsDecision,
+  parsePolicy,
+  readStoredConsent,
+  type AnalyticsDecision,
+} from "./consent/policy";
+import { isPayingMember, serverTrackingAllowed } from "./consent/server-tracking";
+import { createServiceClient } from "./supabase/admin";
 
 export * from "./analytics-events";
 
 const POSTHOG_HOST = "https://us.i.posthog.com";
 
+/**
+ * Why an event about this person may be sent (see consent/server-tracking.ts):
+ * - member: the event is about a member. ownRequest = the member's own browser made the request,
+ *   so their cookie choice can be read; otherwise (e.g. Roni sends feedback) only paying counts.
+ * - purchase: the event is the payment itself (webhook).
+ */
+export type TrackingBasis = { member: string; ownRequest: boolean } | { purchase: true };
+
 export interface ServerEvent {
   email: string;
   event: EventName;
+  basis: TrackingBasis;
   props?: EventProps;
   /** The database row (or order) behind the event. Retries with the same key are counted once. */
   dedupeKey?: string;
@@ -40,12 +60,46 @@ function eventUuid(event: EventName, dedupeKey: string): string {
   return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-8${hex.slice(13, 16)}-${variant}${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-/** Runs the send after the response is streamed, and keeps analytics failures out of the member's way. */
-function sendLater(label: string, send: (posthog: PostHog) => Promise<unknown>): void {
+/** The member's cookie choice, read from the request they made (cookies and the GPC header). */
+async function requestDecision(): Promise<AnalyticsDecision> {
+  const [cookieStore, headerStore] = await Promise.all([cookies(), headers()]);
+  return analyticsDecision(
+    parsePolicy(cookieStore.get(REGION_COOKIE)?.value),
+    readStoredConsent(cookieStore.get(CONSENT_COOKIE)?.value),
+    headerStore.get("sec-gpc") === "1",
+  );
+}
+
+/** Service role: the member may not be the one making the request. Fails closed. */
+async function loadIsPaying(userId: string): Promise<boolean> {
+  const { data, error } = await createServiceClient()
+    .from("enrollments")
+    .select("source, expires_at")
+    .eq("user_id", userId);
+  if (error) {
+    console.error("[analytics] paying check failed", error.message);
+    return false;
+  }
+  return isPayingMember(data ?? [], new Date());
+}
+
+async function isAllowed(basis: TrackingBasis): Promise<boolean> {
+  if ("purchase" in basis) return true;
+  const decision = basis.ownRequest ? await requestDecision() : null;
+  if (decision === "granted") return true;
+  return serverTrackingAllowed({ requestDecision: decision, isPaying: await loadIsPaying(basis.member) });
+}
+
+/**
+ * Runs the consent check and the send after the response is streamed, and keeps
+ * analytics failures out of the member's way.
+ */
+function sendLater(label: string, basis: TrackingBasis, send: (posthog: PostHog) => Promise<unknown>): void {
   const posthog = getClient();
   if (!posthog) return;
   after(async () => {
     try {
+      if (!(await isAllowed(basis))) return;
       await send(posthog);
     } catch (error) {
       console.error(`[analytics] ${label} was not sent`, error instanceof Error ? error.message : error);
@@ -57,10 +111,10 @@ function sendLater(label: string, send: (posthog: PostHog) => Promise<unknown>):
  * Record a fact from the server: call it only after the database write has
  * succeeded, so ad blockers can't drop it and a failed save never counts.
  */
-export function trackServer({ email, event, props = {}, dedupeKey, occurredAt, surface = "app" }: ServerEvent): void {
+export function trackServer({ email, event, basis, props = {}, dedupeKey, occurredAt, surface = "app" }: ServerEvent): void {
   const distinctId = analyticsId(email);
   if (!distinctId) return;
-  sendLater(event, (posthog) =>
+  sendLater(event, basis, (posthog) =>
     posthog.captureImmediate({
       distinctId,
       event,
@@ -74,10 +128,10 @@ export function trackServer({ email, event, props = {}, dedupeKey, occurredAt, s
 }
 
 /** Set person properties (courses owned, dog count, staff flag) from the server. */
-export function identifyServer(email: string, set: EventProps): void {
+export function identifyServer(email: string, set: EventProps, basis: TrackingBasis): void {
   const distinctId = analyticsId(email);
   if (!distinctId) return;
-  sendLater("identify", (posthog) =>
+  sendLater("identify", basis, (posthog) =>
     posthog.identifyImmediate({ distinctId, properties: { $set: set }, disableGeoip: true }),
   );
 }

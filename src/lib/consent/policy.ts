@@ -70,19 +70,34 @@ export function readStoredConsent(raw: string | undefined): StoredConsent | null
   }
 }
 
-export function analyticsDecision(policy: ConsentPolicy, stored: StoredConsent | null): AnalyticsDecision {
+/**
+ * @param gpc Global Privacy Control: a browser-wide "do not sell or share" signal that
+ *   California (CPRA) and other US states require sites to honour as an opt-out.
+ */
+export function analyticsDecision(
+  policy: ConsentPolicy,
+  stored: StoredConsent | null,
+  gpc = false,
+): AnalyticsDecision {
   if (stored && stored.revision === CONSENT_REVISION) {
     return stored.categories.includes(ANALYTICS_CATEGORY) ? "granted" : "denied";
   }
+  if (gpc) return "denied";
   return policy === "opt_out" ? "granted" : "undecided";
 }
 
-/** Decision for the current page, from the two cookies. Browser only. */
+/** The browser's Global Privacy Control flag (not yet in the DOM typings). */
+export function browserSendsGpc(): boolean {
+  return (navigator as Navigator & { globalPrivacyControl?: boolean }).globalPrivacyControl === true;
+}
+
+/** Decision for the current page, from the two cookies and GPC. Browser only. */
 export function currentAnalyticsDecision(): AnalyticsDecision {
   const cookies = document.cookie;
   return analyticsDecision(
     parsePolicy(readCookie(cookies, REGION_COOKIE)),
     readStoredConsent(readCookie(cookies, CONSENT_COOKIE)),
+    browserSendsGpc(),
   );
 }
 

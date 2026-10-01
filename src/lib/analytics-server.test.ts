@@ -5,13 +5,38 @@ const mocks = vi.hoisted(() => ({
   identifyImmediate: vi.fn(async (message: unknown) => void message),
   constructed: vi.fn(),
   scheduled: [] as Array<() => Promise<void>>,
+  cookies: {} as Record<string, string>,
+  headers: {} as Record<string, string>,
+  enrollments: [] as Array<{ source: string; expires_at: string | null }>,
+  enrollmentsError: null as { message: string } | null,
 }));
+
+const ACCEPTED_CONSENT = encodeURIComponent(
+  JSON.stringify({ categories: ["necessary", "analytics"], revision: 1, consentId: "c-1" }),
+);
+const REJECTED_CONSENT = encodeURIComponent(JSON.stringify({ categories: ["necessary"], revision: 1, consentId: "c-1" }));
+const OWN_REQUEST = { member: "user-1", ownRequest: true } as const;
 
 vi.mock("server-only", () => ({}));
 vi.mock("next/server", () => ({
   after: (task: () => Promise<void>) => {
     mocks.scheduled.push(task);
   },
+}));
+vi.mock("next/headers", () => ({
+  cookies: async () => ({
+    get: (name: string) => (name in mocks.cookies ? { value: mocks.cookies[name] } : undefined),
+  }),
+  headers: async () => ({ get: (name: string) => mocks.headers[name] ?? null }),
+}));
+vi.mock("./supabase/admin", () => ({
+  createServiceClient: () => ({
+    from: () => ({
+      select: () => ({
+        eq: async () => ({ data: mocks.enrollments, error: mocks.enrollmentsError }),
+      }),
+    }),
+  }),
 }));
 vi.mock("posthog-node", () => ({
   PostHog: class {
@@ -35,18 +60,23 @@ async function runScheduled() {
 describe("analytics-server", () => {
   beforeEach(() => {
     vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "phc_test");
+    mocks.cookies = { bonded_consent: ACCEPTED_CONSENT };
+    mocks.headers = {};
+    mocks.enrollments = [];
+    mocks.enrollmentsError = null;
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.clearAllMocks();
+    vi.restoreAllMocks();
     mocks.scheduled.length = 0;
   });
 
   test("sends the event after the response, keyed by the lowercased email and tagged as the app", async () => {
     const { trackServer, EVENTS } = await load();
 
-    trackServer({ email: " Member@Example.COM ", event: EVENTS.lessonCompleted, props: { lesson_position: 3 } });
+    trackServer({ email: " Member@Example.COM ", event: EVENTS.lessonCompleted, basis: OWN_REQUEST, props: { lesson_position: 3 } });
     expect(mocks.captureImmediate).not.toHaveBeenCalled();
     await runScheduled();
 
@@ -64,9 +94,9 @@ describe("analytics-server", () => {
     const { trackServer, EVENTS } = await load();
     const occurredAt = "2026-10-01T10:00:00.000Z";
 
-    trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, dedupeKey: "order-1", occurredAt });
-    trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, dedupeKey: "order-1", occurredAt });
-    trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, dedupeKey: "order-2", occurredAt });
+    trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, basis: OWN_REQUEST, dedupeKey: "order-1", occurredAt });
+    trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, basis: OWN_REQUEST, dedupeKey: "order-1", occurredAt });
+    trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, basis: OWN_REQUEST, dedupeKey: "order-2", occurredAt });
     await runScheduled();
 
     const [first, second, third] = mocks.captureImmediate.mock.calls.map(([message]) => message);
@@ -79,8 +109,8 @@ describe("analytics-server", () => {
   test("the same record under two event names gets two uuids", async () => {
     const { trackServer, EVENTS } = await load();
 
-    trackServer({ email: "a@b.com", event: EVENTS.videoSubmitted, dedupeKey: "video-1" });
-    trackServer({ email: "a@b.com", event: EVENTS.feedbackSent, dedupeKey: "video-1" });
+    trackServer({ email: "a@b.com", event: EVENTS.videoSubmitted, basis: OWN_REQUEST, dedupeKey: "video-1" });
+    trackServer({ email: "a@b.com", event: EVENTS.feedbackSent, basis: OWN_REQUEST, dedupeKey: "video-1" });
     await runScheduled();
 
     const [submitted, sent] = mocks.captureImmediate.mock.calls.map(([message]) => message);
@@ -90,7 +120,7 @@ describe("analytics-server", () => {
   test("sets person properties with $set", async () => {
     const { identifyServer } = await load();
 
-    identifyServer("A@B.com", { dog_count: 2, is_staff: false });
+    identifyServer("A@B.com", { dog_count: 2, is_staff: false }, OWN_REQUEST);
     await runScheduled();
 
     expect(mocks.identifyImmediate).toHaveBeenCalledWith({
@@ -105,7 +135,7 @@ describe("analytics-server", () => {
     const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
     mocks.captureImmediate.mockRejectedValueOnce(new Error("network down"));
 
-    trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted });
+    trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
     await expect(runScheduled()).resolves.toBeUndefined();
 
     expect(errorLog).toHaveBeenCalledWith("[analytics] lesson_completed was not sent", "network down");
@@ -115,8 +145,8 @@ describe("analytics-server", () => {
     vi.stubEnv("NEXT_PUBLIC_POSTHOG_KEY", "");
     const { trackServer, identifyServer, EVENTS } = await load();
 
-    trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted });
-    identifyServer("a@b.com", { dog_count: 1 });
+    trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
+    identifyServer("a@b.com", { dog_count: 1 }, OWN_REQUEST);
     await runScheduled();
 
     expect(mocks.constructed).not.toHaveBeenCalled();
@@ -126,8 +156,88 @@ describe("analytics-server", () => {
   test("skips events without an email instead of creating an empty person", async () => {
     const { trackServer, EVENTS } = await load();
 
-    trackServer({ email: "  ", event: EVENTS.lessonCompleted });
+    trackServer({ email: "  ", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
 
     expect(mocks.scheduled).toHaveLength(0);
+  });
+
+  describe("consent", () => {
+    test("a free member who rejected cookies is not tracked", async () => {
+      mocks.cookies = { bonded_consent: REJECTED_CONSENT };
+      const { trackServer, EVENTS } = await load();
+
+      trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
+      await runScheduled();
+
+      expect(mocks.captureImmediate).not.toHaveBeenCalled();
+    });
+
+    test("a paying member who rejected cookies is still tracked", async () => {
+      mocks.cookies = { bonded_consent: REJECTED_CONSENT };
+      mocks.enrollments = [{ source: "order", expires_at: null }];
+      const { trackServer, EVENTS } = await load();
+
+      trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
+      await runScheduled();
+
+      expect(mocks.captureImmediate).toHaveBeenCalledTimes(1);
+    });
+
+    test("Global Privacy Control without a stored choice counts as a rejection", async () => {
+      mocks.cookies = { bonded_consent_region: "opt_out" };
+      mocks.headers = { "sec-gpc": "1" };
+      const { trackServer, EVENTS } = await load();
+
+      trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
+      await runScheduled();
+
+      expect(mocks.captureImmediate).not.toHaveBeenCalled();
+    });
+
+    test("in an opt-out region with no choice yet, the member is tracked", async () => {
+      mocks.cookies = { bonded_consent_region: "opt_out" };
+      const { trackServer, EVENTS } = await load();
+
+      trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
+      await runScheduled();
+
+      expect(mocks.captureImmediate).toHaveBeenCalledTimes(1);
+    });
+
+    test("staff actions about a member ignore the staff's own cookies and need the member to be paying", async () => {
+      const { trackServer, EVENTS } = await load();
+      const aboutMember = { member: "user-1", ownRequest: false } as const;
+
+      trackServer({ email: "a@b.com", event: EVENTS.feedbackSent, basis: aboutMember });
+      await runScheduled();
+      expect(mocks.captureImmediate).not.toHaveBeenCalled();
+
+      mocks.enrollments = [{ source: "subscription", expires_at: null }];
+      trackServer({ email: "a@b.com", event: EVENTS.feedbackSent, basis: aboutMember });
+      await runScheduled();
+      expect(mocks.captureImmediate).toHaveBeenCalledTimes(1);
+    });
+
+    test("a purchase is always recorded", async () => {
+      mocks.cookies = {};
+      const { trackServer, EVENTS } = await load();
+
+      trackServer({ email: "a@b.com", event: EVENTS.purchaseCompleted, basis: { purchase: true } });
+      await runScheduled();
+
+      expect(mocks.captureImmediate).toHaveBeenCalledTimes(1);
+    });
+
+    test("if the paying check fails, nothing is sent", async () => {
+      vi.spyOn(console, "error").mockImplementation(() => undefined);
+      mocks.cookies = { bonded_consent: REJECTED_CONSENT };
+      mocks.enrollmentsError = { message: "timeout" };
+      const { trackServer, EVENTS } = await load();
+
+      trackServer({ email: "a@b.com", event: EVENTS.lessonCompleted, basis: OWN_REQUEST });
+      await runScheduled();
+
+      expect(mocks.captureImmediate).not.toHaveBeenCalled();
+    });
   });
 });

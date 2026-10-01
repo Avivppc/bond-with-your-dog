@@ -8,6 +8,7 @@ import { EVENTS, track } from "@/lib/analytics";
 import { syncAnalyticsConsent } from "@/lib/analytics-consent";
 import {
   ANALYTICS_CATEGORY,
+  browserSendsGpc,
   CONSENT_COOKIE,
   CONSENT_REVISION,
   currentPolicy,
@@ -50,8 +51,10 @@ function applyChoice(cookie: CookieConsent.CookieValue): void {
 export default function CookieConsentManager() {
   useEffect(() => {
     const policy = currentPolicy();
+    // With Global Privacy Control on, analytics starts off everywhere (no banner outside strict regions).
+    const startsOff = policy === "opt_in" || browserSendsGpc();
     void CookieConsent.run({
-      mode: policy === "opt_in" ? "opt-in" : "opt-out",
+      mode: startsOff ? "opt-in" : "opt-out",
       autoShow: policy === "opt_in",
       revision: CONSENT_REVISION,
       cookie: { name: CONSENT_COOKIE, expiresAfterDays: CONSENT_DAYS },

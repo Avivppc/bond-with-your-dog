@@ -86,4 +86,13 @@ describe("analyticsDecision", () => {
 
     expect(analyticsDecision("opt_in", outdated)).toBe("undecided");
   });
+
+  test("Global Privacy Control (California and other US states) turns analytics off by default", () => {
+    expect(analyticsDecision("opt_out", null, true)).toBe("denied");
+    expect(analyticsDecision("opt_in", null, true)).toBe("denied");
+  });
+
+  test("an explicit accept still wins over Global Privacy Control", () => {
+    expect(analyticsDecision("opt_out", accepted, true)).toBe("granted");
+  });
 });
