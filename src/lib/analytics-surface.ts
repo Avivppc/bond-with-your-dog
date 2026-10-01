@@ -38,20 +38,13 @@ export const APP_ROUTE_SEGMENTS = [
 ] as const;
 
 /**
- * Pages both sides share: the doorway from the site into the app.
- * Where they belong decides where the signup → purchase funnel is cut.
+ * Pages outside the route groups that still count as the app. Login is the
+ * members' front door; signup, password reset and checkout stay with the site
+ * so its funnel runs unbroken from quiz to purchase.
  */
-export const SHARED_ROUTE_SEGMENTS = [
-  "login",
-  "signup",
-  "forgot-password",
-  "reset-password",
-  "checkout",
-  "auth",
-] as const;
+export const APP_ENTRY_SEGMENTS = ["login"] as const;
 
-const APP_SEGMENTS: ReadonlySet<string> = new Set(APP_ROUTE_SEGMENTS);
-const SHARED_SEGMENTS: ReadonlySet<string> = new Set(SHARED_ROUTE_SEGMENTS);
+const APP_SEGMENTS: ReadonlySet<string> = new Set([...APP_ROUTE_SEGMENTS, ...APP_ENTRY_SEGMENTS]);
 
 function firstSegment(pathname: string): string {
   return pathname.split("/").find(Boolean) ?? "";
@@ -61,12 +54,5 @@ export function surfaceForPath(pathname: string): Surface {
   const segment = firstSegment(pathname);
   if (segment === "admin") return "admin";
   if (APP_SEGMENTS.has(segment)) return "app";
-
-  // TODO(Aviv): which surface do login, signup, password reset and checkout belong to?
-  //   SHARED_SEGMENTS.has(segment) tells you the page is one of them.
-  //   - "site": the site funnel (quiz → plan click → signup → purchase) stays in one place,
-  //     and the app's numbers start only once the member is inside.
-  //   - "app": the app owns the whole account journey, and the site ends at the plan click.
-  void SHARED_SEGMENTS;
   return "site";
 }

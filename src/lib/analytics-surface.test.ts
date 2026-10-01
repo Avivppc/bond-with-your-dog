@@ -31,6 +31,14 @@ describe("surfaceForPath", () => {
     expect(surfaceForPath("/courses")).toBe("site");
   });
 
+  test("login is the app's front door, the rest of the account journey belongs to the site funnel", () => {
+    expect(surfaceForPath("/login")).toBe("app");
+    expect(surfaceForPath("/signup")).toBe("site");
+    expect(surfaceForPath("/forgot-password")).toBe("site");
+    expect(surfaceForPath("/reset-password")).toBe("site");
+    expect(surfaceForPath("/checkout/foundations")).toBe("site");
+  });
+
   test("a path that only starts like an app route stays on the site", () => {
     expect(surfaceForPath("/homepage-promo")).toBe("site");
   });

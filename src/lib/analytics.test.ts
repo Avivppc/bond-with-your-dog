@@ -7,10 +7,18 @@ const posthogMock = vi.hoisted(() => ({
   reset: vi.fn(),
   register: vi.fn(),
   setPersonProperties: vi.fn(),
+  has_opted_in_capturing: vi.fn(() => true),
+  has_opted_out_capturing: vi.fn(() => false),
+  opt_in_capturing: vi.fn(),
+  opt_out_capturing: vi.fn(),
+  clear_opt_in_out_capturing: vi.fn(),
   get_distinct_id: vi.fn(() => "anon-123"),
 }));
 
 vi.mock("posthog-js", () => ({ default: posthogMock }));
+
+const consentMock = vi.hoisted(() => ({ decision: "granted" as "granted" | "denied" | "undecided" }));
+vi.mock("./consent/policy", () => ({ currentAnalyticsDecision: () => consentMock.decision }));
 
 import { EVENTS, identifyByEmail, registerMemberContext, resetAnalytics, track } from "./analytics";
 
@@ -19,6 +27,8 @@ describe("analytics", () => {
     vi.stubGlobal("window", {});
     posthogMock.__loaded = true;
     posthogMock.get_distinct_id.mockReturnValue("anon-123");
+    posthogMock.has_opted_in_capturing.mockReturnValue(true);
+    consentMock.decision = "granted";
   });
 
   afterEach(() => {
@@ -96,5 +106,26 @@ describe("analytics", () => {
     registerMemberContext({ dogId: null, dogCount: 0, isStaff: false });
 
     expect(posthogMock.register).toHaveBeenCalledWith({ dog_id: null, dog_count: 0 });
+  });
+
+  test("a visitor who has not accepted cookies is never tied to their email", () => {
+    posthogMock.has_opted_in_capturing.mockReturnValue(false);
+
+    identifyByEmail("member@example.com");
+    registerMemberContext({ dogId: "dog-1", dogCount: 1, isStaff: false });
+
+    expect(posthogMock.identify).not.toHaveBeenCalled();
+    expect(posthogMock.setPersonProperties).not.toHaveBeenCalled();
+    expect(posthogMock.register).toHaveBeenCalledWith({ dog_id: "dog-1", dog_count: 1 });
+  });
+
+  test("logout forgets the member and re-applies the visitor's cookie choice", () => {
+    posthogMock.has_opted_in_capturing.mockReturnValue(false);
+    consentMock.decision = "granted";
+
+    resetAnalytics();
+
+    expect(posthogMock.reset).toHaveBeenCalledTimes(1);
+    expect(posthogMock.opt_in_capturing).toHaveBeenCalledWith({ captureEventName: false });
   });
 });

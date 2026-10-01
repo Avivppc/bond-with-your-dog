@@ -18,6 +18,7 @@ export const EVENTS = {
   chapterPageViewed: "chapter_page_viewed",
   waitlistClicked: "waitlist_clicked",
   signupCompleted: "signup_completed",
+  cookieConsentUpdated: "cookie_consent_updated",
 
   // Member app: onboarding and account
   onboardingStarted: "onboarding_started",
