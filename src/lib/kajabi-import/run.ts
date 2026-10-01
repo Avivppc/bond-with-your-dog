@@ -1,8 +1,11 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sanitizeLessonHtml } from "@/lib/sanitize";
 import { parseVimeoUrl } from "@/lib/video/vimeo";
-import { COURSE_IMAGES_BUCKET } from "@/lib/lesson-files";
+import { COURSE_IMAGES_BUCKET, LESSON_FILES_BUCKET, lessonFilePath } from "@/lib/lesson-files";
 import type { PlannedCourse, PlannedLesson, PlannedModule } from "./plan";
 
 type Service = ReturnType<typeof createServiceClient>;
@@ -14,6 +17,7 @@ export interface ImportResult {
   modules: number;
   lessons: number;
   images: number;
+  files: number;
 }
 
 const ALLOWED_IMAGE_HOST = "kajabi-storefronts-production.kajabi-cdn.com";
@@ -52,7 +56,42 @@ async function rehostImage(sb: Service, url: string | null): Promise<string | nu
   }
 }
 
-async function insertLesson(sb: Service, courseId: string, moduleId: string, l: PlannedLesson): Promise<boolean> {
+/** Lesson downloads saved from Kajabi (bundled with the import route, see next.config.ts). */
+const KAJABI_FILES_DIR = path.join(process.cwd(), "data", "kajabi", "files");
+const SAFE_FILE = /^[A-Za-z0-9._-]+\.pdf$/;
+
+/** Uploads a lesson's Kajabi downloads into the private lesson-files bucket; returns how many made it. */
+async function attachFiles(sb: Service, lessonId: string, l: PlannedLesson): Promise<number> {
+  let attached = 0;
+  for (const [position, f] of l.files.entries()) {
+    if (!SAFE_FILE.test(f.file)) {
+      console.error("[kajabi-import] unexpected download file name", { lesson: l.title, file: f.file });
+      continue;
+    }
+    try {
+      const body = await readFile(path.join(KAJABI_FILES_DIR, f.file));
+      const fileName = /\.pdf$/i.test(f.name) ? f.name : `${f.name}.pdf`;
+      const storagePath = lessonFilePath(lessonId, f.file, randomUUID());
+      const { error: uploadError } = await sb.storage.from(LESSON_FILES_BUCKET).upload(storagePath, body, { contentType: "application/pdf" });
+      if (uploadError) throw new Error(uploadError.message);
+      const { error } = await sb.from("lesson_files").insert({
+        lesson_id: lessonId,
+        file_name: fileName,
+        storage_path: storagePath,
+        size_bytes: body.byteLength,
+        content_type: "application/pdf",
+        position,
+      });
+      if (error) throw new Error(error.message);
+      attached++;
+    } catch (e) {
+      console.error("[kajabi-import] download copy failed", { lesson: l.title, file: f.file, error: e instanceof Error ? e.message : e });
+    }
+  }
+  return attached;
+}
+
+async function insertLesson(sb: Service, courseId: string, moduleId: string, l: PlannedLesson): Promise<{ image: boolean; files: number }> {
   const { data, error } = await sb
     .from("lessons")
     .insert({
@@ -63,7 +102,9 @@ async function insertLesson(sb: Service, courseId: string, moduleId: string, l: 
       kind: "video",
       published: l.published,
       body_html: l.bodyHtml ? sanitizeLessonHtml(l.bodyHtml) : null,
-      thumbnail_url: await rehostImage(sb, l.thumbnailUrl),
+      // Kajabi lesson thumbnails were uploaded images there too: keep them as uploads, so a Vimeo
+      // video added later doesn't replace them (the lessons trigger copies this to thumbnail_url).
+      thumbnail_upload_url: await rehostImage(sb, l.thumbnailUrl),
       available_after_days: l.availableAfterDays,
       import_ref: l.ref,
     })
@@ -75,10 +116,12 @@ async function insertLesson(sb: Service, courseId: string, moduleId: string, l: 
     const { error: videoError } = await sb.from("lesson_videos").insert({ lesson_id: data.id, provider: "vimeo", external_id: ref.id, external_hash: ref.hash, source_url: l.vimeoUrl });
     if (videoError) console.error("[kajabi-import] video link failed", { lesson: l.title, error: videoError.message });
   }
-  return Boolean(l.thumbnailUrl);
+  return { image: Boolean(l.thumbnailUrl), files: await attachFiles(sb, data.id, l) };
 }
 
-async function insertModule(sb: Service, courseId: string, m: PlannedModule, parentId: string | null, ids: Map<string, string>, counts: { modules: number; lessons: number; images: number }) {
+type Counts = { modules: number; lessons: number; images: number; files: number };
+
+async function insertModule(sb: Service, courseId: string, m: PlannedModule, parentId: string | null, ids: Map<string, string>, counts: Counts) {
   const { data, error } = await sb
     .from("modules")
     .insert({ course_id: courseId, parent_id: parentId, title: m.title, description: m.description, position: m.position, published: m.published, import_ref: m.ref })
@@ -88,7 +131,9 @@ async function insertModule(sb: Service, courseId: string, m: PlannedModule, par
   ids.set(m.ref, data.id);
   counts.modules++;
   for (const l of m.lessons) {
-    if (await insertLesson(sb, courseId, data.id, l)) counts.images++;
+    const added = await insertLesson(sb, courseId, data.id, l);
+    if (added.image) counts.images++;
+    counts.files += added.files;
     counts.lessons++;
   }
   for (const child of m.children) await insertModule(sb, courseId, child, data.id, ids, counts);
@@ -100,7 +145,7 @@ async function insertModule(sb: Service, courseId: string, m: PlannedModule, par
  */
 export async function importCourse(plan: PlannedCourse): Promise<ImportResult> {
   const sb = createServiceClient();
-  const base = { course: plan.title, modules: 0, lessons: 0, images: 0 };
+  const base = { course: plan.title, modules: 0, lessons: 0, images: 0, files: 0 };
   const { data: existing } = await sb.from("courses").select("id").or(`import_ref.eq.${plan.ref},id.eq.${plan.id}`).limit(1);
   if (existing?.length) return { ...base, status: "skipped", message: "Already in the platform — left as it is." };
 
@@ -119,7 +164,7 @@ export async function importCourse(plan: PlannedCourse): Promise<ImportResult> {
   });
   if (error) return { ...base, status: "failed", message: `Could not create the course: ${error.message}` };
 
-  const counts = { modules: 0, lessons: 0, images: plan.imageUrl ? 1 : 0 };
+  const counts: Counts = { modules: 0, lessons: 0, images: plan.imageUrl ? 1 : 0, files: 0 };
   const ids = new Map<string, string>();
   try {
     for (const m of plan.modules) await insertModule(sb, plan.id, m, null, ids, counts);

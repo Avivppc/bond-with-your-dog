@@ -117,6 +117,12 @@ export default async function ProfilePage() {
         <ArrowLink href="/welcome?again=1">Redo the welcome questions</ArrowLink>
         <ArrowLink href="/home?tour=home">Take the guided tour again</ArrowLink>
       </div>
+      <form action="/auth/logout" method="post">
+        <button type="submit" className="btn btn-ghost btn-sm">
+          <Ms name="logout" size="sm" />
+          Sign out
+        </button>
+      </form>
     </>
   );
 }

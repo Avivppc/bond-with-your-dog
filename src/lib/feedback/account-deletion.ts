@@ -2,12 +2,14 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { assetIdFor, deleteMuxAsset, isMuxConfigured } from "./upload-server";
 import { canCancelSubscription, type SubscriptionLike } from "./membership";
+import { listFilesRecursive } from "./storage-walk";
 
 type Service = ReturnType<typeof createServiceClient>;
 
 /** Buckets where members keep files under a folder named after their user id. */
 const MEMBER_BUCKETS = ["profile-photos", "routine-music", "community-media"];
-const LIST_LIMIT = 1000;
+/** Paths per storage remove call. */
+const REMOVE_BATCH = 1000;
 const TRY_AGAIN = "We couldn't delete your account. Please try again, or ask us from Help.";
 
 type MuxRow = { mux_asset_id: string | null; mux_upload_id: string | null };
@@ -41,17 +43,16 @@ async function deleteMuxAssets(sb: Service, userId: string): Promise<boolean> {
   }
 }
 
+/** Every file in the member's folder of each bucket, nested folders included (e.g. `<user>/stories/`). */
 async function deleteStoredFiles(sb: Service, userId: string): Promise<void> {
   for (const bucket of MEMBER_BUCKETS) {
-    const { data, error } = await sb.storage.from(bucket).list(userId, { limit: LIST_LIMIT });
-    if (error) {
-      console.error("[account] storage list failed", { userId, bucket, error: error.message });
-      continue;
+    const storage = sb.storage.from(bucket);
+    const { paths, errors } = await listFilesRecursive((prefix, options) => storage.list(prefix, options), userId);
+    for (const e of errors) console.error("[account] storage list failed", { userId, bucket, prefix: e.prefix, error: e.message });
+    for (let i = 0; i < paths.length; i += REMOVE_BATCH) {
+      const { error: removeError } = await storage.remove(paths.slice(i, i + REMOVE_BATCH));
+      if (removeError) console.error("[account] storage remove failed", { userId, bucket, error: removeError.message });
     }
-    const paths = (data ?? []).filter((f) => f.id).map((f) => `${userId}/${f.name}`);
-    if (paths.length === 0) continue;
-    const { error: removeError } = await sb.storage.from(bucket).remove(paths);
-    if (removeError) console.error("[account] storage remove failed", { userId, bucket, error: removeError.message });
   }
 }
 

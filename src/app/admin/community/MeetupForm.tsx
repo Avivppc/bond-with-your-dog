@@ -1,4 +1,5 @@
 import { BTN_DANGER, BTN_PRIMARY, INPUT, LABEL } from "@/app/admin/_components/ui";
+import { formatChapters, parseStoredChapters } from "@/lib/community/chapters";
 import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
 import { LocalDateTime } from "./LocalDateTime";
 import { deleteMeetup, saveMeetup } from "./actions";
@@ -25,6 +26,8 @@ export interface MeetupRecord {
   canceled: boolean;
   recording_url: string | null;
   recording_minutes: number | null;
+  /** jsonb [{ t, title }]; read through parseStoredChapters. */
+  recording_chapters: unknown;
 }
 
 interface MeetupFormProps {
@@ -76,6 +79,18 @@ export function MeetupForm({ meetup, returnTo = "community" }: MeetupFormProps) 
             <label className="flex flex-col gap-1.5">
               <span className={LABEL}>Recording length (minutes)</span>
               <input name="recording_minutes" type="number" min={1} max={600} defaultValue={meetup.recording_minutes ?? ""} className={INPUT} />
+            </label>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={LABEL}>Recording chapters (optional)</span>
+              <textarea
+                name="recording_chapters"
+                defaultValue={formatChapters(parseStoredChapters(meetup.recording_chapters))}
+                rows={5}
+                maxLength={10000}
+                placeholder={"0:00 Welcome\n4:30 Loose-lead walking\n1:02:15 Your questions"}
+                className={`${INPUT} font-mono`}
+              />
+              <span className="text-xs text-[#6c6a69]">One per line: a time (mm:ss or h:mm:ss), then the title. Members can jump straight to each part.</span>
             </label>
           </>
         )}

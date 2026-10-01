@@ -33,6 +33,8 @@ export interface MemberProfile {
   tours_seen: string[];
   notif_prefs: Record<string, boolean>;
   marketing_opt_in: boolean;
+  /** IANA zone used for reminders; null until the browser reports it */
+  timezone: string | null;
 }
 
 export interface MemberViewer {
@@ -51,7 +53,7 @@ export interface MemberViewer {
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
 const PROFILE_COLUMNS =
-  "full_name, avatar_url, location, onboarded_at, goals, session_minutes, practice_days, active_dog_id, tours_seen, notif_prefs, marketing_opt_in";
+  "full_name, avatar_url, location, onboarded_at, goals, session_minutes, practice_days, active_dog_id, tours_seen, notif_prefs, marketing_opt_in, timezone";
 const DOG_COLUMNS = "id, name, breed, age_group, size, limitations, limitation_note, photo_url, created_at";
 
 function initialsOf(name: string, email: string): string {
@@ -90,6 +92,7 @@ async function load(supabase: ServerSupabase): Promise<MemberViewer | null> {
     tours_seen: raw.tours_seen ?? [],
     notif_prefs: (raw.notif_prefs ?? {}) as Record<string, boolean>,
     marketing_opt_in: Boolean(raw.marketing_opt_in),
+    timezone: raw.timezone ?? null,
   };
   const dogs = (dogsRes.data ?? []) as Dog[];
   const activeDog = dogs.find((d) => d.id === profile.active_dog_id) ?? dogs[0] ?? null;

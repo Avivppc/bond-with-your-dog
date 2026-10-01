@@ -1,6 +1,8 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { AchievementDef } from "@/lib/practice/achievements";
+import type { SkillLevel } from "@/lib/member/viewer";
+import type { SkillEvent } from "@/lib/practice/skill-history";
 
 export interface ProgressData {
   completedLessons: number;
@@ -41,4 +43,26 @@ export async function loadProgressData(userId: string): Promise<ProgressData> {
     feedbackVideos: videosRes.count ?? 0,
     routines: routinesRes.count ?? 0,
   };
+}
+
+/** Upper bound on skill-level changes read for one dog (each move changes level a handful of times). */
+const MAX_SKILL_EVENTS = 1000;
+
+/** The dog's skill-level history, oldest first (RLS: only the owner's dogs). */
+export async function loadSkillEvents(dogId: string): Promise<SkillEvent[]> {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("dog_skill_events")
+    .select("move_id, from_level, to_level, set_by, created_at")
+    .eq("dog_id", dogId)
+    .order("created_at")
+    .limit(MAX_SKILL_EVENTS);
+  if (error) console.error("[progress] skill events failed", { dogId, error: error.message });
+  return (data ?? []).map((e) => ({
+    moveId: e.move_id as string,
+    fromLevel: (e.from_level as SkillLevel | null) ?? null,
+    toLevel: e.to_level as SkillLevel,
+    setBy: e.set_by as SkillEvent["setBy"],
+    createdAt: e.created_at as string,
+  }));
 }

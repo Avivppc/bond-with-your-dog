@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import type { CourseOutline, OutlineLessonRow, OutlineModule } from "@/lib/course-outline";
 import { placePaywall } from "@/lib/paywall";
-import { createModule, reorderModules, setCoursePaywall } from "../outline-actions";
+import { createModule, reorderModules, setCoursePaywall, setOutlinePublished } from "../outline-actions";
 import { DragHandle, SortableList, type DragHandleProps } from "./SortableList";
 import { ModuleCard, type ExpandSignal } from "./ModuleCard";
 import { InlineAddForm } from "./InlineAdd";
@@ -86,6 +86,17 @@ export function CourseOutlineEditor({ courseId, outline, paywallAfterModuleId }:
     return true;
   }
 
+  function publishEverything(published: boolean) {
+    const question = published
+      ? "Publish every module and lesson in this course? Students with access will see all of it."
+      : "Set every module and lesson in this course to draft? Students won't see any of it until you publish again.";
+    if (!window.confirm(question)) return;
+    startTransition(async () => {
+      const res = await setOutlinePublished({ courseId, moduleId: null, published });
+      if (!res.ok) setError(res.error);
+    });
+  }
+
   function setPaywall(afterModuleId: string | null) {
     startTransition(async () => {
       const res = await setCoursePaywall({ courseId, afterModuleId });
@@ -145,6 +156,37 @@ export function CourseOutlineEditor({ courseId, outline, paywallAfterModuleId }:
             </>
           )}
         </ActionMenu>
+        {outline.modules.length > 0 && (
+          <ActionMenu
+            label="Bulk actions"
+            trigger={
+              <>
+                Bulk actions
+                <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                  expand_more
+                </span>
+              </>
+            }
+            triggerClassName="inline-flex items-center gap-1 rounded-full border border-[#d9d8d6] bg-white px-3 py-2 text-sm font-medium hover:bg-[#f3f3f2]"
+          >
+            {(close) => (
+              <>
+                <button type="button" className={MENU_ITEM} disabled={pending} onClick={() => (close(), publishEverything(true))}>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                    check_circle
+                  </span>
+                  Publish everything
+                </button>
+                <button type="button" className={MENU_ITEM} disabled={pending} onClick={() => (close(), publishEverything(false))}>
+                  <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                    draft
+                  </span>
+                  Set everything to draft
+                </button>
+              </>
+            )}
+          </ActionMenu>
+        )}
       </div>
 
       <div className="flex items-center justify-between">

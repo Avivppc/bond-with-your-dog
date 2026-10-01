@@ -90,12 +90,22 @@ export function LessonList({ data, locked }: { data: StudentCourse; locked: bool
               {m.title}
             </span>
           )}
+          {m.description && (
+            <p className="faint" style={{ margin: 0, padding: showHeadings ? "0 0 8px" : "12px 0 8px", whiteSpace: "pre-line" }}>
+              {m.description}
+            </p>
+          )}
           {rows(m.lessons)}
           {m.submodules.map((s) => (
             <div key={s.id} className="stack" style={{ gap: 0 }}>
               <span className="faint" style={{ padding: "12px 0 4px", fontWeight: 600 }}>
                 {s.title}
               </span>
+              {s.description && (
+                <p className="faint" style={{ margin: 0, padding: "0 0 6px", whiteSpace: "pre-line" }}>
+                  {s.description}
+                </p>
+              )}
               {rows(s.lessons)}
             </div>
           ))}

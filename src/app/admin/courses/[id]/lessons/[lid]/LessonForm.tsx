@@ -1,4 +1,5 @@
 import { Card, INPUT, LABEL } from "@/app/admin/_components/ui";
+import { MAX_DRIP_DAYS, MAX_DURATION_SECONDS } from "@/lib/content/limits";
 
 /**
  * The lesson editor's fields live in cards across two columns (Kajabi layout) but submit as one
@@ -119,6 +120,7 @@ export function AccessCard({ defaults }: { defaults: LessonFormDefaults }) {
             name="available_after_days"
             type="number"
             min={0}
+            max={MAX_DRIP_DAYS}
             defaultValue={defaults.available_after_days ?? ""}
             placeholder="Immediately"
             className={INPUT}
@@ -136,24 +138,25 @@ export function AccessCard({ defaults }: { defaults: LessonFormDefaults }) {
   );
 }
 
-export function ThumbnailCard({ thumbnailUrl, durationSeconds }: { thumbnailUrl: string | null; durationSeconds: number | null }) {
+/**
+ * Lesson length for outlines and cards. Keyed on the saved value so a Vimeo save (which fills it in)
+ * refreshes the input — otherwise the next Save would post the stale, empty value and wipe it.
+ */
+export function LengthField({ durationSeconds }: { durationSeconds: number | null }) {
   return (
-    <Card title="Lesson thumbnail" description="Taken from the Vimeo video.">
-      <div className="space-y-3">
-        {thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- remote Vimeo thumbnail, admin-only preview
-          <img src={thumbnailUrl} alt="" className="aspect-video w-full rounded-[8px] border border-[#e7e6e4] object-cover" />
-        ) : (
-          <div className="flex aspect-video w-full items-center justify-center rounded-[8px] border border-dashed border-[#d9d8d6] bg-[#fafaf9] text-xs text-[#6c6a69]">
-            Add a video to get a thumbnail
-          </div>
-        )}
-        <label className="flex flex-col gap-1.5">
-          <span className={LABEL}>Length (seconds)</span>
-          <input form={LESSON_FORM_ID} name="duration_seconds" type="number" min={0} defaultValue={durationSeconds ?? ""} className={INPUT} />
-          <span className="text-xs text-[#6c6a69]">Filled automatically from Vimeo.</span>
-        </label>
-      </div>
-    </Card>
+    <label className="flex flex-col gap-1.5">
+      <span className={LABEL}>Length (seconds)</span>
+      <input
+        key={durationSeconds ?? "none"}
+        form={LESSON_FORM_ID}
+        name="duration_seconds"
+        type="number"
+        min={0}
+        max={MAX_DURATION_SECONDS}
+        defaultValue={durationSeconds ?? ""}
+        className={INPUT}
+      />
+      <span className="text-xs text-[#6c6a69]">Filled automatically from Vimeo.</span>
+    </label>
   );
 }

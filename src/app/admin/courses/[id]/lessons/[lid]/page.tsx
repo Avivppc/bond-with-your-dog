@@ -5,7 +5,8 @@ import { requireStaff } from "@/lib/admin";
 import { buildOutline } from "@/lib/course-outline";
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, Card, Notice, PageHeader } from "@/app/admin/_components/ui";
 import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
-import { AccessCard, LESSON_FORM_ID, LessonDetailsCard, LessonFormRoot, StatusCard, ThumbnailCard, type ModuleChoice } from "./LessonForm";
+import { AccessCard, LESSON_FORM_ID, LengthField, LessonDetailsCard, LessonFormRoot, StatusCard, type ModuleChoice } from "./LessonForm";
+import { LessonThumbnailCard } from "./LessonThumbnailCard";
 import { QuestionForm, type QuestionDefaults } from "./QuestionForm";
 import { VideoPanel } from "./VideoPanel";
 import { BodyEditor } from "./BodyEditor";
@@ -14,7 +15,14 @@ import { PracticeCard, TakeawaysCuesCard } from "./PracticeCards";
 import { readTextList } from "@/lib/content/lists";
 import { readPracticeSteps } from "@/lib/content/practice-steps";
 import type { LessonVideoSummary } from "./content-actions";
-import { updateLesson, deleteLesson, deleteQuestion } from "../actions";
+import { updateLesson, deleteLesson, deleteQuestion, duplicateLesson } from "../actions";
+
+const SAVED_MESSAGES: Record<string, string> = {
+  "1": "Lesson saved.",
+  duplicated: "Lesson duplicated. This is the copy — it starts as a draft.",
+  question: "Question saved.",
+  "question-deleted": "Question deleted.",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -82,7 +90,9 @@ export default async function EditLessonPage({
         }
       />
 
-      {(saved || error) && <div className="mb-5">{error ? <Notice tone="error">{error}</Notice> : <Notice tone="success">Lesson saved.</Notice>}</div>}
+      {(saved || error) && (
+        <div className="mb-5">{error ? <Notice tone="error">{error}</Notice> : <Notice tone="success">{SAVED_MESSAGES[saved ?? ""] ?? SAVED_MESSAGES["1"]}</Notice>}</div>
+      )}
 
       <LessonFormRoot action={updateLesson} defaults={defaults} />
 
@@ -102,7 +112,21 @@ export default async function EditLessonPage({
         <aside className="space-y-6">
           <StatusCard published={lesson.published} />
           <AccessCard defaults={defaults} />
-          {lesson.kind === "video" && <ThumbnailCard thumbnailUrl={video?.thumbnailUrl ?? null} durationSeconds={lesson.duration_seconds} />}
+          <LessonThumbnailCard courseId={courseId} lessonId={lid} uploadUrl={lesson.thumbnail_upload_url ?? null} videoThumbnailUrl={video?.thumbnailUrl ?? null}>
+            {lesson.kind === "video" && <LengthField durationSeconds={lesson.duration_seconds} />}
+          </LessonThumbnailCard>
+          <Card title="Duplicate lesson" description="Copies the video, text, quiz, practice steps, downloads and thumbnail into a new draft right below this one.">
+            <form action={duplicateLesson}>
+              <input type="hidden" name="id" value={lid} />
+              <input type="hidden" name="course_id" value={courseId} />
+              <button type="submit" className={BTN_SECONDARY}>
+                <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                  content_copy
+                </span>
+                Duplicate lesson
+              </button>
+            </form>
+          </Card>
           <Card title="Delete lesson" description="Removes the lesson, its files and students' progress on it.">
             <form action={deleteLesson}>
               <input type="hidden" name="id" value={lid} />

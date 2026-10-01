@@ -8,6 +8,7 @@ import { isNotifPrefKey, withNotifPref } from "@/lib/feedback/prefs";
 import { requestOrigin } from "@/lib/feedback/request-origin";
 import { deleteAccountData } from "@/lib/feedback/account-deletion";
 import { EVENTS, trackMember } from "@/lib/analytics-server";
+import { TimeZoneInput } from "@/lib/reminders/timezone-input";
 
 export type SettingsResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -41,6 +42,20 @@ export async function setNotifPref(input: z.input<typeof Pref>): Promise<Setting
     return { ok: false, error: TRY_AGAIN };
   }
   trackMember(user, EVENTS.notificationPrefChanged, { pref: parsed.data.key, enabled: parsed.data.value });
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+/** The time zone reminders use (practice days and Live Q&A times). */
+export async function setTimeZone(timeZone: string): Promise<SettingsResult> {
+  const parsed = TimeZoneInput.safeParse(timeZone);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Please pick a time zone from the list." };
+  const { supabase, user } = await signedIn();
+  const { error } = await supabase.from("profiles").update({ timezone: parsed.data }).eq("id", user.id);
+  if (error) {
+    console.error("[settings] time zone update failed", { userId: user.id, error: error.message });
+    return { ok: false, error: TRY_AGAIN };
+  }
   revalidatePath("/settings");
   return { ok: true };
 }

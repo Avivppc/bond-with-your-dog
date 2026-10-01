@@ -6,6 +6,7 @@ import { Mrs_Saint_Delafield } from "next/font/google";
 import { memberViewer } from "@/lib/member/viewer";
 import { Sidebar, Tabbar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
+import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
 import "@/styles/member-app.css";
 
 // Roni's signature on certificates.
@@ -32,6 +33,7 @@ export default async function MemberLayout({ children }: { children: React.React
       </div>
       <Tabbar />
       <MemberAnalytics dogId={viewer.activeDog?.id ?? null} dogCount={viewer.dogs.length} isStaff={viewer.isStaff} />
+      {!viewer.profile.timezone && <TimeZoneCapture />}
       <Suspense fallback={null}>
         <GuidedTour seen={viewer.profile.tours_seen} onboarded={Boolean(viewer.profile.onboarded_at)} />
       </Suspense>

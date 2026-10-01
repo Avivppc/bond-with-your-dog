@@ -6,11 +6,17 @@
 insert into auth.users (id, email, email_confirmed_at) values
   ('00000000-0000-0000-0000-0000000000f1', 'Client@Studio.dev', now()),   -- verified, mixed case
   ('00000000-0000-0000-0000-0000000000f2', 'squatter@studio.dev', null),  -- not verified
-  ('00000000-0000-0000-0000-0000000000f3', 'nobody@studio.dev', now());   -- verified, not invited
+  ('00000000-0000-0000-0000-0000000000f3', 'nobody@studio.dev', now()),   -- verified, not invited
+  ('00000000-0000-0000-0000-0000000000f4', 'grabbed@studio.dev', now());  -- auto-confirmed signup, inbox never proven
+-- Inbox proof (written by the server after an emailed link or Google sign-in).
+insert into public.email_verifications (user_id, email) values
+  ('00000000-0000-0000-0000-0000000000f1', 'client@studio.dev'),
+  ('00000000-0000-0000-0000-0000000000f3', 'nobody@studio.dev');
 
 insert into public.staff_invites (email, role) values
   ('client@studio.dev', 'editor'),
-  ('squatter@studio.dev', 'editor');
+  ('squatter@studio.dev', 'editor'),
+  ('grabbed@studio.dev', 'owner');
 
 select t.fails_with($$insert into public.staff_invites (email, role) values ('CLIENT@studio.dev', 'owner')$$,
                     '23505', 'one pending invite per email, case-insensitive');
@@ -28,6 +34,9 @@ select t.ok(public.claim_staff_invite() is null, 'no invite → no role');
 select t.login('00000000-0000-0000-0000-0000000000f2');
 select t.ok(public.claim_staff_invite() is null, 'unverified email cannot claim an invite');
 select t.ok(public.current_staff_role() is null, 'and gets no staff role');
+
+select t.login('00000000-0000-0000-0000-0000000000f4');
+select t.ok(public.claim_staff_invite() is null, 'instant signup without inbox proof cannot claim an invite');
 
 -- Verified invitee claims once; email match is case-insensitive.
 select t.login('00000000-0000-0000-0000-0000000000f1');

@@ -6,6 +6,8 @@ import { Resend } from "resend";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { roleChangeError } from "@/lib/team";
+import type { StaffRole } from "@/lib/staff";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.bonded.dog";
 
@@ -54,7 +56,14 @@ export async function inviteStaff(formData: FormData): Promise<void> {
   if (!parsed.success) back({ error: parsed.error.issues[0].message });
   const { email, role } = parsed.data;
 
-  const { error } = await createServiceClient()
+  const sb = createServiceClient();
+  const { data: account } = await sb.rpc("find_account_by_email", { p_email: email }).maybeSingle<{ user_id: string }>();
+  if (account) {
+    const { data: existing } = await sb.from("staff_members").select("role").eq("user_id", account.user_id).maybeSingle();
+    if (existing) back({ error: `${email} already has access. Change their role in the list below.` });
+  }
+
+  const { error } = await sb
     .from("staff_invites")
     .insert({ email, role, invited_by: user.id });
   if (error) {
@@ -66,6 +75,52 @@ export async function inviteStaff(formData: FormData): Promise<void> {
   const emailed = await sendInviteEmail(email, role, user.email);
   revalidatePath("/admin/team");
   back({ ok: emailed ? `Invite sent to ${email}.` : `Invite saved for ${email} — email not sent, share the login link manually.` });
+}
+
+const ChangeSchema = z.object({ user_id: z.string().uuid(), role: z.enum(["owner", "editor"]) });
+
+/** Switches a team member between owner and content editor. */
+export async function changeStaffRole(formData: FormData): Promise<void> {
+  const { user } = await requireStaff("staff");
+  const parsed = ChangeSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) back({ error: "Invalid request." });
+  const { user_id: targetId, role } = parsed.data;
+
+  const sb = createServiceClient();
+  const [{ data: member, error: memberError }, { count: owners, error: countError }] = await Promise.all([
+    sb.from("staff_members").select("role").eq("user_id", targetId).maybeSingle(),
+    sb.from("staff_members").select("user_id", { count: "exact", head: true }).eq("role", "owner"),
+  ]);
+  if (memberError || countError || !member) {
+    console.error("[team] role lookup failed", { targetId, error: memberError?.message ?? countError?.message });
+    back({ error: "Could not read this person's access. Please try again." });
+  }
+  const blocked = roleChangeError({ actorId: user.id, targetId, from: member.role as StaffRole, to: role, owners: owners ?? 0 });
+  if (blocked) back({ error: blocked });
+
+  const { error } = await sb.from("staff_members").update({ role }).eq("user_id", targetId);
+  if (error) {
+    console.error("[team] role change failed", { targetId, role, error: error.message });
+    back({ error: "Could not change the role." });
+  }
+  revalidatePath("/admin/team");
+  revalidatePath(`/admin/people/${targetId}`);
+  back({ ok: role === "owner" ? "They're now an owner." : "They're now a content editor." });
+}
+
+/** Sends the invitation email again (e.g. it went to spam). */
+export async function resendInvite(formData: FormData): Promise<void> {
+  const { user } = await requireStaff("staff");
+  const id = z.string().uuid().safeParse(formData.get("id"));
+  if (!id.success) back({ error: "Invalid invite." });
+
+  const { data: invite, error } = await createServiceClient().from("staff_invites").select("email, role").eq("id", id.data).is("accepted_at", null).maybeSingle();
+  if (error || !invite) {
+    if (error) console.error("[team] invite lookup failed", { id: id.data, error: error.message });
+    back({ error: "That invite is no longer pending." });
+  }
+  const emailed = await sendInviteEmail(invite.email, invite.role, user.email);
+  back(emailed ? { ok: `Invite sent again to ${invite.email}.` } : { error: "Email isn't set up yet (Resend). Share the login link with them yourself." });
 }
 
 export async function revokeInvite(formData: FormData): Promise<void> {
@@ -104,5 +159,5 @@ export async function removeStaffMember(formData: FormData): Promise<void> {
   const { error: inviteError } = await sb.from("staff_invites").delete().eq("accepted_by", target.data);
   if (inviteError) console.error("[team] invite cleanup failed", { target: target.data, error: inviteError.message });
   revalidatePath("/admin/team");
-  back({ ok: "Member removed." });
+  back({ ok: "Access removed." });
 }

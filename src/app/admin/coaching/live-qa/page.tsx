@@ -33,7 +33,7 @@ async function loadLiveQa(): Promise<LiveQaData> {
 
   const { data: sessionData, error: loadError } = await sb
     .from("community_meetups")
-    .select("id, kind, title, description, starts_at, duration_minutes, location, meeting_url, cover_image_url, published, canceled, recording_url, recording_minutes")
+    .select("id, kind, title, description, starts_at, duration_minutes, location, meeting_url, cover_image_url, published, canceled, recording_url, recording_minutes, recording_chapters")
     .eq("kind", "live_qa")
     .order("starts_at", { ascending: false })
     .limit(SESSIONS_SHOWN);

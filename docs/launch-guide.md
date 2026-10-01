@@ -74,6 +74,12 @@ npm run dev -- --port 3100
    - Site URL: `https://www.bonded.dog`.
    - להוסיף ל-Redirect URLs את `https://www.bonded.dog/auth/callback` ואת `https://www.bonded.dog/auth/confirm` (הזמנות ואיפוס סיסמה).
    - לתצוגות מקדימות ב-Vercel: להוסיף גם `https://*-avivppc.vercel.app/**`.
+   - ⚠️ **שולח מיילים (SMTP) — חובה לפני פתיחה.** מיילי ההרשמה ואיפוס הסיסמה נשלחים מ-Supabase עצמו. השולח המובנה שלהם מגיע רק לכתובות של צוות הפרויקט ומוגבל לכמה מיילים בשעה, כך שלקוחות חדשים לא יקבלו את מייל האימות. ב-Authentication ← Emails ← SMTP Settings לחבר את Resend:
+     - Host `smtp.resend.com`, Port `465`, User `resend`, Password = מפתח ה-API של Resend, Sender = אותו `EMAIL_FROM`.
+   - **תבניות המייל (Authentication ← Emails ← Templates),** כדי שהקישור יעבוד גם כשפותחים אותו בטלפון ולא בדפדפן שבו נרשמו:
+     - Confirm signup: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/home`
+     - Reset password: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+   - **התחברות עם Google:** הכפתור מופיע ב-`/login` וב-`/signup`. ב-Authentication ← Providers ← Google להדביק Client ID ו-Secret מ-Google Cloud Console (OAuth client מסוג Web, עם Redirect URI של Supabase שמופיע באותו מסך). בלי זה הכפתור מחזיר שגיאה.
 5. **Storage:** הבאקטים `lesson-files` (פרטי, עד 200MB לקובץ), `course-images` (ציבורי), `community-media` (פרטי, תמונות בקהילה עד 10MB), `profile-photos` (ציבורי, 5MB) ו-`routine-music` (פרטי, 20MB) נוצרים אוטומטית במיגרציות. לוודא שהם קיימים.
    - ⚠️ **מגבלת העלאה גלובלית:** ב-Storage → Settings יש "Upload file size limit" שגובר על הגדרת הבאקט. בתוכנית Free היא 50MB לכל היותר. אם יש קבצי הורדה גדולים יותר, צריך תוכנית Pro ולהעלות את המגבלה ל-200MB.
 
@@ -117,6 +123,23 @@ npm run dev -- --port 3100
 2. להגדיר `RESEND_API_KEY` ו-`EMAIL_FROM`.
 3. בלי ההגדרה הזו המערכת עובדת, אבל לא נשלחים מיילים (ברוך הבא, הזמנות, "קיבלת גישה").
 
+### ו2. תזכורות והתראות מתוזמנות
+פעם ביום (06:00 UTC, ב-`vercel.json`) Vercel Cron קורא ל-`/api/cron/reminders`. מה נשלח:
+- **תזכורת אימון:** ביום אימון של התלמיד (לפי אזור הזמן שלו), אם עוד לא התאמן היום. אם אצלו כבר ערב (18:00 ואילך), התזכורת היא "מחר יום אימון".
+- **שיעור חדש נפתח:** כששיעור עם השהיה (drip) נפתח לתלמיד. התראה באפליקציה בלבד.
+- **Live Q&A ומפגשים:** תזכורת יום לפני וביום עצמו. Live Q&A לכל חברי הקהילה, מפגש רגיל רק למי שאישר הגעה.
+- **Feedback שמחכה יותר מ-5 ימים:** התראה לכל אנשי הצוות באפליקציה, ומייל מרוכז ל-`COACH_INBOX` (או ל-`EMAIL_FROM` אם אין).
+
+כל תזכורת נשלחת פעם אחת בלבד, גם אם הריצה חוזרת. התלמידים שולטים בכל סוג ב-Settings. מייל לתלמיד נשלח רק אם הפעיל "Reminders by email" (כבוי כברירת מחדל). אזור הזמן נשמר אוטומטית מהדפדפן, ואפשר לשנות אותו ב-Settings.
+
+**להפעלה:**
+1. להריץ את המיגרציה `20261018000000_reminders.sql`.
+2. ב-Vercel להגדיר `CRON_SECRET`: מחרוזת אקראית, לפחות 16 תווים. בלי המשתנה הזה הכתובת דוחה כל קריאה.
+3. מיילים יוצאים רק כש-Resend מוגדר (סעיף ו).
+4. לבדיקה ידנית: `curl -H "Authorization: Bearer <CRON_SECRET>" https://www.bonded.dog/api/cron/reminders`. התשובה מראה כמה נשלח מכל סוג.
+
+> ב-Vercel Hobby מותר Cron אחד ביום, והוא רץ מתישהו במהלך השעה שנקבעה. התזכורות בנויות לזה.
+
 ### ז. הכנסת הלקוח ותוכן
 1. **הזמנת הלקוח:** ב-`/admin/team` ← Invite, עם תפקיד Content editor. הלקוח נרשם או מתחבר עם אותו מייל.
 2. **ייבוא הקורסים מ-Kajabi:** ב-`/admin/courses` ← "Import from Kajabi". שלושת הקורסים (Foundations, Moves, Let's Dance) נוצרים כטיוטה עם כל המודולים, השיעורים, הטקסטים והתמונות. אפשר להריץ שוב בלי כפילויות. אחר כך:
@@ -136,7 +159,7 @@ npm run dev -- --port 3100
 - **Analytics:** הזמנים לפי UTC. ההכנסות מוצגות **בלי מע"מ/מס**. תשלומים ישנים בלי אמצעי תשלום מופיעים כ-"Other".
 - **חבר מביא חבר:** מי שפותח שני חשבונות יכול להפנות את עצמו פעם אחת (אותו כלל כמו ברוב התוכניות). תגמול אחד לכל חבר שקונה. הנחה "שמורה" 24 שעות לקנייה שלא שולמה עדיין, כדי שלא אפשר יהיה להשתמש בה בכמה קניות במקביל.
 - **קהילה — מי חבר:** כברירת מחדל כל תלמיד עם קורס פעיל, **כולל קורסים חינמיים וגישה מוגבלת**. כדי שרק קונים ייכנסו: ב-`/admin/community` לבטל את "Every student with an active course is a member" ולסמן "Includes community access" בהצעות המתאימות.
-- **תזכורות אימון:** המתגים ב-Settings נשמרים, אבל עדיין אין שליחה מתוזמנת של תזכורות.
+- **תזכורות:** רצות פעם ביום (סעיף ו2), לא בשעה אישית לכל תלמיד. אין עדיין התראות Push לטלפון.
 - **סרטוני Feedback:** מתנגנים דרך Mux עם playback ציבורי (כתובת לא ניתנת לניחוש, אבל לא חתומה).
 - **מוזיקה לרוטינות:** קובץ שהוחלף או שהרוטינה שלו נמחקה נשאר ב-Storage. אין עדיין ניקוי אוטומטי.
 - **אפליקציה:** התשתית מוכנה (הכללים בדאטה בייס). ראו [06-platform-architecture.md](kajabi-research/06-platform-architecture.md).

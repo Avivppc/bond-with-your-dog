@@ -52,6 +52,8 @@ export interface SkillRow {
   subtitle: string;
   image: string;
   level: SkillLevel | null;
+  /** "Reliable since September 12 · 9 days from Learning", from the skill-level history. */
+  history: string | null;
 }
 
 export function MovesCard({ rows, total }: { rows: SkillRow[]; total: number }) {
@@ -76,6 +78,11 @@ export function MovesCard({ rows, total }: { rows: SkillRow[]; total: number }) 
               <div>
                 <b>{m.name}</b>
                 <div className="faint">{m.subtitle}</div>
+                {m.history && (
+                  <div className="faint" style={{ color: "var(--ink-2)", fontSize: 12.5 }}>
+                    {m.history}
+                  </div>
+                )}
               </div>
               <div className="levels-wrap stack" style={{ gap: 6 }}>
                 <div className={`levels ${m.level ? LEVEL_CLASS[m.level] : ""}`} role="img" aria-label={m.level ? LEVEL_LABEL[m.level] : "Not started"}>

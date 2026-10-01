@@ -3,6 +3,7 @@ import { LocalTime } from "@/components/ui/LocalTime";
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, StatusPill } from "../_components/ui";
 import { Avatar } from "../_components/list-kit";
 import { answerRequest, approveStory, setRequestStatus } from "./actions";
+import { StoryPhotoStrip } from "./story-photos";
 import type { InboxStatus, InboxTab } from "@/lib/admin-helpers/inbox";
 
 export interface SupportRequestRow {
@@ -20,6 +21,8 @@ export interface SupportRequestRow {
   answered_at: string | null;
   answered_by_email: string | null;
   created_at: string;
+  /** Story photos in the private community-media bucket. */
+  media_paths: string[] | null;
 }
 
 interface View {
@@ -80,7 +83,7 @@ function StoryActions({ item, view }: { item: SupportRequestRow; view: View }) {
   );
 }
 
-export function InboxItem({ item, view }: { item: SupportRequestRow; view: View }) {
+export function InboxItem({ item, view, photoUrls }: { item: SupportRequestRow; view: View; photoUrls: ReadonlyMap<string, string> }) {
   return (
     <li className="rounded-[12px] border border-[#e7e6e4] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -92,6 +95,7 @@ export function InboxItem({ item, view }: { item: SupportRequestRow; view: View 
       </div>
       {item.subject && <h3 className="mt-3 font-semibold">{item.subject}</h3>}
       <p className="mt-1 whitespace-pre-wrap text-[14px] text-[#1a1a19]">{item.body}</p>
+      <StoryPhotoStrip paths={item.media_paths ?? []} urls={photoUrls} />
       <p className="mt-2 flex flex-wrap gap-3 text-[12px] text-[#6c6a69]">
         {item.page_url && <span>Sent from: {item.page_url}</span>}
         {item.kind === "story" && <span>{item.consent_public ? "✓ OK to share publicly" : "Private — not OK to share"}</span>}
