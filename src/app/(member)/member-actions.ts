@@ -1,11 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isOwnPhotoUrl } from "@/lib/member/photos";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
 import { AboutYouInput, DogInput, PracticePrefsInput } from "@/lib/member/schemas";
+import { createVerifyLink, isEmailVerified } from "@/lib/auth/email-verification";
+import { sendEmail, siteUrl } from "@/lib/email";
+import { confirmEmail } from "@/lib/welcome-email";
 
 async function signedIn() {
   const supabase = await createClient();
@@ -107,6 +111,36 @@ export async function savePracticePrefs(input: PracticePrefsInput): Promise<Acti
     return fail("Could not save. Please try again.");
   }
   refresh();
+  return ok(undefined);
+}
+
+/** The chapter the member wants to follow (onboarding "Your course"). Access still comes from enrollments. */
+export async function saveChosenCourse(courseId: string): Promise<ActionResult> {
+  if (!z.string().min(1).max(100).safeParse(courseId).success) return fail("Please choose a course.");
+  const { supabase, user } = await signedIn();
+  if (!user) return fail("Please sign in again.");
+  // RLS only shows published courses, so this also rejects drafts.
+  const { data: course } = await supabase.from("courses").select("id").eq("id", courseId).maybeSingle();
+  if (!course) return fail("That course isn't available. Please pick another.");
+  const { error } = await supabase.from("profiles").update({ chosen_course_id: courseId }).eq("id", user.id);
+  if (error) {
+    console.error("[onboarding] course choice failed", { userId: user.id, error: error.message });
+    return fail("Could not save. Please try again.");
+  }
+  refresh();
+  return ok(undefined);
+}
+
+/** Emails a fresh confirm-your-email link (Home reminder). */
+export async function resendVerifyEmail(): Promise<ActionResult> {
+  const { supabase, user } = await signedIn();
+  if (!user?.email) return fail("Please sign in again.");
+  if (await isEmailVerified(supabase)) return ok(undefined);
+  const origin = (await headers()).get("origin") ?? siteUrl();
+  const link = await createVerifyLink(user.email, origin);
+  if (!link || !(await sendEmail(confirmEmail(user.email, link)))) {
+    return fail("We couldn't send the email right now. Please try again in a few minutes.");
+  }
   return ok(undefined);
 }
 

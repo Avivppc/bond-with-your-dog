@@ -3,6 +3,7 @@ import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { canPerform, resolveStaffRole, type StaffCapability, type StaffRole } from "@/lib/staff";
+import { isEmailVerified } from "@/lib/auth/email-verification";
 
 /** Bootstrap owners from ADMIN_EMAILS (comma-separated). Invited staff live in staff_members. */
 export function getAdminEmails(): string[] {
@@ -61,7 +62,8 @@ export async function requireStaff(capability: StaffCapability = "content"): Pro
   if (!user) redirect("/login?next=/admin");
 
   const dbRole = await loadStaffRole(supabase, user.id);
-  const role = resolveStaffRole(user.email, dbRole, getAdminEmails(), Boolean(user.email_confirmed_at));
+  // Inbox proof, not Supabase's email_confirmed_at: signups are auto-confirmed now.
+  const role = resolveStaffRole(user.email, dbRole, getAdminEmails(), await isEmailVerified(supabase));
   if (!role || !canPerform(role, capability)) redirect("/home");
   if (role === "owner" && dbRole !== "owner") await ensureOwnerRow(user.id);
   return { user, role };

@@ -55,6 +55,23 @@ export function inviteEmail(to: string, link: string, offerTitle: string | null)
   };
 }
 
+export function confirmToUnlockEmail(to: string, link: string, offerTitle: string | null): OutgoingEmail {
+  return {
+    to,
+    subject: offerTitle ? `Confirm your email to unlock ${offerTitle}` : "Confirm your email to unlock your Bonded course",
+    text: [
+      "Hi,",
+      "",
+      offerTitle ? `Roni's team gave you access to ${offerTitle} on Bonded.` : "Roni's team gave you access to a Bonded course.",
+      "Confirm this is your email address and it unlocks right away (the link works once):",
+      link,
+      "",
+      "Happy training,",
+      "The Bonded team",
+    ].join("\n"),
+  };
+}
+
 export function resetEmail(to: string, link: string): OutgoingEmail {
   return {
     to,

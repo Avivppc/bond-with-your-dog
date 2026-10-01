@@ -1,10 +1,14 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { claimAccountViaGoogle } from "@/lib/auth/email-verification";
+import { hasVerifiedGoogleEmail } from "@/lib/auth/google-identity";
+import { isFirstSignIn } from "@/lib/auth/new-user";
+import { sendEmail } from "@/lib/email";
+import { welcomeEmail } from "@/lib/welcome-email";
 import { safeNext } from "@/lib/auth/safe-next";
 import { MARKETING_CONSENT_COOKIE } from "@/lib/auth/marketing-consent";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
 import { claimReferralCode } from "@/lib/referrals-server";
-
 
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -19,6 +23,17 @@ export async function GET(request: NextRequest) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=auth-callback-failed`);
+  }
+
+  const user = data.user;
+  if (user && hasVerifiedGoogleEmail(user)) {
+    await claimAccountViaGoogle(supabase, user);
+    // A first Google login is a signup: send the welcome (no confirm step needed).
+    if (isFirstSignIn(user) && user.email) {
+      const to = user.email;
+      const fullName = String(user.user_metadata?.full_name ?? user.user_metadata?.name ?? "");
+      after(() => sendEmail(welcomeEmail({ to, fullName, baseUrl: origin, verifyUrl: null })));
+    }
   }
 
   const response = NextResponse.redirect(`${origin}${next}`);

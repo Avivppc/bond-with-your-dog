@@ -5,6 +5,8 @@ export interface OutgoingEmail {
   to: string;
   subject: string;
   text: string;
+  /** Optional branded HTML version; `text` stays as the plain-text fallback. */
+  html?: string;
 }
 
 /**
@@ -18,7 +20,7 @@ export async function sendEmail(email: OutgoingEmail): Promise<boolean> {
     console.warn("[email] Resend not configured; skipped", { to: email.to, subject: email.subject });
     return false;
   }
-  const { error } = await new Resend(apiKey).emails.send({ from, to: email.to, subject: email.subject, text: email.text });
+  const { error } = await new Resend(apiKey).emails.send({ from, to: email.to, subject: email.subject, text: email.text, html: email.html });
   if (error) {
     console.error("[email] send failed", { to: email.to, subject: email.subject, error: error.message });
     return false;

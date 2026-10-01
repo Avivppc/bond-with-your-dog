@@ -365,7 +365,7 @@
 .member-app .queue-head { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); padding: 0 16px 8px; }
 .member-app .bare-top { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .member-app .bare-top img { width: 140px; }
-.member-app .stepper { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.member-app .stepper { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 10px; }
 .member-app .stepper div { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; font-weight: 600; color: var(--ink-3); }
 .member-app .stepper div i { height: 4px; border-radius: 999px; background: var(--tint-2); }
 .member-app .stepper div.done i { background: var(--teal); }
@@ -379,6 +379,12 @@
 .member-app .goal { display: flex; gap: 12px; align-items: center; padding: 16px; border-radius: 18px; background: var(--tint); text-align: left; font-weight: 600; font-size: 14.5px; transition: box-shadow .2s, background .2s; }
 .member-app .goal .ms { color: var(--teal); }
 .member-app .goal.on { background: #fff; box-shadow: inset 0 0 0 2px var(--teal); }
+.member-app .course-pick { width: 100%; align-items: center; gap: 16px; padding: 12px 16px 12px 12px; font-weight: 400; }
+.member-app .course-pick .media, .member-app .onb .plan-thumb { width: 88px; min-height: 0; aspect-ratio: 4 / 3; border-radius: 12px; flex-shrink: 0; }
+.member-app .onb .plan-thumb { width: 120px; aspect-ratio: 16 / 10; border-radius: 14px; }
+.member-app .course-pick .grow { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.member-app .course-pick .title { font-weight: 600; }
+.member-app .course-pick .faint { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .member-app .photo-drop { width: 104px; height: 104px; border-radius: 50%; display: grid; place-items: center; background: var(--tint); box-shadow: inset 0 0 0 2px rgba(14, 102, 106, .2); color: var(--teal); overflow: hidden; flex-shrink: 0; }
 .member-app .photo-drop img { width: 100%; height: 100%; object-fit: cover; }
 .member-app .center-card { max-width: 480px; margin: 8vh auto 0; width: 100%; }

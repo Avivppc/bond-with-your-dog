@@ -33,6 +33,8 @@ export interface MemberProfile {
   tours_seen: string[];
   notif_prefs: Record<string, boolean>;
   marketing_opt_in: boolean;
+  /** The chapter picked in onboarding (choosing is not buying). */
+  chosen_course_id: string | null;
 }
 
 export interface MemberViewer {
@@ -46,12 +48,14 @@ export interface MemberViewer {
   activeDog: Dog | null;
   unreadNotifications: number;
   isStaff: boolean;
+  /** Proved their inbox (welcome-email link, invite, or Google). Unlocks access granted by email. */
+  emailVerified: boolean;
 }
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
 const PROFILE_COLUMNS =
-  "full_name, avatar_url, location, onboarded_at, goals, session_minutes, practice_days, active_dog_id, tours_seen, notif_prefs, marketing_opt_in";
+  "full_name, avatar_url, location, onboarded_at, goals, session_minutes, practice_days, active_dog_id, tours_seen, notif_prefs, marketing_opt_in, chosen_course_id";
 const DOG_COLUMNS = "id, name, breed, age_group, size, limitations, limitation_note, photo_url, created_at";
 
 function initialsOf(name: string, email: string): string {
@@ -68,11 +72,12 @@ async function load(supabase: ServerSupabase): Promise<MemberViewer | null> {
   if (!user) return null;
   await claimPendingAccess(supabase);
 
-  const [profileRes, dogsRes, unreadRes, staffRes] = await Promise.all([
+  const [profileRes, dogsRes, unreadRes, staffRes, verifiedRes] = await Promise.all([
     supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle(),
     supabase.from("dogs").select(DOG_COLUMNS).order("created_at"),
     supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
     supabase.rpc("current_staff_role"),
+    supabase.rpc("my_email_verified"),
   ]);
   if (profileRes.error) console.error("[viewer] profile load failed", profileRes.error.message);
   if (dogsRes.error) console.error("[viewer] dogs load failed", dogsRes.error.message);
@@ -90,6 +95,7 @@ async function load(supabase: ServerSupabase): Promise<MemberViewer | null> {
     tours_seen: raw.tours_seen ?? [],
     notif_prefs: (raw.notif_prefs ?? {}) as Record<string, boolean>,
     marketing_opt_in: Boolean(raw.marketing_opt_in),
+    chosen_course_id: raw.chosen_course_id ?? null,
   };
   const dogs = (dogsRes.data ?? []) as Dog[];
   const activeDog = dogs.find((d) => d.id === profile.active_dog_id) ?? dogs[0] ?? null;
@@ -107,6 +113,7 @@ async function load(supabase: ServerSupabase): Promise<MemberViewer | null> {
     activeDog,
     unreadNotifications: unreadRes.count ?? 0,
     isStaff: typeof staffRes.data === "string" || isAdminEmail(email),
+    emailVerified: verifiedRes.data === true,
   };
 }
 

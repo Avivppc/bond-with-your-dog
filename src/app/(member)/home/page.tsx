@@ -2,8 +2,11 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { dogName, requireMember, type MemberViewer } from "@/lib/member/viewer";
 import { loadHome, type HomeData } from "@/lib/member/home";
+import { loadMyCourses } from "@/lib/member/courses";
+import { chapterChoices, defaultChoiceId, toCourseChoice, unlockLabel, unlockSentence, type CourseChoice } from "@/lib/member/course-choice";
 import { ArrowLink, Days, Ms } from "@/components/app/ui";
 import { WEEKDAYS } from "@/components/app/ui";
+import { VerifyEmailNotice } from "./VerifyEmailNotice";
 import { CourseProgressLine, LiveAndLibrary, RoniCard, SkillsStrip, WeekCard, lessonHref, lessonLength, mediaFor } from "./sections";
 
 export const dynamic = "force-dynamic";
@@ -26,19 +29,22 @@ function returningLede(data: HomeData, dog: string): string {
   return next ? `Pick up where you left off: “${next.title}”${lessonLength(data) ? `, ${lessonLength(data)} with Roni` : ""}.` : "Your course is being prepared. Check back soon.";
 }
 
-export default async function HomePage() {
+export default async function HomePage({ searchParams }: { searchParams: Promise<{ verified?: string; verify?: string }> }) {
   const viewer = await requireMember("/home");
   if (!viewer.profile.onboarded_at) redirect("/welcome");
+  const { verified, verify } = await searchParams;
   const data = await loadHome(viewer);
   const dog = dogName(viewer);
+  const notice = <EmailNotice viewer={viewer} justVerified={verified === "1"} expired={verify === "expired"} />;
 
-  if (!data.current) return <NoCourseHome viewer={viewer} />;
-  if (data.dayOne) return <DayOneHome viewer={viewer} data={data} dog={dog} />;
+  if (!data.current) return <NoCourseHome viewer={viewer} notice={notice} chosen={await chosenCourse(viewer)} />;
+  if (data.dayOne) return <DayOneHome viewer={viewer} data={data} dog={dog} notice={notice} />;
 
   const href = lessonHref(data);
   const total = data.current.lessons.length;
   return (
     <>
+      {notice}
       <div className="hero" data-tour="home-hero">
         <div className="hero-copy">
           <span className="eyebrow">
@@ -88,12 +94,13 @@ export default async function HomePage() {
   );
 }
 
-function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeData; dog: string }) {
+function DayOneHome({ viewer, data, dog, notice }: { viewer: MemberViewer; data: HomeData; dog: string; notice: React.ReactNode }) {
   const href = lessonHref(data);
   const first = data.current!.lessons[0];
   const plannedDays = viewer.profile.practice_days;
   return (
     <>
+      {notice}
       <div className="hero" data-tour="home-hero">
         <div className="hero-copy">
           <span className="eyebrow">Day 1 · {data.current!.course.title}</span>
@@ -182,29 +189,62 @@ function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeDat
   );
 }
 
-function NoCourseHome({ viewer }: { viewer: MemberViewer }) {
+/** Confirm-your-email reminder, or a thank-you right after the link was opened. */
+function EmailNotice({ viewer, justVerified, expired }: { viewer: MemberViewer; justVerified: boolean; expired: boolean }) {
+  if (viewer.emailVerified) {
+    return justVerified ? (
+      <p className="tip" role="status">
+        <Ms name="verified" />
+        <span>Thanks, your email is confirmed.</span>
+      </p>
+    ) : null;
+  }
+  return <VerifyEmailNotice email={viewer.email} expired={expired} />;
+}
+
+/** The chapter picked in onboarding, for members who don't own a course yet. */
+async function chosenCourse(viewer: MemberViewer): Promise<CourseChoice | null> {
+  const { cards } = await loadMyCourses(viewer.userId);
+  const choices = chapterChoices(cards.map(toCourseChoice));
+  const id = defaultChoiceId(choices, viewer.profile.chosen_course_id);
+  return choices.find((c) => c.id === id) ?? null;
+}
+
+function NoCourseHome({ viewer, notice, chosen }: { viewer: MemberViewer; notice: React.ReactNode; chosen: CourseChoice | null }) {
   return (
     <>
+      {notice}
       <div className="hero">
         <div className="hero-copy">
-          <span className="eyebrow">Welcome</span>
+          <span className="eyebrow">{chosen ? `Your path · ${chosen.title}` : "Welcome"}</span>
           <h1 className="display">
             Welcome to Bonded,
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
-          <p className="lede">Three chapters, one partnership: Foundations, Moves and Let&apos;s Dance. Choose where to begin and your first lesson will be waiting here.</p>
+          <p className="lede">
+            {chosen
+              ? `You chose to begin with ${chosen.title}. ${unlockSentence(chosen.offer)}`
+              : "Three chapters, one partnership: Foundations, Moves and Let's Dance. Choose where to begin and your first lesson will be waiting here."}
+          </p>
           <div className="row" style={{ gap: 20 }}>
-            <Link className="btn btn-primary" href="/my-courses">
-              <Ms name="school" />
-              Choose your course
-            </Link>
-            <ArrowLink href="/community">Visit the community</ArrowLink>
+            {chosen?.offer ? (
+              <Link className="btn btn-primary" href={`/checkout/${chosen.offer.slug}`}>
+                <Ms name="lock_open" />
+                {unlockLabel(chosen.offer)}
+              </Link>
+            ) : (
+              <Link className="btn btn-primary" href="/my-courses">
+                <Ms name="school" />
+                Choose your course
+              </Link>
+            )}
+            <ArrowLink href={chosen?.offer ? "/my-courses" : "/community"}>{chosen?.offer ? "See all courses" : "Visit the community"}</ArrowLink>
           </div>
         </div>
         <div className="media">
-          {/* eslint-disable-next-line @next/next/no-img-element -- Roni with her dogs */}
-          <img src="/app/img/roni-kneel.jpg" alt="Roni kneeling with her two Border Collies" />
+          {/* eslint-disable-next-line @next/next/no-img-element -- course image or Roni with her dogs */}
+          <img src={chosen?.image || "/app/img/roni-kneel.jpg"} alt={chosen ? "" : "Roni kneeling with her two Border Collies"} />
         </div>
       </div>
     </>

@@ -2,13 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { markEmailVerified } from "@/lib/auth/email-verification";
 
-/** Link types the admin sends (Contacts → invite / password reset). */
-const ALLOWED_TYPES: readonly EmailOtpType[] = ["invite", "recovery"];
+/** Link types we email: admin invites, password resets, and "confirm your email". */
+const ALLOWED_TYPES: readonly EmailOtpType[] = ["invite", "recovery", "magiclink"];
 
 /**
- * Verifies a one-time token_hash link (admin invitations and password resets) and signs the
- * person in on whatever device they open it, then continues to `next` (same-site only).
+ * Verifies a one-time token_hash link and signs the person in on whatever device they open
+ * it, then continues to `next` (same-site only). Opening any of these links proves the
+ * inbox, so it also records the email as verified (unlocking access granted by email).
  */
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url);
@@ -21,11 +23,17 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+  const { data, error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
   if (error) {
     console.error("[auth/confirm] verify failed", { type, error: error.message });
-    const expired = type === "recovery" ? "/forgot-password?error=That+link+has+expired.+Request+a+new+one." : "/login?error=auth-callback-failed";
+    const expired =
+      type === "recovery"
+        ? "/forgot-password?error=That+link+has+expired.+Request+a+new+one."
+        : type === "magiclink"
+          ? "/home?verify=expired"
+          : "/login?error=auth-callback-failed";
     return NextResponse.redirect(`${origin}${expired}`);
   }
+  if (data.user) await markEmailVerified(data.user);
   return NextResponse.redirect(`${origin}${next}`);
 }
