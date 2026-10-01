@@ -31,6 +31,14 @@ vi.mock("next/headers", () => ({
 }));
 vi.mock("./supabase/admin", () => ({
   createServiceClient: () => ({
+    auth: {
+      admin: {
+        getUserById: async (id: string) => ({
+          data: { user: id === "user-1" ? { email: "Member@Example.com" } : null },
+          error: null,
+        }),
+      },
+    },
     from: () => ({
       select: () => ({
         eq: async () => ({ data: mocks.enrollments, error: mocks.enrollmentsError }),
@@ -239,5 +247,60 @@ describe("analytics-server", () => {
 
       expect(mocks.captureImmediate).not.toHaveBeenCalled();
     });
+  });
+
+  test("trackMember sends the member's own action with their consent as the basis", async () => {
+    const { trackMember, EVENTS } = await load();
+
+    trackMember({ id: "user-1", email: "Member@Example.com" }, EVENTS.dogAdded, { dog_count: 2 }, { dedupeKey: "dog-1" });
+    await runScheduled();
+
+    expect(mocks.captureImmediate).toHaveBeenCalledWith(
+      expect.objectContaining({ distinctId: "member@example.com", event: "dog_added", properties: expect.objectContaining({ dog_count: 2 }) }),
+    );
+  });
+
+  test("trackMember skips a user without an email", async () => {
+    const { trackMember, EVENTS } = await load();
+
+    trackMember({ id: "user-1", email: null }, EVENTS.dogAdded);
+
+    expect(mocks.scheduled).toHaveLength(0);
+  });
+
+  test("trackAboutMember files a staff action under the paying member", async () => {
+    mocks.enrollments = [{ source: "order", expires_at: null }];
+    const { trackAboutMember, EVENTS } = await load();
+
+    trackAboutMember("user-1", EVENTS.feedbackSent, { video_id: "v-1" }, { dedupeKey: "v-1" });
+    await runScheduled();
+
+    expect(mocks.captureImmediate).toHaveBeenCalledWith(
+      expect.objectContaining({ distinctId: "member@example.com", event: "feedback_sent" }),
+    );
+  });
+
+  test("trackAboutMember logs and skips a member who can't be found", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.enrollments = [{ source: "order", expires_at: null }];
+    const { trackAboutMember, EVENTS } = await load();
+
+    trackAboutMember("missing", EVENTS.feedbackSent);
+    await runScheduled();
+
+    expect(mocks.captureImmediate).not.toHaveBeenCalled();
+    expect(errorLog).toHaveBeenCalledWith("[analytics] feedback_sent was not sent", "member has no email");
+  });
+
+  test("trackPurchase records a payment for the buyer whatever their cookie choice", async () => {
+    mocks.cookies = { bonded_consent: REJECTED_CONSENT };
+    const { trackPurchase, EVENTS } = await load();
+
+    trackPurchase("user-1", EVENTS.purchaseCompleted, { offer_id: "o-1" }, { dedupeKey: "order-1" });
+    await runScheduled();
+
+    expect(mocks.captureImmediate).toHaveBeenCalledWith(
+      expect.objectContaining({ distinctId: "member@example.com", event: "purchase_completed" }),
+    );
   });
 });

@@ -6,6 +6,7 @@ import { addDays, isIsoDate } from "@/lib/practice/dates";
 import { MAX_SESSION_SECONDS } from "@/lib/practice/session";
 import { memberClient } from "@/lib/practice/server/auth";
 import { dbMessage, fail, ok, type ActionResult } from "@/lib/practice/result";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 const SaveSession = z.object({
   /** One id per session from the browser, so a retried save is stored once. */
@@ -36,7 +37,7 @@ export async function savePracticeSession(input: z.input<typeof SaveSession>): P
 
   const member = await memberClient();
   if (!member) return fail("Please sign in again.");
-  const { supabase, userId } = member;
+  const { supabase, userId, email } = member;
 
   const { data: canAccess, error: accessError } = await supabase.rpc("can_access_lesson", { p_lesson_id: s.lessonId });
   if (accessError) {
@@ -68,7 +69,7 @@ export async function savePracticeSession(input: z.input<typeof SaveSession>): P
   }
   const { data, error: readError } = await supabase
     .from("practice_sessions")
-    .select("id")
+    .select("id, created_at")
     .eq("user_id", userId)
     .eq("client_id", s.clientId)
     .single();
@@ -76,6 +77,21 @@ export async function savePracticeSession(input: z.input<typeof SaveSession>): P
     console.error("[practice] saved session not found", readError?.message);
     return fail(dbMessage(readError?.code));
   }
+  // The North Star: practising pairs per week = distinct dog_id with this event.
+  trackMember(
+    { id: userId, email },
+    EVENTS.practiceSessionCompleted,
+    {
+      dog_id: s.dogId,
+      lesson_id: s.lessonId,
+      move_id: s.moveId,
+      duration_seconds: s.durationSeconds,
+      reps: s.reps,
+      steps_completed: s.stepsDone,
+      weekday: new Date(`${s.practicedOn}T12:00:00Z`).getUTCDay(),
+    },
+    { dedupeKey: data.id as string, occurredAt: data.created_at as string },
+  );
   for (const path of ["/plan", "/progress", "/home"]) revalidatePath(path);
   return ok({ id: data.id as string });
 }

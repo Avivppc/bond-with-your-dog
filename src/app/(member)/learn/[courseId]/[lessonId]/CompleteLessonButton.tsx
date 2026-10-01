@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { reportLessonCompleted } from "./analytics-actions";
 
 interface CompleteLessonButtonProps {
   lessonId: string;
@@ -37,6 +38,7 @@ export function CompleteLessonButton({ lessonId, completed, doneHref }: Complete
         return;
       }
       setError(null);
+      void reportLessonCompleted(lessonId);
       router.push(doneHref);
     });
   }

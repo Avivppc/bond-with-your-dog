@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { accessGrantedEmail, sendEmail } from "@/lib/email";
 import type { BillingEvent } from "./types";
 import { validatePayment } from "./validate-payment";
+import { EVENTS, trackPurchase } from "@/lib/analytics-server";
 
 /**
  * Applies provider-agnostic billing events to orders, subscriptions and access.
@@ -210,7 +211,15 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     currency: order.currency,
     payment_method: payment.paymentMethod,
   });
-  if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
+  if ((transitioned ?? []).length > 0) {
+    await notifyAccessGranted(order.user_id, order.offer_id);
+    // What was bought, not for how much: money stays in /admin/analytics.
+    trackPurchase(order.user_id, EVENTS.purchaseCompleted, {
+      offer_id: order.offer_id,
+      payment_type: offer.payment_type,
+      provider: payment.provider,
+    }, { dedupeKey: order.id });
+  }
 
   // Referral: converts a referred friend's first purchase / consumes a used reward. Idempotent, so a
   // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).
@@ -344,6 +353,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
         return;
       }
       await sb.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString() }).eq("id", order.id);
+      trackPurchase(order.user_id, EVENTS.purchaseRefunded, { offer_id: order.offer_id, provider }, { dedupeKey: order.id });
       const { error: referralError } = await sb.rpc("referral_order_refunded", { p_order_id: order.id });
       if (referralError) throw new Error(`referral reversal failed for order ${order.id}: ${referralError.message}`);
       await revoke(sb, order.user_id, order.offer_id, order.id);

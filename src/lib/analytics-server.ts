@@ -111,20 +111,62 @@ function sendLater(label: string, basis: TrackingBasis, send: (posthog: PostHog)
  * Record a fact from the server: call it only after the database write has
  * succeeded, so ad blockers can't drop it and a failed save never counts.
  */
-export function trackServer({ email, event, basis, props = {}, dedupeKey, occurredAt, surface = "app" }: ServerEvent): void {
+type CaptureFields = Omit<ServerEvent, "email" | "basis">;
+
+function captureMessage(distinctId: string, { event, props = {}, dedupeKey, occurredAt, surface = "app" }: CaptureFields) {
+  return {
+    distinctId,
+    event,
+    properties: { ...props, surface, $source: "server" },
+    uuid: dedupeKey ? eventUuid(event, dedupeKey) : undefined,
+    timestamp: occurredAt ? new Date(occurredAt) : undefined,
+    // The request comes from Vercel, so its IP says nothing about the member.
+    disableGeoip: true,
+  };
+}
+
+export function trackServer({ email, basis, ...fields }: ServerEvent): void {
   const distinctId = analyticsId(email);
   if (!distinctId) return;
-  sendLater(event, basis, (posthog) =>
-    posthog.captureImmediate({
-      distinctId,
-      event,
-      properties: { ...props, surface, $source: "server" },
-      uuid: dedupeKey ? eventUuid(event, dedupeKey) : undefined,
-      timestamp: occurredAt ? new Date(occurredAt) : undefined,
-      // The request comes from Vercel, so its IP says nothing about the member.
-      disableGeoip: true,
-    }),
-  );
+  sendLater(fields.event, basis, (posthog) => posthog.captureImmediate(captureMessage(distinctId, fields)));
+}
+
+function sendAboutMember(
+  memberId: string,
+  basis: TrackingBasis,
+  event: EventName,
+  props: EventProps,
+  options: Pick<ServerEvent, "dedupeKey" | "occurredAt">,
+): void {
+  sendLater(event, basis, async (posthog) => {
+    const { data, error } = await createServiceClient().auth.admin.getUserById(memberId);
+    const email = data.user?.email;
+    if (error || !email) throw new Error(error?.message ?? "member has no email");
+    return posthog.captureImmediate(captureMessage(analyticsId(email), { event, props, ...options }));
+  });
+}
+
+/**
+ * An event about a member caused by someone else, e.g. Roni sending feedback.
+ * It is filed under the member (looked up by id), and only for paying members.
+ */
+export function trackAboutMember(
+  memberId: string,
+  event: EventName,
+  props: EventProps = {},
+  options: Pick<ServerEvent, "dedupeKey" | "occurredAt"> = {},
+): void {
+  sendAboutMember(memberId, { member: memberId, ownRequest: false }, event, props, options);
+}
+
+/** A payment or refund from the payment webhook: always recorded, filed under the buyer. */
+export function trackPurchase(
+  buyerId: string,
+  event: EventName,
+  props: EventProps = {},
+  options: Pick<ServerEvent, "dedupeKey" | "occurredAt"> = {},
+): void {
+  sendAboutMember(buyerId, { purchase: true }, event, props, options);
 }
 
 /** Set person properties (courses owned, dog count, staff flag) from the server. */
@@ -134,4 +176,23 @@ export function identifyServer(email: string, set: EventProps, basis: TrackingBa
   sendLater("identify", basis, (posthog) =>
     posthog.identifyImmediate({ distinctId, properties: { $set: set }, disableGeoip: true }),
   );
+}
+
+export interface SignedInUser {
+  id: string;
+  email?: string | null;
+}
+
+/**
+ * The common case: the signed-in member did something in their own request.
+ * Their cookie choice (or being a paying member) decides whether it is sent.
+ */
+export function trackMember(
+  user: SignedInUser,
+  event: EventName,
+  props: EventProps = {},
+  options: Pick<ServerEvent, "dedupeKey" | "occurredAt"> = {},
+): void {
+  if (!user.email) return;
+  trackServer({ email: user.email, event, props, basis: { member: user.id, ownRequest: true }, ...options });
 }

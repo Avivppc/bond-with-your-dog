@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isNotifPrefKey, withNotifPref } from "@/lib/feedback/prefs";
 import { requestOrigin } from "@/lib/feedback/request-origin";
 import { deleteAccountData } from "@/lib/feedback/account-deletion";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 export type SettingsResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -39,6 +40,7 @@ export async function setNotifPref(input: z.input<typeof Pref>): Promise<Setting
     console.error("[settings] prefs update failed", error.message);
     return { ok: false, error: TRY_AGAIN };
   }
+  trackMember(user, EVENTS.notificationPrefChanged, { pref: parsed.data.key, enabled: parsed.data.value });
   revalidatePath("/settings");
   return { ok: true };
 }

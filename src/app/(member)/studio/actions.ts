@@ -6,6 +6,7 @@ import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { notifyMemberByEmail } from "@/lib/feedback/notify-email";
 import type { EmailOutcome } from "@/lib/feedback/email-outcome";
+import { EVENTS, trackAboutMember } from "@/lib/analytics-server";
 
 /** Roni's Studio writes. Every action checks the caller is staff, then uses the service role. */
 
@@ -77,7 +78,7 @@ export async function setCoachLevel(input: z.input<typeof Level>): Promise<Studi
   const { sb } = await staff();
   const parsed = Level.safeParse(input);
   if (!parsed.success) return fail("Choose a level.");
-  const { data: video } = await sb.from("feedback_videos").select("dog_id, move_id").eq("id", parsed.data.videoId).maybeSingle();
+  const { data: video } = await sb.from("feedback_videos").select("user_id, dog_id, move_id").eq("id", parsed.data.videoId).maybeSingle();
   if (!video?.dog_id || !video.move_id) return fail("This video isn't linked to a dog and a move, so there's no level to set.");
   const { error } = await sb
     .from("dog_skills")
@@ -89,6 +90,13 @@ export async function setCoachLevel(input: z.input<typeof Level>): Promise<Studi
     console.error("[studio] set level failed", { videoId: parsed.data.videoId, error: error.message });
     return fail("The level didn't save. Please try again.");
   }
+  trackAboutMember(video.user_id as string, EVENTS.skillLevelChanged, {
+    dog_id: video.dog_id as string,
+    move_id: video.move_id as string,
+    to_level: parsed.data.level,
+    set_by: "coach",
+    video_id: parsed.data.videoId,
+  });
   done();
   return { ok: true, data: undefined };
 }
@@ -101,7 +109,7 @@ export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioR
   const parsed = Send.safeParse(input);
   if (!parsed.success) return fail(parsed.error.issues[0]?.message ?? "Check the summary.");
   const { videoId, summary } = parsed.data;
-  const { data: video } = await sb.from("feedback_videos").select("id, user_id, title, status").eq("id", videoId).maybeSingle();
+  const { data: video } = await sb.from("feedback_videos").select("id, user_id, title, status, created_at").eq("id", videoId).maybeSingle();
   if (!video || (video.status !== "waiting" && video.status !== "replied")) return fail("This video isn't ready for feedback.");
 
   const firstSend = video.status === "waiting";
@@ -113,6 +121,13 @@ export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioR
     return fail("The feedback didn't send. Please try again.");
   }
   if (!updated?.length) return fail("Someone on the team just sent this. Reload to see their feedback.");
+  if (firstSend) {
+    const turnaroundHours = (Date.now() - new Date(video.created_at as string).getTime()) / 3_600_000;
+    trackAboutMember(video.user_id as string, EVENTS.feedbackSent, {
+      video_id: videoId,
+      turnaround_hours: Math.round(turnaroundHours * 10) / 10,
+    }, { dedupeKey: videoId });
+  }
   const email = firstSend
     ? await notifyMemberByEmail(sb, video.user_id as string, {
         subject: `Roni replied to your ${video.title} video`,

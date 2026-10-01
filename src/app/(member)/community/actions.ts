@@ -8,6 +8,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { requireStaff } from "@/lib/admin";
 import { COMMUNITY_MEDIA_BUCKET } from "@/lib/community/queries";
 import { communityImagePath, validateCommunityImage } from "@/lib/community/media";
+import { EVENTS } from "@/lib/analytics-events";
+import { trackSignedIn } from "@/lib/analytics-member";
 
 /** Community actions for members (via the DB RPCs, as the member) and staff moderation. */
 export type ActionResult<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
@@ -86,6 +88,14 @@ export async function createPost(input: z.input<typeof CreatePost>): Promise<Act
     p_image_path: p.imagePath,
     p_poll_options: p.pollOptions,
   });
+  if (res.ok) {
+    trackSignedIn(EVENTS.communityPostCreated, {
+      channel_id: p.channelId,
+      challenge_id: p.challengeId,
+      has_image: Boolean(p.imagePath),
+      has_poll: Boolean(p.pollOptions),
+    }, { dedupeKey: res.data });
+  }
   return res.ok ? { ok: true, data: { id: res.data } } : res;
 }
 
@@ -131,6 +141,9 @@ export async function addComment(input: z.input<typeof AddComment>): Promise<Act
   const parsed = AddComment.safeParse(input);
   if (!parsed.success) return fail(parsed.error.issues[0].message);
   const res = await rpc<string>("community_add_comment", { p_post_id: parsed.data.postId, p_parent_id: parsed.data.parentId, p_body: parsed.data.body });
+  if (res.ok) {
+    trackSignedIn(EVENTS.communityCommentCreated, { post_id: parsed.data.postId, is_reply: parsed.data.parentId !== null }, { dedupeKey: res.data });
+  }
   return res.ok ? { ok: true, data: { id: res.data } } : res;
 }
 
@@ -144,6 +157,7 @@ export async function deleteComment(commentId: string): Promise<ActionResult> {
 export async function joinChallenge(challengeId: string): Promise<ActionResult> {
   if (!uuid.safeParse(challengeId).success) return fail("Invalid challenge.");
   const res = await rpc<null>("community_join_challenge", { p_challenge_id: challengeId });
+  if (res.ok) trackSignedIn(EVENTS.challengeJoined, { challenge_id: challengeId });
   return res.ok ? { ok: true, data: undefined } : res;
 }
 
@@ -156,6 +170,7 @@ export async function completeStep(stepId: string, done: boolean): Promise<Actio
 export async function rsvp(meetupId: string, going: boolean): Promise<ActionResult> {
   if (!uuid.safeParse(meetupId).success) return fail("Invalid meetup.");
   const res = await rpc<null>("community_rsvp", { p_meetup_id: meetupId, p_going: going });
+  if (res.ok) trackSignedIn(EVENTS.meetupRsvped, { meetup_id: meetupId, going });
   return res.ok ? { ok: true, data: undefined } : res;
 }
 

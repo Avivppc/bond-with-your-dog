@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -21,6 +22,11 @@ export async function replyToFeedback(input: z.input<typeof Reply>): Promise<Act
     console.error("[feedback] reply failed", { videoId: parsed.data.videoId, error: error.message });
     return { ok: false, error: error.code === "42501" ? "This video isn't on your account." : "Your reply didn't send. Please try again." };
   }
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  // The reply text never goes to analytics, only that a reply was sent.
+  if (user) trackMember(user, EVENTS.feedbackReplySent, { video_id: parsed.data.videoId });
   revalidatePath(`/feedback/${parsed.data.videoId}`);
   revalidatePath("/studio");
   return { ok: true };

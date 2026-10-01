@@ -2,6 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { createClient } from "@/lib/supabase/server";
 import { chooseDiscount, discountedCents, heldDiscounts, isValidReferralCode, type CheckoutDiscount, type PendingDiscountOrder } from "./referrals";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -42,6 +43,13 @@ export async function claimReferralCode(supabase: ServerSupabase, code: string |
   if (error) {
     console.error("[referrals] claim failed", error.message);
     return false;
+  }
+  if (String(data) === "ok") {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    // A member is referred once, so their id keeps a repeated claim to one event.
+    if (user) trackMember(user, EVENTS.referralSignup, {}, { dedupeKey: user.id });
   }
   return FINAL_CLAIM_RESULTS.has(String(data));
 }

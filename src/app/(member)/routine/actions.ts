@@ -9,6 +9,7 @@ import { memberClient } from "@/lib/practice/server/auth";
 import { dbMessage, fail, ok, type ActionResult } from "@/lib/practice/result";
 import { isOwnMusicPath, MUSIC_TYPES, musicExtension, ROUTINE_MUSIC_BUCKET, routineMusicPath, validateMusicFile } from "@/lib/practice/music";
 import { formatTimecode, MAX_ITEMS, MAX_ROUTINE_SECONDS, RoutineItemSchema, sortItems } from "@/lib/practice/timeline";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 const uuid = z.string().uuid();
 const Name = z.string().trim().min(1, "Give your routine a name.").max(80, "Keep the name under 80 characters.");
@@ -132,6 +133,15 @@ export async function saveRoutine(input: z.input<typeof Save>): Promise<ActionRe
     console.error("[routine] save failed", error.message);
     return fail(dbMessage(error.code));
   }
+  const songSeconds = songLength ?? 0;
+  const coveredSeconds = items.reduce((sum, i) => sum + Math.max(0, i.end - i.start), 0);
+  trackMember({ id: member.userId, email: member.email }, EVENTS.routineSaved, {
+    routine_id: id,
+    block_count: items.length,
+    duration_seconds: songSeconds,
+    coverage_pct: songSeconds > 0 ? Math.min(100, Math.round((coveredSeconds / songSeconds) * 100)) : 0,
+    has_music: Boolean(music ?? before.music_path),
+  });
   // The previous track is no longer used once a new one is saved.
   const old = before.music_path as string | null;
   if (music && old && old !== music.path && isOwnMusicPath(old, member.userId)) {

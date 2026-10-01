@@ -6,6 +6,7 @@ import VimeoPlayer from "@vimeo/player";
 import { createClient } from "@/lib/supabase/client";
 import type { PlaybackResponse } from "@/app/api/lessons/[lessonId]/playback/route";
 import { resumeFrom } from "@/lib/member/resume";
+import { reportLessonCompleted } from "./analytics-actions";
 
 const PROGRESS_EVERY_SECONDS = 15;
 
@@ -32,6 +33,7 @@ function useProgressRecorder(lessonId: string) {
       console.error("complete_lesson failed", done.error.message);
       return false;
     }
+    if (done) void reportLessonCompleted(lessonId);
     return true;
   }
 

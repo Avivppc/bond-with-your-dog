@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { isOwnPhotoUrl } from "@/lib/member/photos";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
 import { AboutYouInput, DogInput, PracticePrefsInput } from "@/lib/member/schemas";
+import { EVENTS, trackMember } from "@/lib/analytics-server";
 
 async function signedIn() {
   const supabase = await createClient();
@@ -47,6 +48,15 @@ export async function saveDog(input: DogInput): Promise<ActionResult<{ id: strin
   if (res.error || !res.data) {
     console.error("[dogs] save failed", { userId: user.id, error: res.error?.message });
     return fail(res.error?.code === "23514" ? "You can add up to 10 dogs." : "Could not save your dog. Please try again.");
+  }
+
+  if (!d.id) {
+    const { count } = await supabase.from("dogs").select("id", { count: "exact", head: true });
+    trackMember(user, EVENTS.dogAdded, {
+      dog_count: count ?? null,
+      age_band: d.ageGroup,
+      has_limitations: d.limitations.length > 0,
+    }, { dedupeKey: res.data.id });
   }
 
   const { data: profile } = await supabase.from("profiles").select("active_dog_id").eq("id", user.id).maybeSingle();
@@ -114,10 +124,24 @@ export async function savePracticePrefs(input: PracticePrefsInput): Promise<Acti
 export async function finishOnboarding(): Promise<ActionResult> {
   const { supabase, user } = await signedIn();
   if (!user) return fail("Please sign in again.");
-  const { error } = await supabase.from("profiles").update({ onboarded_at: new Date().toISOString() }).eq("id", user.id).is("onboarded_at", null);
+  const { data: finished, error } = await supabase
+    .from("profiles")
+    .update({ onboarded_at: new Date().toISOString() })
+    .eq("id", user.id)
+    .is("onboarded_at", null)
+    .select("goals, practice_days, session_minutes, onboarded_at");
   if (error) {
     console.error("[onboarding] finish failed", { userId: user.id, error: error.message });
     return fail("Could not save. Please try again.");
+  }
+  // Only the first finish updates a row, so this fires once per member.
+  const profile = finished?.[0];
+  if (profile) {
+    trackMember(user, EVENTS.onboardingCompleted, {
+      goals: profile.goals as string[],
+      practice_days_count: (profile.practice_days as number[]).length,
+      session_minutes: profile.session_minutes as number,
+    }, { dedupeKey: user.id, occurredAt: profile.onboarded_at as string });
   }
   refresh();
   return ok(undefined);
