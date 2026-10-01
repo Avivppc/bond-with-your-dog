@@ -74,6 +74,12 @@ npm run dev -- --port 3100
    - Site URL: `https://www.bonded.dog`.
    - להוסיף ל-Redirect URLs את `https://www.bonded.dog/auth/callback` ואת `https://www.bonded.dog/auth/confirm` (הזמנות ואיפוס סיסמה).
    - לתצוגות מקדימות ב-Vercel: להוסיף גם `https://*-avivppc.vercel.app/**`.
+   - ⚠️ **שולח מיילים (SMTP) — חובה לפני פתיחה.** מיילי ההרשמה ואיפוס הסיסמה נשלחים מ-Supabase עצמו. השולח המובנה שלהם מגיע רק לכתובות של צוות הפרויקט ומוגבל לכמה מיילים בשעה, כך שלקוחות חדשים לא יקבלו את מייל האימות. ב-Authentication ← Emails ← SMTP Settings לחבר את Resend:
+     - Host `smtp.resend.com`, Port `465`, User `resend`, Password = מפתח ה-API של Resend, Sender = אותו `EMAIL_FROM`.
+   - **תבניות המייל (Authentication ← Emails ← Templates),** כדי שהקישור יעבוד גם כשפותחים אותו בטלפון ולא בדפדפן שבו נרשמו:
+     - Confirm signup: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email&next=/home`
+     - Reset password: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/reset-password`
+   - **התחברות עם Google:** הכפתור מופיע ב-`/login` וב-`/signup`. ב-Authentication ← Providers ← Google להדביק Client ID ו-Secret מ-Google Cloud Console (OAuth client מסוג Web, עם Redirect URI של Supabase שמופיע באותו מסך). בלי זה הכפתור מחזיר שגיאה.
 5. **Storage:** הבאקטים `lesson-files` (פרטי, עד 200MB לקובץ), `course-images` (ציבורי), `community-media` (פרטי, תמונות בקהילה עד 10MB), `profile-photos` (ציבורי, 5MB) ו-`routine-music` (פרטי, 20MB) נוצרים אוטומטית במיגרציות. לוודא שהם קיימים.
    - ⚠️ **מגבלת העלאה גלובלית:** ב-Storage → Settings יש "Upload file size limit" שגובר על הגדרת הבאקט. בתוכנית Free היא 50MB לכל היותר. אם יש קבצי הורדה גדולים יותר, צריך תוכנית Pro ולהעלות את המגבלה ל-200MB.
 
