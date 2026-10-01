@@ -30,5 +30,8 @@ export async function updatePassword(formData: FormData): Promise<void> {
     console.error("[reset-password] update failed", error.message);
     redirect(`/reset-password?error=${encodeURIComponent(FRIENDLY_ERRORS[error.code ?? ""] ?? "We couldn't save the new password. Please try again.")}`);
   }
-  redirect("/home");
+  // Team members invited to the admin go straight there (claim_staff_invite also returns an existing role).
+  const { data: staffRole, error: claimError } = await supabase.rpc("claim_staff_invite");
+  if (claimError) console.error("[reset-password] staff claim failed", claimError.message);
+  redirect(staffRole ? "/admin" : "/home");
 }

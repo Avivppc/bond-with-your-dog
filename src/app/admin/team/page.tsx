@@ -3,9 +3,10 @@ import { requireStaff, getAdminEmails } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { buildTeamRows, type TeamInvite, type TeamMember, type TeamRow } from "@/lib/team";
 import type { StaffRole } from "@/lib/staff";
-import { BTN_PRIMARY, Card, INPUT, LABEL, Notice, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
+import { Card, Notice, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
 import { Avatar, MENU_ITEM, OptionsMenu, shortDate } from "../_components/list-kit";
-import { changeStaffRole, inviteStaff, removeStaffMember, resendInvite, revokeInvite } from "./actions";
+import { changeStaffRole, removeStaffMember, resendInvite, revokeInvite } from "./actions";
+import { InviteForm } from "./InviteForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Users & access" };
@@ -103,21 +104,8 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
       {ok && <Notice tone="success">{ok}</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
 
-      <Card title="Invite a user" description="They get an email with a link. They sign in (or sign up) with that address and land in the admin.">
-        <form action={inviteStaff} className="flex flex-wrap items-end gap-3">
-          <label className="flex min-w-56 flex-1 flex-col gap-1.5">
-            <span className={LABEL}>Email</span>
-            <input name="email" type="email" required placeholder="name@example.com" className={INPUT} />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className={LABEL}>Role</span>
-            <select name="role" defaultValue="editor" className={INPUT}>
-              <option value="editor">{ROLE_LABEL.editor}</option>
-              <option value="owner">{ROLE_LABEL.owner}</option>
-            </select>
-          </label>
-          <button type="submit" className={BTN_PRIMARY}>Send invite</button>
-        </form>
+      <Card title="Invite a user" description="They get a one-time link to choose a password, then land in the admin with the role you pick.">
+        <InviteForm />
       </Card>
 
       <Card title={`Users (${rows.length})`} flush>

@@ -11,11 +11,6 @@ import type { StaffRole } from "@/lib/staff";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.bonded.dog";
 
-const InviteSchema = z.object({
-  email: z.string().trim().toLowerCase().email("Enter a valid email address"),
-  role: z.enum(["editor", "owner"]),
-});
-
 function back(params: Record<string, string>): never {
   redirect(`/admin/team?${new URLSearchParams(params).toString()}`);
 }
@@ -48,33 +43,6 @@ async function sendInviteEmail(email: string, role: string, inviterEmail: string
     return false;
   }
   return true;
-}
-
-export async function inviteStaff(formData: FormData): Promise<void> {
-  const { user } = await requireStaff("staff");
-  const parsed = InviteSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) back({ error: parsed.error.issues[0].message });
-  const { email, role } = parsed.data;
-
-  const sb = createServiceClient();
-  const { data: account } = await sb.rpc("find_account_by_email", { p_email: email }).maybeSingle<{ user_id: string }>();
-  if (account) {
-    const { data: existing } = await sb.from("staff_members").select("role").eq("user_id", account.user_id).maybeSingle();
-    if (existing) back({ error: `${email} already has access. Change their role in the list below.` });
-  }
-
-  const { error } = await sb
-    .from("staff_invites")
-    .insert({ email, role, invited_by: user.id });
-  if (error) {
-    if (error.code === "23505") back({ error: `${email} already has an invite.` });
-    console.error("[team] invite insert failed", { email, error: error.message });
-    back({ error: "Could not create the invite." });
-  }
-
-  const emailed = await sendInviteEmail(email, role, user.email);
-  revalidatePath("/admin/team");
-  back({ ok: emailed ? `Invite sent to ${email}.` : `Invite saved for ${email} — email not sent, share the login link manually.` });
 }
 
 const ChangeSchema = z.object({ user_id: z.string().uuid(), role: z.enum(["owner", "editor"]) });
@@ -120,7 +88,7 @@ export async function resendInvite(formData: FormData): Promise<void> {
     back({ error: "That invite is no longer pending." });
   }
   const emailed = await sendInviteEmail(invite.email, invite.role, user.email);
-  back(emailed ? { ok: `Invite sent again to ${invite.email}.` } : { error: "Email isn't set up yet (Resend). Share the login link with them yourself." });
+  back(emailed ? { ok: `Invite sent again to ${invite.email}.` } : { error: "Email isn't set up yet (Resend). Use “Send invite” above with the same email to get a fresh one-time link to send yourself." });
 }
 
 export async function revokeInvite(formData: FormData): Promise<void> {
