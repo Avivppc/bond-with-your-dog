@@ -70,11 +70,11 @@ export default async function MovesLibraryPage({ searchParams }: { searchParams:
               <thead className="border-y border-[#efeeed] text-left text-[#6c6a69]">
                 <tr>
                   <th className="px-5 py-3 font-medium">Move</th>
-                  <th className="px-3 py-3 font-medium">Chapter</th>
-                  <th className="px-3 py-3 font-medium">Lesson</th>
-                  <th className="px-3 py-3 font-medium">Cue</th>
+                  <th className="hidden px-3 py-3 font-medium md:table-cell">Chapter</th>
+                  <th className="hidden px-3 py-3 font-medium sm:table-cell">Lesson</th>
+                  <th className="hidden px-3 py-3 font-medium lg:table-cell">Cue</th>
                   <th className="px-3 py-3 font-medium">Status</th>
-                  <th className="px-5 py-3 text-right font-medium">Position</th>
+                  <th className="hidden px-5 py-3 text-right font-medium sm:table-cell">Position</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#efeeed]">
@@ -86,13 +86,13 @@ export default async function MovesLibraryPage({ searchParams }: { searchParams:
                         {m.name}
                       </Link>
                     </td>
-                    <td className="px-3 py-3 text-[#6c6a69]">{m.course_id ? courseTitle.get(m.course_id) ?? m.course_id : "—"}</td>
-                    <td className="px-3 py-3 text-[#6c6a69]">{m.lesson_id ? lessonTitle.get(m.lesson_id) ?? "—" : "—"}</td>
-                    <td className="max-w-[16rem] truncate px-3 py-3 text-[#6c6a69]">{m.cue ?? "—"}</td>
+                    <td className="hidden px-3 py-3 text-[#6c6a69] md:table-cell">{m.course_id ? courseTitle.get(m.course_id) ?? m.course_id : "—"}</td>
+                    <td className="hidden px-3 py-3 text-[#6c6a69] sm:table-cell">{m.lesson_id ? lessonTitle.get(m.lesson_id) ?? "—" : "—"}</td>
+                    <td className="hidden max-w-[16rem] truncate px-3 py-3 text-[#6c6a69] lg:table-cell">{m.cue ?? "—"}</td>
                     <td className="px-3 py-3">
                       <StatusPill tone={m.published ? "published" : "draft"}>{m.published ? "Published" : "Draft"}</StatusPill>
                     </td>
-                    <td className="px-5 py-3 text-right tabular-nums text-[#6c6a69]">{m.position}</td>
+                    <td className="hidden px-5 py-3 text-right tabular-nums text-[#6c6a69] sm:table-cell">{m.position}</td>
                   </tr>
                 ))}
               </tbody>

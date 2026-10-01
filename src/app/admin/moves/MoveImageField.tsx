@@ -60,7 +60,7 @@ export function MoveImageField({ formId, initialUrl, alt }: MoveImageFieldProps)
           </div>
         )}
         <div className="flex flex-wrap gap-2">
-          <label className={`${BTN_SECONDARY} cursor-pointer ${busy ? "opacity-50" : ""}`}>
+          <label className={`${BTN_SECONDARY} relative cursor-pointer ${busy ? "opacity-50" : ""}`}>
             {busy ? "Uploading…" : url ? "Replace image" : "Upload image"}
             <input
               type="file"
