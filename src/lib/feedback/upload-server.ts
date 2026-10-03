@@ -1,6 +1,7 @@
 import "server-only";
 import { getMux } from "@/lib/mux";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { notifyTeam } from "@/lib/notify-team";
 import { settleOutcome, type MuxUploadState } from "./settle";
 import type { FeedbackStatus } from "./status";
 
@@ -81,6 +82,15 @@ export async function assetIdFor(row: { mux_asset_id: string | null; mux_upload_
  * Brings one "uploading" row up to date with Mux (service role: the values come from Mux, not
  * from the member). Returns the row's status afterwards.
  */
+async function notifyTeamOfVideo(sb: ReturnType<typeof createServiceClient>, title: string, userId: string): Promise<void> {
+  const { data } = await sb.auth.admin.getUserById(userId);
+  await notifyTeam("videos", {
+    subject: `New video for feedback: ${title}`,
+    lines: [`${data.user?.email ?? "A member"} sent “${title}” for Roni's feedback.`],
+    path: "/studio",
+  });
+}
+
 export async function settleUpload(row: UploadingRow, now: Date = new Date()): Promise<FeedbackStatus> {
   if (row.status !== "uploading") return row.status;
   let state: Awaited<ReturnType<typeof readMuxState>> = null;
@@ -98,11 +108,14 @@ export async function settleUpload(row: UploadingRow, now: Date = new Date()): P
     outcome.kind === "ready"
       ? { status: "waiting", mux_asset_id: state?.assetId ?? null, mux_playback_id: outcome.playbackId, duration_seconds: outcome.durationSeconds }
       : { status: "errored", mux_asset_id: state?.assetId ?? row.mux_asset_id };
-  const { error } = await createServiceClient()
+  const sb = createServiceClient();
+  const { data: settled, error } = await sb
     .from("feedback_videos")
     .update(patch)
     .eq("id", row.id)
-    .eq("status", "uploading");
+    .eq("status", "uploading")
+    .select("title, user_id");
+  if (!error && patch.status === "waiting" && settled?.[0]) await notifyTeamOfVideo(sb, settled[0].title as string, settled[0].user_id as string);
   if (error) {
     console.error("[feedback] could not settle upload", { videoId: row.id, error: error.message });
     return row.status;

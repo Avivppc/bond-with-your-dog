@@ -1,8 +1,8 @@
 import Link from "next/link";
+import { loadSiteSettings } from "@/lib/site-settings-server";
+import { SOCIAL_INFO, SOCIAL_KEYS, type SiteSettings } from "@/lib/site-settings";
 
 const LOGO_URL = "/images/logo.png";
-
-export const CONTACT_EMAIL = "info.bonded@gmail.com";
 
 const exploreLinks = [
   { href: "/courses", label: "Bonded Journey" },
@@ -11,8 +11,8 @@ const exploreLinks = [
   { href: "/about", label: "About Roni" },
 ];
 
-const supportLinks = [
-  { href: `mailto:${CONTACT_EMAIL}`, label: "Contact Us" },
+const supportLinks = (contactEmail: string) => [
+  { href: `mailto:${contactEmail}`, label: "Contact Us" },
   { href: "/#faq", label: "FAQ" },
   { href: "/login", label: "Member Login" },
   { href: "/terms", label: "Terms" },
@@ -23,7 +23,14 @@ const supportLinks = [
 const linkClass =
   "text-sm text-on-surface-variant hover:text-primary transition-colors";
 
-export default function Footer() {
+/** The public footer. Contact email and social links come from Settings → General. */
+export default async function Footer() {
+  return <FooterView settings={await loadSiteSettings()} />;
+}
+
+export function FooterView({ settings }: { settings: SiteSettings }) {
+  const { contactEmail, academyName, social } = settings;
+  const socialLinks = SOCIAL_KEYS.flatMap((k) => (social[k] ? [{ key: k, href: social[k], label: SOCIAL_INFO[k].label }] : []));
   return (
     <footer className="w-full mt-20 bg-surface-container-low border-t border-outline-variant/20">
       <div className="max-w-7xl mx-auto px-6 py-16">
@@ -57,7 +64,7 @@ export default function Footer() {
               Support
             </h4>
             <ul className="space-y-4">
-              {supportLinks.map(({ href, label }) => (
+              {supportLinks(contactEmail).map(({ href, label }) => (
                 <li key={href}>
                   <a href={href} className={linkClass}>
                     {label}
@@ -70,13 +77,24 @@ export default function Footer() {
 
         <div className="pt-8 border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-on-surface-variant">
-            © {new Date().getFullYear()} BONDED. All rights reserved.
+            © {new Date().getFullYear()} {academyName.toUpperCase()}. All rights reserved.
           </p>
+          {socialLinks.length > 0 && (
+            <ul className="flex flex-wrap items-center gap-4" aria-label="Follow us">
+              {socialLinks.map(({ key, href, label }) => (
+                <li key={key}>
+                  <a href={href} target="_blank" rel="noopener noreferrer" className="text-xs text-on-surface-variant hover:text-primary transition-colors">
+                    {label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
           <a
-            href={`mailto:${CONTACT_EMAIL}`}
+            href={`mailto:${contactEmail}`}
             className="text-xs text-on-surface-variant hover:text-primary transition-colors"
           >
-            {CONTACT_EMAIL}
+            {contactEmail}
           </a>
         </div>
       </div>

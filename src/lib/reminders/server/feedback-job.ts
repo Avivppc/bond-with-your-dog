@@ -3,6 +3,7 @@ import { z } from "zod";
 import { overdueDigestEmail, overdueNotice } from "../copy";
 import { daysWaiting, feedbackOverdueCutoff } from "../windows";
 import { mapInChunks } from "../summary";
+import { teamRecipient } from "@/lib/notifications";
 import { deliver, type Delivery } from "./data";
 import type { JobContext, JobResult } from "./member-jobs";
 
@@ -11,9 +12,11 @@ const VideoRow = z.object({ id: z.string().uuid(), created_at: z.string() });
 const MAX_VIDEOS = 200;
 const CONCURRENCY = 8;
 
-/** Where the team's overdue digest goes: COACH_INBOX, else the sending address. */
-export function teamInbox(): string | null {
-  return process.env.COACH_INBOX?.trim() || process.env.EMAIL_FROM?.trim() || null;
+/** Where the team's overdue digest goes: the team email (Settings → Notifications), COACH_INBOX, else the sending address. */
+export async function teamInbox(ctx: JobContext): Promise<string | null> {
+  const { data, error } = await ctx.sb.from("email_settings").select("team_email").eq("id", 1).maybeSingle();
+  if (error) console.error("[reminders] team email lookup failed", error.message);
+  return teamRecipient((data?.team_email as string | null) ?? null, process.env.COACH_INBOX) ?? (process.env.EMAIL_FROM?.trim() || null);
 }
 
 async function loadOverdueVideos(ctx: JobContext): Promise<{ id: string; days: number }[]> {
@@ -51,7 +54,7 @@ export async function runFeedbackOverdueJob(ctx: JobContext): Promise<JobResult>
   );
   const outcomes = await mapInChunks(inApp, CONCURRENCY, (d) => deliver(ctx.sb, d));
 
-  const inbox = teamInbox();
+  const inbox = await teamInbox(ctx);
   if (!inbox || !ctx.emailConfigured) return { outcomes, emails: [] };
   const claims = await mapInChunks(videos, CONCURRENCY, (v) =>
     deliver(ctx.sb, { userId: null, kind: "feedback_overdue_email", ref: v.id, noticeKind: "system", notice: null })

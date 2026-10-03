@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { accessGrantedEmail, sendEmail } from "@/lib/email";
 import type { BillingEvent } from "./types";
 import { validatePayment } from "./validate-payment";
+import { notifyTeam } from "@/lib/notify-team";
+import { formatMoney } from "@/lib/pricing";
 
 /**
  * Applies provider-agnostic billing events to orders, subscriptions and access.
@@ -18,6 +20,7 @@ export class BillingIgnored extends Error {}
 
 interface OfferRow {
   id: string;
+  title: string;
   payment_type: "free" | "one_time" | "subscription";
   days_of_access: number | null;
   provider_price_id: string | null;
@@ -103,7 +106,7 @@ export async function notifyAccessGranted(userId: string, offerId: string): Prom
 async function loadOffer(sb: Sb, offerId: string): Promise<OfferRow> {
   const { data, error } = await sb
     .from("offers")
-    .select("id, payment_type, days_of_access, provider_price_id")
+    .select("id, title, payment_type, days_of_access, provider_price_id")
     .eq("id", offerId)
     .single();
   if (error || !data) throw new Error(`offer ${offerId} not found`);
@@ -146,6 +149,13 @@ async function recordPayment(sb: Sb, row: LedgerRow): Promise<void> {
  * paid order re-applies the (idempotent) grant; refunded/canceled/failed orders never
  * get access. The access email is sent only on the pending → paid transition.
  */
+async function notifyTeamOfPurchase(sb: Sb, userId: string, offerTitle: string, cents: number, currency: string): Promise<void> {
+  const { data } = await sb.auth.admin.getUserById(userId);
+  const who = data.user?.email ?? "A member";
+  const price = cents > 0 ? ` for ${formatMoney(cents, currency.toUpperCase())}` : " (free)";
+  await notifyTeam("orders", { subject: `New purchase: ${offerTitle}`, lines: [`${who} bought ${offerTitle}${price}.`], path: `/admin/people/${userId}` });
+}
+
 export async function fulfillOrder(orderId: string, payment: FulfillmentPayment): Promise<void> {
   const sb = createServiceClient();
   const { data: order } = await sb
@@ -210,7 +220,10 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     currency: order.currency,
     payment_method: payment.paymentMethod,
   });
-  if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
+  if ((transitioned ?? []).length > 0) {
+    await notifyAccessGranted(order.user_id, order.offer_id);
+    await notifyTeamOfPurchase(sb, order.user_id, offer.title, payment.amountCents ?? order.amount_cents, order.currency);
+  }
 
   // Referral: converts a referred friend's first purchase / consumes a used reward. Idempotent, so a
   // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).

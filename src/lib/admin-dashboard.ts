@@ -79,7 +79,7 @@ export function setupWarnings(facts: SetupFacts, now: Date): SetupWarning[] {
           tone: "warning",
           label: "Forms have no spam protection",
           hint: "Add the Turnstile keys in Vercel to block bots on sign-up and the quiz.",
-          href: "/admin/settings/email",
+          href: "/admin/settings/general",
           icon: "shield",
         }
       : null,

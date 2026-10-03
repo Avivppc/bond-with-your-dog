@@ -1,6 +1,7 @@
 import "server-only";
 import type { createClient } from "@/lib/supabase/server";
-import { sendEmail, siteUrl } from "@/lib/email";
+import { siteUrl } from "@/lib/email";
+import { notifyTeam } from "@/lib/notify-team";
 
 type ServerSupabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -46,22 +47,10 @@ export async function submitSupport(
     return { ok: false, ...(ERRORS[error?.code ?? ""] ?? { status: 500, error: "That didn't send. Please try again." }) };
   }
 
-  const inbox = process.env.COACH_INBOX;
-  const emailed = inbox
-    ? await sendEmail({
-        to: inbox,
-        subject: `[${input.kind === "bug" ? "Problem report" : "Question"}] ${input.subject ?? input.body.slice(0, 60)}`,
-        text: [
-          `From: ${fromEmail}`,
-          input.pageUrl ? `Page: ${siteUrl()}${safePagePath(input.pageUrl) ?? ""}` : null,
-          "",
-          input.body,
-          "",
-          `Answer it in the admin Inbox: ${siteUrl()}/admin`,
-        ]
-          .filter((l) => l !== null)
-          .join("\n"),
-      })
-    : false;
+  const emailed = await notifyTeam("inbox", {
+    subject: `[${input.kind === "bug" ? "Problem report" : "Question"}] ${input.subject ?? input.body.slice(0, 60)}`,
+    lines: [`From: ${fromEmail}`, input.pageUrl ? `Page: ${siteUrl()}${safePagePath(input.pageUrl) ?? ""}` : null, "", input.body],
+    path: "/admin/inbox",
+  });
   return { ok: true, id: data, emailed };
 }

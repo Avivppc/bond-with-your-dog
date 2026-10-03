@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage, LEGAL_NAME } from "@/components/LegalPage";
-import { CONTACT_EMAIL } from "@/components/Footer";
+import { loadSiteSettings } from "@/lib/site-settings-server";
 
 export const metadata: Metadata = { title: "Terms of Service | BONDED" };
 
-export default function TermsPage() {
+export default async function TermsPage() {
+  const { contactEmail: CONTACT_EMAIL } = await loadSiteSettings();
   return (
     <LegalPage title="Terms of Service">
       <p>

@@ -27,10 +27,10 @@ describe("adminNavFor", () => {
     expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/home"]));
   });
 
-  it("hides Team from editors but keeps the email settings they send with", () => {
+  it("hides Team, General and Payments from editors but keeps the settings they send with", () => {
     const nav = adminNavFor("editor");
     expect(hrefsOf("editor")).not.toContain("/admin/team");
-    expect(nav.bottom.find((e) => e.label === "Settings")?.children?.map((c) => c.href)).toEqual(["/admin/settings/email"]);
+    expect(nav.bottom.find((e) => e.label === "Settings")?.children?.map((c) => c.href)).toEqual(["/admin/settings/notifications", "/admin/settings/email"]);
     expect([...nav.main, ...nav.bottom].every((e) => (e.children ? e.children.length > 0 : Boolean(e.href)))).toBe(true);
   });
 });

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { LegalPage, LEGAL_NAME } from "@/components/LegalPage";
-import { CONTACT_EMAIL } from "@/components/Footer";
+import { loadSiteSettings } from "@/lib/site-settings-server";
 
 export const metadata: Metadata = { title: "Refund Policy | BONDED" };
 
-export default function RefundPolicyPage() {
+export default async function RefundPolicyPage() {
+  const { contactEmail: CONTACT_EMAIL } = await loadSiteSettings();
   return (
     <LegalPage title="Refund Policy">
       <p>

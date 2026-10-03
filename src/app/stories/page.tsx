@@ -1,6 +1,7 @@
 import PlanCtaLink from "@/components/analytics/PlanCtaLink";
 import Navbar from "@/components/Navbar";
-import Footer, { CONTACT_EMAIL } from "@/components/Footer";
+import Footer from "@/components/Footer";
+import { loadSiteSettings } from "@/lib/site-settings-server";
 import TestimonialCard from "@/components/TestimonialCard";
 import { TESTIMONIALS } from "@/lib/testimonials";
 
@@ -13,13 +14,14 @@ const countries = Array.from(
   new Set(TESTIMONIALS.map((t) => t.country).filter((c): c is string => Boolean(c)))
 );
 
-const shareMailto = `mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(
+const shareMailto = (contactEmail: string) => `mailto:${contactEmail}?subject=${encodeURIComponent(
   "Our BONDED story"
 )}&body=${encodeURIComponent(
   "Hi Roni,\n\nOur names: \nOur dog: \nWhich chapter we did: \nOur story (a few sentences): \n\nWe're attaching a photo or a short video. You're welcome to share it on bonded.dog.\n"
 )}`;
 
-export default function StoriesPage() {
+export default async function StoriesPage() {
+  const { contactEmail } = await loadSiteSettings();
   return (
     <>
       <Navbar />
@@ -85,7 +87,7 @@ export default function StoriesPage() {
                 be featured here.
               </p>
               <a
-                href={shareMailto}
+                href={shareMailto(contactEmail)}
                 className="bg-on-secondary-container text-secondary-container font-label text-base font-bold px-8 py-4 rounded-full w-full sm:w-max text-center hover:bg-secondary transition-colors shadow-md"
               >
                 Send your story

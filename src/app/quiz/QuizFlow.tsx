@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
 import ProgressBar from "@/components/quiz/ProgressBar";
 import QuestionCard from "@/components/quiz/QuestionCard";
 import ResultCard from "@/components/quiz/ResultCard";
@@ -20,10 +19,12 @@ const NEXT_QUESTION_DELAY_MS = 280;
 interface QuizFlowProps {
   questions: QuizConfigQuestion[];
   results: QuizResults;
+  /** The site footer, rendered by the server page (it reads Settings → General). */
+  footer: ReactNode;
 }
 
 /** The quiz itself: intro, questions, lead capture, result. Content comes from the admin (or the defaults). */
-export default function QuizFlow({ questions, results }: QuizFlowProps) {
+export default function QuizFlow({ questions, results, footer }: QuizFlowProps) {
   const [step, setStep] = useState<Step>("intro");
   const [answers, setAnswers] = useState<QuizAnswers>({});
   const [leadOutcome, setLeadOutcome] = useState<"sent" | "skipped" | null>(null);
@@ -178,7 +179,7 @@ export default function QuizFlow({ questions, results }: QuizFlowProps) {
           </div>
         )}
       </main>
-      <Footer />
+      {footer}
     </>
   );
 }

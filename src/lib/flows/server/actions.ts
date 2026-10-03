@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { sendEmail, siteUrl } from "@/lib/email";
+import { teamRecipient } from "@/lib/notifications";
 import { isPrivateAddress, isPublicHttpsUrl, normalizeTag, type ActionData } from "../actions";
 import type { ActionNode } from "../graph";
 import { exactLike } from "../like";
@@ -57,8 +58,8 @@ function fillNote(message: string, flow: FlowRow, person: Person): string {
 }
 
 async function notifyTeam(flow: FlowRow, person: Person, message: string, settings: EmailSettings): Promise<ActionOutcome> {
-  const to = settings.teamEmail ?? process.env.COACH_INBOX?.trim() ?? null;
-  if (!to) return failed("no team email in Settings → Email", true);
+  const to = teamRecipient(settings.teamEmail, process.env.COACH_INBOX);
+  if (!to) return failed("no team email in Settings → Notifications", true);
   const who = [person.firstName, person.email].filter(Boolean).join(" · ") || "Someone";
   const sent = await sendEmail({
     to,

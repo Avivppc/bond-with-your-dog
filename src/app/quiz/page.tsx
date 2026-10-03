@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { loadQuizConfig } from "@/lib/quiz/config-server";
 import { questionCountWord } from "@/lib/quiz/count-word";
 import QuizFlow from "./QuizFlow";
+import Footer from "@/components/Footer";
 
 // Staff edit the quiz in the admin; visitors should see the latest version right away.
 export const dynamic = "force-dynamic";
@@ -15,5 +16,5 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function QuizPage() {
   const { questions, results } = await loadQuizConfig();
-  return <QuizFlow questions={questions} results={results} />;
+  return <QuizFlow questions={questions} results={results} footer={<Footer />} />;
 }

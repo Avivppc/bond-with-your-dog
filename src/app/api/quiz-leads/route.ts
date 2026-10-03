@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { z } from "zod";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { absoluteHref } from "@/lib/quiz/config";
 import { loadQuizConfig } from "@/lib/quiz/config-server";
 import { clientIp, verifyTurnstile } from "@/lib/turnstile";
+import { notifyTeam } from "@/lib/notify-team";
 
 /**
  * Anyone can take the quiz, so this route sends email to an address a stranger typed. Keep it
@@ -51,6 +52,14 @@ export async function POST(request: Request) {
     console.error("[quiz-leads] insert failed", dbError.message);
     return NextResponse.json({ error: "Please try again." }, { status: 502 });
   }
+  // After the response, so the visitor never waits on the team's email.
+  after(() =>
+    notifyTeam("leads", {
+      subject: `New quiz lead: ${firstName}`,
+      lines: [`${firstName} (${email}) finished the website quiz.`, `Result: ${tier}`, `Newsletter: ${marketingOptIn ? "yes" : "no"}`],
+      path: `/admin/leads?q=${encodeURIComponent(email)}`,
+    }),
+  );
 
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;

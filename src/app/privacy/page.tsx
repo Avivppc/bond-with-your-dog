@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { LegalPage, LEGAL_NAME } from "@/components/LegalPage";
-import { CONTACT_EMAIL } from "@/components/Footer";
+import { loadSiteSettings } from "@/lib/site-settings-server";
 
 export const metadata: Metadata = { title: "Privacy Policy | BONDED" };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const { contactEmail: CONTACT_EMAIL } = await loadSiteSettings();
   return (
     <LegalPage title="Privacy Policy">
       <p>
