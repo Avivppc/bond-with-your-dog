@@ -148,6 +148,26 @@ describe("planRun", () => {
     expect(planRun(graph, plan.state, facts({ condition: (id) => id === "c" }), NOW)).toMatchObject({ status: "done", actions: [] });
   });
 
+  it("waits until a local time in the person's zone", () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: "t", type: "trigger", position: { x: 0, y: 0 }, data: {} },
+        { id: "w", type: "wait", position: { x: 0, y: 0 }, data: { days: 0, hours: 0, mode: "until", atHour: 10, weekday: null } },
+        { id: "x", type: "exit", position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: "1", source: "t", target: "w" },
+        { id: "2", source: "w", target: "x" },
+      ],
+    };
+    const plan = planRun(graph, start, facts({ timezone: "Asia/Jerusalem" }), NOW);
+    expect(plan).toMatchObject({ status: "waiting", state: { nodeId: "w", waitUntil: "2026-10-04T07:00:00.000Z" } });
+  });
+
+  it("says which exit condition took the person out", () => {
+    expect(planRun(SAMPLE, start, facts({ goalReached: true, exitReason: "exit:practiced" }), NOW)).toMatchObject({ status: "exited", exitReason: "exit:practiced" });
+  });
+
   it("exits cleanly when the member's step was deleted from the flow", () => {
     expect(planRun(SAMPLE, { ...start, nodeId: "gone" }, facts(), NOW)).toMatchObject({ status: "exited", exitReason: "step_removed" });
   });

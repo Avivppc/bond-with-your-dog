@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
+import { earliestArrival } from "@/lib/flows/local-time";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { campaignStarterDoc } from "@/lib/email-blocks/defaults";
 import { emailHasContent } from "@/lib/flows/graph";
@@ -58,34 +60,60 @@ export async function countAudience(input: unknown): Promise<{ ok: true; count: 
   }
 }
 
+const LocalSend = z.object({ wall: z.string().regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/), zone: z.string().min(1).max(64) });
+/** The latest time zone (UTC-12) reaches a local time 26 hours after the earliest (UTC+14). */
+const LOCAL_SPAN_MS = 26 * 60 * 60 * 1000;
+
+function validZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /**
- * Schedules the campaign (at = ISO time) or sends it within 15 minutes (at = null). Saves first and
- * checks the email is complete.
+ * Schedules the campaign (at = ISO time) or sends it within 15 minutes (at = null). With `local`, it
+ * arrives at that wall-clock time in each person's time zone (people without one use `local.zone`).
+ * Saves first and checks the email is complete.
  */
-export async function scheduleCampaign(id: string, input: unknown, at: string | null): Promise<CampaignActionResult> {
+export async function scheduleCampaign(id: string, input: unknown, at: string | null, localInput: unknown = null): Promise<CampaignActionResult> {
   const saved = await saveCampaign(id, input);
   if (!saved.ok) return saved;
   const parsed = campaignSchema.parse(input);
   if (!parsed.email.subject.trim() || !emailHasContent(parsed.email)) return { ok: false, error: "Add a subject and some content before sending." };
   if (!hasPostalAddress(await loadEmailSettings(createServiceClient()))) return { ok: false, error: MISSING_ADDRESS_ERROR };
-  const when = at ? new Date(at) : new Date();
+  const local = localInput === null ? null : LocalSend.safeParse(localInput);
+  if (local && (!local.success || !validZone(local.data.zone))) return { ok: false, error: "Pick a valid date and time." };
+  const earliest = local?.success ? earliestArrival(local.data.wall) : null;
+  if (local?.success && (!earliest || earliest.getTime() + LOCAL_SPAN_MS < Date.now())) return { ok: false, error: "That time has already passed everywhere. Pick a later one." };
+  const when = earliest ?? (at ? new Date(at) : new Date());
   if (Number.isNaN(when.getTime())) return { ok: false, error: "Pick a valid date and time." };
   const { data, error } = await createServiceClient()
     .from("email_campaigns")
-    .update({ status: "scheduled", scheduled_at: when.toISOString(), updated_at: new Date().toISOString() })
+    .update({
+      status: "scheduled",
+      scheduled_at: when.toISOString(),
+      local_time: Boolean(local?.success),
+      scheduled_local: local?.success ? local.data.wall : null,
+      fallback_zone: local?.success ? local.data.zone : null,
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id)
     .in("status", ["draft", "scheduled"])
     .select("id");
   if (error || !data?.length) return { ok: false, error: "Couldn't schedule. Try again." };
   revalidatePath(LIST);
   revalidatePath(`${LIST}/${id}`);
+  if (local?.success) return { ok: true, message: `Scheduled for ${local.data.wall.replace("T", " ")} in each person's time zone.` };
   return { ok: true, message: at ? "Scheduled." : "On its way: it goes out within 15 minutes." };
 }
 
 /** Back to draft before it starts sending. */
 export async function unscheduleCampaign(id: string): Promise<CampaignActionResult> {
   await requireStaff("sales");
-  const { data } = await createServiceClient().from("email_campaigns").update({ status: "draft", scheduled_at: null }).eq("id", id).eq("status", "scheduled").select("id");
+  const { data } = await createServiceClient().from("email_campaigns").update({ status: "draft", scheduled_at: null, local_time: false, scheduled_local: null, fallback_zone: null }).eq("id", id).eq("status", "scheduled").select("id");
   if (!data?.length) return { ok: false, error: "It has already started sending." };
   revalidatePath(LIST);
   revalidatePath(`${LIST}/${id}`);

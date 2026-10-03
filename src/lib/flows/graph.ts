@@ -35,7 +35,11 @@ export interface TriggerNode extends Base {
 }
 export interface WaitNode extends Base {
   type: "wait";
-  data: { days: number; hours: number };
+  /**
+   * "duration" (default): days + hours. "until": the next `atHour`:00 in the person's time zone,
+   * on `weekday` (0 = Sunday) when set.
+   */
+  data: { days: number; hours: number; mode?: "duration" | "until"; atHour?: number; weekday?: number | null };
 }
 export interface EmailNode extends Base {
   type: "email";
@@ -120,6 +124,11 @@ export function waitMs(node: WaitNode): number {
 function nodeProblems(node: FlowNode): string[] {
   switch (node.type) {
     case "wait": {
+      if (node.data.mode === "until") {
+        const { atHour, weekday } = node.data;
+        const ok = Number.isInteger(atHour) && (atHour ?? -1) >= 0 && (atHour ?? 24) <= 23 && (weekday === null || weekday === undefined || (Number.isInteger(weekday) && weekday >= 0 && weekday <= 6));
+        return ok ? [] : ["A wait-until step needs an hour (0–23) and, optionally, a weekday."];
+      }
       const { days, hours } = node.data;
       const ok = Number.isInteger(days) && Number.isInteger(hours) && days >= 0 && days <= MAX_WAIT_DAYS && hours >= 0 && hours <= 23 && days + hours > 0;
       return ok ? [] : [`A wait step needs 1 hour to ${MAX_WAIT_DAYS} days.`];

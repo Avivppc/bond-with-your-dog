@@ -8,6 +8,7 @@ import { discountedCents, formatUsd } from "../discount";
 import { exactLike } from "../like";
 import { normalizeTag } from "../actions";
 import { quietHoldUntil } from "../quiet-hours";
+import { exitsOf, type ExitCondition, type ExitKind } from "../exits";
 import { chapterOffer, ensureCode, ownsChapter, type ServiceClient } from "./data";
 
 /** A live flow as the runner reads it. */
@@ -18,7 +19,10 @@ export interface FlowRow {
   trigger: FlowTrigger;
   trigger_params: TriggerParams;
   offer: FlowOffer;
+  /** Older flows: their single goal (read through exitsOf). */
   goal: FlowGoal;
+  /** Leave the flow as soon as any is true; null on flows saved before exit lists. */
+  exit_conditions: ExitCondition[] | null;
   reentry: "once" | "each_time";
   smart_sending_hours: number;
   quiet_hours: boolean;
@@ -31,7 +35,7 @@ export interface FlowRow {
 }
 
 export const FLOW_COLUMNS =
-  "id, name, status, trigger, trigger_params, offer, goal, reentry, smart_sending_hours, quiet_hours, consent, discount_percent, discount_valid_days, graph, live_since";
+  "id, name, status, trigger, trigger_params, offer, goal, exit_conditions, reentry, smart_sending_hours, quiet_hours, consent, discount_percent, discount_valid_days, graph, live_since";
 
 /** What happened that put this person in the flow (chapter, lesson, order…), from the trigger. */
 export interface RunContext {
@@ -89,25 +93,48 @@ async function accountFor(sb: ServiceClient, run: RunRow): Promise<string | null
   return (data as string | null) ?? null;
 }
 
-async function goalReached(sb: ServiceClient, flow: FlowRow, run: RunRow, now: Date): Promise<boolean> {
+async function countOf(query: PromiseLike<{ count: number | null; error: { message: string } | null }>): Promise<number> {
+  const { count, error } = await query;
+  if (error) throw new Error(`exit check failed: ${error.message}`);
+  return count ?? 0;
+}
+
+/** Whether one exit condition is true for this person now. */
+async function exitMet(sb: ServiceClient, run: RunRow, exit: ExitCondition, recipient: string | null, now: Date): Promise<boolean> {
   const user = run.user_id;
-  switch (flow.goal.kind) {
-    case "none":
-      return false;
+  switch (exit.kind) {
     case "bought_offer":
       if (!user) return false;
       if (run.target_course_id) return ownsChapter(sb, user, run.target_course_id, now);
       return run.context.offerId ? paidSince(sb, user, run.started_at, run.context.offerId) : false;
     case "any_purchase":
       return user ? paidSince(sb, user, run.started_at) : false;
-    case "practiced": {
-      if (!user) return false;
-      const { count } = await sb.from("practice_sessions").select("id", { count: "exact", head: true }).eq("user_id", user).gte("created_at", run.started_at);
-      return (count ?? 0) > 0;
-    }
+    case "practiced":
+      return user ? (await countOf(sb.from("practice_sessions").select("id", { count: "exact", head: true }).eq("user_id", user).gte("created_at", run.started_at))) > 0 : false;
     case "signed_up":
       return Boolean(await accountFor(sb, run));
+    case "has_tag":
+      return recipient && exit.tag
+        ? (await countOf(sb.from("contact_tags").select("id", { count: "exact", head: true }).eq("tag", normalizeTag(exit.tag)).ilike("email", exactLike(recipient)))) > 0
+        : false;
+    case "completed_chapter":
+      return user && exit.courseId ? (await countOf(sb.from("certificates").select("id", { count: "exact", head: true }).eq("user_id", user).eq("course_id", exit.courseId))) > 0 : false;
+    case "owns_chapter":
+      return user && exit.courseId ? ownsChapter(sb, user, exit.courseId, now) : false;
+    case "unsubscribed": {
+      const { data, error } = await sb.rpc("is_unsubscribed", { p_user_id: user, p_email: recipient });
+      if (error) throw new Error(`exit check failed: ${error.message}`);
+      return Boolean(data);
+    }
   }
+}
+
+/** The first of the flow's exit conditions that is true, if any. */
+async function exitReached(sb: ServiceClient, flow: FlowRow, run: RunRow, recipient: string | null, now: Date): Promise<ExitKind | null> {
+  for (const exit of exitsOf(flow.exit_conditions, flow.goal)) {
+    if (await exitMet(sb, run, exit, recipient, now)) return exit.kind;
+  }
+  return null;
 }
 
 /** Answers for every member-data condition in the graph (opened/clicked are answered by the engine). */
@@ -142,8 +169,8 @@ async function conditionAnswers(sb: ServiceClient, flow: FlowRow, run: RunRow, n
 
 /** Everything the engine needs to decide this person's next steps. Throws when the data can't be read (the run waits). */
 export async function personFacts(sb: ServiceClient, flow: FlowRow, run: RunRow, recipient: string | null, timezone: string | null, now: Date): Promise<RunFacts> {
-  const [goal, consentRes, msgRes, recentRes, answers] = await Promise.all([
-    goalReached(sb, flow, run, now),
+  const [exited, consentRes, msgRes, recentRes, answers] = await Promise.all([
+    exitReached(sb, flow, run, recipient, now),
     // Marketing flows need consent (sign-up/settings box, or the quiz box); service flows only need no unsubscribe.
     recipient
       ? sb.rpc("can_email", { p_user_id: run.user_id, p_email: recipient, p_require_consent: flow.consent !== "all" })
@@ -164,7 +191,9 @@ export async function personFacts(sb: ServiceClient, flow: FlowRow, run: RunRow,
   }
   const messages = msgRes.data ?? [];
   return {
-    goalReached: goal,
+    goalReached: exited !== null,
+    exitReason: exited ? `exit:${exited}` : undefined,
+    timezone,
     unsubscribed: consentRes.data !== true,
     recentlyEmailed: (recentRes.count ?? 0) > 0,
     holdUntil: flow.quiet_hours ? quietHoldUntil(now, timezone) : null,

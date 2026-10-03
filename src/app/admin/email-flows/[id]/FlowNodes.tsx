@@ -4,6 +4,7 @@ import { createContext, useContext, useState } from "react";
 import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, Handle, Position, ViewportPortal, type EdgeProps, type NodeProps } from "@xyflow/react";
 import type { ActionNode, ConditionNode, EmailStepData, FlowNode, FlowNodeType, SplitNode, WaitNode } from "@/lib/flows/graph";
 import { ACTION_LABEL } from "@/lib/flows/actions";
+import { describeLocalTime } from "@/lib/flows/local-time";
 import type { StepStats } from "@/lib/flows/stats";
 import { percent } from "@/lib/flows/stats";
 
@@ -115,8 +116,12 @@ function EmailCard({ id, data, selected }: NodeProps) {
 }
 
 function WaitCard({ id, data, selected }: NodeProps) {
-  const { days, hours } = data as WaitNode["data"];
-  const parts = [days ? `${days} day${days === 1 ? "" : "s"}` : "", hours ? `${hours} hour${hours === 1 ? "" : "s"}` : ""].filter(Boolean);
+  const wait = data as WaitNode["data"];
+  const { days, hours } = wait;
+  const parts =
+    wait.mode === "until"
+      ? [`Until ${describeLocalTime(wait.atHour ?? 10, wait.weekday ?? null)}`]
+      : [days ? `${days} day${days === 1 ? "" : "s"}` : "", hours ? `${hours} hour${hours === 1 ? "" : "s"}` : ""].filter(Boolean);
   return (
     <>
       <Handle type="target" position={Position.Top} className={HANDLE} />

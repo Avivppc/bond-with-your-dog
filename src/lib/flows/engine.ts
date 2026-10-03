@@ -1,4 +1,5 @@
-import { findNode, nextNodeId, waitMs, type Branch, type FlowGraph } from "./graph";
+import { findNode, nextNodeId, waitMs, type Branch, type FlowGraph, type WaitNode } from "./graph";
+import { nextLocalTime } from "./local-time";
 
 /**
  * Moves one member through a flow, Klaviyo-style: from where they are, follow the graph until they
@@ -17,8 +18,12 @@ export interface RunState {
 }
 
 export interface RunFacts {
-  /** They reached the flow's goal (bought the offer, practiced, signed up…): they leave the flow. */
+  /** One of the flow's exit conditions is true (bought, practiced, got a tag…): they leave the flow. */
   goalReached: boolean;
+  /** Which exit took them out, e.g. "exit:practiced" (stored on the run). */
+  exitReason?: string;
+  /** Their time zone, for "wait until 10:00 their time". */
+  timezone?: string | null;
   /** They unsubscribed: emails are skipped, the flow still runs (and stops at the end). */
   unsubscribed: boolean;
   /** Smart sending: they got a marketing email very recently, so this one is skipped. */
@@ -57,7 +62,7 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
   const finish = (status: RunStatus, exitReason: string | null = null): RunPlan => ({ actions, status, state, exitReason });
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    if (facts.goalReached) return finish("exited", "goal");
+    if (facts.goalReached) return finish("exited", facts.exitReason ?? "goal");
     const node = findNode(graph, state.nodeId);
     if (!node) return finish("exited", "step_removed");
 
@@ -67,7 +72,7 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
         return finish("done");
       case "wait": {
         if (state.waitUntil === null) {
-          state = { ...state, waitUntil: new Date(now.getTime() + waitMs(node)).toISOString() };
+          state = { ...state, waitUntil: waitEnd(node, now, facts.timezone ?? null).toISOString() };
           return finish("waiting");
         }
         if (new Date(state.waitUntil) > now) return finish("waiting");
@@ -119,6 +124,12 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
     state = { ...state, nodeId: next };
   }
   return finish("exited", "too_many_steps");
+}
+
+/** When a wait step lets the person go: after its duration, or at the next local time it names. */
+function waitEnd(node: WaitNode, now: Date, timezone: string | null): Date {
+  if (node.data.mode === "until") return nextLocalTime(now, timezone, node.data.atHour ?? 10, node.data.weekday ?? null);
+  return new Date(now.getTime() + waitMs(node));
 }
 
 /** A stable bucket in [0, 1) from a run id, so a member stays on the same A/B side on every tick. */

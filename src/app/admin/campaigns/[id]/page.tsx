@@ -38,7 +38,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       />
 
       {editable ? (
-        <CampaignEditor id={c.id} status={c.status as "draft" | "scheduled"} scheduledAt={c.scheduled_at} initial={{ name: c.name, audience: c.audience, email: doc }} chapters={chapters} siteUrl={siteUrl()} />
+        <CampaignEditor id={c.id} status={c.status as "draft" | "scheduled"} scheduledAt={c.scheduled_at} scheduledLocal={c.local_time ? c.scheduled_local : null} initial={{ name: c.name, audience: c.audience, email: doc }} chapters={chapters} siteUrl={siteUrl()} />
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">

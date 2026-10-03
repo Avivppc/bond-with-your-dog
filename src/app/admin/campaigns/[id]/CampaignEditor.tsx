@@ -23,6 +23,8 @@ interface CampaignEditorProps {
   id: string;
   status: "draft" | "scheduled";
   scheduledAt: string | null;
+  /** "2026-10-05T10:00" when it goes out at that time in each person's time zone. */
+  scheduledLocal: string | null;
   initial: { name: string; audience: Audience; email: EmailDoc };
   chapters: readonly ChapterOption[];
   siteUrl: string;
@@ -41,12 +43,13 @@ function localInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function CampaignEditor({ id, status: initialStatus, scheduledAt, initial, chapters, siteUrl }: CampaignEditorProps) {
+export function CampaignEditor({ id, status: initialStatus, scheduledAt, scheduledLocal, initial, chapters, siteUrl }: CampaignEditorProps) {
   const [name, setName] = useState(initial.name);
   const [audience, setAudience] = useState<Audience>(initial.audience);
   const [email, setEmail] = useState<EmailDoc>(initial.email);
   const [status, setStatus] = useState(initialStatus);
   const [when, setWhen] = useState(localInput(scheduledAt));
+  const [perZone, setPerZone] = useState(false);
   const [count, setCount] = useState<string>("…");
   const [result, setResult] = useState<CampaignActionResult | null>(null);
   const [pending, start] = useTransition();
@@ -73,7 +76,7 @@ export function CampaignEditor({ id, status: initialStatus, scheduledAt, initial
     <div className="flex flex-col gap-4">
       {status === "scheduled" && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-[8px] bg-[#e6f0fb] px-4 py-3 text-[14px] text-[#1d4f91]">
-          Scheduled for {new Date(scheduledAt ?? when).toLocaleString()}. You can still edit it until it starts sending.
+          Scheduled for {scheduledLocal ? `${scheduledLocal.replace("T", " ")} in each person's time zone` : new Date(scheduledAt ?? when).toLocaleString()}. You can still edit it until it starts sending.
           <button type="button" className={BTN_SECONDARY} disabled={pending} onClick={() => run(() => unscheduleCampaign(id), () => setStatus("draft"))}>
             Unschedule
           </button>
@@ -148,10 +151,27 @@ export function CampaignEditor({ id, status: initialStatus, scheduledAt, initial
         </button>
         <div className="ml-auto flex flex-wrap items-end gap-2">
           <label className="flex flex-col gap-1">
-            <span className={`text-[12px] ${MUTED}`}>Send at (your time)</span>
+            <span className={`text-[12px] ${MUTED}`}>{perZone ? "Send at (each person's time)" : "Send at (your time)"}</span>
             <input className={INPUT} type="datetime-local" value={when} onChange={(e) => setWhen(e.target.value)} />
           </label>
-          <button type="button" className={BTN_SECONDARY} disabled={pending} onClick={() => run(() => scheduleCampaign(id, draft(), new Date(when).toISOString()), () => setStatus("scheduled"))}>
+          <label className="flex max-w-[220px] items-start gap-2 pb-2 text-[12px]" title="People without a time zone get it at this time in yours">
+            <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#343332]" checked={perZone} onChange={(e) => setPerZone(e.target.checked)} />
+            Deliver at this time in each person&apos;s time zone
+          </label>
+          <button
+            type="button"
+            className={BTN_SECONDARY}
+            disabled={pending}
+            onClick={() =>
+              run(
+                () =>
+                  perZone
+                    ? scheduleCampaign(id, draft(), null, { wall: when, zone: Intl.DateTimeFormat().resolvedOptions().timeZone })
+                    : scheduleCampaign(id, draft(), new Date(when).toISOString()),
+                () => setStatus("scheduled"),
+              )
+            }
+          >
             Schedule
           </button>
           <button

@@ -36,9 +36,12 @@ export interface CampaignRow {
   started_at: string | null;
   sent_at: string | null;
   recipients: number | null;
+  /** Sent at `scheduled_local` in each person's time zone. */
+  local_time: boolean;
+  scheduled_local: string | null;
 }
 
-export const CAMPAIGN_COLUMNS = "id, name, status, audience, email, scheduled_at, started_at, sent_at, recipients";
+export const CAMPAIGN_COLUMNS = "id, name, status, audience, email, scheduled_at, started_at, sent_at, recipients, local_time, scheduled_local";
 
 const BATCH = 100;
 /** How long a job holds a campaign; a job that died lets go after this. */
@@ -133,10 +136,31 @@ async function enqueue(sb: ServiceClient, id: string): Promise<void> {
   await sb.from("email_campaigns").update({ recipients: count ?? 0 }).eq("id", id);
 }
 
-async function nextBatch(sb: ServiceClient, id: string): Promise<QueuedMessage[]> {
-  const { data, error } = await sb.from("email_messages").select("id, user_id, to_email").eq("campaign_id", id).eq("status", "queued").order("id").limit(BATCH);
+/** Queued messages whose time has come (local-time campaigns hold each until their local hour). */
+async function nextBatch(sb: ServiceClient, id: string, now: Date): Promise<QueuedMessage[]> {
+  const { data, error } = await sb
+    .from("email_messages")
+    .select("id, user_id, to_email")
+    .eq("campaign_id", id)
+    .eq("status", "queued")
+    .or(`send_after.is.null,send_after.lte.${now.toISOString()}`)
+    .order("id")
+    .limit(BATCH);
   if (error) throw new Error(`queue unavailable: ${error.message}`);
   return (data ?? []) as QueuedMessage[];
+}
+
+async function queuedLeft(sb: ServiceClient, id: string): Promise<number> {
+  const { count, error } = await sb.from("email_messages").select("id", { count: "exact", head: true }).eq("campaign_id", id).eq("status", "queued");
+  if (error) throw new Error(`queue unavailable: ${error.message}`);
+  return count ?? 0;
+}
+
+/** Messages still failing a day after their time are given up on (Resend keeps idempotency keys 24h). */
+async function giveUpStale(sb: ServiceClient, id: string, now: Date): Promise<void> {
+  const cutoff = new Date(now.getTime() - GIVE_UP_MS).toISOString();
+  const { error } = await sb.from("email_messages").update({ status: "failed" }).eq("campaign_id", id).eq("status", "queued").lt("send_after", cutoff);
+  if (error) console.error("[campaigns] giving up failed", { campaign: id, error: error.message });
 }
 
 async function finish(sb: ServiceClient, id: string): Promise<void> {
@@ -149,17 +173,12 @@ async function sendCampaign(sb: ServiceClient, campaign: CampaignRow, now: Date,
   let sent = 0;
   try {
     if (campaign.recipients === null) await enqueue(sb, campaign.id);
-    const startedAt = new Date(campaign.started_at ?? now.toISOString()).getTime();
+    await giveUpStale(sb, campaign.id, now);
     while (Date.now() < deadline) {
-      if (now.getTime() - startedAt > GIVE_UP_MS) {
-        console.error("[campaigns] giving up on unsent messages", { campaign: campaign.id });
-        await sb.from("email_messages").update({ status: "failed" }).eq("campaign_id", campaign.id).eq("status", "queued");
-        await finish(sb, campaign.id);
-        break;
-      }
-      const batch = await nextBatch(sb, campaign.id);
+      const batch = await nextBatch(sb, campaign.id, now);
       if (batch.length === 0) {
-        await finish(sb, campaign.id);
+        // Done when nothing is queued; otherwise the rest waits for its local time.
+        if ((await queuedLeft(sb, campaign.id)) === 0) await finish(sb, campaign.id);
         break;
       }
       const result = await sendBatch(sb, campaign, batch, settings);

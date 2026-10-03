@@ -20,7 +20,7 @@ describe("flowSettingsSchema", () => {
     trigger: "chapter_progress",
     triggerParams: { percent: 80 },
     offer: { kind: "next_chapter" },
-    goal: { kind: "bought_offer" },
+    exits: [{ kind: "bought_offer" }],
     reentry: "each_time",
     discountPercent: 20,
     discountValidDays: 7,

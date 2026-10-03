@@ -65,6 +65,7 @@ export async function loadFlowList(sb: ServiceClient): Promise<FlowListItem[]> {
 }
 
 export interface FlowMember {
+  runId: string;
   email: string;
   status: RunRow["status"];
   exitReason: string | null;
@@ -83,7 +84,15 @@ export interface FlowDetail {
   recent: FlowMember[];
 }
 
-export async function loadFlow(sb: ServiceClient, id: string): Promise<FlowDetail | null> {
+/** The people to list: the latest 15, or everyone whose address matches `find` (member or lead). */
+async function pickRuns(sb: ServiceClient, runs: readonly RunWithMember[], find: string | null): Promise<RunWithMember[]> {
+  const query = find?.trim().toLowerCase();
+  if (!query) return runs.slice(0, 15);
+  const { data: account } = await sb.rpc("user_id_for_email", { p_email: query });
+  return runs.filter((r) => (account && r.user_id === account) || (r.email ?? "").toLowerCase() === query).slice(0, 50);
+}
+
+export async function loadFlow(sb: ServiceClient, id: string, find: string | null = null): Promise<FlowDetail | null> {
   const { data: flow } = await sb.from("email_flows").select(FLOW_COLUMNS).eq("id", id).maybeSingle();
   if (!flow) return null;
   const [runs, messages, actions] = await Promise.all([
@@ -97,7 +106,7 @@ export async function loadFlow(sb: ServiceClient, id: string): Promise<FlowDetai
   const atStep: Record<string, number> = {};
   for (const r of runs) if (r.status === "active" || r.status === "waiting") atStep[r.node_id] = (atStep[r.node_id] ?? 0) + 1;
 
-  const recentRuns = runs.slice(0, 15);
+  const recentRuns = await pickRuns(sb, runs, find);
   // Members are looked up by account (their address may have changed); leads carry their address.
   const emails = await Promise.all(
     recentRuns.map((r) => (r.user_id ? sb.auth.admin.getUserById(r.user_id).then((u) => u.data.user?.email ?? "—") : Promise.resolve(r.email ?? "—"))),
@@ -108,6 +117,6 @@ export async function loadFlow(sb: ServiceClient, id: string): Promise<FlowDetai
     steps: Object.fromEntries(statsByStep(messages)),
     atStep,
     actionsDone,
-    recent: recentRuns.map((r, i) => ({ email: emails[i], status: r.status, exitReason: r.exit_reason, nodeId: r.node_id, startedAt: r.started_at })),
+    recent: recentRuns.map((r, i) => ({ runId: r.id, email: emails[i], status: r.status, exitReason: r.exit_reason, nodeId: r.node_id, startedAt: r.started_at })),
   };
 }

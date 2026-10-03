@@ -3,6 +3,7 @@ import type { EmailDoc } from "@/lib/email-blocks/types";
 import type { FlowGraph } from "./graph";
 import { TRIGGERS, type FlowTrigger } from "./triggers";
 import { normalizeTag } from "./actions";
+import { cleanExit, exitProblems } from "./exits";
 
 /** What the admin may save: graphs, emails and settings are checked field by field before they reach the database. */
 
@@ -31,7 +32,18 @@ const courseId = z.string().min(1).max(100).nullish();
 const node = z.discriminatedUnion("type", [
   z.object({ id, type: z.literal("trigger"), position, data: empty }),
   z.object({ id, type: z.literal("exit"), position, data: empty }),
-  z.object({ id, type: z.literal("wait"), position, data: z.object({ days: z.number().int().min(0).max(60), hours: z.number().int().min(0).max(23) }) }),
+  z.object({
+    id,
+    type: z.literal("wait"),
+    position,
+    data: z.object({
+      days: z.number().int().min(0).max(60),
+      hours: z.number().int().min(0).max(23),
+      mode: z.enum(["duration", "until"]).optional(),
+      atHour: z.number().int().min(0).max(23).optional(),
+      weekday: z.number().int().min(0).max(6).nullable().optional(),
+    }),
+  }),
   z.object({ id, type: z.literal("email"), position, data: z.union([emailDocSchema, legacyEmail]) }),
   z.object({
     id,
@@ -71,7 +83,16 @@ export const flowSettingsSchema = z
     trigger: z.enum(triggerKeys),
     triggerParams: z.object({ courseId, percent: z.number().int().optional(), days: z.number().int().optional(), hours: z.number().int().optional() }),
     offer: z.object({ kind: z.enum(["none", "next_chapter", "chapter", "abandoned_offer"]), courseId }),
-    goal: z.object({ kind: z.enum(["none", "bought_offer", "any_purchase", "practiced", "signed_up"]) }),
+    exits: z
+      .array(
+        z.object({
+          kind: z.enum(["bought_offer", "any_purchase", "practiced", "signed_up", "has_tag", "completed_chapter", "owns_chapter", "unsubscribed"]),
+          courseId,
+          tag: z.string().max(60).optional(),
+        }),
+      )
+      .max(6)
+      .transform((list) => list.map(cleanExit)),
     reentry: z.enum(["once", "each_time"]),
     discountPercent: z.number().int().min(1).max(90).nullable(),
     discountValidDays: z.number().int().min(1).max(90).nullable(),
@@ -81,7 +102,11 @@ export const flowSettingsSchema = z
     consent: z.enum(["marketing", "all"]).default("marketing"),
   })
   .refine((s) => (s.discountPercent === null) === (s.discountValidDays === null), { message: "Set both the discount and how long the code lasts, or neither." })
-  .refine((s) => s.offer.kind !== "chapter" || Boolean(s.offer.courseId), { message: "Pick which chapter the flow offers." });
+  .refine((s) => s.offer.kind !== "chapter" || Boolean(s.offer.courseId), { message: "Pick which chapter the flow offers." })
+  .superRefine((s, ctx) => {
+    const problem = exitProblems(s.exits)[0];
+    if (problem) ctx.addIssue({ code: "custom", message: problem });
+  });
 
 export type FlowSettings = z.infer<typeof flowSettingsSchema>;
 

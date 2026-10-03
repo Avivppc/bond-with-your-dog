@@ -229,14 +229,14 @@ function Builder({ flowId, status: initialStatus, settings: initialSettings, gra
     });
   }
 
-  function changeStatus(next: "live" | "paused") {
+  function changeStatus(next: "live" | "paused", catchUp = false) {
     start(async () => {
       if (dirty) {
         const saved = await saveFlow(flowId, settings, toGraph(nodes, edges));
         if (!saved.ok) return setResult(saved);
         setDirty(false);
       }
-      const res = await setFlowStatus(flowId, next);
+      const res = await setFlowStatus(flowId, next, catchUp);
       setResult(res);
       if (res.ok) setStatus(next);
     });
@@ -263,9 +263,24 @@ function Builder({ flowId, status: initialStatus, settings: initialSettings, gra
             <button type="button" className={BTN_SECONDARY} onClick={() => changeStatus("paused")} disabled={pending}>
               Pause
             </button>
+          ) : status === "paused" ? (
+            <>
+              <button
+                type="button"
+                className={BTN_SECONDARY}
+                onClick={() => changeStatus("live", true)}
+                disabled={pending}
+                title="Also lets in everyone who hit the trigger while the flow was paused"
+              >
+                Resume and catch up
+              </button>
+              <button type="button" className={BTN_PRIMARY} onClick={() => changeStatus("live")} disabled={pending} title="People inside continue; only new people from now on">
+                Resume
+              </button>
+            </>
           ) : (
             <button type="button" className={BTN_PRIMARY} onClick={() => changeStatus("live")} disabled={pending}>
-              {status === "paused" ? "Resume" : "Go live"}
+              Go live
             </button>
           )}
         </div>

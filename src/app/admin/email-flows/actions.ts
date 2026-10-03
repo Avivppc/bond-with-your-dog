@@ -10,6 +10,7 @@ import { validateGraph } from "@/lib/flows/graph";
 import { flowSettingsSchema, parseEmailDoc, parseGraph, type FlowSettings } from "@/lib/flows/schema";
 import { FLOW_TEMPLATES } from "@/lib/flows/templates";
 import { normalizeParams } from "@/lib/flows/triggers";
+import { exitsOf } from "@/lib/flows/exits";
 import { EXAMPLE_VARS } from "@/lib/flows/template";
 import { hasPostalAddress, loadEmailSettings, MISSING_ADDRESS_ERROR } from "@/lib/flows/server/email-settings";
 import { sendMarketingEmail, unsubscribeLinks } from "@/lib/flows/server/send";
@@ -30,6 +31,7 @@ export async function createFlow(formData: FormData): Promise<void> {
       trigger_params: normalizeParams(template.trigger, template.triggerParams),
       offer: template.offer,
       goal: template.goal,
+      exit_conditions: exitsOf(null, template.goal),
       reentry: template.reentry,
       discount_percent: template.discountPercent,
       discount_valid_days: template.discountValidDays,
@@ -52,7 +54,7 @@ export async function duplicateFlow(formData: FormData): Promise<void> {
   const sb = createServiceClient();
   const { data: flow } = await sb
     .from("email_flows")
-    .select("name, trigger, trigger_params, offer, goal, reentry, smart_sending_hours, quiet_hours, consent, discount_percent, discount_valid_days, graph")
+    .select("name, trigger, trigger_params, offer, goal, exit_conditions, reentry, smart_sending_hours, quiet_hours, consent, discount_percent, discount_valid_days, graph")
     .eq("id", String(formData.get("id") ?? ""))
     .maybeSingle();
   if (!flow) redirect(LIST);
@@ -99,7 +101,7 @@ export async function saveFlow(id: string, settings: FlowSettings, graphInput: u
       trigger_params: params,
       ...(current.status === "live" && triggerChanged ? { live_since: new Date().toISOString() } : {}),
       offer: s.offer,
-      goal: s.goal,
+      exit_conditions: s.exits,
       reentry: s.reentry,
       discount_percent: s.discountPercent,
       discount_valid_days: s.discountValidDays,
@@ -123,7 +125,7 @@ export async function saveFlow(id: string, settings: FlowSettings, graphInput: u
  * Live / paused. Going live (or resuming) checks the flow first and counts people from that moment
  * on, so whoever hit the trigger while it was paused doesn't arrive all at once.
  */
-export async function setFlowStatus(id: string, status: "live" | "paused"): Promise<FlowActionResult> {
+export async function setFlowStatus(id: string, status: "live" | "paused", catchUp = false): Promise<FlowActionResult> {
   await requireStaff("sales");
   const sb = createServiceClient();
   const { data: flow } = await sb.from("email_flows").select("graph, status, live_since").eq("id", id).maybeSingle();
@@ -134,14 +136,27 @@ export async function setFlowStatus(id: string, status: "live" | "paused"): Prom
     const problems = parsed.ok ? validateGraph(parsed.graph) : [parsed.error];
     if (problems.length) return { ok: false, error: "Finish these before going live:", problems };
   }
+  // Resuming with catch-up keeps the original start, so whoever hit the trigger while it was
+  // paused enters too; otherwise it counts from now. Going live the first time always counts from now.
+  const now = new Date().toISOString();
+  const keepStart = status === "live" && flow.status === "paused" && catchUp && Boolean(flow.live_since);
+  const liveSince = status === "live" && flow.status !== "live" && !keepStart ? now : flow.live_since;
   const { error } = await sb
     .from("email_flows")
-    .update({ status, live_since: status === "live" && flow.status !== "live" ? new Date().toISOString() : flow.live_since, updated_at: new Date().toISOString() })
+    .update({ status, live_since: liveSince, paused_at: status === "paused" ? now : null, updated_at: now })
     .eq("id", id);
   if (error) return { ok: false, error: "Couldn't change the status. Try again." };
   revalidatePath(LIST);
   revalidatePath(`${LIST}/${id}`);
-  return { ok: true, message: status === "live" ? "Live. People who hit the trigger from now on enter within 15 minutes." : "Paused. Nobody new enters and no emails go out." };
+  const message =
+    status === "paused"
+      ? "Paused. Nobody new enters and no emails go out; people inside keep their place."
+      : keepStart
+        ? "Resumed. People inside continue, and whoever hit the trigger while it was paused enters within 15 minutes."
+        : flow.status === "paused"
+          ? "Resumed. People inside continue; new people enter from now on."
+          : "Live. People who hit the trigger from now on enter within 15 minutes.";
+  return { ok: true, message };
 }
 
 export async function deleteFlow(formData: FormData): Promise<void> {

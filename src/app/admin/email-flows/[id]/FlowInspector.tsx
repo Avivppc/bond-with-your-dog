@@ -3,7 +3,10 @@
 import type { ActionNode, ConditionCheck, ConditionNode, EmailStepData, FlowNode } from "@/lib/flows/graph";
 import { ACTION_HINT, ACTION_KINDS, ACTION_LABEL, MAX_NOTE, type ActionKind } from "@/lib/flows/actions";
 import type { FlowSettings } from "@/lib/flows/schema";
-import { GOAL_LABEL, OFFER_LABEL, TRIGGER_GROUPS, TRIGGERS, normalizeParams, triggerDef, type FlowTrigger, type GoalKind, type OfferKind } from "@/lib/flows/triggers";
+import { OFFER_LABEL, TRIGGER_GROUPS, TRIGGERS, normalizeParams, triggerDef, type FlowTrigger, type OfferKind } from "@/lib/flows/triggers";
+import { exitsOf } from "@/lib/flows/exits";
+import { ExitsField } from "./ExitsField";
+import { WaitFields } from "./WaitFields";
 import { percent, type StepStats } from "@/lib/flows/stats";
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, MUTED } from "../../_components/ui";
 import { ConsentChoice } from "../../_components/ConsentChoice";
@@ -59,7 +62,7 @@ export function SettingsPanel({ settings, chapters, onChange }: SettingsPanelPro
   const set = (patch: Partial<FlowSettings>) => onChange({ ...settings, ...patch });
   const pickTrigger = (key: FlowTrigger) => {
     const d = triggerDef(key).defaults;
-    set({ trigger: key, triggerParams: normalizeParams(key, {}), offer: d.offer, goal: d.goal, reentry: d.reentry });
+    set({ trigger: key, triggerParams: normalizeParams(key, {}), offer: d.offer, exits: exitsOf(null, d.goal), reentry: d.reentry });
   };
   const hasDiscount = settings.discountPercent !== null;
   return (
@@ -142,15 +145,7 @@ export function SettingsPanel({ settings, chapters, onChange }: SettingsPanelPro
             )}
           </>
         )}
-        <Field label="Leave the flow early when" hint="Checked before every step.">
-          <select className={INPUT} value={settings.goal.kind} onChange={(e) => set({ goal: { kind: e.target.value as GoalKind } })}>
-            {(Object.keys(GOAL_LABEL) as GoalKind[]).map((k) => (
-              <option key={k} value={k}>
-                {GOAL_LABEL[k]}
-              </option>
-            ))}
-          </select>
-        </Field>
+        <ExitsField exits={settings.exits} chapters={chapters} onChange={(exits) => set({ exits })} />
       </Section>
 
       <Section title="Sending">
@@ -335,17 +330,7 @@ export function StepPanel({ node, chapters, stats, onData, onDelete, onDuplicate
           </button>
         </>
       )}
-      {node.type === "wait" && (
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Days">
-            <input className={INPUT} type="number" min={0} max={60} value={node.data.days} onChange={(e) => onData({ ...node.data, days: num(e.target.value, 0) })} />
-          </Field>
-          <Field label="Hours">
-            <input className={INPUT} type="number" min={0} max={23} value={node.data.hours} onChange={(e) => onData({ ...node.data, hours: num(e.target.value, 0) })} />
-          </Field>
-          <p className={`col-span-2 text-[12px] ${MUTED}`}>The flow checks every 15 minutes, so waits land within 15 minutes of this time.</p>
-        </div>
-      )}
+      {node.type === "wait" && <WaitFields data={node.data} onData={onData} />}
       {node.type === "condition" && <ConditionFields data={node.data} chapters={chapters} onData={onData} />}
       {node.type === "action" && <ActionFields data={node.data} chapters={chapters} onData={onData} />}
       {node.type === "split" && (
