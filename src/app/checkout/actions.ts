@@ -12,6 +12,7 @@ import { ownsEverything, type AccessLevel } from "@/lib/offer-ownership";
 import { cookies } from "next/headers";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
 import { claimReferralCode, referralQuote } from "@/lib/referrals-server";
+import { upsellQuote } from "@/lib/flows/server/checkout";
 
 const Slug = z.string().regex(/^[a-z0-9-]{2,80}$/);
 
@@ -67,6 +68,15 @@ export async function startCheckout(formData: FormData): Promise<void> {
   const referralCode = jar.get(REFERRAL_COOKIE)?.value;
   if (referralCode && (await claimReferralCode(await createClient(), referralCode))) jar.delete(REFERRAL_COOKIE);
   const quote = offer.payment_type === "free" ? null : await referralQuote({ userId: user.id, offerId: offer.id, priceCents: offer.price_cents, provider: provider?.name ?? null });
+  // A personal code from an email flow; one discount per purchase, so the bigger one wins.
+  const codeInput = String(formData.get("code") ?? "").trim();
+  // Only through a provider that charges our amount, so a discount shown is a discount charged.
+  const upsell = codeInput && provider?.chargesOrderAmount ? await upsellQuote({ userId: user.id, offerId: offer.id, paymentType: offer.payment_type, priceCents: offer.price_cents, code: codeInput }) : null;
+  const useUpsell = upsell?.ok === true && upsell.percent >= (quote?.discount?.percent ?? 0);
+  // A code sits on one open order: starting checkout again replaces the member's earlier unpaid one.
+  if (useUpsell && upsell?.ok) {
+    await sb.from("orders").update({ status: "canceled" }).eq("user_id", user.id).eq("discount_code_id", upsell.codeId).eq("status", "pending");
+  }
 
   const { data: order, error } = await sb
     .from("orders")
@@ -74,15 +84,17 @@ export async function startCheckout(formData: FormData): Promise<void> {
       user_id: user.id,
       offer_id: offer.id,
       status: "pending",
-      amount_cents: quote?.amountCents ?? offer.price_cents,
+      amount_cents: useUpsell && upsell?.ok ? upsell.amountCents : (quote?.amountCents ?? offer.price_cents),
       currency: offer.currency,
       provider: provider?.name ?? "free",
-      discount_kind: quote?.discount?.kind ?? null,
-      discount_percent: quote?.discount?.percent ?? null,
-      referral_reward_id: quote?.discount?.rewardId ?? null,
+      discount_kind: useUpsell ? "upsell" : (quote?.discount?.kind ?? null),
+      discount_percent: useUpsell && upsell?.ok ? upsell.percent : (quote?.discount?.percent ?? null),
+      referral_reward_id: useUpsell ? null : (quote?.discount?.rewardId ?? null),
+      discount_code_id: useUpsell && upsell?.ok ? upsell.codeId : null,
     })
     .select("id")
     .single();
+  if (error?.code === "23505") redirect(`/checkout/${slug.data}?error=code-used`);
   if (error || !order) {
     console.error("[checkout] order insert failed", { slug: slug.data, error: error?.message });
     redirect(`/checkout/${slug.data}?error=failed`);
@@ -102,7 +114,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
       customerEmail: user.email,
       providerPriceId: offer.provider_price_id,
       successUrl: `${siteUrl()}/checkout/success?order=${order.id}`,
-      discountId: quote?.paddleDiscountId ?? null,
+      discountId: useUpsell ? null : (quote?.paddleDiscountId ?? null),
     });
     // Webhooks are matched on this server-created transaction id, never on buyer-supplied data.
     if (session.providerRef) {

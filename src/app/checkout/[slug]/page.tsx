@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatMoney, formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { getPaymentProvider } from "@/lib/payments/provider";
 import { referralQuote } from "@/lib/referrals-server";
+import { upsellQuote } from "@/lib/flows/server/checkout";
 import { startCheckout } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ const ERRORS: Record<string, string> = {
   provider: "We couldn't reach the payment provider. Please try again in a moment.",
   failed: "Something went wrong starting your checkout. Please try again.",
   owned: "You already have access to everything in this offer — head to your dashboard to keep learning.",
+  "code-used": "That code is already on another purchase.",
 };
 
 export default async function CheckoutPage({
@@ -23,10 +25,10 @@ export default async function CheckoutPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; code?: string }>;
 }) {
   const { slug } = await params;
-  const { error } = await searchParams;
+  const { error, code } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -47,7 +49,11 @@ export default async function CheckoutPage({
   const price = formatOfferPrice(offer as unknown as PricedOffer);
   // Preview of the referral discount applied at checkout (a friend's first purchase / a referrer reward).
   const quote = offer.payment_type === "free" ? null : await referralQuote({ userId: user.id, offerId: offer.id, priceCents: offer.price_cents, provider: getPaymentProvider()?.name ?? null });
-  const discount = quote?.discount ?? null;
+  // A personal code from an email flow or the in-app offer (?code=); the bigger discount wins.
+  const provider = getPaymentProvider();
+  const upsell = code && provider?.chargesOrderAmount ? await upsellQuote({ userId: user.id, offerId: offer.id, paymentType: offer.payment_type, priceCents: offer.price_cents, code }) : null;
+  const useUpsell = upsell?.ok === true && upsell.percent >= (quote?.discount?.percent ?? 0);
+  const discount = useUpsell ? null : (quote?.discount ?? null);
 
   return (
     <>
@@ -62,6 +68,12 @@ export default async function CheckoutPage({
         {offer.description && (
           <p className="text-lg mb-6" style={{ color: "#515d64" }}>
             {offer.description}
+          </p>
+        )}
+
+        {upsell && !upsell.ok && (
+          <p role="alert" className="mb-6 p-4 rounded-xl bg-amber-50 text-amber-900 text-sm">
+            {upsell.reason} You can still buy at the regular price.
           </p>
         )}
 
@@ -97,7 +109,19 @@ export default async function CheckoutPage({
 
           <div className="flex items-center justify-between border-t border-slate-100 pt-5">
             <span>
-              {discount ? (
+              {useUpsell && upsell?.ok ? (
+                <>
+                  <span className="block text-sm line-through" style={{ color: "#515d64" }}>
+                    {price}
+                  </span>
+                  <span className="text-3xl font-extrabold" style={{ color: "#243036" }}>
+                    {formatMoney(upsell.amountCents, offer.currency)}
+                  </span>
+                  <span className="mt-1 block text-xs font-bold" style={{ color: "#0e666a" }}>
+                    Your member code {upsell.code}: {upsell.percent}% off
+                  </span>
+                </>
+              ) : discount ? (
                 <>
                   <span className="block text-sm line-through" style={{ color: "#515d64" }}>
                     {price}
@@ -118,6 +142,7 @@ export default async function CheckoutPage({
             </span>
             <form action={startCheckout}>
               <input type="hidden" name="slug" value={offer.slug} />
+              {useUpsell && upsell?.ok && <input type="hidden" name="code" value={upsell.code} />}
               <button type="submit" className="kinetic-gradient px-6 py-3 rounded-full font-bold shadow-md" style={{ color: "#fff0e6" }}>
                 {offer.payment_type === "free" ? "Get access" : "Continue to payment"}
               </button>

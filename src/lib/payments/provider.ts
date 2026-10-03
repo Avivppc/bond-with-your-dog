@@ -38,6 +38,7 @@ const SubscriptionResponse = z.object({
 
 const paddle: PaymentProvider = {
   name: "paddle",
+  chargesOrderAmount: false,
   async createCheckout(request: CheckoutRequest): Promise<CheckoutSession> {
     const apiKey = process.env.PADDLE_API_KEY;
     if (!apiKey) throw new Error("PADDLE_API_KEY is not configured");
@@ -88,6 +89,7 @@ const paddle: PaymentProvider = {
 
 const test: PaymentProvider = {
   name: "test",
+  chargesOrderAmount: true,
   async createCheckout(request: CheckoutRequest): Promise<CheckoutSession> {
     const url = new URL("/checkout/test-pay", request.successUrl);
     url.searchParams.set("order", request.orderId);

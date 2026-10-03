@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadStudentCourse } from "@/lib/student-course-server";
+import { NextChapterOffer } from "@/components/app/NextChapterOffer";
 import { lessonNeighbors } from "@/lib/course-progress";
 import { dogName, requireMember } from "@/lib/member/viewer";
 import { Ms, formatMinutes } from "@/components/app/ui";
@@ -31,6 +32,7 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
   const dog = dogName(viewer);
 
   return (
+    <>
     <div className="card" style={{ maxWidth: 880, margin: "0 auto", width: "100%", alignItems: "center", textAlign: "center", padding: "52px 40px", gap: 22 }}>
       <div className="sketch" style={{ width: 180, height: 180, borderRadius: "50%" }}>
         {/* eslint-disable-next-line @next/next/no-img-element -- illustration */}
@@ -107,5 +109,10 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
         </Link>
       </div>
     </div>
+    {/* From 80% of the chapter: the next chapter, with the member's personal code when a flow offers one. */}
+    <div style={{ maxWidth: 880, margin: "0 auto", width: "100%" }}>
+      <NextChapterOffer userId={viewer.userId} courseId={courseId} percentDone={data.progress.percent} />
+    </div>
+    </>
   );
 }

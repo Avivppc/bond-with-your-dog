@@ -52,9 +52,18 @@ const MAIN: NavDef[] = [
     label: "Sales",
     icon: "sell",
     children: [
+      { href: "/admin/pricing", label: "Chapter prices", needs: "sales" },
       { href: "/admin/offers", label: "Offers", needs: "sales" },
       { href: "/admin/orders", label: "Orders", needs: "sales" },
       { href: "/admin/referrals", label: "Referrals", needs: "sales" },
+    ],
+  },
+  {
+    label: "Marketing",
+    icon: "campaign",
+    children: [
+      { href: "/admin/email-flows", label: "Email flows", needs: "sales" },
+      { href: "/admin/discount-codes", label: "Discount codes", needs: "sales" },
     ],
   },
   {

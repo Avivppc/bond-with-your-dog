@@ -150,7 +150,7 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
   const sb = createServiceClient();
   const { data: order } = await sb
     .from("orders")
-    .select("id, user_id, offer_id, status, amount_cents, currency")
+    .select("id, user_id, offer_id, status, amount_cents, currency, discount_code_id")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) throw new Error(`order ${orderId} not found`);
@@ -216,6 +216,19 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
   // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).
   const { error: referralError } = await sb.rpc("referral_order_paid", { p_order_id: order.id });
   if (referralError) throw new Error(`referral settlement failed for order ${order.id}: ${referralError.message}`);
+
+  // A personal code from an email flow works once: it now belongs to this order.
+  if (order.discount_code_id) {
+    const { data: redeemed, error: codeError } = await sb
+      .from("discount_codes")
+      .update({ redeemed_at: new Date().toISOString(), order_id: order.id })
+      .eq("id", order.discount_code_id)
+      .or(`redeemed_at.is.null,order_id.eq.${order.id}`)
+      .select("id");
+    if (codeError) throw new Error(`discount code redemption failed for order ${order.id}: ${codeError.message}`);
+    // Only one open/paid order can hold a code (orders_one_per_code), so this should never happen.
+    if (!redeemed?.length) console.error("[billing] discount code was already used by another order", { orderId: order.id, codeId: order.discount_code_id });
+  }
 }
 
 export async function applyBillingEvent(provider: string, event: BillingEvent): Promise<void> {
