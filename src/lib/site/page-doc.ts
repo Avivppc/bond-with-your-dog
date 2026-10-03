@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { valuesSchema, withDefaults, type FieldValues } from "./fields";
+import { isSafeImageSrc, valuesSchema, withDefaults, type FieldValues } from "./fields";
 import type { SectionDef } from "./section-def";
 
 /** A page as the editor saves it: an ordered list of sections. Pure. */
@@ -32,7 +32,7 @@ const SECTION_ID = /^[a-z0-9-]{1,40}$/;
 export const seoSchema = z.object({
   title: z.string().trim().max(70, "The search title can be up to 70 characters."),
   description: z.string().trim().max(170, "The search description can be up to 170 characters."),
-  image: z.string().trim().max(1000),
+  image: z.string().trim().max(1000).refine(isSafeImageSrc, "The share image must be an https link or a site path."),
 });
 
 export const EMPTY_SEO: PageSeo = { title: "", description: "", image: "" };

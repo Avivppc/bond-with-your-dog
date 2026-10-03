@@ -109,8 +109,12 @@ export async function saveSiteDraft(input: unknown): Promise<EditorResult> {
     return { ok: false, error: "Couldn't save. Check your connection; your changes are still here." };
   }
   if (data === null) return { ok: false, conflict: true, error: "Someone else saved this page in the meantime. Reload to see their version." };
-  // A live page that moved to a new address: the old one stops showing it now.
-  if (row.status === "published" && !row.system_key && slug !== row.slug) refreshLive(row.slug);
+  // A live page that moved: the old address stops showing it and the new one starts now (it may
+  // have been cached as "no page here").
+  if (row.status === "published" && !row.system_key && slug !== row.slug) {
+    refreshLive(row.slug);
+    refreshLive(slug);
+  }
   return { ok: true, rev: data as number };
 }
 
@@ -121,15 +125,17 @@ export async function publishSitePage(id: string): Promise<EditorResult> {
   const row = await loadPageRow(sb, id);
   if (!row) return { ok: false, error: "This page was deleted." };
   const now = new Date().toISOString();
-  const { error } = await sb
+  const { data: published, error } = await sb
     .from("site_pages")
     .update({ published: row.draft, published_seo: row.draft_seo, published_title: row.title, status: "published", has_changes: false, published_at: now, updated_by: user.id })
     .eq("id", id)
-    .eq("draft_rev", row.draft_rev);
+    .eq("draft_rev", row.draft_rev)
+    .select("id");
   if (error) {
     console.error("[site] publish failed", { id, error: error.message });
     return { ok: false, error: "Couldn't publish. Try again." };
   }
+  if (!published?.length) return { ok: false, conflict: true, error: "The page changed while publishing. Publish again." };
   const { error: versionError } = await sb.from("site_page_versions").insert({ page_id: id, title: row.title, doc: row.draft, seo: row.draft_seo, created_by: user.id });
   if (versionError) console.error("[site] version not kept", { id, error: versionError.message });
   refreshLive(row.slug);

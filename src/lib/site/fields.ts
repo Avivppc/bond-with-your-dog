@@ -45,8 +45,8 @@ const MAX_RICHTEXT = 60_000;
 export function isSafeHref(href: string): boolean {
   const h = href.trim();
   if (h === "") return true;
-  if (h.startsWith("//")) return false;
-  if (h.startsWith("/") || h.startsWith("#")) return !/[\s<>"]/.test(h);
+  if (h.startsWith("//") || h.startsWith("/\\")) return false;
+  if (h.startsWith("/") || h.startsWith("#")) return !/[\s<>"\\]/.test(h);
   try {
     const url = new URL(h);
     return url.protocol === "https:" || url.protocol === "mailto:" || url.protocol === "http:";
@@ -59,7 +59,7 @@ export function isSafeHref(href: string): boolean {
 export function isSafeImageSrc(src: string): boolean {
   const s = src.trim();
   if (s === "") return true;
-  if (s.startsWith("/") && !s.startsWith("//")) return !/[\s<>"]/.test(s);
+  if (s.startsWith("/") && !s.startsWith("//")) return !/[\s<>"\\]/.test(s);
   try {
     return new URL(s).protocol === "https:";
   } catch {

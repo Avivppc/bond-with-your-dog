@@ -73,7 +73,10 @@ export function ThemeEditor({ initial, rev, previewPageId, hasChanges: initialCh
 
   async function publish() {
     setBusy(true);
-    await autosave.flush();
+    if (!(await autosave.flush())) {
+      setBusy(false);
+      return;
+    }
     const result = await publishTheme().catch(() => ({ ok: false as const, error: "That didn't go through. Try again." }));
     setBusy(false);
     if (!result.ok) return setMessage({ tone: "error", text: result.error });

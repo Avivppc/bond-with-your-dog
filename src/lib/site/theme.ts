@@ -22,9 +22,6 @@ export const FONT_OPTIONS = [
 export type FontName = (typeof FONT_OPTIONS)[number]["value"];
 const FONT_NAMES = FONT_OPTIONS.map((f) => f.value) as [FontName, ...FontName[]];
 
-/** Fonts the site already loads with next/font; choosing them needs no extra download. */
-export const BUILT_IN_FONTS: readonly FontName[] = ["Plus Jakarta Sans", "Be Vietnam Pro"];
-
 export interface ThemeColors {
   /** Buttons, links and highlights (dark enough for white text). */
   primary: string;
@@ -276,8 +273,13 @@ function tokenSources(token: string): (keyof ThemeColors)[] {
 
 /** Google Fonts stylesheet for chosen fonts the site doesn't already load ("" when none). */
 export function themeFontsHref(theme: SiteTheme, { all = false }: { all?: boolean } = {}): string {
-  // With `all` (the preview), the built-in fonts load by name too, since themeCss then names them.
-  const extra = [...new Set([theme.headingFont, theme.bodyFont])].filter((f) => all || !BUILT_IN_FONTS.includes(f));
+  // next/font serves the defaults under hashed names, so any font themeCss names (even a built-in
+  // one in another role) must come from Google. Only a role left at its default is skipped.
+  const named = [
+    all || theme.headingFont !== DEFAULT_THEME.headingFont ? theme.headingFont : null,
+    all || theme.bodyFont !== DEFAULT_THEME.bodyFont ? theme.bodyFont : null,
+  ];
+  const extra = [...new Set(named.filter((f): f is FontName => f !== null))];
   if (extra.length === 0) return "";
   const families = extra.map((f) => `family=${f.replace(/ /g, "+")}:wght@300;400;500;600;700;800`).join("&");
   return `https://fonts.googleapis.com/css2?${families}&display=swap`;

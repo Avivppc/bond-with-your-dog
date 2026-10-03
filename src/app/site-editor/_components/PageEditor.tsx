@@ -69,7 +69,11 @@ export function PageEditor({ page, siteUrl }: { page: EditorPage; siteUrl: strin
   async function run(action: () => Promise<EditorResult>, after?: (rev?: number) => void) {
     setBusy(true);
     setMessage(null);
-    await autosave.flush();
+    // Never publish (or restore over) something the editor isn't showing.
+    if (!(await autosave.flush())) {
+      setBusy(false);
+      return;
+    }
     const result = await action().catch((): EditorResult => ({ ok: false, error: "That didn't go through. Try again." }));
     setBusy(false);
     if (!result.ok) return setMessage({ tone: "error", text: result.error });

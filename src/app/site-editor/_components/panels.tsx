@@ -159,7 +159,7 @@ export function PageSettingsPanel({ value, onChange, isSystem, onBack, siteUrl }
             <span className="text-[#6c6a69]">{siteUrl.replace(/^https?:\/\//, "")}/</span>
             <input className={INPUT} value={value.slug} maxLength={60} disabled={isSystem} onChange={(e) => onChange({ ...value, slug: e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "-") })} />
           </div>
-          <span className="mt-1 block text-[12px] text-[#6c6a69]">{isSystem ? "Built-in pages keep their address." : "Changing it moves a live page to the new address right away."}</span>
+          <span className="mt-1 block text-[12px] text-[#6c6a69]">{isSystem ? "Built-in pages keep their address." : "Changing it moves a live page to the new address right away (Discard changes doesn't move it back)."}</span>
         </label>
         <div className="border-t border-[#efeeed] pt-3">
           <p className="mb-2 font-semibold">Search engines and link previews</p>

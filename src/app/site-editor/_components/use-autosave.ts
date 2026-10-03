@@ -16,31 +16,40 @@ export function useAutosave<T>(value: T, initialRev: number, save: (rev: number,
   const [error, setError] = useState<string | null>(null);
   const rev = useRef(initialRev);
   const saved = useRef(value);
-  const running = useRef(false);
+  const inFlight = useRef<Promise<boolean> | null>(null);
   const latest = useRef(value);
 
-  const flush = useCallback(async () => {
-    if (running.current) return;
-    running.current = true;
+  const saveAll = useCallback(async (): Promise<boolean> => {
     // Keep going while edits arrived during the last save.
     while (latest.current !== saved.current) {
       setStatus("saving");
       const target = latest.current;
       const result = await save(rev.current, target).catch((): EditorResult => ({ ok: false, error: "Couldn't save. Check your connection; your changes are still here." }));
       if (!result.ok) {
-        running.current = false;
         setStatus(result.conflict ? "conflict" : "error");
         setError(result.error);
-        return;
+        return false;
       }
       if (result.rev) rev.current = result.rev;
       saved.current = target;
       setError(null);
       onSaved();
     }
-    running.current = false;
     setStatus("saved");
+    return true;
   }, [save, onSaved]);
+
+  /** Saves now (or waits for the save under way). True when the server has everything. */
+  const flush = useCallback(async (): Promise<boolean> => {
+    while (inFlight.current) await inFlight.current;
+    if (latest.current === saved.current) return true;
+    inFlight.current = saveAll();
+    try {
+      return await inFlight.current;
+    } finally {
+      inFlight.current = null;
+    }
+  }, [saveAll]);
 
   useEffect(() => {
     latest.current = value;

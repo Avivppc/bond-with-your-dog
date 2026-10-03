@@ -17,9 +17,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  // Email images (≤ 2 MB) are uploaded through a server action; the default limit is 1 MB.
+  // Email images (≤ 2 MB) and website images (≤ 5 MB) are uploaded through server actions; the
+  // default limit is 1 MB.
   experimental: {
-    serverActions: { bodySizeLimit: "3mb" },
+    serverActions: { bodySizeLimit: "6mb" },
   },
   // The Kajabi import copies lesson downloads saved in the repo; bundle them with that route.
   outputFileTracingIncludes: {
