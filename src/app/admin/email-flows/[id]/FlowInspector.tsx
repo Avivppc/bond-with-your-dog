@@ -6,6 +6,7 @@ import type { FlowSettings } from "@/lib/flows/schema";
 import { GOAL_LABEL, OFFER_LABEL, TRIGGER_GROUPS, TRIGGERS, normalizeParams, triggerDef, type FlowTrigger, type GoalKind, type OfferKind } from "@/lib/flows/triggers";
 import { percent, type StepStats } from "@/lib/flows/stats";
 import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, MUTED } from "../../_components/ui";
+import { ConsentChoice } from "../../_components/ConsentChoice";
 
 export interface ChapterOption {
   id: string;
@@ -153,6 +154,7 @@ export function SettingsPanel({ settings, chapters, onChange }: SettingsPanelPro
       </Section>
 
       <Section title="Sending">
+        <ConsentChoice value={settings.consent} onChange={(consent) => set({ consent })} />
         <label className="flex items-start gap-2 text-[14px]">
           <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#343332]" checked={settings.smartSendingHours > 0} onChange={(e) => set({ smartSendingHours: e.target.checked ? 16 : 0 })} />
           <span>

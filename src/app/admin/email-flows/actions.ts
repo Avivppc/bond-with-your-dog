@@ -52,7 +52,7 @@ export async function duplicateFlow(formData: FormData): Promise<void> {
   const sb = createServiceClient();
   const { data: flow } = await sb
     .from("email_flows")
-    .select("name, trigger, trigger_params, offer, goal, reentry, smart_sending_hours, quiet_hours, discount_percent, discount_valid_days, graph")
+    .select("name, trigger, trigger_params, offer, goal, reentry, smart_sending_hours, quiet_hours, consent, discount_percent, discount_valid_days, graph")
     .eq("id", String(formData.get("id") ?? ""))
     .maybeSingle();
   if (!flow) redirect(LIST);
@@ -105,6 +105,7 @@ export async function saveFlow(id: string, settings: FlowSettings, graphInput: u
       discount_valid_days: s.discountValidDays,
       smart_sending_hours: s.smartSendingHours,
       quiet_hours: s.quietHours,
+      consent: s.consent,
       graph: parsedGraph.graph,
       updated_at: new Date().toISOString(),
     })

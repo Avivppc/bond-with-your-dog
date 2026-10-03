@@ -77,6 +77,8 @@ export const flowSettingsSchema = z
     discountValidDays: z.number().int().min(1).max(90).nullable(),
     smartSendingHours: z.number().int().min(0).max(168),
     quietHours: z.boolean(),
+    // Who it emails: only people who agreed to marketing email, or everyone not unsubscribed (service messages).
+    consent: z.enum(["marketing", "all"]).default("marketing"),
   })
   .refine((s) => (s.discountPercent === null) === (s.discountValidDays === null), { message: "Set both the discount and how long the code lasts, or neither." })
   .refine((s) => s.offer.kind !== "chapter" || Boolean(s.offer.courseId), { message: "Pick which chapter the flow offers." });
@@ -103,6 +105,7 @@ export const audienceSchema = z
     days: z.number().int().min(1).max(365).optional(),
     // Stored the way tags are stored ("VIP  Members" → "vip members"), so it matches.
     tag: z.string().max(60).transform(normalizeTag).optional(),
+    consent: z.enum(["marketing", "all"]).default("marketing"),
   })
   .refine((a) => !["owns_chapter", "not_owns_chapter", "completed_chapter"].includes(a.kind) || Boolean(a.courseId), { message: "Pick the chapter for this audience." })
   .refine((a) => a.kind !== "has_tag" || Boolean(a.tag), { message: "Type the tag for this audience." });

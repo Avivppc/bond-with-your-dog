@@ -22,6 +22,8 @@ export interface Audience {
   courseId?: string | null;
   days?: number;
   tag?: string;
+  /** "marketing" (default): consent needed; "all": everyone who hasn't unsubscribed (service messages). */
+  consent?: "marketing" | "all";
 }
 
 export interface CampaignRow {

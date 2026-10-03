@@ -22,6 +22,8 @@ export interface FlowRow {
   reentry: "once" | "each_time";
   smart_sending_hours: number;
   quiet_hours: boolean;
+  /** "marketing": consent needed; "all": everyone who hasn't unsubscribed (service messages). */
+  consent: "marketing" | "all";
   discount_percent: number | null;
   discount_valid_days: number | null;
   graph: FlowGraph;
@@ -29,7 +31,7 @@ export interface FlowRow {
 }
 
 export const FLOW_COLUMNS =
-  "id, name, status, trigger, trigger_params, offer, goal, reentry, smart_sending_hours, quiet_hours, discount_percent, discount_valid_days, graph, live_since";
+  "id, name, status, trigger, trigger_params, offer, goal, reentry, smart_sending_hours, quiet_hours, consent, discount_percent, discount_valid_days, graph, live_since";
 
 /** What happened that put this person in the flow (chapter, lesson, order…), from the trigger. */
 export interface RunContext {
@@ -142,8 +144,10 @@ async function conditionAnswers(sb: ServiceClient, flow: FlowRow, run: RunRow, n
 export async function personFacts(sb: ServiceClient, flow: FlowRow, run: RunRow, recipient: string | null, timezone: string | null, now: Date): Promise<RunFacts> {
   const [goal, consentRes, msgRes, recentRes, answers] = await Promise.all([
     goalReached(sb, flow, run, now),
-    // Marketing email needs consent (sign-up/settings box, or the quiz box) and no unsubscribe.
-    recipient ? sb.rpc("can_market", { p_user_id: run.user_id, p_email: recipient }) : Promise.resolve({ data: false, error: null }),
+    // Marketing flows need consent (sign-up/settings box, or the quiz box); service flows only need no unsubscribe.
+    recipient
+      ? sb.rpc("can_email", { p_user_id: run.user_id, p_email: recipient, p_require_consent: flow.consent !== "all" })
+      : Promise.resolve({ data: false, error: null }),
     sb.from("email_messages").select("node_id, opened_at, clicked_at").eq("run_id", run.id),
     flow.smart_sending_hours > 0 && recipient
       ? sb

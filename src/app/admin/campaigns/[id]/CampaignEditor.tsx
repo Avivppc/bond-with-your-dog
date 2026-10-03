@@ -9,6 +9,7 @@ import { BLOCK_TYPES } from "../../_components/email-editor/block-meta";
 import { EmailEditor } from "../../_components/email-editor/EmailEditor";
 import { uploadImage } from "../../_components/email-editor/upload-client";
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, MUTED } from "../../_components/ui";
+import { ConsentChoice } from "../../_components/ConsentChoice";
 import { sendTestEmail } from "../../email-flows/actions";
 import { countAudience, saveCampaign, scheduleCampaign, unscheduleCampaign, type CampaignActionResult } from "../actions";
 import { AUDIENCE_LABEL, AUDIENCE_NEEDS_CHAPTER } from "../audience";
@@ -87,7 +88,7 @@ export function CampaignEditor({ id, status: initialStatus, scheduledAt, initial
         </label>
         <label className="flex flex-col gap-1.5">
           <span className={LABEL}>Send to</span>
-          <select className={INPUT} value={audience.kind} onChange={(e) => setAudience({ kind: e.target.value as AudienceKind, courseId: null, days: 14 })}>
+          <select className={INPUT} value={audience.kind} onChange={(e) => setAudience({ kind: e.target.value as AudienceKind, courseId: null, days: 14, consent: audience.consent })}>
             {(Object.keys(AUDIENCE_LABEL) as AudienceKind[]).map((k) => (
               <option key={k} value={k}>
                 {AUDIENCE_LABEL[k]}
@@ -121,6 +122,10 @@ export function CampaignEditor({ id, status: initialStatus, scheduledAt, initial
             <input className={INPUT} type="number" min={1} max={365} value={audience.days ?? 14} onChange={(e) => setAudience({ ...audience, days: Math.max(1, Math.round(Number(e.target.value) || 14)) })} />
           </label>
         )}
+      </div>
+
+      <div className="rounded-[12px] border border-[#e7e6e4] bg-white p-5">
+        <ConsentChoice value={audience.consent ?? "marketing"} onChange={(consent) => setAudience({ ...audience, consent })} />
       </div>
 
       <EmailEditor

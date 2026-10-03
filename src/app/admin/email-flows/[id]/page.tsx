@@ -58,6 +58,7 @@ export default async function EmailFlowPage({ params }: { params: Promise<{ id: 
           discountValidDays: flow.discount_valid_days,
           smartSendingHours: flow.smart_sending_hours,
           quietHours: flow.quiet_hours,
+          consent: flow.consent ?? "marketing",
         }}
         siteUrl={siteUrl()}
         graph={flow.graph}
