@@ -104,6 +104,28 @@ describe("planRun", () => {
     expect(planRun(ab, start, facts({ bucket: 0.9 }), NOW).actions).toEqual([{ kind: "send", nodeId: "b", variant: "B" }]);
   });
 
+  it("runs action steps for everyone, even without email consent or at night", () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: "t", type: "trigger", position: { x: 0, y: 0 }, data: {} },
+        { id: "a1", type: "action", position: { x: 0, y: 0 }, data: { action: "add_tag", tag: "quiz-taker" } },
+        { id: "a2", type: "action", position: { x: 0, y: 0 }, data: { action: "grant_chapter", courseId: "foundations" } },
+        { id: "x", type: "exit", position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: "1", source: "t", target: "a1" },
+        { id: "2", source: "a1", target: "a2" },
+        { id: "3", source: "a2", target: "x" },
+      ],
+    };
+    const plan = planRun(graph, start, facts({ unsubscribed: true, holdUntil: "2026-10-04T06:00:00.000Z" }), NOW);
+    expect(plan.actions).toEqual([
+      { kind: "act", nodeId: "a1" },
+      { kind: "act", nodeId: "a2" },
+    ]);
+    expect(plan.status).toBe("done");
+  });
+
   it("exits cleanly when the member's step was deleted from the flow", () => {
     expect(planRun(SAMPLE, { ...start, nodeId: "gone" }, facts(), NOW)).toMatchObject({ status: "exited", exitReason: "step_removed" });
   });

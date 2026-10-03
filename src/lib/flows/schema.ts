@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { EmailDoc } from "@/lib/email-blocks/types";
 import type { FlowGraph } from "./graph";
 import { TRIGGERS, type FlowTrigger } from "./triggers";
+import { normalizeTag } from "./actions";
 
 /** What the admin may save: graphs, emails and settings are checked field by field before they reach the database. */
 
@@ -37,9 +38,22 @@ const node = z.discriminatedUnion("type", [
     type: z.literal("condition"),
     position,
     data: z.object({
-      check: z.enum(["opened", "clicked", "owns_chapter", "completed_chapter", "practiced_recently", "has_purchased", "is_member"]),
+      check: z.enum(["opened", "clicked", "owns_chapter", "completed_chapter", "practiced_recently", "has_purchased", "is_member", "has_tag"]),
       courseId,
       days: z.number().int().min(1).max(365).optional(),
+      tag: text(40).optional(),
+    }),
+  }),
+  z.object({
+    id,
+    type: z.literal("action"),
+    position,
+    data: z.object({
+      action: z.enum(["grant_chapter", "revoke_chapter", "add_tag", "remove_tag", "notify_team", "webhook"]),
+      courseId,
+      tag: text(40).optional(),
+      message: text(1000).optional(),
+      url: text(2000).optional(),
     }),
   }),
   z.object({ id, type: z.literal("split"), position, data: z.object({ percentA: z.number().int().min(1).max(99) }) }),
@@ -84,11 +98,13 @@ export function parseEmailDoc(input: unknown): { ok: true; doc: EmailDoc } | { o
 /** A campaign's audience (public.campaign_audience reads the same shape). */
 export const audienceSchema = z
   .object({
-    kind: z.enum(["all_members", "owns_chapter", "not_owns_chapter", "completed_chapter", "inactive_practice", "quiz_leads", "everyone"]),
+    kind: z.enum(["all_members", "owns_chapter", "not_owns_chapter", "completed_chapter", "inactive_practice", "quiz_leads", "everyone", "has_tag"]),
     courseId,
     days: z.number().int().min(1).max(365).optional(),
+    tag: z.string().max(40).optional(),
   })
-  .refine((a) => !["owns_chapter", "not_owns_chapter", "completed_chapter"].includes(a.kind) || Boolean(a.courseId), { message: "Pick the chapter for this audience." });
+  .refine((a) => !["owns_chapter", "not_owns_chapter", "completed_chapter"].includes(a.kind) || Boolean(a.courseId), { message: "Pick the chapter for this audience." })
+  .refine((a) => a.kind !== "has_tag" || Boolean(normalizeTag(a.tag ?? "")), { message: "Type the tag for this audience." });
 
 export const campaignSchema = z.object({
   name: z.string().trim().min(1, "Give the campaign a name.").max(120),

@@ -30,6 +30,27 @@ describe("validateGraph", () => {
     expect(validateGraph(orphan)).toContain("Some steps aren't connected to the trigger.");
   });
 
+  it("checks each action has what it needs", () => {
+    const withAction = (data: object) => ({
+      nodes: [
+        { id: "t", type: "trigger" as const, position: at, data: {} },
+        { id: "a", type: "action" as const, position: at, data },
+        { id: "x", type: "exit" as const, position: at, data: {} },
+      ],
+      edges: [
+        { id: "1", source: "t", target: "a" },
+        { id: "2", source: "a", target: "x" },
+      ],
+    });
+    // A flow of actions only (no email) is fine.
+    expect(validateGraph(withAction({ action: "add_tag", tag: "vip" }) as never)).toEqual([]);
+    expect(validateGraph(withAction({ action: "grant_chapter" }) as never)).toContain("A chapter action needs the chapter picked.");
+    expect(validateGraph(withAction({ action: "add_tag", tag: "  " }) as never)).toContain("A tag action needs a tag (letters, numbers, spaces and dashes).");
+    expect(validateGraph(withAction({ action: "notify_team", message: "" }) as never)).toContain("A team notification needs a message.");
+    expect(validateGraph(withAction({ action: "webhook", url: "http://localhost/x" }) as never)).toContain("A webhook needs a public https:// address.");
+    expect(validateGraph(withAction({ action: "webhook", url: "https://hooks.zapier.com/abc" }) as never)).toEqual([]);
+  });
+
   it("rejects a zero-length wait", () => {
     const nodes = SAMPLE.nodes.map((n) => (n.type === "wait" ? { ...n, data: { days: 0, hours: 0 } } : n));
     expect(validateGraph({ ...SAMPLE, nodes })).toContain("A wait step needs 1 hour to 60 days.");

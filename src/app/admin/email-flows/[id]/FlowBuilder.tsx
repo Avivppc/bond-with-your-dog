@@ -41,14 +41,14 @@ interface FlowBuilderProps {
   settings: FlowSettings;
   graph: FlowGraph;
   chapters: readonly ChapterOption[];
-  stats: Pick<FlowMeta, "steps" | "atStep">;
+  stats: Pick<FlowMeta, "steps" | "atStep" | "actionsDone">;
   siteUrl: string;
 }
 
 /** A stable object: the email preview memoizes on it. */
 const EXAMPLE: Record<string, string> = { ...EXAMPLE_VARS };
 
-const PALETTE: AddableType[] = ["email", "wait", "condition", "split", "exit"];
+const PALETTE: AddableType[] = ["email", "wait", "condition", "action", "split", "exit"];
 const DRAG_TYPE = "application/x-bonded-step";
 /** Dropping within this distance (canvas px) of a connection's middle inserts the step on it. */
 const SNAP_TO_EDGE = 80;

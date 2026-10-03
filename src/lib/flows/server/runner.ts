@@ -2,8 +2,9 @@ import "server-only";
 import { siteUrl } from "@/lib/email";
 import { emailDocFromNodeData } from "@/lib/email-blocks/defaults";
 import { renderEmailDoc } from "@/lib/email-blocks/render";
-import { planRun, type RunPlan } from "../engine";
-import { findNode, triggerNode } from "../graph";
+import { planRun, type RunAction, type RunPlan } from "../engine";
+import { findNode, triggerNode, type ActionNode, type EmailNode } from "../graph";
+import { runAction } from "./actions";
 import type { ServiceClient } from "./data";
 import { FLOW_COLUMNS, loadPerson, personFacts, personVars, RUN_COLUMNS, targetChapter, type FlowRow, type Person, type RunContext, type RunRow } from "./people";
 import { hasPostalAddress, loadEmailSettings, type EmailSettings } from "./email-settings";
@@ -83,8 +84,9 @@ async function enrolPage(sb: ServiceClient, flow: FlowRow, startId: string, cand
   return inserted?.length ?? 0;
 }
 
-async function failedAttempts(sb: ServiceClient, runId: string, nodeId: string): Promise<number> {
-  const { count } = await sb.from("email_messages").select("id", { count: "exact", head: true }).eq("run_id", runId).eq("node_id", nodeId).eq("status", "failed");
+/** Failed tries of one step for one person (emails or actions). */
+async function failedAttempts(sb: ServiceClient, table: "email_messages" | "email_flow_actions", runId: string, nodeId: string): Promise<number> {
+  const { count } = await sb.from(table).select("id", { count: "exact", head: true }).eq("run_id", runId).eq("node_id", nodeId).eq("status", "failed");
   return count ?? 0;
 }
 
@@ -103,51 +105,92 @@ async function releaseStaleQueued(sb: ServiceClient, now: Date): Promise<void> {
   if (error) console.error("[flows] stale queue cleanup failed", { error: error.message });
 }
 
-/** "retry": a send failed for a reason worth retrying; the run stays on this step for the next job. */
+/** "retry": a step failed for a reason worth retrying; the run stays on this step for the next job. */
 type DeliverOutcome = { sent: number; failed: number; retry: boolean };
+const NOTHING: DeliverOutcome = { sent: 0, failed: 0, retry: false };
 
+type Vars = Awaited<ReturnType<typeof personVars>>;
+
+async function deliverEmail(
+  sb: ServiceClient,
+  ctx: { flow: FlowRow; run: RunRow; person: Person; settings: EmailSettings; vars: () => Promise<Vars> },
+  node: EmailNode,
+  action: Extract<RunAction, { kind: "send" | "skip" }>,
+): Promise<DeliverOutcome> {
+  const { flow, run, person, settings } = ctx;
+  const doc = emailDocFromNodeData(node.data);
+  const base = { flow_id: flow.id, run_id: run.id, node_id: node.id, user_id: run.user_id, to_email: person.email ?? "", variant: action.kind === "send" ? action.variant : null };
+  if (action.kind === "skip") {
+    await sb.from("email_messages").insert({ ...base, subject: doc.subject, status: "skipped" });
+    return NOTHING;
+  }
+  const links = unsubscribeLinks({ userId: run.user_id, email: person.email ?? "" });
+  const rendered = renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...(await ctx.vars()) }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress });
+  const { data: queued, error: queueError } = await sb.from("email_messages").insert({ ...base, subject: rendered.subject, status: "queued" }).select("id").single();
+  if (queueError?.code === "23505") return NOTHING; // this step already went out (an earlier run or another job)
+  if (queueError || !queued) {
+    console.error("[flows] queue failed", { run: run.id, node: node.id, error: queueError?.message });
+    return { ...NOTHING, retry: true };
+  }
+  const result = person.email
+    ? await sendMarketingEmail({
+        to: person.email,
+        subject: rendered.subject,
+        html: rendered.html,
+        text: rendered.text,
+        unsubscribe: links,
+        idempotencyKey: `${run.id}:${node.id}`,
+        sender: { name: settings.senderName, replyTo: settings.replyTo },
+      })
+    : ({ ok: false, error: "no email address", permanent: true } as const);
+  if (result.ok) {
+    await sb.from("email_messages").update({ status: "sent", provider_id: result.providerId }).eq("id", queued.id);
+    return { ...NOTHING, sent: 1 };
+  }
+  console.error("[flows] send failed", { flow: flow.id, run: run.id, node: node.id, error: result.error });
+  // A permanent failure (or one that kept failing) is recorded as skipped and the flow moves on;
+  // anything else is retried next run.
+  const giveUp = result.permanent || (await failedAttempts(sb, "email_messages", run.id, node.id)) + 1 >= MAX_SEND_ATTEMPTS;
+  await sb.from("email_messages").update({ status: giveUp ? "skipped" : "failed" }).eq("id", queued.id);
+  return { sent: 0, failed: 1, retry: !giveUp };
+}
+
+/** Runs an action step once per person: a step already done (or skipped on purpose) isn't repeated. */
+async function deliverAction(sb: ServiceClient, ctx: { flow: FlowRow; run: RunRow; person: Person; settings: EmailSettings }, node: ActionNode): Promise<DeliverOutcome> {
+  const { flow, run } = ctx;
+  const { data: done, error } = await sb.from("email_flow_actions").select("id").eq("run_id", run.id).eq("node_id", node.id).in("status", ["done", "skipped"]).limit(1);
+  if (error) return { ...NOTHING, retry: true };
+  if (done?.length) return NOTHING;
+  const result = await runAction(sb, flow, run, ctx.person, node, ctx.settings);
+  const base = { flow_id: flow.id, run_id: run.id, node_id: node.id, action: node.data.action, detail: result.detail?.slice(0, 500) ?? null };
+  if (result.status !== "failed") {
+    const { error: logError } = await sb.from("email_flow_actions").insert({ ...base, status: result.status });
+    if (logError && logError.code !== "23505") console.error("[flows] action log failed", { run: run.id, node: node.id, error: logError.message });
+    return NOTHING;
+  }
+  console.error("[flows] action failed", { flow: flow.id, run: run.id, node: node.id, action: node.data.action, error: result.detail });
+  const giveUp = result.permanent || (await failedAttempts(sb, "email_flow_actions", run.id, node.id)) + 1 >= MAX_SEND_ATTEMPTS;
+  await sb.from("email_flow_actions").insert({ ...base, status: giveUp ? "skipped" : "failed" });
+  return { sent: 0, failed: 1, retry: !giveUp };
+}
+
+/** Carries out the plan's steps in order; stops at the first one worth retrying. */
 async function deliver(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Person, plan: RunPlan, now: Date, settings: EmailSettings): Promise<DeliverOutcome> {
-  const outcome: DeliverOutcome = { sent: 0, failed: 0, retry: false };
-  let vars: Awaited<ReturnType<typeof personVars>> | null = null;
+  let cachedVars: Promise<Vars> | null = null;
+  const ctx = { flow, run, person, settings, vars: () => (cachedVars ??= personVars(sb, flow, run, person, now)) };
+  let total = NOTHING;
   for (const action of plan.actions) {
     const node = findNode(flow.graph, action.nodeId);
-    if (node?.type !== "email") continue;
-    const doc = emailDocFromNodeData(node.data);
-    const base = { flow_id: flow.id, run_id: run.id, node_id: node.id, user_id: run.user_id, to_email: person.email ?? "", variant: action.kind === "send" ? action.variant : null };
-    if (action.kind === "skip") {
-      await sb.from("email_messages").insert({ ...base, subject: doc.subject, status: "skipped" });
-      continue;
-    }
-    vars ??= await personVars(sb, flow, run, person, now);
-    const links = unsubscribeLinks({ userId: run.user_id, email: person.email ?? "" });
-    const rendered = renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...vars }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress });
-    const { data: queued, error: queueError } = await sb.from("email_messages").insert({ ...base, subject: rendered.subject, status: "queued" }).select("id").single();
-    if (queueError?.code === "23505") continue; // this step already went out (an earlier run or another job)
-    if (queueError || !queued) {
-      console.error("[flows] queue failed", { run: run.id, node: node.id, error: queueError?.message });
-      outcome.retry = true;
-      break;
-    }
-    const result = person.email
-      ? await sendMarketingEmail({ to: person.email, subject: rendered.subject, html: rendered.html, text: rendered.text, unsubscribe: links, idempotencyKey: `${run.id}:${node.id}`, sender: { name: settings.senderName, replyTo: settings.replyTo } })
-      : ({ ok: false, error: "no email address", permanent: true } as const);
-    if (result.ok) {
-      await sb.from("email_messages").update({ status: "sent", provider_id: result.providerId }).eq("id", queued.id);
-      outcome.sent++;
-      continue;
-    }
-    console.error("[flows] send failed", { flow: flow.id, run: run.id, node: node.id, error: result.error });
-    outcome.failed++;
-    // A permanent failure (or one that kept failing) is recorded as skipped and the flow moves on;
-    // anything else is retried next run.
-    const giveUp = result.permanent || (await failedAttempts(sb, run.id, node.id)) + 1 >= MAX_SEND_ATTEMPTS;
-    await sb.from("email_messages").update({ status: giveUp ? "skipped" : "failed" }).eq("id", queued.id);
-    if (!giveUp) {
-      outcome.retry = true;
-      break;
-    }
+    const step =
+      node?.type === "action" && action.kind === "act"
+        ? await deliverAction(sb, ctx, node)
+        : node?.type === "email" && action.kind !== "act"
+          ? await deliverEmail(sb, ctx, node, action)
+          : NOTHING;
+    total = { sent: total.sent + step.sent, failed: total.failed + step.failed, retry: step.retry };
+    if (step.retry) return total;
   }
-  return outcome;
+  return total;
 }
 
 async function advance(sb: ServiceClient, flow: FlowRow, listed: RunRow, now: Date, settings: EmailSettings): Promise<DeliverOutcome | null> {

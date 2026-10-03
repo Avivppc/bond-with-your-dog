@@ -1,6 +1,7 @@
 "use client";
 
-import type { ConditionCheck, ConditionNode, EmailStepData, FlowNode } from "@/lib/flows/graph";
+import type { ActionNode, ConditionCheck, ConditionNode, EmailStepData, FlowNode } from "@/lib/flows/graph";
+import { ACTION_HINT, ACTION_KINDS, ACTION_LABEL, MAX_NOTE, type ActionKind } from "@/lib/flows/actions";
 import type { FlowSettings } from "@/lib/flows/schema";
 import { GOAL_LABEL, OFFER_LABEL, TRIGGER_GROUPS, TRIGGERS, normalizeParams, triggerDef, type FlowTrigger, type GoalKind, type OfferKind } from "@/lib/flows/triggers";
 import { percent, type StepStats } from "@/lib/flows/stats";
@@ -198,6 +199,7 @@ const CHECKS: { value: ConditionCheck; label: string }[] = [
   { value: "practiced_recently", label: "Practiced recently" },
   { value: "has_purchased", label: "Has bought anything" },
   { value: "is_member", label: "Has an account (for quiz leads)" },
+  { value: "has_tag", label: "Has a tag" },
 ];
 
 function ConditionFields({ data, chapters, onData }: { data: ConditionNode["data"]; chapters: readonly ChapterOption[]; onData: (d: ConditionNode["data"]) => void }) {
@@ -222,6 +224,63 @@ function ConditionFields({ data, chapters, onData }: { data: ConditionNode["data
           <input className={INPUT} type="number" min={1} max={365} value={data.days ?? 7} onChange={(e) => onData({ ...data, days: num(e.target.value, 7) })} />
         </Field>
       )}
+      {data.check === "has_tag" && (
+        <Field label="Tag" hint="Lower-case letters, numbers, spaces and dashes.">
+          <input className={INPUT} maxLength={40} value={data.tag ?? ""} placeholder="vip" onChange={(e) => onData({ ...data, tag: e.target.value.toLowerCase() })} />
+        </Field>
+      )}
+    </>
+  );
+}
+
+/** Starting values when the action changes, so old fields don't linger. */
+function freshAction(action: ActionKind): ActionNode["data"] {
+  switch (action) {
+    case "grant_chapter":
+    case "revoke_chapter":
+      return { action, courseId: null };
+    case "add_tag":
+    case "remove_tag":
+      return { action, tag: "" };
+    case "notify_team":
+      return { action, message: "{{first_name}} ({{email}}) reached this step in {{flow_name}}." };
+    case "webhook":
+      return { action, url: "" };
+  }
+}
+
+function ActionFields({ data, chapters, onData }: { data: ActionNode["data"]; chapters: readonly ChapterOption[]; onData: (d: ActionNode["data"]) => void }) {
+  return (
+    <>
+      <Field label="Do this" hint={ACTION_HINT[data.action]}>
+        <select className={INPUT} value={data.action} onChange={(e) => onData(freshAction(e.target.value as ActionKind))}>
+          {ACTION_KINDS.map((k) => (
+            <option key={k} value={k}>
+              {ACTION_LABEL[k]}
+            </option>
+          ))}
+        </select>
+      </Field>
+      {(data.action === "grant_chapter" || data.action === "revoke_chapter") && (
+        <Field label="Chapter">
+          <ChapterSelect value={data.courseId} chapters={chapters} onChange={(id) => onData({ ...data, courseId: id })} />
+        </Field>
+      )}
+      {(data.action === "add_tag" || data.action === "remove_tag") && (
+        <Field label="Tag" hint="Lower-case letters, numbers, spaces and dashes. Campaigns can be sent to a tag.">
+          <input className={INPUT} maxLength={40} value={data.tag ?? ""} placeholder="vip" onChange={(e) => onData({ ...data, tag: e.target.value.toLowerCase() })} />
+        </Field>
+      )}
+      {data.action === "notify_team" && (
+        <Field label="Note for the team" hint="Goes to the team email in Settings → Email. Tags: {{first_name}}, {{dog_name}}, {{email}}, {{flow_name}}.">
+          <textarea className={INPUT} rows={4} maxLength={MAX_NOTE} value={data.message ?? ""} onChange={(e) => onData({ ...data, message: e.target.value })} />
+        </Field>
+      )}
+      {data.action === "webhook" && (
+        <Field label="Webhook address" hint="A public https:// address (Zapier, Make…). We POST the person and the flow as JSON.">
+          <input className={INPUT} type="url" maxLength={2000} value={data.url ?? ""} placeholder="https://hooks.zapier.com/…" onChange={(e) => onData({ ...data, url: e.target.value.trim() })} />
+        </Field>
+      )}
     </>
   );
 }
@@ -238,7 +297,7 @@ interface StepPanelProps {
   testing: boolean;
 }
 
-const TITLES: Record<FlowNode["type"], string> = { trigger: "Trigger", email: "Email", wait: "Wait", condition: "Condition", split: "A/B split", exit: "Exit" };
+const TITLES: Record<FlowNode["type"], string> = { trigger: "Trigger", email: "Email", wait: "Wait", condition: "Condition", split: "A/B split", action: "Action", exit: "Exit" };
 
 export function StepPanel({ node, chapters, stats, onData, onDelete, onDuplicate, onEditEmail, onTest, testing }: StepPanelProps) {
   return (
@@ -286,6 +345,7 @@ export function StepPanel({ node, chapters, stats, onData, onDelete, onDuplicate
         </div>
       )}
       {node.type === "condition" && <ConditionFields data={node.data} chapters={chapters} onData={onData} />}
+      {node.type === "action" && <ActionFields data={node.data} chapters={chapters} onData={onData} />}
       {node.type === "split" && (
         <Field label={`Path A gets ${node.data.percentA}%`} hint="Each person always stays on the same path. Compare the emails' open and click rates.">
           <input type="range" min={1} max={99} value={node.data.percentA} onChange={(e) => onData({ percentA: num(e.target.value, 50) })} />

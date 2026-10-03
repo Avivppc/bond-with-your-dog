@@ -21,6 +21,12 @@ const Settings = z.object({
     .max(200)
     .refine((v) => v === "" || z.email().safeParse(v).success, "Reply-to must be an email address.")
     .transform((v) => v || null),
+  team_email: z
+    .string()
+    .trim()
+    .max(200)
+    .refine((v) => v === "" || z.email().safeParse(v).success, "Team email must be an email address.")
+    .transform((v) => v || null),
   postal_address: z
     .string()
     .trim()

@@ -34,7 +34,11 @@ export interface RunFacts {
 }
 
 export type SkipReason = "unsubscribed" | "smart_sending";
-export type RunAction = { kind: "send"; nodeId: string; variant: string | null } | { kind: "skip"; nodeId: string; reason: SkipReason };
+export type RunAction =
+  | { kind: "send"; nodeId: string; variant: string | null }
+  | { kind: "skip"; nodeId: string; reason: SkipReason }
+  /** An action step (tag, chapter, notification, webhook): not email, so consent and quiet hours don't apply. */
+  | { kind: "act"; nodeId: string };
 
 export interface RunPlan {
   actions: RunAction[];
@@ -81,6 +85,9 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
         state = { ...state, lastEmailNodeId: node.id, waitUntil: null };
         break;
       }
+      case "action":
+        actions.push({ kind: "act", nodeId: node.id });
+        break;
       case "condition": {
         const last = state.lastEmailNodeId;
         const yes =

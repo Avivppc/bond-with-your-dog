@@ -37,6 +37,11 @@ export default async function EmailSettingsPage({ searchParams }: { searchParams
             <span className={`text-[12px] ${MUTED}`}>Where replies go. Leave empty to use the sender address.</span>
           </label>
           <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>Team email (optional)</span>
+            <input name="team_email" type="email" className={INPUT} maxLength={200} defaultValue={settings.teamEmail ?? ""} placeholder="team@bonded.dog" />
+            <span className={`text-[12px] ${MUTED}`}>Where &quot;Notify the team&quot; steps in flows send their note.</span>
+          </label>
+          <label className="flex flex-col gap-1.5">
             <span className={LABEL}>Business postal address</span>
             <textarea name="postal_address" rows={3} className={INPUT} maxLength={300} defaultValue={settings.postalAddress ?? ""} placeholder={"Bonded Ltd.\nStreet 1, City\nIsrael"} />
             <span className={`text-[12px] ${MUTED}`}>

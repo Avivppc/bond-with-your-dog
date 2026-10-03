@@ -25,7 +25,7 @@ export default async function EmailFlowPage({ params }: { params: Promise<{ id: 
   const sb = createServiceClient();
   const [detail, chaptersRes] = await Promise.all([loadFlow(sb, id), sb.from("courses").select("id, title, chapter_number").not("chapter_number", "is", null).order("chapter_number")]);
   if (!detail) notFound();
-  const { flow, totals, steps, atStep, recent } = detail;
+  const { flow, totals, steps, atStep, actionsDone, recent } = detail;
   const chapters = (chaptersRes.data ?? []).map((c) => ({ id: c.id as string, title: c.title as string }));
 
   return (
@@ -62,7 +62,7 @@ export default async function EmailFlowPage({ params }: { params: Promise<{ id: 
         siteUrl={siteUrl()}
         graph={flow.graph}
         chapters={chapters}
-        stats={{ steps, atStep }}
+        stats={{ steps, atStep, actionsDone }}
       />
 
       <Card title="Recent members" description="The last 15 people who entered this flow." className="mt-6" flush>

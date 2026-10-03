@@ -9,6 +9,7 @@ import { ActivitySection, DogsAndOnboarding, PersonHeader } from "./ProfileSecti
 import { loadContactNotes } from "../_lib/notes-data";
 import { CoursesSection, OrdersSection, TeamSection } from "./AccessSections";
 import { NotesSection } from "./NotesSection";
+import { TagsSection } from "./TagsSection";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ export default async function PersonPage({
         </div>
         <div className="space-y-5">
           <NotesSection contactId={person.userId} notes={notes} />
+          {person.email && <TagsSection contactId={person.userId} email={person.email} />}
           <DogsAndOnboarding person={person} />
           <Card title="Account" description="Sends a one-time link to choose a new password.">
             <PasswordResetButton userId={person.userId} className={BTN_SECONDARY} />

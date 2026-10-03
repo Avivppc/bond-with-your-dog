@@ -10,6 +10,7 @@ export const AUDIENCE_LABEL: Record<AudienceKind, string> = {
   inactive_practice: "Members who stopped practicing",
   quiz_leads: "Quiz leads (no account yet)",
   everyone: "Everyone (members and quiz leads)",
+  has_tag: "Everyone with a tag",
 };
 
 export const AUDIENCE_NEEDS_CHAPTER: readonly AudienceKind[] = ["owns_chapter", "not_owns_chapter", "completed_chapter"];

@@ -1,8 +1,9 @@
 "use client";
 
 import { createContext, useContext, useState } from "react";
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, Handle, Position, type EdgeProps, type NodeProps } from "@xyflow/react";
-import type { ConditionNode, EmailStepData, FlowNode, FlowNodeType, SplitNode, WaitNode } from "@/lib/flows/graph";
+import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, Handle, Position, ViewportPortal, type EdgeProps, type NodeProps } from "@xyflow/react";
+import type { ActionNode, ConditionNode, EmailStepData, FlowNode, FlowNodeType, SplitNode, WaitNode } from "@/lib/flows/graph";
+import { ACTION_LABEL } from "@/lib/flows/actions";
 import type { StepStats } from "@/lib/flows/stats";
 import { percent } from "@/lib/flows/stats";
 
@@ -10,6 +11,8 @@ import { percent } from "@/lib/flows/stats";
 export interface FlowMeta {
   steps: Record<string, StepStats & { variants: Record<string, StepStats> }>;
   atStep: Record<string, number>;
+  /** How many people each action step has been carried out for. */
+  actionsDone: Record<string, number>;
   triggerLabel: string;
   triggerDetail: string;
   chapterTitle: (id: string | null | undefined) => string;
@@ -19,6 +22,7 @@ export interface FlowMeta {
 export const FlowMetaContext = createContext<FlowMeta>({
   steps: {},
   atStep: {},
+  actionsDone: {},
   triggerLabel: "",
   triggerDetail: "",
   chapterTitle: () => "",
@@ -31,6 +35,7 @@ export const STEP_LOOK: Record<FlowNodeType, { icon: string; label: string; acce
   wait: { icon: "schedule", label: "Wait", accent: "#6c6a69" },
   condition: { icon: "call_split", label: "Condition", accent: "#1d4f91" },
   split: { icon: "science", label: "A/B split", accent: "#7a3fa0" },
+  action: { icon: "electric_bolt", label: "Action", accent: "#1c6b35" },
   exit: { icon: "flag", label: "Exit", accent: "#6c6a69" },
 };
 
@@ -140,6 +145,34 @@ export function conditionQuestion(data: ConditionNode["data"], chapterTitle: (id
       return "Has bought anything?";
     case "is_member":
       return "Has an account?";
+    case "has_tag":
+      return data.tag ? `Tagged "${data.tag}"?` : "Has a tag?";
+  }
+}
+
+/** "Give Bonded: Moves", "Add tag vip", "Webhook to hooks.zapier.com" — an action in plain words. */
+export function actionSummary(data: ActionNode["data"], chapterTitle: (id: string | null | undefined) => string): string {
+  switch (data.action) {
+    case "grant_chapter":
+      return `Give ${chapterTitle(data.courseId) || "a chapter"}`;
+    case "revoke_chapter":
+      return `Take back ${chapterTitle(data.courseId) || "a chapter"}`;
+    case "add_tag":
+      return data.tag ? `Add tag "${data.tag}"` : "Add a tag";
+    case "remove_tag":
+      return data.tag ? `Remove tag "${data.tag}"` : "Remove a tag";
+    case "notify_team":
+      return "Notify the team";
+    case "webhook": {
+      const host = (() => {
+        try {
+          return new URL(data.url ?? "").hostname;
+        } catch {
+          return "";
+        }
+      })();
+      return host ? `Webhook to ${host}` : ACTION_LABEL.webhook;
+    }
   }
 }
 
@@ -171,6 +204,21 @@ function SplitCard({ id, data, selected }: NodeProps) {
   );
 }
 
+function ActionCard({ id, data, selected }: NodeProps) {
+  const meta = useContext(FlowMetaContext);
+  const done = meta.actionsDone[id] ?? 0;
+  return (
+    <>
+      <Handle type="target" position={Position.Top} className={HANDLE} />
+      <Shell id={id} type="action" selected={selected}>
+        <p className="line-clamp-2 font-medium">{actionSummary(data as unknown as ActionNode["data"], meta.chapterTitle)}</p>
+        <p className="mt-1.5 text-[12px] text-[#9b9997]">{done > 0 ? `Done for ${done}` : "Not run yet"}</p>
+      </Shell>
+      <Handle type="source" position={Position.Bottom} className={HANDLE} />
+    </>
+  );
+}
+
 function ExitCard({ id, selected }: NodeProps) {
   return (
     <>
@@ -182,9 +230,9 @@ function ExitCard({ id, selected }: NodeProps) {
   );
 }
 
-export const NODE_TYPES = { trigger: TriggerCard, email: EmailCard, wait: WaitCard, condition: ConditionCard, split: SplitCard, exit: ExitCard };
+export const NODE_TYPES = { trigger: TriggerCard, email: EmailCard, wait: WaitCard, condition: ConditionCard, split: SplitCard, action: ActionCard, exit: ExitCard };
 
-const INSERTABLE: Exclude<FlowNodeType, "trigger" | "exit">[] = ["email", "wait", "condition", "split"];
+const INSERTABLE: Exclude<FlowNodeType, "trigger" | "exit">[] = ["email", "wait", "condition", "action", "split"];
 
 /** A connection with a "+" in the middle that inserts a step right there. */
 function InsertableEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, markerEnd, style }: EdgeProps) {
@@ -208,29 +256,35 @@ function InsertableEdge({ id, sourceX, sourceY, targetX, targetY, sourcePosition
               add
             </span>
           </button>
-          {open && (
-            <div role="menu" className="flex flex-col rounded-[10px] border border-[#e7e6e4] bg-white p-1 shadow-lg">
-              {INSERTABLE.map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  role="menuitem"
-                  className="flex items-center gap-2 rounded-[6px] px-2.5 py-1.5 text-left text-[13px] hover:bg-[#f3f3f2]"
-                  onClick={() => {
-                    setOpen(false);
-                    meta.insertOnEdge(id, type);
-                  }}
-                >
-                  <span className="material-symbols-outlined text-[16px]" style={{ color: STEP_LOOK[type].accent }} aria-hidden>
-                    {STEP_LOOK[type].icon}
-                  </span>
-                  {STEP_LOOK[type].label}
-                </button>
-              ))}
-            </div>
-          )}
         </div>
       </EdgeLabelRenderer>
+      {open && (
+        <ViewportPortal>
+          <div
+            role="menu"
+            className="nodrag nopan absolute z-10 flex flex-col rounded-[10px] border border-[#e7e6e4] bg-white p-1 shadow-lg"
+            style={{ transform: `translate(-50%, 16px) translate(${labelX}px, ${labelY}px)`, pointerEvents: "all" }}
+          >
+            {INSERTABLE.map((type) => (
+              <button
+                key={type}
+                type="button"
+                role="menuitem"
+                className="flex items-center gap-2 rounded-[6px] px-2.5 py-1.5 text-left text-[13px] hover:bg-[#f3f3f2]"
+                onClick={() => {
+                  setOpen(false);
+                  meta.insertOnEdge(id, type);
+                }}
+              >
+                <span className="material-symbols-outlined text-[16px]" style={{ color: STEP_LOOK[type].accent }} aria-hidden>
+                  {STEP_LOOK[type].icon}
+                </span>
+                {STEP_LOOK[type].label}
+              </button>
+            ))}
+          </div>
+        </ViewportPortal>
+      )}
     </>
   );
 }

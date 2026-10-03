@@ -16,11 +16,12 @@ import { sendMarketingBatch, unsubscribeLinks } from "./send";
  * nobody gets it twice and nobody is dropped. Sending stops after a day of failures.
  */
 
-export type AudienceKind = "all_members" | "owns_chapter" | "not_owns_chapter" | "completed_chapter" | "inactive_practice" | "quiz_leads" | "everyone";
+export type AudienceKind = "all_members" | "owns_chapter" | "not_owns_chapter" | "completed_chapter" | "inactive_practice" | "quiz_leads" | "everyone" | "has_tag";
 export interface Audience {
   kind: AudienceKind;
   courseId?: string | null;
   days?: number;
+  tag?: string;
 }
 
 export interface CampaignRow {

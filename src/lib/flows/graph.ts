@@ -1,16 +1,18 @@
 /**
  * An email flow is a graph, stored in React Flow's shape (nodes + edges) so the admin canvas can
- * load and save it as-is. One trigger node starts it; wait / email / condition / split / exit nodes
- * follow. Edges carry the branch in `sourceHandle` ("yes"/"no" for a condition, "a"/"b" for a split).
+ * load and save it as-is. One trigger node starts it; wait / email / condition / split / action /
+ * exit nodes follow. Edges carry the branch in `sourceHandle` ("yes"/"no" for a condition, "a"/"b" for a split).
  * Pure: shared by the builder, the validator and the engine.
  */
 
 import type { EmailDoc } from "@/lib/email-blocks/types";
+import { actionProblems, normalizeTag, type ActionData } from "./actions";
 
 export type { FlowTrigger } from "./triggers";
+export type { ActionData, ActionKind } from "./actions";
 
 /** What a condition step asks. opened/clicked are about the last email this person got in the flow. */
-export type ConditionCheck = "opened" | "clicked" | "owns_chapter" | "completed_chapter" | "practiced_recently" | "has_purchased" | "is_member";
+export type ConditionCheck = "opened" | "clicked" | "owns_chapter" | "completed_chapter" | "practiced_recently" | "has_purchased" | "is_member" | "has_tag";
 export type Branch = "yes" | "no" | "a" | "b";
 
 /** The email an email step sends. Older flows stored plain text (subject/body/button). */
@@ -41,20 +43,24 @@ export interface EmailNode extends Base {
 }
 export interface ConditionNode extends Base {
   type: "condition";
-  /** courseId for the chapter checks, days for "practiced recently". */
-  data: { check: ConditionCheck; courseId?: string | null; days?: number };
+  /** courseId for the chapter checks, days for "practiced recently", tag for "has a tag". */
+  data: { check: ConditionCheck; courseId?: string | null; days?: number; tag?: string };
 }
 export interface SplitNode extends Base {
   type: "split";
   /** Share of members that take branch A (the rest take B). */
   data: { percentA: number };
 }
+export interface ActionNode extends Base {
+  type: "action";
+  data: ActionData;
+}
 export interface ExitNode extends Base {
   type: "exit";
   data: Record<string, never>;
 }
 
-export type FlowNode = TriggerNode | WaitNode | EmailNode | ConditionNode | SplitNode | ExitNode;
+export type FlowNode = TriggerNode | WaitNode | EmailNode | ConditionNode | SplitNode | ActionNode | ExitNode;
 export type FlowNodeType = FlowNode["type"];
 
 export interface FlowEdge {
@@ -76,6 +82,7 @@ export const BRANCHES: Record<FlowNodeType, readonly (Branch | null)[]> = {
   email: [null],
   condition: ["yes", "no"],
   split: ["a", "b"],
+  action: [null],
   exit: [],
 };
 
@@ -125,7 +132,10 @@ function nodeProblems(node: FlowNode): string[] {
     }
     case "condition":
       if ((node.data.check === "owns_chapter" || node.data.check === "completed_chapter") && !node.data.courseId) return ["A condition about a chapter needs the chapter picked."];
+      if (node.data.check === "has_tag" && !normalizeTag(node.data.tag ?? "")) return ["A condition about a tag needs the tag."];
       return [];
+    case "action":
+      return actionProblems(node.data);
     case "split":
       return node.data.percentA >= 1 && node.data.percentA <= 99 ? [] : ["An A/B split needs a share between 1% and 99%."];
     default:
@@ -171,7 +181,7 @@ export function validateGraph(graph: FlowGraph): string[] {
   visit(triggers[0].id);
   if (loops) problems.push("The flow loops back on itself; connect steps forward only.");
   if (graph.nodes.some((n) => !reached.has(n.id))) problems.push("Some steps aren't connected to the trigger.");
-  if (!graph.nodes.some((n) => n.type === "email")) problems.push("Add at least one email.");
+  if (!graph.nodes.some((n) => n.type === "email" || n.type === "action")) problems.push("Add at least one email or action.");
 
   return [...new Set(problems)];
 }

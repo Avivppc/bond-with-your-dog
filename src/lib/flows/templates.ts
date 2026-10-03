@@ -235,6 +235,8 @@ export function newNode(type: Exclude<FlowNodeType, "trigger">, id: string, posi
       return { id, type, position, data: { check: "opened" } };
     case "split":
       return { id, type, position, data: { percentA: 50 } };
+    case "action":
+      return { id, type, position, data: { action: "add_tag", tag: "" } };
     case "exit":
       return { id, type, position, data: {} };
   }

@@ -6,6 +6,7 @@ import type { FlowGoal, FlowOffer, FlowTrigger, TriggerParams } from "../trigger
 import type { FlowVars } from "../template";
 import { discountedCents, formatUsd } from "../discount";
 import { exactLike } from "../like";
+import { normalizeTag } from "../actions";
 import { quietHoldUntil } from "../quiet-hours";
 import { chapterOffer, ensureCode, ownsChapter, type ServiceClient } from "./data";
 
@@ -108,14 +109,18 @@ async function goalReached(sb: ServiceClient, flow: FlowRow, run: RunRow, now: D
 }
 
 /** Answers for every member-data condition in the graph (opened/clicked are answered by the engine). */
-async function conditionAnswers(sb: ServiceClient, flow: FlowRow, run: RunRow, now: Date): Promise<Map<string, boolean>> {
+async function conditionAnswers(sb: ServiceClient, flow: FlowRow, run: RunRow, now: Date, recipient: string | null): Promise<Map<string, boolean>> {
   const answers = new Map<string, boolean>();
   for (const node of flow.graph.nodes) {
     if (node.type !== "condition" || node.data.check === "opened" || node.data.check === "clicked") continue;
     const user = run.user_id;
-    const { check, courseId, days } = node.data;
+    const { check, courseId, days, tag } = node.data;
     let yes = false;
     if (check === "is_member") yes = Boolean(await accountFor(sb, run));
+    else if (check === "has_tag" && recipient && tag) {
+      const { count } = await sb.from("contact_tags").select("id", { count: "exact", head: true }).eq("tag", normalizeTag(tag)).ilike("email", exactLike(recipient));
+      yes = (count ?? 0) > 0;
+    }
     else if (user && check === "owns_chapter" && courseId) yes = await ownsChapter(sb, user, courseId, now);
     else if (user && check === "completed_chapter" && courseId) {
       const { count } = await sb.from("certificates").select("id", { count: "exact", head: true }).eq("user_id", user).eq("course_id", courseId);
@@ -148,7 +153,7 @@ export async function personFacts(sb: ServiceClient, flow: FlowRow, run: RunRow,
           .eq("status", "sent")
           .gte("sent_at", new Date(now.getTime() - flow.smart_sending_hours * 3_600_000).toISOString())
       : Promise.resolve({ count: 0, error: null }),
-    conditionAnswers(sb, flow, run, now),
+    conditionAnswers(sb, flow, run, now, recipient),
   ]);
   if (consentRes.error || msgRes.error || recentRes.error) {
     throw new Error(`person facts unavailable: ${consentRes.error?.message ?? msgRes.error?.message ?? recentRes.error?.message}`);

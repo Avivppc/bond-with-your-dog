@@ -109,6 +109,12 @@ export function CampaignEditor({ id, status: initialStatus, scheduledAt, initial
             </select>
           </label>
         )}
+        {audience.kind === "has_tag" && (
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>Tag</span>
+            <input className={INPUT} maxLength={40} placeholder="vip" value={audience.tag ?? ""} onChange={(e) => setAudience({ ...audience, tag: e.target.value.toLowerCase() })} />
+          </label>
+        )}
         {audience.kind === "inactive_practice" && (
           <label className="flex flex-col gap-1.5">
             <span className={LABEL}>No practice for (days)</span>
