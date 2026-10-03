@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import AnalyticsIdentity from "@/components/analytics/AnalyticsIdentity";
+import SignupCompletedTracker from "@/components/analytics/SignupCompletedTracker";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -60,6 +61,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased min-h-screen flex flex-col">
         <AnalyticsIdentity />
+        <SignupCompletedTracker />
         {children}
       </body>
     </html>

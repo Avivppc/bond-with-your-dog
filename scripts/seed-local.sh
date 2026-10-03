@@ -40,6 +40,11 @@ psql "$DB_URL" -v ON_ERROR_STOP=1 -q <<'SQL'
 insert into public.staff_invites (email, role) values ('editor@bonded.test', 'editor')
   on conflict do nothing;
 
+-- Seeded accounts count as having proven their inbox (signup no longer does that).
+insert into public.email_verifications (user_id, email)
+  select id, lower(email) from auth.users where email like '%@bonded.test'
+  on conflict (user_id) do nothing;
+
 -- Sample outline for the seeded "kinetic-basics" course (idempotent).
 do $$
 declare m1 uuid; m2 uuid; s1 uuid;

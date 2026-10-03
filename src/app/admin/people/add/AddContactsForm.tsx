@@ -14,6 +14,14 @@ function outcomeText(r: ContactOutcome): { label: string; tone: string; detail?:
       return { label: "Already a contact", tone: "text-[#6c6a69]", detail: "Nothing to change without an offer." };
     case "pending":
       return { label: "Access waiting", tone: "text-[#1d4f91]", detail: "Unlocks when they sign up with this email." };
+    case "confirm_pending":
+      return r.emailed
+        ? { label: "Waiting for email confirmation", tone: "text-[#1d4f91]", detail: "They already have an account. We emailed a confirm link; access unlocks once they open it." }
+        : {
+            label: "Confirmation email not sent",
+            tone: "text-[#8a5a00]",
+            detail: "Access is saved. Ask them to sign in and press “Send me a new link” on their Home page.",
+          };
     case "already_invited":
       return { label: "Already invited", tone: "text-[#6c6a69]", detail: "This offer was already waiting for them." };
     case "invited":
