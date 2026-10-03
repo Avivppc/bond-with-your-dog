@@ -2,6 +2,8 @@ import Link from "next/link";
 import { badgeLabel, buildAdminAlerts } from "@/lib/admin-alerts";
 import { loadAdminAlertCounts } from "./admin-alerts-data";
 import { TopBarMenu } from "./TopBarMenu";
+import { CommandSearch } from "./CommandSearch";
+import type { AdminNav } from "@/lib/admin-nav";
 
 const MENU_ITEM = "flex w-full items-center gap-2 rounded-[8px] px-3 py-2 text-left text-[14px] text-[#1a1a19] hover:bg-[#f3f3f2]";
 const PANEL_BOX = "z-30 rounded-[12px] border border-[#e7e6e4] bg-white p-1 shadow-lg";
@@ -90,33 +92,11 @@ async function AlertsMenu({ canSeeInbox }: { canSeeInbox: boolean }) {
   );
 }
 
-/** Kajabi's top bar: contact search, notifications bell, account menu. */
-export async function AdminTopBar({ email, canSeeContacts }: { email: string; canSeeContacts: boolean }) {
+/** Kajabi's top bar: search everything (⌘K), notifications bell, account menu. */
+export async function AdminTopBar({ email, canSeeContacts, nav }: { email: string; canSeeContacts: boolean; nav: AdminNav }) {
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center justify-end gap-2 border-b border-[#ebeae8] bg-white px-4 pl-14 lg:pl-4">
-      {canSeeContacts && (
-        <>
-          <form action="/admin/people" method="get" role="search" className="mr-auto hidden max-w-sm flex-1 sm:block">
-            <label className="relative block">
-              <span className="sr-only">Search contacts</span>
-              <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9b9997]" aria-hidden>
-                search
-              </span>
-              <input
-                name="q"
-                type="search"
-                placeholder="Search contacts"
-                className="w-full rounded-full border border-[#e7e6e4] bg-[#f8f8f8] py-1.5 pl-9 pr-3 text-[14px] placeholder:text-[#9b9997] focus:border-[#343332] focus:bg-white focus:outline-none"
-              />
-            </label>
-          </form>
-          <Link href="/admin/people" className={`${ICON_BUTTON} sm:hidden`} aria-label="Search contacts">
-            <span className="material-symbols-outlined text-[22px]" aria-hidden>
-              search
-            </span>
-          </Link>
-        </>
-      )}
+      <CommandSearch nav={nav} />
       <AlertsMenu canSeeInbox={canSeeContacts} />
       <AccountMenu email={email} initial={(email || "?").charAt(0).toUpperCase()} />
     </header>
