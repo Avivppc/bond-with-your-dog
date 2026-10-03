@@ -40,6 +40,13 @@ describe("memberCss", () => {
     expect(memberCss(DEFAULT_MEMBER_AREA.look, site)).toContain("--cognac:#1d4f91");
   });
 
+  test("own fonts win over a site theme with other fonts, even the built-in ones", () => {
+    const site = { ...DEFAULT_THEME, headingFont: "Lora" as const };
+    const look = { ...DEFAULT_MEMBER_AREA.look, followSite: false };
+    expect(memberCss(look, site)).toContain('--display:"Plus Jakarta Sans", sans-serif');
+    expect(memberFontsHref(look, site)).toContain("family=Plus+Jakarta+Sans");
+  });
+
   test("own colors, fonts and square corners", () => {
     const look = { ...DEFAULT_MEMBER_AREA.look, followSite: false, colors: { ...DEFAULT_MEMBER_AREA.look.colors, accent: "#00aa55" }, headingFont: "Lora" as const, radius: "square" as const };
     const css = memberCss(look, DEFAULT_THEME);

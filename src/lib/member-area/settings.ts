@@ -278,8 +278,10 @@ export function memberCss(look: MemberLook, site: SiteTheme, { all = false }: { 
   }
   const heading = look.followSite ? site.headingFont : look.headingFont;
   const body = look.followSite ? site.bodyFont : look.bodyFont;
-  if (all || heading !== "Plus Jakarta Sans") vars.push(["--display", fontStack(heading)]);
-  if (all || body !== "Be Vietnam Pro") vars.push(["--body", fontStack(body)]);
+  // Own fonts are always written: otherwise the site theme's fonts (on :root) would show through.
+  const ownFonts = all || !look.followSite;
+  if (ownFonts || heading !== "Plus Jakarta Sans") vars.push(["--display", fontStack(heading)]);
+  if (ownFonts || body !== "Be Vietnam Pro") vars.push(["--body", fontStack(body)]);
   if (all || look.radius !== "round") {
     const [lg, md, sm] = RADII[look.radius];
     vars.push(["--r-lg", `${lg}px`], ["--r-md", `${md}px`], ["--r-sm", `${sm}px`]);
@@ -291,7 +293,8 @@ export function memberCss(look: MemberLook, site: SiteTheme, { all = false }: { 
 export function memberFontsHref(look: MemberLook, site: SiteTheme, { all = false }: { all?: boolean } = {}): string {
   const heading = look.followSite ? site.headingFont : look.headingFont;
   const body = look.followSite ? site.bodyFont : look.bodyFont;
-  const named = [all || heading !== "Plus Jakarta Sans" ? heading : null, all || body !== "Be Vietnam Pro" ? body : null].filter((f): f is FontName => f !== null);
+  const ownFonts = all || !look.followSite;
+  const named = [ownFonts || heading !== "Plus Jakarta Sans" ? heading : null, ownFonts || body !== "Be Vietnam Pro" ? body : null].filter((f): f is FontName => f !== null);
   const fonts = [...new Set(named)];
   if (fonts.length === 0) return "";
   return `https://fonts.googleapis.com/css2?${fonts.map((f) => `family=${f.replace(/ /g, "+")}:wght@300;400;500;600;700;800`).join("&")}&display=swap`;

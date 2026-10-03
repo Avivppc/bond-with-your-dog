@@ -28,13 +28,13 @@ function today(timezone: string | null): string {
   }
 }
 
+/** Any active enrollment counts (limited access too), as on the home page. */
 async function hasChapter(userId: string): Promise<boolean> {
   const supabase = await createClient();
   const { count, error } = await supabase
     .from("enrollments")
     .select("id", { count: "exact", head: true })
     .eq("user_id", userId)
-    .eq("access_level", "full")
     .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`);
   if (error) console.error("[member layout] enrollment check failed", error.message);
   return (count ?? 0) > 0;
@@ -48,7 +48,9 @@ export default async function MemberLayout({ children }: { children: React.React
   const viewer = await memberViewer();
   if (!viewer) redirect("/login");
 
-  const [{ settings, preview }, site, withChapter] = await Promise.all([loadMemberArea(viewer.isStaff), loadLiveTheme(), hasChapter(viewer.userId)]);
+  const [{ settings, preview }, site] = await Promise.all([loadMemberArea(viewer.isStaff), loadLiveTheme()]);
+  // Only ask the database when a banner is aimed at members with or without a chapter.
+  const withChapter = settings.banners.some((b) => b.audience !== "all") ? await hasChapter(viewer.userId) : false;
   const nav = memberNav(settings.menu);
   const css = memberCss(settings.look, site, { all: preview });
   const fontsHref = memberFontsHref(settings.look, site, { all: preview });
