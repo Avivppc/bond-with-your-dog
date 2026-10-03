@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SalesAssistant from "@/components/assistant/SalesAssistant";
 import { createClient } from "@/lib/supabase/server";
 import { formatMoney, formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { getPaymentProvider } from "@/lib/payments/provider";
@@ -158,6 +159,7 @@ export default async function CheckoutPage({
         </section>
       </main>
       <Footer />
+      <SalesAssistant />
     </>
   );
 }

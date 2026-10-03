@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SalesAssistant from "@/components/assistant/SalesAssistant";
 import PlanCtaLink from "@/components/analytics/PlanCtaLink";
 import { ChapterStage } from "@/components/chapters/ChapterStage";
 import { STAGES } from "@/components/chapters/stages";
@@ -222,6 +223,7 @@ export default function CoursesPage() {
 
       </main>
       <Footer />
+      <SalesAssistant />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SalesAssistant from "@/components/assistant/SalesAssistant";
 import InlineVideo from "@/components/InlineVideo";
 import PlayVideoButton from "@/components/PlayVideoButton";
 import TestimonialCarousel from "@/components/TestimonialCarousel";
@@ -595,6 +596,7 @@ export default function HomePage() {
 
       </main>
       <Footer />
+      <SalesAssistant />
     </>
   );
 }

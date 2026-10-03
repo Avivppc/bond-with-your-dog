@@ -15,6 +15,7 @@ import { CompleteLessonButton } from "./CompleteLessonButton";
 import { LessonAside } from "./LessonAside";
 import { DownloadsTab, OverviewTab, PracticeTab, QuestionsTab, TabBar, type QuestionRow } from "./LessonTabs";
 import { asTab, parsePracticeSteps } from "./lesson-data";
+import LessonAssistant from "@/components/assistant/LessonAssistant";
 
 export const dynamic = "force-dynamic";
 
@@ -152,6 +153,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
               {tab === "practice" && <PracticeTab steps={steps} lessonId={lessonId} minutes={lesson.practice_minutes} />}
               {tab === "downloads" && <DownloadsTab lessonId={lessonId} files={files} />}
               {tab === "questions" && <QuestionsTab questions={questions} lessonId={lessonId} courseId={courseId} />}
+              {canAccess && <LessonAssistant lessonId={lessonId} />}
             </>
           )}
         </div>
