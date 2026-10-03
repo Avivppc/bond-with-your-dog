@@ -10,7 +10,7 @@ describe("adminNavFor", () => {
   it("lays out Kajabi's top-level entries with expandable groups", () => {
     const nav = adminNavFor("owner");
     expect(nav.main.map((e) => e.label)).toEqual(["Dashboard", "Products", "Website", "Sales", "Marketing", "Coaching", "Contacts", "Analytics"]);
-    expect(nav.main.find((e) => e.label === "Website")?.children?.map((c) => c.href)).toEqual(["/admin/website", "/site-editor/theme"]);
+    expect(nav.main.find((e) => e.label === "Website")?.children?.map((c) => c.href)).toEqual(["/admin/website", "/site-editor/theme", "/site-editor/member"]);
     expect(nav.main.find((e) => e.label === "Marketing")?.children?.map((c) => c.href)).toEqual(["/admin/email-flows", "/admin/campaigns", "/admin/discount-codes"]);
     expect(nav.main[0]).toEqual({ label: "Dashboard", icon: "home", href: "/admin" });
     expect(nav.main.find((e) => e.label === "Products")?.children?.map((c) => c.label)).toEqual([

@@ -10,13 +10,13 @@ export function dogSubtitle(d: { breed: string | null; age_group: string }): str
 }
 
 /** Sticky header: search, notifications, dog switcher, profile. */
-export function Topbar({ viewer }: { viewer: MemberViewer }) {
+export function Topbar({ viewer, logo = "/app/img/logo.png" }: { viewer: MemberViewer; logo?: string }) {
   const dogs: ChipDog[] = viewer.dogs.map((d) => ({ id: d.id, name: d.name, subtitle: dogSubtitle(d), photo: d.photo_url }));
   return (
     <header className="topbar">
       <Link className="brand-mini" href="/home">
         {/* eslint-disable-next-line @next/next/no-img-element -- brand logo */}
-        <img src="/app/img/logo.png" alt="Bonded" style={{ width: 108 }} />
+        <img src={logo} alt="Bonded" style={{ width: 108 }} />
       </Link>
       <form action="/search" role="search" style={{ flex: 1, minWidth: 0 }}>
         <label className="search" htmlFor="q">

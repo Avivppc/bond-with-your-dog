@@ -55,6 +55,7 @@ const MAIN: NavDef[] = [
     children: [
       { href: "/admin/website", label: "Pages", needs: "content" },
       { href: "/site-editor/theme", label: "Theme", needs: "content" },
+      { href: "/site-editor/member", label: "Member area", needs: "content" },
     ],
   },
   {

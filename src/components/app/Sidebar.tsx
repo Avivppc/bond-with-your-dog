@@ -2,26 +2,45 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MEMBER_FOOT_NAV, MEMBER_NAV, MEMBER_TABS, isActive } from "./nav";
+import { isActive, type MemberNavItem } from "./nav";
 import { Ms } from "./ui";
 import { SoonPill } from "./SoonLink";
 import { isComingSoon } from "@/lib/member/coming-soon";
 
+interface SidebarProps {
+  isStaff: boolean;
+  /** The menu from Website → Member area (built-in pages and custom links). */
+  nav: MemberNavItem[];
+  foot: MemberNavItem[];
+  logo: string;
+}
+
+const isExternal = (href: string) => /^(https?:|mailto:)/.test(href);
+
 /** Left rail on desktop (logo, main nav, Ask Roni, settings/help, team links). */
-export function Sidebar({ isStaff }: { isStaff: boolean }) {
+export function Sidebar({ isStaff, nav, foot, logo }: SidebarProps) {
   const pathname = usePathname();
   return (
     <aside className="sidebar" aria-label="Main" data-tour="sidebar">
       <div className="brand">
         <Link href="/home" aria-label="Bonded home">
           {/* eslint-disable-next-line @next/next/no-img-element -- brand logo */}
-          <img src="/app/img/logo.png" alt="Bonded" />
+          <img src={logo} alt="Bonded" />
         </Link>
         <span className="member-pill">Member</span>
       </div>
       <nav className="nav">
-        {MEMBER_NAV.map((item) => {
+        {nav.map((item) => {
           const active = isActive(item, pathname);
+          if (isExternal(item.href)) {
+            return (
+              <a key={item.href} href={item.href} target="_blank" rel="noopener noreferrer">
+                <Ms name={item.icon} />
+                {item.label}
+                <Ms name="open_in_new" size="sm" />
+              </a>
+            );
+          }
           if (isComingSoon(item.href)) {
             return (
               <span key={item.href} className="nav-soon" aria-disabled="true" title="Coming soon">
@@ -45,7 +64,7 @@ export function Sidebar({ isStaff }: { isStaff: boolean }) {
           Ask Roni
         </Link>
         <div className="small-links">
-          {MEMBER_FOOT_NAV.map((item) => (
+          {foot.map((item) => (
             <Link key={item.href} href={item.href} className={isActive(item, pathname) ? "active" : undefined}>
               <Ms name={item.icon} size="sm" />
               {item.label}
@@ -76,9 +95,8 @@ export function Sidebar({ isStaff }: { isStaff: boolean }) {
 }
 
 /** Bottom tab bar on phones. */
-export function Tabbar() {
+export function Tabbar({ tabs }: { tabs: MemberNavItem[] }) {
   const pathname = usePathname();
-  const tabs = MEMBER_NAV.filter((i) => MEMBER_TABS.includes(i.href));
   return (
     <nav className="tabbar" aria-label="Main">
       {tabs.map((item) => {

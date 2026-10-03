@@ -11,6 +11,8 @@ import { SECTION_DEFS } from "@/lib/site/registry";
 import { ensureSystemPageRow, loadPageRow, pageTag, sanitizeDoc, THEME_TAG } from "@/lib/site/server";
 import { slugify, slugProblem, type SystemKey, SYSTEM_PAGES } from "@/lib/site/system-pages";
 import { themeSchema } from "@/lib/site/theme";
+import { memberAreaSchema } from "@/lib/member-area/settings";
+import { MEMBER_AREA_TAG } from "@/lib/member-area/server";
 import { sniffImageType, validateEmailImage } from "@/app/admin/_components/email-editor/upload-rules";
 import { heroVideo } from "@/lib/site/sections/home";
 import { newSection } from "@/lib/site/page-doc";
@@ -311,4 +313,31 @@ export async function publishTheme(): Promise<EditorResult> {
   // Colors, fonts, header and footer are on every page.
   revalidatePath("/", "layout");
   return { ok: true, message: "Theme published. Every page uses it now." };
+}
+
+// ---------- Member area ----------
+
+export async function saveMemberAreaDraft(rev: number, input: unknown): Promise<EditorResult> {
+  const { user } = await requireStaff("content");
+  const parsed = memberAreaSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? "Check the member area settings." };
+  const { data, error } = await createServiceClient().rpc("save_member_area_draft", { p_rev: rev, p_settings: parsed.data, p_staff: user.id });
+  if (error) {
+    console.error("[member area] save failed", { error: error.message });
+    return { ok: false, error: "Couldn't save. Check your connection; your changes are still here." };
+  }
+  if (data === null) return { ok: false, conflict: true, error: "Someone else changed the member area in the meantime. Reload to see their version." };
+  return { ok: true, rev: data as number };
+}
+
+export async function publishMemberArea(): Promise<EditorResult> {
+  const { user } = await requireStaff("content");
+  const sb = createServiceClient();
+  const { data: row } = await sb.from("member_area").select("draft").eq("id", 1).maybeSingle();
+  const parsed = memberAreaSchema.safeParse(row?.draft);
+  if (!parsed.success) return { ok: false, error: "Save a change first." };
+  const { error } = await sb.from("member_area").update({ published: parsed.data, has_changes: false, published_at: new Date().toISOString(), updated_by: user.id }).eq("id", 1);
+  if (error) return { ok: false, error: "Couldn't publish. Try again." };
+  updateTag(MEMBER_AREA_TAG);
+  return { ok: true, message: "Published. Members see it now." };
 }
