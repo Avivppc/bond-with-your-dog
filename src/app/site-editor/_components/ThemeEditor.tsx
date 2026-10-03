@@ -166,7 +166,7 @@ export function ThemeEditor({ initial, rev, previewPageId, hasChanges: initialCh
       preview={<PreviewFrame ref={preview} src={`/site-preview/${previewPageId}`} device={device} />}
       actions={
         <>
-          <Link href="/admin/website" className={`${BTN_SECONDARY} hidden sm:inline-flex`}>
+          <Link href="/admin/website" className={`${BTN_SECONDARY} max-sm:hidden`}>
             Pages
           </Link>
           <button type="button" className={BTN_PRIMARY} disabled={busy || (!hasChanges && autosave.status === "saved")} onClick={publish}>

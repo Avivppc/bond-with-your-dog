@@ -49,11 +49,11 @@ export default async function EmailFlowsPage({ searchParams }: { searchParams: P
                   <th className={TH}>Flow</th>
                   <th className={TH}>Status</th>
                   <th className={TH}>Entered</th>
-                  <th className={TH}>Sent</th>
-                  <th className={TH}>Open rate</th>
-                  <th className={TH}>Click rate</th>
-                  <th className={TH}>Purchases</th>
-                  <th className={TH}>Revenue</th>
+                  <th className={`${TH} max-md:hidden`}>Sent</th>
+                  <th className={`${TH} max-md:hidden`}>Open rate</th>
+                  <th className={`${TH} max-md:hidden`}>Click rate</th>
+                  <th className={`${TH} max-md:hidden`}>Purchases</th>
+                  <th className={`${TH} max-md:hidden`}>Revenue</th>
                 </tr>
               </thead>
               <tbody>
@@ -69,13 +69,13 @@ export default async function EmailFlowsPage({ searchParams }: { searchParams: P
                       <StatusPill tone={STATUS_TONE[flow.status]}>{flow.status[0].toUpperCase() + flow.status.slice(1)}</StatusPill>
                     </td>
                     <td className={TD}>{totals.entered}</td>
-                    <td className={TD}>{totals.emails.sent}</td>
-                    <td className={TD}>{percent(totals.emails.openRate)}</td>
-                    <td className={TD}>{percent(totals.emails.clickRate)}</td>
-                    <td className={TD}>
+                    <td className={`${TD} max-md:hidden`}>{totals.emails.sent}</td>
+                    <td className={`${TD} max-md:hidden`}>{percent(totals.emails.openRate)}</td>
+                    <td className={`${TD} max-md:hidden`}>{percent(totals.emails.clickRate)}</td>
+                    <td className={`${TD} max-md:hidden`}>
                       {totals.converted} <span className={MUTED}>({percent(totals.conversionRate)})</span>
                     </td>
-                    <td className={TD}>{formatUsd(totals.revenueCents)}</td>
+                    <td className={`${TD} max-md:hidden`}>{formatUsd(totals.revenueCents)}</td>
                   </tr>
                 ))}
               </tbody>

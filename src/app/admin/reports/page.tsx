@@ -3,6 +3,8 @@ import { requireStaff } from "@/lib/admin";
 import { REPORTS } from "@/lib/analytics/reports";
 import { Card, EmptyState, INPUT, PageHeader } from "@/app/admin/_components/ui";
 
+export const metadata = { title: "Reports" };
+
 export const dynamic = "force-dynamic";
 
 export default async function ReportsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {

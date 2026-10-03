@@ -8,6 +8,8 @@ import { BTN_SECONDARY, Card, EmptyState, INPUT, PageHeader, TABLE, TD, TH, THEA
 import { Pagination, shortDate } from "../_components/list-kit";
 import { EmailOnlyContacts } from "./EmailOnlyContacts";
 
+export const metadata = { title: "Leads" };
+
 export const dynamic = "force-dynamic";
 
 const PER_PAGE = 50;

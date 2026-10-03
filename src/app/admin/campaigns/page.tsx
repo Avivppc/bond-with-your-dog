@@ -44,10 +44,10 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
                   <th className={TH}>Campaign</th>
                   <th className={TH}>Status</th>
                   <th className={TH}>Sent</th>
-                  <th className={TH}>Open rate</th>
-                  <th className={TH}>Click rate</th>
-                  <th className={TH}>Purchases</th>
-                  <th className={TH}>Unsubscribes</th>
+                  <th className={`${TH} max-md:hidden`}>Open rate</th>
+                  <th className={`${TH} max-md:hidden`}>Click rate</th>
+                  <th className={`${TH} max-md:hidden`}>Purchases</th>
+                  <th className={`${TH} max-md:hidden`}>Unsubscribes</th>
                 </tr>
               </thead>
               <tbody>
@@ -67,12 +67,12 @@ export default async function CampaignsPage({ searchParams }: { searchParams: Pr
                       <StatusPill tone={STATUS_TONE[c.status]}>{STATUS_LABEL[c.status]}</StatusPill>
                     </td>
                     <td className={TD}>{stats.emails.sent}</td>
-                    <td className={TD}>{percent(stats.emails.openRate)}</td>
-                    <td className={TD}>{percent(stats.emails.clickRate)}</td>
-                    <td className={TD}>
+                    <td className={`${TD} max-md:hidden`}>{percent(stats.emails.openRate)}</td>
+                    <td className={`${TD} max-md:hidden`}>{percent(stats.emails.clickRate)}</td>
+                    <td className={`${TD} max-md:hidden`}>
                       {stats.purchases} <span className={MUTED}>· {formatUsd(stats.revenueCents)}</span>
                     </td>
-                    <td className={TD}>{stats.unsubscribes}</td>
+                    <td className={`${TD} max-md:hidden`}>{stats.unsubscribes}</td>
                   </tr>
                 ))}
               </tbody>

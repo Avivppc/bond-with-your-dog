@@ -9,6 +9,8 @@ import { AnswerForm, EditableAnswer } from "./AnswerForm";
 import { setQuestionHidden } from "./actions";
 import { asQuestionTab, QUESTION_TABS, type QuestionTab } from "./tabs";
 
+export const metadata = { title: "Lesson questions" };
+
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 25;

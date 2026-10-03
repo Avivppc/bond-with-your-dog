@@ -16,7 +16,7 @@ export default async function EmailSettingsPage({ searchParams }: { searchParams
   const envFrom = process.env.EMAIL_FROM ?? "";
 
   return (
-    <>
+    <div className="space-y-5">
       <PageHeader title="Email settings" description="How flow and campaign emails show who they're from." />
       {saved && <Notice tone="success">Email settings saved.</Notice>}
       {typeof error === "string" && <Notice tone="error">{error}</Notice>}
@@ -50,6 +50,6 @@ export default async function EmailSettingsPage({ searchParams }: { searchParams
           </div>
         </form>
       </Card>
-    </>
+    </div>
   );
 }

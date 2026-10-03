@@ -164,17 +164,17 @@ export function PageEditor({ page, siteUrl }: { page: EditorPage; siteUrl: strin
       actions={
         <>
           {status === "published" && (
-            <a href={livePath} target="_blank" rel="noopener noreferrer" className={`${BTN_SECONDARY} hidden sm:inline-flex`}>
+            <a href={livePath} target="_blank" rel="noopener noreferrer" className={`${BTN_SECONDARY} max-sm:hidden`}>
               View live
             </a>
           )}
           {status === "published" && hasChanges && (
-            <button type="button" className={`${BTN_SECONDARY} hidden lg:inline-flex`} disabled={busy} onClick={() => window.confirm("Throw away your changes and go back to the live version?") && run(() => discardSiteDraft(page.id), reloadFromServer)}>
+            <button type="button" className={`${BTN_SECONDARY} max-lg:hidden`} disabled={busy} onClick={() => window.confirm("Throw away your changes and go back to the live version?") && run(() => discardSiteDraft(page.id), reloadFromServer)}>
               Discard changes
             </button>
           )}
           {!page.isSystem && status === "published" && (
-            <button type="button" className={`${BTN_SECONDARY} hidden lg:inline-flex`} disabled={busy} onClick={() => window.confirm("Take this page off the site?") && run(() => hideSitePage(page.id), () => setStatus("hidden"))}>
+            <button type="button" className={`${BTN_SECONDARY} max-lg:hidden`} disabled={busy} onClick={() => window.confirm("Take this page off the site?") && run(() => hideSitePage(page.id), () => setStatus("hidden"))}>
               Unpublish
             </button>
           )}

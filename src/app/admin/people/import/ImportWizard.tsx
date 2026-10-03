@@ -98,7 +98,21 @@ export function ImportWizard({ offers }: { offers: { id: string; title: string }
   if (!sheet || !mapping) {
     return (
       <Card title="1. Choose a file" description="A CSV with one person per row and a header row. From Kajabi: People → Export.">
-        <input type="file" accept=".csv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} className="text-[14px]" aria-label="CSV file" />
+        <label
+          className="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-[12px] border-2 border-dashed border-[#d9d8d6] bg-[#fafaf9] px-6 py-10 text-center hover:border-[#343332] hover:bg-white"
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={(e) => {
+            e.preventDefault();
+            void onFile(e.dataTransfer.files?.[0]);
+          }}
+        >
+          <span className="material-symbols-outlined text-[32px] text-[#6c6a69]" aria-hidden>
+            upload_file
+          </span>
+          <span className="text-[14px] font-medium">Drop the CSV here, or click to choose it</span>
+          <span className={`text-[12px] ${MUTED}`}>Up to 10 MB · up to {MAX_IMPORT_ROWS.toLocaleString("en-US")} people</span>
+          <input type="file" accept=".csv,text/csv" onChange={(e) => onFile(e.target.files?.[0])} className="sr-only" aria-label="CSV file" />
+        </label>
         {fileError && (
           <p role="alert" className="mt-3 text-[14px] text-red-700">
             {fileError}

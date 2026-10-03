@@ -7,6 +7,8 @@ import { loadOfferOptions } from "../_lib/person-data";
 import { AddContactsForm } from "./AddContactsForm";
 import type { AddContactsState } from "./actions";
 
+export const metadata = { title: "Add contacts" };
+
 export const dynamic = "force-dynamic";
 
 async function loadPendingInvites() {

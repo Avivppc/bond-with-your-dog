@@ -25,7 +25,7 @@ export default async function PaymentSettingsPage() {
   const missing = provider === "paddle" ? PADDLE_KEYS.filter((k) => !isSet(k.env)) : [];
 
   return (
-    <>
+    <div className="space-y-5">
       <PageHeader title="Payments" description="How the checkout takes money. Keys live in Vercel, so this page only shows whether they're set." />
 
       <div className="space-y-6">
@@ -100,6 +100,6 @@ export default async function PaymentSettingsPage() {
           </ul>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

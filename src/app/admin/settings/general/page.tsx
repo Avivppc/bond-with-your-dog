@@ -16,7 +16,7 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
   const protectedForms = turnstileEnabled();
 
   return (
-    <>
+    <div className="space-y-5">
       <PageHeader title="General" description="How the academy presents itself on the website." />
       {saved && <Notice tone="success">Settings saved. The website shows them now.</Notice>}
       {typeof error === "string" && <Notice tone="error">{error}</Notice>}
@@ -54,7 +54,7 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
         </div>
       </form>
 
-      <div className="mt-6">
+      <div>
         <Card title="Spam protection" description="Cloudflare Turnstile checks that the sign-up and quiz forms are filled in by people.">
           <div className="flex flex-wrap items-center gap-3 text-[14px]">
             {protectedForms ? <StatusPill tone="published">On</StatusPill> : <StatusPill tone="warning">Off</StatusPill>}
@@ -66,6 +66,6 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
           </div>
         </Card>
       </div>
-    </>
+    </div>
   );
 }

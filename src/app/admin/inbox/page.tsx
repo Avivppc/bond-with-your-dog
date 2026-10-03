@@ -8,6 +8,8 @@ import { Pagination } from "../_components/list-kit";
 import { InboxItem, type SupportRequestRow } from "./InboxItem";
 import { signStoryPhotos } from "./story-photos";
 
+export const metadata = { title: "Inbox" };
+
 export const dynamic = "force-dynamic";
 
 const PER_PAGE = 20;

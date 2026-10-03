@@ -7,6 +7,8 @@ import { BTN_PRIMARY, Card, EmptyState, PageHeader, StatusPill, TABLE, TD, TH, T
 import { StatCard } from "../_components/list-kit";
 import { loadPricingStats } from "./sales-data";
 
+export const metadata = { title: "Offers" };
+
 export const dynamic = "force-dynamic";
 
 interface OfferRow extends PricedOffer {

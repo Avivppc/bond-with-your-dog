@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { pageWindow } from "@/lib/admin-helpers/pagination";
 import { EmptyState, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
@@ -44,7 +45,15 @@ export async function EmailOnlyContacts({ q, page }: { q: string; page: number }
       {result.failed ? (
         <EmptyState title="Contacts couldn't be loaded.">Please refresh the page.</EmptyState>
       ) : result.rows.length === 0 ? (
-        <EmptyState title={q ? "No contacts match your search." : "No email-only contacts yet."}>{!q && "Import a CSV from Contacts → Import."}</EmptyState>
+        <EmptyState title={q ? "No contacts match your search." : "No email-only contacts yet."}>{!q && (
+            <>
+              Import a CSV from{" "}
+              <Link href="/admin/people/import" className="font-medium text-[#1a1a19] underline">
+                Contacts → Import
+              </Link>
+              .
+            </>
+          )}</EmptyState>
       ) : (
         <div className="relative overflow-x-auto">
           <table className={TABLE}>

@@ -77,7 +77,7 @@ export function EditorShell({ title, status, device, onDevice, actions, panel, p
         <button type="button" className="flex h-8 w-8 items-center justify-center rounded-full hover:bg-[#f3f3f2] md:hidden" onClick={() => setPanelOpen((o) => !o)} aria-label="Show or hide the panel">
           <span className="material-symbols-outlined text-[20px]">{panelOpen ? "visibility" : "tune"}</span>
         </button>
-        <div className="min-w-0 flex-1 truncate text-[14px] font-medium">{title}</div>
+        <h1 className="min-w-0 flex-1 truncate text-[14px] font-medium">{title}</h1>
         <span className={`hidden text-[12px] sm:inline ${STATUS_TONE[status]}`} role="status">
           {STATUS_TEXT[status]}
         </span>

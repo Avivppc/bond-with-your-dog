@@ -57,13 +57,13 @@ export default async function InsightsPage() {
 
   return (
     <>
-      <PageHeader title="Insights" description="Your contacts at a glance: members, quiz leads, customers and email subscribers." />
+      <PageHeader title="Insights" description="Your contacts at a glance: members, leads (quiz and imported), customers and email subscribers." />
       {!data ? (
         <Notice tone="error">Couldn&apos;t load the numbers. Refresh to try again.</Notice>
       ) : (
         <div className="flex flex-col gap-6">
           <section aria-label="Contacts" className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <StatCard icon="group" label="Contacts" value={String(data.contacts.total)} hint={`${data.contacts.members} members · ${data.contacts.leads} quiz leads`} href="/admin/people" />
+            <StatCard icon="group" label="Contacts" value={String(data.contacts.total)} hint={`${data.contacts.members} members · ${data.contacts.leads} without an account`} href="/admin/people" />
             <StatCard icon="person_add" label="New contacts (30 days)" value={String(data.contacts.new30)} hint={trend(data.contacts.new30, data.contacts.newPrev30)} />
             <StatCard icon="shopping_bag" label="Customers" value={String(data.customers.total)} hint={`${share(data.customers.total, data.contacts.members)} of members have a chapter`} href="/admin/people?segment=students" />
             <StatCard icon="trending_up" label="New customers (30 days)" value={String(data.customers.new30)} hint={trend(data.customers.new30, data.customers.newPrev30)} />

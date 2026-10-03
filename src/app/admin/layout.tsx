@@ -7,7 +7,7 @@ import { AdminTopBar } from "./_components/AdminTopBar";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: { absolute: "Bonded Academy · Admin" }, robots: { index: false, follow: false } };
+export const metadata = { title: { default: "Bonded Academy · Admin", template: "%s · Admin" }, robots: { index: false, follow: false } };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-admin" });
 

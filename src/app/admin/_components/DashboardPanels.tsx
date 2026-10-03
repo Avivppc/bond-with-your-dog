@@ -110,7 +110,7 @@ export async function NeedsAttention({ canSell }: { canSell: boolean }) {
 
 /** Fetch more rows than we show: bursts (a member finishing 7 lessons) fold into one line. */
 const ACTIVITY_ROWS = 100;
-const ACTIVITY_SHOWN = 12;
+const ACTIVITY_SHOWN = 8;
 
 export async function RecentActivity() {
   const rows = await recentActivityRows(ACTIVITY_ROWS);

@@ -28,7 +28,8 @@ export function PublishToggle({ published, onChange, disabled, label }: PublishT
       trigger={
         <>
           {published && <span aria-hidden>✓</span>}
-          {published ? "Published" : "Draft"}
+          {/* Phones show only the ✓ (or "Draft"), so lesson titles keep their room. */}
+          <span className={published ? "max-sm:sr-only" : undefined}>{published ? "Published" : "Draft"}</span>
           <span aria-hidden className="material-symbols-outlined text-[16px] leading-none">
             expand_more
           </span>

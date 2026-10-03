@@ -17,7 +17,7 @@ export default async function NotificationSettingsPage({ searchParams }: { searc
   const recipient = teamRecipient(settings.teamEmail, process.env.COACH_INBOX);
 
   return (
-    <>
+    <div className="space-y-5">
       <PageHeader title="Notifications" description="Get an email when something needs the team. Everything also shows on the dashboard and the bell." />
       {saved && <Notice tone="success">Notification settings saved.</Notice>}
       {typeof error === "string" && <Notice tone="error">{error}</Notice>}
@@ -63,6 +63,6 @@ export default async function NotificationSettingsPage({ searchParams }: { searc
           </button>
         </div>
       </form>
-    </>
+    </div>
   );
 }

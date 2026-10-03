@@ -11,6 +11,8 @@ import { CoursesSection, OrdersSection, TeamSection } from "./AccessSections";
 import { NotesSection } from "./NotesSection";
 import { TagsSection } from "./TagsSection";
 
+export const metadata = { title: "Contact" };
+
 export const dynamic = "force-dynamic";
 
 const UserId = z.string().uuid();

@@ -10,6 +10,8 @@ import { BULK_FORM_ID, BulkBar, SelectAllBox } from "./BulkBar";
 import { loadOfferOptions } from "./_lib/person-data";
 import { loadPeople, parseSegment, PEOPLE_PER_PAGE, SEGMENTS, type PeoplePage, type PersonRow, type Segment } from "./_lib/people-data";
 
+export const metadata = { title: "Contacts" };
+
 export const dynamic = "force-dynamic";
 
 const MAX_SEARCH = 100;
@@ -35,21 +37,22 @@ function ContactRow({ person }: { person: PersonRow }) {
           <Avatar name={name} src={person.avatarUrl} />
           <span className="min-w-0">
             <span className="block truncate">{name}</span>
+            <span className="block truncate text-[12px] font-normal text-[#6c6a69] md:hidden">{person.email}</span>
             {person.staffRole && <span className="text-[12px] font-normal capitalize text-[#6c6a69]">{person.staffRole}</span>}
           </span>
         </Link>
       </td>
-      <td className={`${TD} text-[#3d3c3a]`}>{person.email}</td>
-      <td className={TD}>
+      <td className={`${TD} text-[#3d3c3a] max-md:hidden`}>{person.email}</td>
+      <td className={`${TD} max-md:hidden`}>
         {person.marketingOptIn ? (
           <span className="rounded-full bg-[#e3f5e8] px-2.5 py-0.5 text-[12px] font-medium text-[#1c6b35]">Subscribed</span>
         ) : (
           <span className="text-[#9b9997]">Not subscribed</span>
         )}
       </td>
-      <td className={`${TD} whitespace-nowrap tabular-nums`}>{formatAmounts(person.lifetimeValue)}</td>
-      <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(person.createdAt)}</td>
-      <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{person.lastSignInAt ? shortDate(person.lastSignInAt) : "Never signed in"}</td>
+      <td className={`${TD} whitespace-nowrap tabular-nums max-md:hidden`}>{formatAmounts(person.lifetimeValue)}</td>
+      <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-lg:hidden`}>{shortDate(person.createdAt)}</td>
+      <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-lg:hidden`}>{person.lastSignInAt ? shortDate(person.lastSignInAt) : "Never signed in"}</td>
       <td className={`${TD} text-right`}>
         <OptionsMenu label={`Options for ${person.email}`}>
           <Link href={href} className={MENU_ITEM}>
@@ -144,11 +147,11 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
                     <SelectAllBox />
                   </th>
                   <th className={TH}>Name</th>
-                  <th className={TH}>Email</th>
-                  <th className={TH}>Email marketing</th>
-                  <th className={TH}>Lifetime value</th>
-                  <th className={TH}>Added date</th>
-                  <th className={TH}>Last activity</th>
+                  <th className={`${TH} max-md:hidden`}>Email</th>
+                  <th className={`${TH} max-md:hidden`}>Email marketing</th>
+                  <th className={`${TH} max-md:hidden`}>Lifetime value</th>
+                  <th className={`${TH} max-lg:hidden`}>Added date</th>
+                  <th className={`${TH} max-lg:hidden`}>Last activity</th>
                   <th className={TH}>
                     <span className="sr-only">Options</span>
                   </th>

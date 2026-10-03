@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { SoonLink } from "@/components/app/SoonLink";
 import type { SkillLevel } from "@/lib/member/viewer";
 import { dateLabel, type SkillMilestone } from "@/lib/practice/skill-history";

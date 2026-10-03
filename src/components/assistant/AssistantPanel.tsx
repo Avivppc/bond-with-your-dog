@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from "react";
 import { MESSAGE_MAX_CHARS, type AssistantMode } from "@/lib/assistant/types";
 import { useAssistantChat, type ChatBubble, type Handoff } from "./useAssistantChat";
@@ -33,7 +34,7 @@ function Bubble({ bubble }: { bubble: ChatBubble }) {
   );
 }
 
-function HandoffNote({ handoff, mode, lessonId }: { handoff: Handoff; mode: AssistantMode; lessonId?: string }) {
+function HandoffNote({ handoff, mode }: { handoff: Handoff; mode: AssistantMode }) {
   if (mode !== "member") return null;
   return (
     <div className="rounded-xl bg-tertiary-container/30 px-3.5 py-2.5 text-[13.5px] text-on-surface" role="note">
@@ -43,9 +44,9 @@ function HandoffNote({ handoff, mode, lessonId }: { handoff: Handoff; mode: Assi
       ) : (
         <>
           This one is best for Roni.{" "}
-          <a className="font-semibold underline" href="/help#ask">
+          <Link className="font-semibold underline" href="/help#ask">
             Ask her in Help
-          </a>{" "}
+          </Link>{" "}
           or send her a video.
         </>
       )}
@@ -102,7 +103,7 @@ export default function AssistantPanel({ mode, lessonId, page, title, intro, var
         )}
       </div>
 
-      {handoff && <HandoffNote handoff={handoff} mode={mode} lessonId={lessonId} />}
+      {handoff && <HandoffNote handoff={handoff} mode={mode} />}
       {error && (
         <p className="text-[13.5px] font-medium text-error" role="alert">
           {error}

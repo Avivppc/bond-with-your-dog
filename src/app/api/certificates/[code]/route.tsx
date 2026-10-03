@@ -6,7 +6,6 @@ import {
   View,
   StyleSheet,
   renderToStream,
-  Font,
 } from "@react-pdf/renderer";
 import { createClient } from "@/lib/supabase/server";
 

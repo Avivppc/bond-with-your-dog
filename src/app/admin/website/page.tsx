@@ -60,9 +60,9 @@ export default async function WebsitePage({ searchParams }: { searchParams: Prom
             <thead className={THEAD}>
               <tr>
                 <th className={TH}>Page</th>
-                <th className={TH}>Address</th>
+                <th className={`${TH} max-md:hidden`}>Address</th>
                 <th className={TH}>Status</th>
-                <th className={TH}>Last edited</th>
+                <th className={`${TH} max-md:hidden`}>Last edited</th>
                 <th className={TH}>
                   <span className="sr-only">Actions</span>
                 </th>
@@ -74,12 +74,15 @@ export default async function WebsitePage({ searchParams }: { searchParams: Prom
                 const st = statusOf(row);
                 return (
                   <tr key={p.key} className={TROW}>
-                    <td className={`${TD} font-medium`}>{row?.title ?? p.title}</td>
-                    <td className={`${TD} text-[#6c6a69]`}>/{p.slug}</td>
+                    <td className={`${TD} font-medium`}>
+                      {row?.title ?? p.title}
+                      <span className="block text-[12px] font-normal text-[#6c6a69] md:hidden">/{p.slug}</span>
+                    </td>
+                    <td className={`${TD} text-[#6c6a69] max-md:hidden`}>/{p.slug}</td>
                     <td className={TD}>
                       <StatusPill tone={st.tone}>{st.label}</StatusPill>
                     </td>
-                    <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{row ? shortDate(row.updated_at) : "Never"}</td>
+                    <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-md:hidden`}>{row ? shortDate(row.updated_at) : "Never"}</td>
                     <td className={`${TD} text-right`}>
                       <form action={openSystemPage}>
                         <input type="hidden" name="key" value={p.key} />
@@ -95,12 +98,15 @@ export default async function WebsitePage({ searchParams }: { searchParams: Prom
                 const st = statusOf(row);
                 return (
                   <tr key={row.id} className={TROW}>
-                    <td className={`${TD} font-medium`}>{row.title}</td>
-                    <td className={`${TD} text-[#6c6a69]`}>/{row.slug}</td>
+                    <td className={`${TD} font-medium`}>
+                      {row.title}
+                      <span className="block text-[12px] font-normal text-[#6c6a69] md:hidden">/{row.slug}</span>
+                    </td>
+                    <td className={`${TD} text-[#6c6a69] max-md:hidden`}>/{row.slug}</td>
                     <td className={TD}>
                       <StatusPill tone={st.tone}>{st.label}</StatusPill>
                     </td>
-                    <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(row.updated_at)}</td>
+                    <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-md:hidden`}>{shortDate(row.updated_at)}</td>
                     <td className={`${TD} text-right`}>
                       <div className="flex items-center justify-end gap-3">
                         <Link href={`/site-editor/${row.id}`} className="text-[14px] font-medium hover:underline">
