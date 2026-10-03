@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
+import { pushSoon } from "@/lib/push/server";
 import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { notifyMemberByEmail } from "@/lib/feedback/notify-email";
@@ -114,6 +115,7 @@ export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioR
     return fail("The feedback didn't send. Please try again.");
   }
   if (!updated?.length) return fail("Someone on the team just sent this. Reload to see their feedback.");
+  if (firstSend) pushSoon(video.user_id as string);
   const email = firstSend
     ? await notifyMemberByEmail(sb, video.user_id as string, {
         subject: `Roni replied to your ${video.title} video`,
@@ -150,6 +152,7 @@ export async function replyAsStaff(input: z.input<typeof Reply>): Promise<Studio
     href: `/feedback/${videoId}`,
   });
   if (notifyError) console.error("[studio] reply notification failed", { videoId, error: notifyError.message });
+  else pushSoon(video.user_id as string);
   const email = await notifyMemberByEmail(sb, video.user_id as string, {
     subject: `Roni answered you about ${video.title}`,
     lead: body,

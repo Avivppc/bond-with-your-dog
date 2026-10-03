@@ -30,6 +30,19 @@ const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   // Reverse proxy for PostHog (US cloud). The path must match POSTHOG_PROXY_PATH
   // in src/instrumentation-client.ts.
+  // The service worker must always be fresh and may only run our own scripts.
+  async headers() {
+    return [
+      {
+        source: "/sw.js",
+        headers: [
+          { key: "Content-Type", value: "application/javascript; charset=utf-8" },
+          { key: "Cache-Control", value: "no-cache, no-store, must-revalidate" },
+          { key: "Content-Security-Policy", value: "default-src 'self'; script-src 'self'" },
+        ],
+      },
+    ];
+  },
   async rewrites() {
     return [
       { source: "/tails/static/:path*", destination: "https://us-assets.i.posthog.com/static/:path*" },

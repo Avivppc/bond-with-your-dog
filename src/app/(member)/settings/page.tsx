@@ -6,6 +6,8 @@ import { SwitchRow } from "./SwitchRow";
 import { TimeZoneRow } from "./TimeZoneRow";
 import { SignInCard } from "./SignInCard";
 import { DataCard } from "./DataCard";
+import { PhoneNotificationsCard } from "./PhoneNotificationsCard";
+import { pushConfig } from "@/lib/push/server";
 
 export const metadata = { title: "Settings & privacy" };
 
@@ -36,6 +38,7 @@ export default async function SettingsPage() {
           </div>
         </div>
         <div className="stack-lg">
+          <PhoneNotificationsCard publicKey={pushConfig()?.publicKey ?? null} />
           <SignInCard email={viewer.email} hasGoogle={providers.has("google")} hasPassword={providers.has("email")} />
           <DataCard />
         </div>

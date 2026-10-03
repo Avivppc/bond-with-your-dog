@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { pushSoon } from "@/lib/push/server";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { parsePage } from "@/lib/admin-helpers/pagination";
 import { inboxHref, parseInboxStatus, parseInboxTab } from "@/lib/admin-helpers/inbox";
@@ -56,6 +57,7 @@ export async function answerRequest(formData: FormData): Promise<void> {
     back(formData, { error: "Could not save the answer." });
   }
 
+  pushSoon(request.user_id);
   const to = await memberEmail(request.user_id);
   const emailed =
     to !== null &&

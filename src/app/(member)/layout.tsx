@@ -8,6 +8,7 @@ import { Topbar } from "@/components/app/Topbar";
 import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
 import { MemberBanners } from "@/components/app/MemberBanners";
 import { MemberPreviewBridge } from "@/components/app/MemberPreviewBridge";
+import { RegisterServiceWorker } from "@/components/app/RegisterServiceWorker";
 import { loadMemberArea } from "@/lib/member-area/server";
 import { activeBanners, memberCss, memberFontsHref, memberNav } from "@/lib/member-area/settings";
 import { loadLiveTheme } from "@/lib/site/server";
@@ -73,6 +74,7 @@ export default async function MemberLayout({ children }: { children: React.React
       </div>
       <Tabbar tabs={nav.tabs} />
       {!viewer.profile.timezone && <TimeZoneCapture />}
+      {!preview && <RegisterServiceWorker />}
       {preview && <MemberPreviewBridge />}
       {/* The tour would cover the screen in the editor's preview. */}
       {!preview && (

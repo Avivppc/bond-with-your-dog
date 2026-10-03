@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminNav } from "@/lib/admin-nav";
 import { flattenHits, navHits, SEARCH_MAX_LENGTH, searchTerm, type SearchGroup } from "@/lib/admin-search";
@@ -8,7 +8,6 @@ import { adminSearch } from "./search-actions";
 
 const DEBOUNCE_MS = 200;
 
-const noSubscribe = () => () => {};
 const shortcutLabel = () => (/Mac|iPhone|iPad/.test(navigator.platform) ? "⌘K" : "Ctrl K");
 
 /**
@@ -21,7 +20,7 @@ export function CommandSearch({ nav }: { nav: AdminNav }) {
   const [query, setQuery] = useState("");
   const [remote, setRemote] = useState<{ term: string; groups: SearchGroup[] } | null>(null);
   const [active, setActive] = useState(0);
-  const shortcut = useSyncExternalStore(noSubscribe, shortcutLabel, () => "Ctrl K");
+  const [shortcut, setShortcut] = useState("Ctrl K");
   const trigger = useRef<HTMLButtonElement>(null);
   const latest = useRef(0);
   const term = searchTerm(query);
@@ -34,6 +33,8 @@ export function CommandSearch({ nav }: { nav: AdminNav }) {
   }, [nav, query, remote, term]);
 
   useEffect(() => {
+    // After hydration: the server can't know the keyboard.
+    void Promise.resolve().then(() => setShortcut(shortcutLabel()));
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
