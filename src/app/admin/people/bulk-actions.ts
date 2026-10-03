@@ -26,11 +26,17 @@ const Bulk = z.object({
 
 /** Only back to the contacts list (with its filters), never anywhere else. */
 function backTo(returnTo: string | undefined, params: Record<string, string>): never {
-  const base = returnTo?.startsWith("/admin/people") && !returnTo.startsWith("/admin/people/") ? returnTo : "/admin/people";
-  const url = new URL(base, "http://x");
-  ["ok", "error"].forEach((k) => url.searchParams.delete(k));
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  redirect(`${url.pathname}${url.search}`);
+  // Only the list's filters are kept from what the form sent; the path is always ours.
+  let search = new URLSearchParams();
+  try {
+    const url = new URL(returnTo ?? "", "http://x");
+    if (url.pathname === "/admin/people") search = url.searchParams;
+  } catch {
+    // Not a URL: start from the plain list.
+  }
+  ["ok", "error"].forEach((k) => search.delete(k));
+  Object.entries(params).forEach(([k, v]) => search.set(k, v));
+  redirect(`/admin/people?${search.toString()}`);
 }
 
 async function emailsOf(ids: readonly string[]): Promise<{ id: string; email: string }[]> {

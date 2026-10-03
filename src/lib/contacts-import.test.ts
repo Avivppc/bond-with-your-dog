@@ -46,17 +46,27 @@ describe("guessMapping", () => {
 });
 
 describe("readConsent", () => {
-  test("reads yes/no words and leaves anything else unknown", () => {
-    expect(readConsent("TRUE", "Subscribed")).toBe(true);
-    expect(readConsent("yes", "Newsletter")).toBe(true);
-    expect(readConsent("Unsubscribed", "Status")).toBe(false);
-    expect(readConsent("", "Subscribed")).toBeNull();
-    expect(readConsent("maybe", "Subscribed")).toBeNull();
+  const yes = { subscribed: true, unsubscribed: false };
+  const no = { subscribed: false, unsubscribed: false };
+  const out = { subscribed: false, unsubscribed: true };
+  const unknown = { subscribed: null, unsubscribed: false };
+
+  test("reads yes and no, and leaves anything else unknown", () => {
+    expect(readConsent("TRUE", "Subscribed")).toEqual(yes);
+    expect(readConsent("yes", "Newsletter")).toEqual(yes);
+    expect(readConsent("no", "Subscribed")).toEqual(no);
+    expect(readConsent("", "Subscribed")).toEqual(unknown);
+    expect(readConsent("maybe", "Subscribed")).toEqual(unknown);
   });
 
-  test("flips for an Unsubscribed or opt-out column", () => {
-    expect(readConsent("true", "Unsubscribed")).toBe(false);
-    expect(readConsent("false", "Opted out")).toBe(true);
+  test("tells an explicit opt-out apart from a plain no", () => {
+    expect(readConsent("Unsubscribed", "Status")).toEqual(out);
+    expect(readConsent("opted out", "Newsletter")).toEqual(out);
+  });
+
+  test("in an Unsubscribed or opt-out column, yes is an opt-out and no says nothing about consent", () => {
+    expect(readConsent("true", "Unsubscribed")).toEqual(out);
+    expect(readConsent("false", "Opted out")).toEqual(unknown);
   });
 });
 
@@ -77,8 +87,8 @@ describe("buildImport", () => {
     ];
     const built = buildImport(headers, data, mapping, ["Kajabi Import"]);
     expect(built.rows).toEqual([
-      { email: "jane@x.dev", name: "Jane", subscribed: true, tags: ["puppy", "kajabi import"] },
-      { email: "bob@x.dev", name: "Bob", subscribed: null, tags: ["kajabi import"] },
+      { email: "jane@x.dev", name: "Jane", subscribed: true, unsubscribed: false, tags: ["puppy", "kajabi import"] },
+      { email: "bob@x.dev", name: "Bob", subscribed: null, unsubscribed: false, tags: ["kajabi import"] },
     ]);
     expect(built.invalidLines).toEqual([3]);
     expect(built.duplicates).toBe(1);

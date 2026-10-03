@@ -22,13 +22,14 @@ interface Totals {
   updated: number;
   members: number;
   tagsAdded: number;
+  unsubscribed: number;
   granted: number;
   waiting: number;
   failed: { email: string; reason: string }[];
   error: string | null;
 }
 
-const ZERO: Totals = { done: 0, created: 0, updated: 0, members: 0, tagsAdded: 0, granted: 0, waiting: 0, failed: [], error: null };
+const ZERO: Totals = { done: 0, created: 0, updated: 0, members: 0, tagsAdded: 0, unsubscribed: 0, granted: 0, waiting: 0, failed: [], error: null };
 
 function addUp(t: Totals, r: ImportBatchResult, size: number): Totals {
   return {
@@ -37,6 +38,7 @@ function addUp(t: Totals, r: ImportBatchResult, size: number): Totals {
     updated: t.updated + r.updated,
     members: t.members + r.members,
     tagsAdded: t.tagsAdded + r.tagsAdded,
+    unsubscribed: t.unsubscribed + r.unsubscribed,
     granted: t.granted + r.granted,
     waiting: t.waiting + r.waiting,
     failed: [...t.failed, ...r.failed],
@@ -45,7 +47,8 @@ function addUp(t: Totals, r: ImportBatchResult, size: number): Totals {
 }
 
 const plural = (n: number, word: string) => `${n.toLocaleString("en-US")} ${word}${n === 1 ? "" : "s"}`;
-const consentText = (v: boolean | null) => (v === null ? "Keep as is" : v ? "Subscribed" : "Not subscribed");
+const consentText = (r: { subscribed: boolean | null; unsubscribed: boolean }) =>
+  r.unsubscribed ? "Unsubscribed" : r.subscribed === null ? "Keep as is" : r.subscribed ? "Subscribed" : "Not subscribed";
 
 /** Contacts → Import: CSV in, contacts (with consent and tags, optionally an offer) out. */
 export function ImportWizard({ offers }: { offers: { id: string; title: string }[] }) {
@@ -81,7 +84,7 @@ export function ImportWizard({ offers }: { offers: { id: string; title: string }
     for (let i = 0; i < built.rows.length; i += IMPORT_BATCH) {
       const batch = built.rows.slice(i, i + IMPORT_BATCH);
       const result = await importContactsBatch({ rows: batch, offerId: offerId || null, days }).catch(
-        (): ImportBatchResult => ({ ok: false, error: "The connection dropped. Run the import again; nothing is duplicated.", created: 0, updated: 0, members: 0, tagsAdded: 0, granted: 0, waiting: 0, failed: [] }),
+        (): ImportBatchResult => ({ ok: false, error: "The connection dropped. Run the import again; nothing is duplicated.", created: 0, updated: 0, members: 0, tagsAdded: 0, unsubscribed: 0, granted: 0, waiting: 0, failed: [] }),
       );
       t = addUp(t, result, batch.length);
       setTotals(t);
@@ -137,7 +140,8 @@ export function ImportWizard({ offers }: { offers: { id: string; title: string }
           ))}
         </div>
         <p className={`mt-3 text-[12px] ${MUTED}`}>
-          Newsletter consent: only import it if these people agreed to marketing email. Empty cells keep what we already have. Unsubscribes are always kept.
+          Newsletter consent: only import it if these people agreed to marketing email. It applies to people without an account; members keep the choice
+          they made here. &quot;Unsubscribed&quot; in the file is recorded as an unsubscribe, and nobody who unsubscribed is ever emailed.
         </p>
       </Card>
 
@@ -194,7 +198,7 @@ export function ImportWizard({ offers }: { offers: { id: string; title: string }
                   <tr key={r.email} className={TROW}>
                     <td className={TD}>{r.email}</td>
                     <td className={TD}>{r.name ?? "—"}</td>
-                    <td className={TD}>{consentText(r.subscribed)}</td>
+                    <td className={TD}>{consentText(r)}</td>
                     <td className={TD}>{r.tags.join(", ") || "—"}</td>
                   </tr>
                 ))}
@@ -240,6 +244,11 @@ export function ImportWizard({ offers }: { offers: { id: string; title: string }
             <li>
               <b>{totals.tagsAdded.toLocaleString("en-US")}</b> tags added
             </li>
+            {totals.unsubscribed > 0 && (
+              <li>
+                <b>{totals.unsubscribed.toLocaleString("en-US")}</b> marked as unsubscribed (they won&apos;t get any email)
+              </li>
+            )}
             {offerId && (
               <li>
                 Offer: <b>{totals.granted}</b> got access now, <b>{totals.waiting}</b> get it when they sign up

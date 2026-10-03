@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { accessGrantedEmail, sendEmail } from "@/lib/email";
 import type { BillingEvent } from "./types";
 import { validatePayment } from "./validate-payment";
-import { notifyTeam } from "@/lib/notify-team";
+import { notifyTeamSafely } from "@/lib/notify-team";
 import { formatMoney } from "@/lib/pricing";
 
 /**
@@ -149,11 +149,14 @@ async function recordPayment(sb: Sb, row: LedgerRow): Promise<void> {
  * paid order re-applies the (idempotent) grant; refunded/canceled/failed orders never
  * get access. The access email is sent only on the pending → paid transition.
  */
+/** Never throws: the order is already paid and fulfilled when this runs. */
 async function notifyTeamOfPurchase(sb: Sb, userId: string, offerTitle: string, cents: number, currency: string): Promise<void> {
-  const { data } = await sb.auth.admin.getUserById(userId);
-  const who = data.user?.email ?? "A member";
-  const price = cents > 0 ? ` for ${formatMoney(cents, currency.toUpperCase())}` : " (free)";
-  await notifyTeam("orders", { subject: `New purchase: ${offerTitle}`, lines: [`${who} bought ${offerTitle}${price}.`], path: `/admin/people/${userId}` });
+  await notifyTeamSafely("orders", async () => {
+    const { data } = await sb.auth.admin.getUserById(userId);
+    const who = data.user?.email ?? "A member";
+    const price = cents > 0 ? ` for ${formatMoney(cents, currency.toUpperCase())}` : " (free)";
+    return { subject: `New purchase: ${offerTitle}`, lines: [`${who} bought ${offerTitle}${price}.`], path: `/admin/people/${userId}` };
+  });
 }
 
 export async function fulfillOrder(orderId: string, payment: FulfillmentPayment): Promise<void> {
@@ -220,10 +223,8 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     currency: order.currency,
     payment_method: payment.paymentMethod,
   });
-  if ((transitioned ?? []).length > 0) {
-    await notifyAccessGranted(order.user_id, order.offer_id);
-    await notifyTeamOfPurchase(sb, order.user_id, offer.title, payment.amountCents ?? order.amount_cents, order.currency);
-  }
+  const firstTimePaid = (transitioned ?? []).length > 0;
+  if (firstTimePaid) await notifyAccessGranted(order.user_id, order.offer_id);
 
   // Referral: converts a referred friend's first purchase / consumes a used reward. Idempotent, so a
   // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).
@@ -242,6 +243,9 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     // Only one open/paid order can hold a code (orders_one_per_code), so this should never happen.
     if (!redeemed?.length) console.error("[billing] discount code was already used by another order", { orderId: order.id, codeId: order.discount_code_id });
   }
+
+  // Last, once everything that matters is done; it never throws.
+  if (firstTimePaid) await notifyTeamOfPurchase(sb, order.user_id, offer.title, payment.amountCents ?? order.amount_cents, order.currency);
 }
 
 export async function applyBillingEvent(provider: string, event: BillingEvent): Promise<void> {

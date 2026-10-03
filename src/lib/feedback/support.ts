@@ -49,7 +49,8 @@ export async function submitSupport(
 
   const emailed = await notifyTeam("inbox", {
     subject: `[${input.kind === "bug" ? "Problem report" : "Question"}] ${input.subject ?? input.body.slice(0, 60)}`,
-    lines: [`From: ${fromEmail}`, input.pageUrl ? `Page: ${siteUrl()}${safePagePath(input.pageUrl) ?? ""}` : null, "", input.body],
+    lines: [`From: ${fromEmail}`, input.pageUrl ? `Page: ${siteUrl()}${safePagePath(input.pageUrl) ?? ""}` : null],
+    quoted: input.body,
     path: "/admin/inbox",
   });
   return { ok: true, id: data, emailed };

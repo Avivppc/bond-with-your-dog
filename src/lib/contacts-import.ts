@@ -44,17 +44,28 @@ export function guessMapping(headers: readonly string[]): ColumnMapping {
 }
 
 const YES = /^(true|yes|y|1|subscribed|opted in|opt-in|on|active)$/i;
-const NO = /^(false|no|n|0|unsubscribed|opted out|opt-out|off|inactive|never subscribed|not subscribed)$/i;
+const NO = /^(false|no|n|0|off|inactive|never subscribed|not subscribed)$/i;
+const OPTED_OUT = /^(unsubscribed|opted out|opt-out|opted-out)$/i;
+
+export interface Consent {
+  /** The newsletter choice: true / false, or null when the file doesn't say (keep what's saved). */
+  subscribed: boolean | null;
+  /** The person explicitly opted out in the source system (recorded as an unsubscribe). */
+  unsubscribed: boolean;
+}
 
 /**
- * A consent cell → true / false / null (unknown, keep what's saved). A column named like
- * "Unsubscribed" flips the meaning.
+ * A consent cell. "Unsubscribed"/"opted out" is an explicit opt-out, not just "no". In a column
+ * named like "Unsubscribed", yes means opted out and no tells us nothing about consent.
  */
-export function readConsent(cell: string, header: string): boolean | null {
+export function readConsent(cell: string, header: string): Consent {
   const value = cell.trim();
+  if (OPTED_OUT.test(value)) return { subscribed: false, unsubscribed: true };
   const flipped = /unsubscri|opt(ed)?[\s_-]?out/i.test(header);
-  const answer = YES.test(value) ? true : NO.test(value) ? false : null;
-  return answer === null ? null : flipped ? !answer : answer;
+  if (flipped) return YES.test(value) ? { subscribed: false, unsubscribed: true } : { subscribed: null, unsubscribed: false };
+  if (YES.test(value)) return { subscribed: true, unsubscribed: false };
+  if (NO.test(value)) return { subscribed: false, unsubscribed: false };
+  return { subscribed: null, unsubscribed: false };
 }
 
 /** "dog-dance, vip;Puppy Class" → ["dog-dance", "vip", "puppy class"], dropping what isn't a valid tag. */
@@ -66,6 +77,7 @@ export interface ImportRow {
   email: string;
   name: string | null;
   subscribed: boolean | null;
+  unsubscribed: boolean;
   tags: string[];
 }
 
@@ -106,8 +118,8 @@ export function buildImport(headers: readonly string[], data: readonly (readonly
     seen.add(email);
     const full = cellAt(row, mapping.name) || [cellAt(row, mapping.firstName), cellAt(row, mapping.lastName)].filter(Boolean).join(" ");
     const tags = [...new Set([...splitTags(cellAt(row, mapping.tags)), ...extra])];
-    const subscribed = mapping.subscribed === null ? null : readConsent(cellAt(row, mapping.subscribed), consentHeader);
-    rows.push({ email, name: full ? full.slice(0, MAX_NAME) : null, subscribed, tags });
+    const consent: Consent = mapping.subscribed === null ? { subscribed: null, unsubscribed: false } : readConsent(cellAt(row, mapping.subscribed), consentHeader);
+    rows.push({ email, name: full ? full.slice(0, MAX_NAME) : null, ...consent, tags });
   });
   return { rows, invalidLines, duplicates };
 }
@@ -120,5 +132,6 @@ export const importRowSchema = z.object({
   email: z.email().max(320),
   name: z.string().trim().max(MAX_NAME).nullable(),
   subscribed: z.boolean().nullable(),
+  unsubscribed: z.boolean(),
   tags: z.array(z.string().max(40)).max(30),
 });

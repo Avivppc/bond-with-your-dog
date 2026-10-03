@@ -26,7 +26,8 @@ export async function askLessonQuestion(input: z.input<typeof Ask>): Promise<Act
   const { data } = await supabase.auth.getUser();
   await notifyTeam("questions", {
     subject: "New lesson question",
-    lines: [`From: ${data.user?.email ?? "a member"}`, "", parsed.data.body],
+    lines: [`From: ${data.user?.email ?? "a member"}`],
+    quoted: parsed.data.body,
     path: "/admin/coaching/questions",
   });
   revalidatePath(`/learn/${parsed.data.courseId}/${parsed.data.lessonId}`);

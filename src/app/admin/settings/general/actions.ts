@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { siteSettingsForm, socialFromForm } from "@/lib/site-settings";
@@ -26,7 +26,7 @@ export async function saveSiteSettings(formData: FormData): Promise<void> {
     back({ error: "Couldn't save. Try again." });
   }
   // The footer is on every public page.
-  revalidateTag(SITE_SETTINGS_TAG, "max");
+  updateTag(SITE_SETTINGS_TAG);
   revalidatePath("/", "layout");
   back({ saved: "1" });
 }

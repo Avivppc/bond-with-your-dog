@@ -14,7 +14,9 @@ async function readSiteSettings(): Promise<SiteSettings> {
   return { academyName: data.academy_name, contactEmail: data.contact_email, social: readSocial(data.social) };
 }
 
-const cachedSiteSettings = unstable_cache(readSiteSettings, ["site-settings"], { tags: [SITE_SETTINGS_TAG] });
+/** Saving refreshes it at once; the hour is only a safety net if a page was built while the database was down. */
+const SAFETY_REFRESH_SECONDS = 3600;
+const cachedSiteSettings = unstable_cache(readSiteSettings, ["site-settings"], { tags: [SITE_SETTINGS_TAG], revalidate: SAFETY_REFRESH_SECONDS });
 
 async function withDefaults(read: () => Promise<SiteSettings>): Promise<SiteSettings> {
   try {
