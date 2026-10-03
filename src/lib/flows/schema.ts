@@ -101,10 +101,11 @@ export const audienceSchema = z
     kind: z.enum(["all_members", "owns_chapter", "not_owns_chapter", "completed_chapter", "inactive_practice", "quiz_leads", "everyone", "has_tag"]),
     courseId,
     days: z.number().int().min(1).max(365).optional(),
-    tag: z.string().max(40).optional(),
+    // Stored the way tags are stored ("VIP  Members" → "vip members"), so it matches.
+    tag: z.string().max(60).transform(normalizeTag).optional(),
   })
   .refine((a) => !["owns_chapter", "not_owns_chapter", "completed_chapter"].includes(a.kind) || Boolean(a.courseId), { message: "Pick the chapter for this audience." })
-  .refine((a) => a.kind !== "has_tag" || Boolean(normalizeTag(a.tag ?? "")), { message: "Type the tag for this audience." });
+  .refine((a) => a.kind !== "has_tag" || Boolean(a.tag), { message: "Type the tag for this audience." });
 
 export const campaignSchema = z.object({
   name: z.string().trim().min(1, "Give the campaign a name.").max(120),

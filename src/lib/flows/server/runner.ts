@@ -118,6 +118,8 @@ async function deliverEmail(
   action: Extract<RunAction, { kind: "send" | "skip" }>,
 ): Promise<DeliverOutcome> {
   const { flow, run, person, settings } = ctx;
+  // No postal address yet: wait on this step (not counted as a failed try).
+  if (action.kind === "send" && !hasPostalAddress(settings)) return { ...NOTHING, retry: true };
   const doc = emailDocFromNodeData(node.data);
   const base = { flow_id: flow.id, run_id: run.id, node_id: node.id, user_id: run.user_id, to_email: person.email ?? "", variant: action.kind === "send" ? action.variant : null };
   if (action.kind === "skip") {
@@ -253,12 +255,10 @@ export async function runFlows(sb: ServiceClient, now: Date = new Date(), starte
   for (const flow of live) summary.enrolled += await enrol(sb, flow, started);
   if (live.length === 0) return summary;
 
-  // Marketing email carries the sender settings, and never goes out without the postal address.
+  // Marketing email carries the sender settings, and never goes out without the postal address:
+  // people reaching an email step wait there until it's set (action steps still run).
   const settings = await loadEmailSettings(sb);
-  if (!hasPostalAddress(settings)) {
-    console.error("[flows] no postal address in Settings → Email; runs wait until it's set");
-    return { ...summary, ok: false };
-  }
+  if (!hasPostalAddress(settings)) console.error("[flows] no postal address in Settings → Email; email steps wait until it's set");
 
   const { data: runs, error: runsError } = await sb
     .from("email_flow_runs")

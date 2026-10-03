@@ -30,7 +30,7 @@ export const ACTION_LABEL: Record<ActionKind, string> = {
 
 export const ACTION_HINT: Record<ActionKind, string> = {
   grant_chapter: "Opens a chapter for the member (members only; quiz leads are skipped).",
-  revoke_chapter: "Closes a chapter this flow gave. Purchased access is never taken back.",
+  revoke_chapter: "Closes a chapter this same flow gave. Purchases and other access are never taken back.",
   add_tag: "Labels the contact, e.g. vip. Campaigns can go to a tag.",
   remove_tag: "Takes a label off the contact.",
   notify_team: "Emails the team inbox with a note about this person.",
@@ -46,12 +46,15 @@ export function normalizeTag(raw: string): string {
   return TAG_RE.test(tag) ? tag : "";
 }
 
-const PRIVATE_HOSTS = /^(localhost|.*\.localhost|.*\.local|.*\.internal|metadata\.google\.internal)$/i;
+const PRIVATE_SUFFIXES = /(^|\.)(localhost|local|internal|intranet|lan|corp|home|home\.arpa|private|localdomain)$/i;
 const IPV4 = /^\d{1,3}(\.\d{1,3}){3}$/;
+/** Hosts written as a bare number (2130706433 = 127.0.0.1) or in hex. */
+const NUMERIC_HOST = /^(0x[0-9a-f]+|\d+)$/i;
 
 /**
- * Webhooks go only to public https addresses named by a host (no IP literals, no localhost), so a
- * flow can't be pointed at the server's own network.
+ * Webhooks go only to public https addresses on port 443, named by a host (no IP literals, no
+ * internal names), so a flow can't be pointed at the server's own network. The runner also checks
+ * where the name resolves before sending (see isPrivateAddress).
  */
 export function isPublicHttpsUrl(raw: string): boolean {
   let url: URL;
@@ -61,9 +64,36 @@ export function isPublicHttpsUrl(raw: string): boolean {
     return false;
   }
   if (url.protocol !== "https:" || url.username || url.password) return false;
-  const host = url.hostname;
-  if (!host.includes(".") || PRIVATE_HOSTS.test(host) || IPV4.test(host) || host.startsWith("[")) return false;
+  if (url.port && url.port !== "443") return false;
+  const host = url.hostname.replace(/\.$/, "");
+  if (!host.includes(".") || PRIVATE_SUFFIXES.test(host) || IPV4.test(host) || NUMERIC_HOST.test(host) || host.startsWith("[")) return false;
   return true;
+}
+
+function ipv4Private(ip: string): boolean {
+  const [a, b] = ip.split(".").map(Number);
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 100 && b >= 64 && b <= 127) ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19)) ||
+    a >= 224
+  );
+}
+
+/** Whether a resolved address is anything but the public internet (loopback, private, link-local…). */
+export function isPrivateAddress(ip: string): boolean {
+  const addr = ip.toLowerCase();
+  if (IPV4.test(addr)) return ipv4Private(addr);
+  const mapped = addr.match(/^::ffff:(\d{1,3}(\.\d{1,3}){3})$/);
+  if (mapped) return ipv4Private(mapped[1]);
+  if (addr === "::" || addr === "::1") return true;
+  // fc00::/7 unique local, fe80::/10 link-local, ff00::/8 multicast.
+  return /^(f[cd][0-9a-f]{2}|fe[89ab][0-9a-f]|ff[0-9a-f]{2}):/.test(addr);
 }
 
 /** What keeps an action step from going live, in plain words. */

@@ -72,7 +72,19 @@ function batchKey(campaignId: string, batch: readonly QueuedMessage[]): string {
 }
 
 /** Sends one batch. ok: false means Resend took none of it; the messages stay queued for later. */
-async function sendBatch(sb: ServiceClient, campaign: CampaignRow, batch: readonly QueuedMessage[], settings: EmailSettings): Promise<{ sent: number; ok: boolean }> {
+/** Drops recipients who unsubscribed or withdrew consent since the campaign was queued. */
+async function stillMarketable(sb: ServiceClient, batch: readonly QueuedMessage[]): Promise<QueuedMessage[]> {
+  const { data, error } = await sb.rpc("marketable_messages", { p_message_ids: batch.map((m) => m.id) });
+  if (error) throw new Error(`consent check failed: ${error.message}`);
+  const allowed = new Set((data ?? []) as string[]);
+  const dropped = batch.filter((m) => !allowed.has(m.id)).map((m) => m.id);
+  if (dropped.length) await sb.from("email_messages").update({ status: "skipped" }).in("id", dropped);
+  return batch.filter((m) => allowed.has(m.id));
+}
+
+async function sendBatch(sb: ServiceClient, campaign: CampaignRow, queued: readonly QueuedMessage[], settings: EmailSettings): Promise<{ sent: number; ok: boolean }> {
+  const batch = await stillMarketable(sb, queued);
+  if (batch.length === 0) return { sent: 0, ok: true };
   const names = await namesFor(sb, batch.map((m) => m.user_id).filter((id): id is string => Boolean(id)));
   const doc = emailDocFromNodeData(campaign.email);
   const site = siteUrl();

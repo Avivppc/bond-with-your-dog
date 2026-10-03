@@ -14,9 +14,18 @@ export function turnstileEnabled(): boolean {
   return Boolean(process.env.TURNSTILE_SECRET_KEY);
 }
 
+let warnedMissing = false;
+
 export async function verifyTurnstile(token: string | null | undefined, remoteIp?: string | null): Promise<boolean> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return true;
+  if (!secret) {
+    // Open on purpose until the keys exist, but say so in production logs.
+    if (process.env.VERCEL_ENV === "production" && !warnedMissing) {
+      warnedMissing = true;
+      console.warn("[turnstile] TURNSTILE_SECRET_KEY is not set: public forms have no bot protection");
+    }
+    return true;
+  }
   if (!token || token.length > 2048) return false;
   try {
     const body = new URLSearchParams({ secret, response: token });

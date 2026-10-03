@@ -85,9 +85,16 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
         state = { ...state, lastEmailNodeId: node.id, waitUntil: null };
         break;
       }
-      case "action":
+      case "action": {
         actions.push({ kind: "act", nodeId: node.id });
+        // The facts were read before this action ran: let a following condition ask again next run.
+        const following = nextNodeId(graph, node.id);
+        if (following && findNode(graph, following)?.type === "condition") {
+          state = { ...state, nodeId: following };
+          return finish("active");
+        }
         break;
+      }
       case "condition": {
         const last = state.lastEmailNodeId;
         const yes =

@@ -1,7 +1,8 @@
 import "server-only";
 import { createHmac } from "node:crypto";
+import { lookup } from "node:dns/promises";
 import { sendEmail, siteUrl } from "@/lib/email";
-import { isPublicHttpsUrl, normalizeTag, type ActionData } from "../actions";
+import { isPrivateAddress, isPublicHttpsUrl, normalizeTag, type ActionData } from "../actions";
 import type { ActionNode } from "../graph";
 import { exactLike } from "../like";
 import type { ServiceClient } from "./data";
@@ -21,24 +22,20 @@ const WEBHOOK_TIMEOUT_MS = 8_000;
 const skipped = (detail: string): ActionOutcome => ({ status: "skipped", detail });
 const failed = (detail: string, permanent = false): ActionOutcome => ({ status: "failed", detail, permanent });
 
-async function grantChapter(sb: ServiceClient, run: RunRow, courseId: string): Promise<ActionOutcome> {
+/** A lifetime access grant from this flow (like any purchase or manual grant, so recomputes keep it). */
+async function grantChapter(sb: ServiceClient, flow: FlowRow, run: RunRow, courseId: string): Promise<ActionOutcome> {
   if (!run.user_id) return skipped("quiz leads have no account");
-  const { data: existing, error } = await sb.from("enrollments").select("id, access_level").eq("user_id", run.user_id).eq("course_id", courseId).maybeSingle();
+  const { data, error } = await sb.rpc("grant_flow_access", { p_user_id: run.user_id, p_course_id: courseId, p_flow_id: flow.id });
   if (error) return failed(error.message);
-  if (existing?.access_level === "full") return skipped("already has the chapter");
-  const write = existing
-    ? sb.from("enrollments").update({ access_level: "full", source: "flow", expires_at: null }).eq("id", existing.id)
-    : sb.from("enrollments").insert({ user_id: run.user_id, course_id: courseId, source: "flow", access_level: "full" });
-  const { error: writeError } = await write;
-  return writeError ? failed(writeError.message) : { status: "done" };
+  return data === "already" ? skipped("already has the chapter") : { status: "done" };
 }
 
-/** Only access a flow gave is taken back; purchased or granted-by-hand access stays. */
-async function revokeChapter(sb: ServiceClient, run: RunRow, courseId: string): Promise<ActionOutcome> {
+/** Takes back only what this flow gave; purchases and other grants stay. */
+async function revokeChapter(sb: ServiceClient, flow: FlowRow, run: RunRow, courseId: string): Promise<ActionOutcome> {
   if (!run.user_id) return skipped("quiz leads have no account");
-  const { data, error } = await sb.from("enrollments").delete().eq("user_id", run.user_id).eq("course_id", courseId).eq("source", "flow").select("id");
+  const { data, error } = await sb.rpc("revoke_flow_access", { p_user_id: run.user_id, p_course_id: courseId, p_flow_id: flow.id });
   if (error) return failed(error.message);
-  return data?.length ? { status: "done" } : skipped("no chapter from a flow to take back");
+  return data === "none" ? skipped("this flow gave no chapter to take back") : { status: "done" };
 }
 
 async function setTag(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Person, rawTag: string, add: boolean): Promise<ActionOutcome> {
@@ -73,7 +70,16 @@ async function notifyTeam(flow: FlowRow, person: Person, message: string, settin
 
 async function postWebhook(flow: FlowRow, run: RunRow, person: Person, node: ActionNode, url: string): Promise<ActionOutcome> {
   if (!isPublicHttpsUrl(url)) return failed("not a public https address", true);
+  // A public name can still point inside a network: check where it resolves right before sending.
+  try {
+    const addresses = await lookup(new URL(url).hostname, { all: true });
+    if (addresses.length === 0 || addresses.some((a) => isPrivateAddress(a.address))) return failed("the address points to a private network", true);
+  } catch (error: unknown) {
+    return failed(`couldn't resolve the address: ${error instanceof Error ? error.message : String(error)}`);
+  }
   const body = JSON.stringify({
+    // The same id on every retry of this step for this person, so receivers can ignore repeats.
+    id: `${run.id}:${node.id}`,
     event: "flow.step",
     flow: { id: flow.id, name: flow.name, trigger: flow.trigger },
     step: node.id,
@@ -99,9 +105,9 @@ export async function runAction(sb: ServiceClient, flow: FlowRow, run: RunRow, p
   const data: ActionData = node.data;
   switch (data.action) {
     case "grant_chapter":
-      return data.courseId ? grantChapter(sb, run, data.courseId) : failed("no chapter picked", true);
+      return data.courseId ? grantChapter(sb, flow, run, data.courseId) : failed("no chapter picked", true);
     case "revoke_chapter":
-      return data.courseId ? revokeChapter(sb, run, data.courseId) : failed("no chapter picked", true);
+      return data.courseId ? revokeChapter(sb, flow, run, data.courseId) : failed("no chapter picked", true);
     case "add_tag":
     case "remove_tag":
       return setTag(sb, flow, run, person, data.tag ?? "", data.action === "add_tag");

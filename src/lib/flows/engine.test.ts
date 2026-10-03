@@ -126,6 +126,28 @@ describe("planRun", () => {
     expect(plan.status).toBe("done");
   });
 
+  it("pauses after an action that a condition follows, so the condition sees what the action did", () => {
+    const graph: FlowGraph = {
+      nodes: [
+        { id: "t", type: "trigger", position: { x: 0, y: 0 }, data: {} },
+        { id: "a", type: "action", position: { x: 0, y: 0 }, data: { action: "add_tag", tag: "vip" } },
+        { id: "c", type: "condition", position: { x: 0, y: 0 }, data: { check: "has_tag", tag: "vip" } },
+        { id: "yes", type: "exit", position: { x: 0, y: 0 }, data: {} },
+        { id: "no", type: "exit", position: { x: 0, y: 0 }, data: {} },
+      ],
+      edges: [
+        { id: "1", source: "t", target: "a" },
+        { id: "2", source: "a", target: "c" },
+        { id: "3", source: "c", target: "yes", sourceHandle: "yes" },
+        { id: "4", source: "c", target: "no", sourceHandle: "no" },
+      ],
+    };
+    const plan = planRun(graph, start, facts(), NOW);
+    expect(plan).toMatchObject({ status: "active", actions: [{ kind: "act", nodeId: "a" }], state: { nodeId: "c" } });
+    // Next tick, with the tag in place, the condition answers yes.
+    expect(planRun(graph, plan.state, facts({ condition: (id) => id === "c" }), NOW)).toMatchObject({ status: "done", actions: [] });
+  });
+
   it("exits cleanly when the member's step was deleted from the flow", () => {
     expect(planRun(SAMPLE, { ...start, nodeId: "gone" }, facts(), NOW)).toMatchObject({ status: "exited", exitReason: "step_removed" });
   });
