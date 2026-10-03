@@ -21,6 +21,7 @@ import { metricSeries, staffFirstName } from "./_components/dashboard-data";
 import { BTN_PRIMARY, Card, EmptyState } from "./_components/ui";
 import { CourseTable } from "./_components/CourseTable";
 import { loadAdminCourses } from "./_components/course-stats";
+import { LastDayStrip, NeedsAttention, RecentActivity } from "./_components/DashboardPanels";
 
 export const dynamic = "force-dynamic";
 
@@ -93,6 +94,11 @@ export default async function AdminDashboardPage({ searchParams }: { searchParam
           <span aria-hidden>+</span> New product
         </Link>
       </header>
+      <LastDayStrip currency={ctx.currency} canSell={canSell} />
+      <div className={`grid grid-cols-1 gap-4 ${canSell ? "lg:grid-cols-2" : ""}`}>
+        <NeedsAttention canSell={canSell} />
+        {canSell && <RecentActivity />}
+      </div>
       {canSell && (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_280px]">
           <MetricCard ctx={ctx} rangeKey={rangeKey} metric={parseMetric(params.metric)} />

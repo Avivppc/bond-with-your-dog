@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { isAuthorizedCron } from "@/lib/reminders/cron-auth";
 import { runReminderJobs } from "@/lib/reminders/server/run";
+import { recordJobRun } from "@/lib/job-runs";
 
 // Vercel caps Hobby functions at 60 seconds.
 export const maxDuration = 60;
@@ -25,5 +26,6 @@ export async function GET(req: NextRequest) {
   }
 
   const summary = await runReminderJobs(sb);
+  await recordJobRun(sb, "reminders", summary.ok);
   return NextResponse.json(summary, { status: summary.ok ? 200 : 500 });
 }

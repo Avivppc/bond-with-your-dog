@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { isAuthorizedCron } from "@/lib/reminders/cron-auth";
 import { runFlows, TIME_BUDGET_MS } from "@/lib/flows/server/runner";
 import { sendDueCampaigns } from "@/lib/flows/server/campaigns";
+import { recordJobRun } from "@/lib/job-runs";
 
 // Vercel caps Hobby functions at 60 seconds.
 export const maxDuration = 60;
@@ -28,5 +29,6 @@ export async function GET(req: NextRequest) {
   const flows = await runFlows(sb, now, started);
   const campaigns = await sendDueCampaigns(sb, now, started + TIME_BUDGET_MS);
   const ok = flows.ok && campaigns.ok;
+  await recordJobRun(sb, "flows", ok, ok ? undefined : "Some steps or campaign emails didn't go through. They'll be retried.");
   return NextResponse.json({ ...flows, campaignEmails: campaigns.sent, ok }, { status: ok ? 200 : 500 });
 }
