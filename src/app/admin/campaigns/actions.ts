@@ -8,6 +8,7 @@ import { campaignStarterDoc } from "@/lib/email-blocks/defaults";
 import { emailHasContent } from "@/lib/flows/graph";
 import { audienceSchema, campaignSchema } from "@/lib/flows/schema";
 import { audienceSize, type Audience } from "@/lib/flows/server/campaigns";
+import { hasPostalAddress, loadEmailSettings, MISSING_ADDRESS_ERROR } from "@/lib/flows/server/email-settings";
 
 export type CampaignActionResult = { ok: true; message?: string } | { ok: false; error: string };
 
@@ -66,6 +67,7 @@ export async function scheduleCampaign(id: string, input: unknown, at: string | 
   if (!saved.ok) return saved;
   const parsed = campaignSchema.parse(input);
   if (!parsed.email.subject.trim() || !emailHasContent(parsed.email)) return { ok: false, error: "Add a subject and some content before sending." };
+  if (!hasPostalAddress(await loadEmailSettings(createServiceClient()))) return { ok: false, error: MISSING_ADDRESS_ERROR };
   const when = at ? new Date(at) : new Date();
   if (Number.isNaN(when.getTime())) return { ok: false, error: "Pick a valid date and time." };
   const { data, error } = await createServiceClient()

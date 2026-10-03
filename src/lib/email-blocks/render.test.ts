@@ -34,6 +34,18 @@ describe("renderEmailDoc names from forms", () => {
   });
 });
 
+describe("renderEmailDoc postal address", () => {
+  it("puts the business address in both footers, escaped", () => {
+    const out = renderEmailDoc(doc([]), { ...CTX, postalAddress: "Bonded Ltd, 1 <Dog> St\nTel Aviv, Israel" });
+    expect(out.html).toContain("Bonded Ltd, 1 &lt;Dog&gt; St<br>Tel Aviv, Israel");
+    expect(out.text).toContain("Bonded Ltd, 1 <Dog> St\nTel Aviv, Israel");
+  });
+
+  it("leaves it out when none is set", () => {
+    expect(renderEmailDoc(doc([]), CTX).html).not.toContain("Tel Aviv");
+  });
+});
+
 describe("renderEmailDoc frame", () => {
   it("fills the subject and preheader and keeps the branded frame", () => {
     const out = renderEmailDoc(doc([]), CTX);

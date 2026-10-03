@@ -18,7 +18,7 @@ describe("adminNavFor", () => {
       "Moves Library",
       "Community",
     ]);
-    expect(nav.main.find((e) => e.label === "Contacts")?.children?.map((c) => c.href)).toEqual(["/admin/people", "/admin/leads", "/admin/inbox"]);
+    expect(nav.main.find((e) => e.label === "Contacts")?.children?.map((c) => c.href)).toEqual(["/admin/people", "/admin/insights", "/admin/leads", "/admin/inbox"]);
     expect(nav.bottom.map((e) => e.label)).toEqual(["Settings", "View member app"]);
   });
 
@@ -26,10 +26,10 @@ describe("adminNavFor", () => {
     expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/home"]));
   });
 
-  it("hides Team from editors and drops the Settings group left empty", () => {
+  it("hides Team from editors but keeps the email settings they send with", () => {
     const nav = adminNavFor("editor");
     expect(hrefsOf("editor")).not.toContain("/admin/team");
-    expect(nav.bottom.map((e) => e.label)).toEqual(["View member app"]);
+    expect(nav.bottom.find((e) => e.label === "Settings")?.children?.map((c) => c.href)).toEqual(["/admin/settings/email"]);
     expect([...nav.main, ...nav.bottom].every((e) => (e.children ? e.children.length > 0 : Boolean(e.href)))).toBe(true);
   });
 });

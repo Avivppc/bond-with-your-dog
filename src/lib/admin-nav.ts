@@ -81,6 +81,7 @@ const MAIN: NavDef[] = [
     icon: "group",
     children: [
       { href: "/admin/people", label: "All Contacts", needs: "sales" },
+      { href: "/admin/insights", label: "Insights", needs: "sales" },
       { href: "/admin/leads", label: "Leads", needs: "sales" },
       { href: "/admin/inbox", label: "Inbox", needs: "sales" },
     ],
@@ -96,7 +97,14 @@ const MAIN: NavDef[] = [
 ];
 
 const BOTTOM: NavDef[] = [
-  { label: "Settings", icon: "settings", children: [{ href: "/admin/team", label: "Users & access", needs: "staff" }] },
+  {
+    label: "Settings",
+    icon: "settings",
+    children: [
+      { href: "/admin/team", label: "Users & access", needs: "staff" },
+      { href: "/admin/settings/email", label: "Email", needs: "sales" },
+    ],
+  },
   { label: "View member app", icon: "open_in_new", href: "/home", needs: "content" },
 ];
 

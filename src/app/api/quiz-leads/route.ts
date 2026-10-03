@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { TIER_RESULTS } from "@/lib/quiz/data";
+import { clientIp, verifyTurnstile } from "@/lib/turnstile";
 
 /**
  * Anyone can take the quiz, so this route sends email to an address a stranger typed. Keep it
@@ -19,6 +20,9 @@ const Body = z.object({
   tier: z.enum(["foundations", "moves", "letsDance"]),
   scores: z.record(z.string(), z.number()),
   answers: z.record(z.string(), z.enum(["A", "B", "C"])),
+  // The "email me tips and updates" box: without it they get only the result they asked for.
+  marketingOptIn: z.boolean().default(false),
+  captcha: z.string().max(2048).nullish(),
 });
 
 export async function POST(request: Request) {
@@ -28,7 +32,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid input" }, { status: 400 });
   }
 
-  const { firstName, email, tier, scores, answers } = parsed.data;
+  const { firstName, email, tier, scores, answers, marketingOptIn, captcha } = parsed.data;
+  if (!(await verifyTurnstile(captcha, clientIp(request.headers)))) {
+    return NextResponse.json({ error: "Please confirm you're not a robot and try again." }, { status: 403 });
+  }
   const result = TIER_RESULTS[tier];
 
   const supabase = await createClient();
@@ -38,6 +45,7 @@ export async function POST(request: Request) {
     tier,
     scores,
     answers,
+    marketing_opt_in: marketingOptIn,
   });
   if (dbError) {
     console.error("[quiz-leads] insert failed", dbError.message);

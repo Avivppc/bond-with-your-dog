@@ -135,9 +135,10 @@ async function conditionAnswers(sb: ServiceClient, flow: FlowRow, run: RunRow, n
 
 /** Everything the engine needs to decide this person's next steps. Throws when the data can't be read (the run waits). */
 export async function personFacts(sb: ServiceClient, flow: FlowRow, run: RunRow, recipient: string | null, timezone: string | null, now: Date): Promise<RunFacts> {
-  const [goal, unsubRes, msgRes, recentRes, answers] = await Promise.all([
+  const [goal, consentRes, msgRes, recentRes, answers] = await Promise.all([
     goalReached(sb, flow, run, now),
-    sb.rpc("is_unsubscribed", { p_user_id: run.user_id, p_email: recipient }),
+    // Marketing email needs consent (sign-up/settings box, or the quiz box) and no unsubscribe.
+    recipient ? sb.rpc("can_market", { p_user_id: run.user_id, p_email: recipient }) : Promise.resolve({ data: false, error: null }),
     sb.from("email_messages").select("node_id, opened_at, clicked_at").eq("run_id", run.id),
     flow.smart_sending_hours > 0 && recipient
       ? sb
@@ -149,13 +150,13 @@ export async function personFacts(sb: ServiceClient, flow: FlowRow, run: RunRow,
       : Promise.resolve({ count: 0, error: null }),
     conditionAnswers(sb, flow, run, now),
   ]);
-  if (unsubRes.error || msgRes.error || recentRes.error) {
-    throw new Error(`person facts unavailable: ${unsubRes.error?.message ?? msgRes.error?.message ?? recentRes.error?.message}`);
+  if (consentRes.error || msgRes.error || recentRes.error) {
+    throw new Error(`person facts unavailable: ${consentRes.error?.message ?? msgRes.error?.message ?? recentRes.error?.message}`);
   }
   const messages = msgRes.data ?? [];
   return {
     goalReached: goal,
-    unsubscribed: Boolean(unsubRes.data) || !recipient,
+    unsubscribed: consentRes.data !== true,
     recentlyEmailed: (recentRes.count ?? 0) > 0,
     holdUntil: flow.quiet_hours ? quietHoldUntil(now, timezone) : null,
     opened: (nodeId) => messages.some((m) => m.node_id === nodeId && m.opened_at),

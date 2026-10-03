@@ -11,6 +11,7 @@ import { flowSettingsSchema, parseEmailDoc, parseGraph, type FlowSettings } from
 import { FLOW_TEMPLATES } from "@/lib/flows/templates";
 import { normalizeParams } from "@/lib/flows/triggers";
 import { EXAMPLE_VARS } from "@/lib/flows/template";
+import { hasPostalAddress, loadEmailSettings, MISSING_ADDRESS_ERROR } from "@/lib/flows/server/email-settings";
 import { sendMarketingEmail, unsubscribeLinks } from "@/lib/flows/server/send";
 
 export type FlowActionResult = { ok: true; message?: string } | { ok: false; error: string; problems?: string[] };
@@ -127,6 +128,7 @@ export async function setFlowStatus(id: string, status: "live" | "paused"): Prom
   const { data: flow } = await sb.from("email_flows").select("graph, status, live_since").eq("id", id).maybeSingle();
   if (!flow) return { ok: false, error: "This flow no longer exists." };
   if (status === "live") {
+    if (!hasPostalAddress(await loadEmailSettings(sb))) return { ok: false, error: MISSING_ADDRESS_ERROR };
     const parsed = parseGraph(flow.graph);
     const problems = parsed.ok ? validateGraph(parsed.graph) : [parsed.error];
     if (problems.length) return { ok: false, error: "Finish these before going live:", problems };
@@ -158,9 +160,22 @@ export async function sendTestEmail(docInput: unknown): Promise<FlowActionResult
   if (!parsed.doc.subject.trim() || parsed.doc.blocks.length === 0) return { ok: false, error: "Add a subject and some content first." };
   if (!user.email) return { ok: false, error: "Your account has no email address." };
   const firstName = String(user.user_metadata?.full_name ?? "").split(/\s+/)[0] || EXAMPLE_VARS.first_name;
+  const settings = await loadEmailSettings(createServiceClient());
   const links = unsubscribeLinks({ userId: user.id, email: user.email });
-  const rendered = renderEmailDoc(parsed.doc, { siteUrl: siteUrl(), vars: { ...EXAMPLE_VARS, first_name: firstName }, unsubscribeUrl: links.page });
-  const result = await sendMarketingEmail({ to: user.email, subject: `[Test] ${rendered.subject}`, html: rendered.html, text: rendered.text, unsubscribe: links });
+  const rendered = renderEmailDoc(parsed.doc, {
+    siteUrl: siteUrl(),
+    vars: { ...EXAMPLE_VARS, first_name: firstName },
+    unsubscribeUrl: links.page,
+    postalAddress: settings.postalAddress,
+  });
+  const result = await sendMarketingEmail({
+    to: user.email,
+    subject: `[Test] ${rendered.subject}`,
+    html: rendered.html,
+    text: rendered.text,
+    unsubscribe: links,
+    sender: { name: settings.senderName, replyTo: settings.replyTo },
+  });
   if (!result.ok) return { ok: false, error: `Couldn't send: ${result.error}` };
   return { ok: true, message: `Test sent to ${user.email}.` };
 }

@@ -5,6 +5,7 @@ import { emailDocFromNodeData } from "@/lib/email-blocks/defaults";
 import { renderEmailDoc } from "@/lib/email-blocks/render";
 import type { EmailDoc } from "@/lib/email-blocks/types";
 import type { ServiceClient } from "./data";
+import { hasPostalAddress, loadEmailSettings, type EmailSettings } from "./email-settings";
 import { sendMarketingBatch, unsubscribeLinks } from "./send";
 
 /**
@@ -70,7 +71,7 @@ function batchKey(campaignId: string, batch: readonly QueuedMessage[]): string {
 }
 
 /** Sends one batch. ok: false means Resend took none of it; the messages stay queued for later. */
-async function sendBatch(sb: ServiceClient, campaign: CampaignRow, batch: readonly QueuedMessage[]): Promise<{ sent: number; ok: boolean }> {
+async function sendBatch(sb: ServiceClient, campaign: CampaignRow, batch: readonly QueuedMessage[], settings: EmailSettings): Promise<{ sent: number; ok: boolean }> {
   const names = await namesFor(sb, batch.map((m) => m.user_id).filter((id): id is string => Boolean(id)));
   const doc = emailDocFromNodeData(campaign.email);
   const site = siteUrl();
@@ -78,8 +79,8 @@ async function sendBatch(sb: ServiceClient, campaign: CampaignRow, batch: readon
     const name = m.user_id ? names.get(m.user_id) : undefined;
     const links = unsubscribeLinks({ userId: m.user_id, email: m.to_email });
     const appUrl = m.user_id ? `${site}/home` : `${site}/signup`;
-    const email = renderEmailDoc(doc, { siteUrl: site, vars: { first_name: name?.first ?? "", dog_name: name?.dog ?? "", app_url: appUrl, offer_url: appUrl }, unsubscribeUrl: links.page });
-    return { to: m.to_email, subject: email.subject, html: email.html, text: email.text, unsubscribe: links };
+    const email = renderEmailDoc(doc, { siteUrl: site, vars: { first_name: name?.first ?? "", dog_name: name?.dog ?? "", app_url: appUrl, offer_url: appUrl }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress });
+    return { to: m.to_email, subject: email.subject, html: email.html, text: email.text, unsubscribe: links, sender: { name: settings.senderName, replyTo: settings.replyTo } };
   });
   const result = await sendMarketingBatch(rendered, batchKey(campaign.id, batch));
   if (!result.ok) {
@@ -128,7 +129,7 @@ async function finish(sb: ServiceClient, id: string): Promise<void> {
 }
 
 /** Sends one campaign's queued messages until it's done, time runs out, or Resend fails. */
-async function sendCampaign(sb: ServiceClient, campaign: CampaignRow, now: Date, deadline: number): Promise<number> {
+async function sendCampaign(sb: ServiceClient, campaign: CampaignRow, now: Date, deadline: number, settings: EmailSettings): Promise<number> {
   if (!(await hold(sb, campaign.id, now, false))) return 0;
   let sent = 0;
   try {
@@ -146,7 +147,7 @@ async function sendCampaign(sb: ServiceClient, campaign: CampaignRow, now: Date,
         await finish(sb, campaign.id);
         break;
       }
-      const result = await sendBatch(sb, campaign, batch);
+      const result = await sendBatch(sb, campaign, batch, settings);
       sent += result.sent;
       // Resend is down or limiting: the rest waits for the next job. Stopped by an admin: done.
       if (!result.ok || !(await hold(sb, campaign.id, now, true))) break;
@@ -170,8 +171,15 @@ export async function sendDueCampaigns(sb: ServiceClient, now: Date, deadline: n
     console.error("[campaigns] load failed", { error: error.message });
     return { ok: false, sent: 0 };
   }
+  const due = (data ?? []) as unknown as CampaignRow[];
+  if (due.length === 0) return { ok: true, sent: 0 };
+  const settings = await loadEmailSettings(sb);
+  if (!hasPostalAddress(settings)) {
+    console.error("[campaigns] no postal address in Settings → Email; campaigns wait until it's set");
+    return { ok: false, sent: 0 };
+  }
   let sent = 0;
-  for (const row of (data ?? []) as unknown as CampaignRow[]) {
+  for (const row of due) {
     if (Date.now() > deadline) break;
     let campaign = row;
     if (row.status === "scheduled") {
@@ -179,7 +187,7 @@ export async function sendDueCampaigns(sb: ServiceClient, now: Date, deadline: n
       if (!claimed?.length) continue;
       campaign = { ...row, status: "sending", started_at: now.toISOString() };
     }
-    sent += await sendCampaign(sb, campaign, now, deadline);
+    sent += await sendCampaign(sb, campaign, now, deadline, settings);
   }
   return { ok: true, sent };
 }

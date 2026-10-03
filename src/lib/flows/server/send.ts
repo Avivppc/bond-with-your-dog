@@ -2,6 +2,7 @@ import "server-only";
 import { Resend } from "resend";
 import { siteUrl } from "@/lib/email";
 import { batchOutcomes, isPermanentSendError, type BatchItemOutcome } from "../send-errors";
+import { fromWithName } from "../sender";
 import { unsubscribeToken, unsubscribeTokenForEmail } from "../signing";
 
 /** Signs unsubscribe links; falls back to the service key so links work before a dedicated secret is set. */
@@ -34,6 +35,8 @@ export interface MarketingEmail {
   unsubscribe: UnsubscribeLinks;
   /** Same key, same email: Resend sends it once even if we ask twice (e.g. after a crash). */
   idempotencyKey?: string;
+  /** Settings → Email: the sender's display name and where replies go. */
+  sender?: { name: string; replyTo: string | null };
 }
 
 /** `permanent`: retrying won't help; otherwise try again on the next run. */
@@ -46,7 +49,8 @@ function resendConfig(): { apiKey: string; from: string } | null {
 }
 
 const payload = (from: string, email: MarketingEmail) => ({
-  from,
+  from: email.sender ? fromWithName(from, email.sender.name) : from,
+  ...(email.sender?.replyTo ? { replyTo: email.sender.replyTo } : {}),
   to: email.to,
   subject: email.subject,
   html: email.html,

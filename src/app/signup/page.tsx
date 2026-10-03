@@ -5,6 +5,7 @@ import GoogleButton from "@/components/auth/GoogleButton";
 import TestimonialCard from "@/components/TestimonialCard";
 import { testimonialById } from "@/lib/testimonials";
 import { MARKETING_CONSENT_LABEL } from "@/lib/auth/marketing-consent";
+import { Turnstile } from "@/components/Turnstile";
 import TrackOnMount from "@/components/analytics/TrackOnMount";
 import { EVENTS } from "@/lib/analytics-events";
 import { signup } from "./actions";
@@ -129,6 +130,8 @@ export default async function SignupPage({
                   />
                   <span>{MARKETING_CONSENT_LABEL}</span>
                 </label>
+
+                <Turnstile />
 
                 <button
                   type="submit"

@@ -165,15 +165,17 @@ interface FrameParts {
   body: string;
   site: string;
   unsubscribeUrl: string | null;
+  postalAddress: string;
 }
 
-function frame({ subject, preheader, body, site, unsubscribeUrl }: FrameParts): string {
+function frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress }: FrameParts): string {
   const preheaderHtml = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${escapeHtml(preheader)}</div>\n`
     : "";
   const unsubscribe = unsubscribeUrl
     ? `<br>\n        <a href="${escapeHtml(unsubscribeUrl)}" style="color:${COLORS.muted}">Unsubscribe from these emails</a>`
     : "";
+  const address = postalAddress ? `<br>\n        ${postalAddress.split("\n").map(escapeHtml).join("<br>")}` : "";
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -194,7 +196,7 @@ ${body}
       </td></tr>
       <tr><td align="center" style="padding:20px 8px 0;font-size:12px;line-height:1.5;color:${COLORS.muted}">
         Bonded · Learn your dog's secret language<br>
-        <a href="${escapeHtml(site)}" style="color:${COLORS.muted}">${escapeHtml(site.replace(/^https?:\/\//, ""))}</a>${unsubscribe}
+        <a href="${escapeHtml(site)}" style="color:${COLORS.muted}">${escapeHtml(site.replace(/^https?:\/\//, ""))}</a>${address}${unsubscribe}
       </td></tr>
     </table>
   </td></tr>
@@ -203,12 +205,12 @@ ${body}
 </html>`;
 }
 
-function plainText(blocks: readonly BlockOutput[], site: string, unsubscribeUrl: string | null): string {
+function plainText(blocks: readonly BlockOutput[], site: string, unsubscribeUrl: string | null, postalAddress: string): string {
   const body = blocks
     .map((b) => b.text.trim())
     .filter(Boolean)
     .join("\n\n");
-  const footer = ["--", "Bonded · Learn your dog's secret language", site, unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : ""]
+  const footer = ["--", "Bonded · Learn your dog's secret language", site, postalAddress, unsubscribeUrl ? `Unsubscribe: ${unsubscribeUrl}` : ""]
     .filter(Boolean)
     .join("\n");
   return body ? `${body}\n\n${footer}` : footer;
@@ -220,11 +222,16 @@ export function renderEmailDoc(doc: EmailDoc, ctx: RenderContext): RenderedEmail
   const unsubscribeUrl = ctx.unsubscribeUrl ? safeHttpUrl(ctx.unsubscribeUrl) : null;
   const subject = fill(doc.subject).replace(/\s+/g, " ").trim();
   const preheader = fill(doc.preheader).replace(/\s+/g, " ").trim();
+  const postalAddress = (ctx.postalAddress ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n");
   const blocks = doc.blocks.map((b) => renderBlock(b, ctx, fill)).filter((b): b is BlockOutput => b !== null);
   const body = blocks.map((b) => b.html).join("\n");
   return {
     subject,
-    html: frame({ subject, preheader, body, site, unsubscribeUrl }),
-    text: plainText(blocks, site, unsubscribeUrl),
+    html: frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress }),
+    text: plainText(blocks, site, unsubscribeUrl, postalAddress),
   };
 }

@@ -30,7 +30,13 @@ values ('e8000000-0000-0000-0000-000000000001', 'ep-moves', 'Moves', 'one_time',
 insert into public.orders (id, user_id, offer_id, status, amount_cents, currency, provider, created_at) values
   ('e7000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000e1003', 'e8000000-0000-0000-0000-000000000001', 'pending', 12900, 'USD', 'test', now() - interval '3 hours'),
   ('e7000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-0000000e1003', 'e8000000-0000-0000-0000-000000000001', 'canceled', 12900, 'USD', 'test', now() - interval '4 hours');
-insert into public.quiz_leads (first_name, email, tier, scores, answers) values ('Lea', 'lead@test.dev', 'foundations', '{}', '{}'), ('Old', 'old@test.dev', 'foundations', '{}', '{}');
+insert into public.quiz_leads (first_name, email, tier, scores, answers, marketing_opt_in) values
+  ('Lea', 'lead@test.dev', 'foundations', '{}', '{}', true), ('Old', 'old@test.dev', 'foundations', '{}', '{}', true),
+  ('Nope', 'noconsent@test.dev', 'foundations', '{}', '{}', false);
+-- Everyone here agreed to marketing email except idle@ (and the noconsent@ lead).
+insert into public.profiles (id, marketing_opt_in)
+select u.id, u.email <> 'idle@test.dev' from auth.users u where u.email like '%@test.dev'
+on conflict (id) do update set marketing_opt_in = excluded.marketing_opt_in;
 
 set role service_role;
 select t.ok((select 'new@test.dev' = any(array_agg(email)) and not 'old@test.dev' = any(array_agg(email)) from public.flow_trigger_candidates('signed_up', '{}', now() - interval '1 day')),
@@ -60,7 +66,16 @@ select t.ok((select count(*) from public.flow_trigger_candidates('checkout_aband
 select t.ok((select 'lead@test.dev' = any(array_agg(email)) and not 'old@test.dev' = any(array_agg(email)) from public.flow_trigger_candidates('quiz_lead', '{}', now() - interval '1 day')),
             'quiz leads without an account (members are skipped)');
 
--- Campaign audiences, minus unsubscribed addresses.
+-- Campaign audiences, minus unsubscribed addresses and anyone without consent.
+select t.ok((select not 'idle@test.dev' = any(array_agg(email)) from public.campaign_audience('{"kind": "all_members"}')),
+            'a member who never ticked the email box gets no campaign');
+select t.ok((select not 'noconsent@test.dev' = any(array_agg(email)) from public.campaign_audience('{"kind": "quiz_leads"}')),
+            'a quiz lead without consent gets no campaign');
+select t.ok(public.can_market(null, 'LEAD@test.dev') and not public.can_market(null, 'noconsent@test.dev')
+            and not public.can_market('00000000-0000-0000-0000-0000000e1004', 'idle@test.dev'),
+            'can_market: consent for leads by address, for members by profile');
+select t.ok((public.admin_contact_insights()->'contacts'->>'leads')::int >= 1 and (public.admin_contact_insights()->'subscribers'->>'notConsented')::int >= 2,
+            'insights count leads and people without consent');
 select t.ok((select count(*) from public.campaign_audience('{"kind": "all_members"}')) >= 3, 'all members');
 select t.ok((select array_agg(email order by email) from public.campaign_audience('{"kind": "owns_chapter", "courseId": "ep-a"}')) = array['buyer@test.dev', 'old@test.dev'],
             'owners of a chapter');

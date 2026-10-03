@@ -6,6 +6,7 @@ import { planRun, type RunPlan } from "../engine";
 import { findNode, triggerNode } from "../graph";
 import type { ServiceClient } from "./data";
 import { FLOW_COLUMNS, loadPerson, personFacts, personVars, RUN_COLUMNS, targetChapter, type FlowRow, type Person, type RunContext, type RunRow } from "./people";
+import { hasPostalAddress, loadEmailSettings, type EmailSettings } from "./email-settings";
 import { sendMarketingEmail, unsubscribeLinks } from "./send";
 
 /**
@@ -105,7 +106,7 @@ async function releaseStaleQueued(sb: ServiceClient, now: Date): Promise<void> {
 /** "retry": a send failed for a reason worth retrying; the run stays on this step for the next job. */
 type DeliverOutcome = { sent: number; failed: number; retry: boolean };
 
-async function deliver(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Person, plan: RunPlan, now: Date): Promise<DeliverOutcome> {
+async function deliver(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Person, plan: RunPlan, now: Date, settings: EmailSettings): Promise<DeliverOutcome> {
   const outcome: DeliverOutcome = { sent: 0, failed: 0, retry: false };
   let vars: Awaited<ReturnType<typeof personVars>> | null = null;
   for (const action of plan.actions) {
@@ -119,7 +120,7 @@ async function deliver(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Pe
     }
     vars ??= await personVars(sb, flow, run, person, now);
     const links = unsubscribeLinks({ userId: run.user_id, email: person.email ?? "" });
-    const rendered = renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...vars }, unsubscribeUrl: links.page });
+    const rendered = renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...vars }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress });
     const { data: queued, error: queueError } = await sb.from("email_messages").insert({ ...base, subject: rendered.subject, status: "queued" }).select("id").single();
     if (queueError?.code === "23505") continue; // this step already went out (an earlier run or another job)
     if (queueError || !queued) {
@@ -128,7 +129,7 @@ async function deliver(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Pe
       break;
     }
     const result = person.email
-      ? await sendMarketingEmail({ to: person.email, subject: rendered.subject, html: rendered.html, text: rendered.text, unsubscribe: links, idempotencyKey: `${run.id}:${node.id}` })
+      ? await sendMarketingEmail({ to: person.email, subject: rendered.subject, html: rendered.html, text: rendered.text, unsubscribe: links, idempotencyKey: `${run.id}:${node.id}`, sender: { name: settings.senderName, replyTo: settings.replyTo } })
       : ({ ok: false, error: "no email address", permanent: true } as const);
     if (result.ok) {
       await sb.from("email_messages").update({ status: "sent", provider_id: result.providerId }).eq("id", queued.id);
@@ -149,7 +150,7 @@ async function deliver(sb: ServiceClient, flow: FlowRow, run: RunRow, person: Pe
   return outcome;
 }
 
-async function advance(sb: ServiceClient, flow: FlowRow, listed: RunRow, now: Date): Promise<DeliverOutcome | null> {
+async function advance(sb: ServiceClient, flow: FlowRow, listed: RunRow, now: Date, settings: EmailSettings): Promise<DeliverOutcome | null> {
   // Lease the run: only one job moves a person at a time. The lease returns the run as it is now
   // (another job may have moved it since it was listed); a finished run is left alone.
   const { data: claimed } = await sb
@@ -169,7 +170,7 @@ async function advance(sb: ServiceClient, flow: FlowRow, listed: RunRow, now: Da
     const person = await loadPerson(sb, run);
     const facts = await personFacts(sb, flow, run, person.email, person.timezone, now);
     const plan = planRun(flow.graph, { nodeId: run.node_id, waitUntil: run.wait_until, lastEmailNodeId: run.last_email_node_id }, facts, now);
-    const outcome = await deliver(sb, flow, run, person, plan, now);
+    const outcome = await deliver(sb, flow, run, person, plan, now, settings);
     if (outcome.retry) {
       await release(); // stay on this step; emails already sent won't go out again
       return outcome;
@@ -209,6 +210,13 @@ export async function runFlows(sb: ServiceClient, now: Date = new Date(), starte
   for (const flow of live) summary.enrolled += await enrol(sb, flow, started);
   if (live.length === 0) return summary;
 
+  // Marketing email carries the sender settings, and never goes out without the postal address.
+  const settings = await loadEmailSettings(sb);
+  if (!hasPostalAddress(settings)) {
+    console.error("[flows] no postal address in Settings → Email; runs wait until it's set");
+    return { ...summary, ok: false };
+  }
+
   const { data: runs, error: runsError } = await sb
     .from("email_flow_runs")
     .select(RUN_COLUMNS)
@@ -228,7 +236,7 @@ export async function runFlows(sb: ServiceClient, now: Date = new Date(), starte
     if (Date.now() - started > TIME_BUDGET_MS) break; // the rest wait for the next run
     const flow = live.find((f) => f.id === run.flow_id);
     if (!flow) continue;
-    const counts = await advance(sb, flow, run, now);
+    const counts = await advance(sb, flow, run, now, settings);
     if (!counts) continue;
     summary.advanced++;
     summary.sent += counts.sent;

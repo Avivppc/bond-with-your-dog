@@ -81,4 +81,6 @@ export interface RenderContext {
   /** Filled into {{tags}} in every text field. */
   vars: Record<string, string>;
   unsubscribeUrl?: string;
+  /** The business postal address marketing email must show (Settings → Email). */
+  postalAddress?: string | null;
 }
