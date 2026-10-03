@@ -15,10 +15,26 @@ describe("parseGraph", () => {
 });
 
 describe("flowSettingsSchema", () => {
-  const base = { name: "Moves upsell", trigger: "chapter_80", courseId: null, discountPercent: 20, discountValidDays: 7 };
+  const base = {
+    name: "Moves upsell",
+    trigger: "chapter_progress",
+    triggerParams: { percent: 80 },
+    offer: { kind: "next_chapter" },
+    goal: { kind: "bought_offer" },
+    reentry: "each_time",
+    discountPercent: 20,
+    discountValidDays: 7,
+    smartSendingHours: 16,
+    quietHours: true,
+  };
   it("needs discount % and validity together", () => {
     expect(flowSettingsSchema.safeParse(base).success).toBe(true);
     expect(flowSettingsSchema.safeParse({ ...base, discountPercent: null, discountValidDays: null }).success).toBe(true);
     expect(flowSettingsSchema.safeParse({ ...base, discountValidDays: null }).success).toBe(false);
+  });
+
+  it("needs a chapter when the flow offers a specific one, and a known trigger", () => {
+    expect(flowSettingsSchema.safeParse({ ...base, offer: { kind: "chapter" } }).success).toBe(false);
+    expect(flowSettingsSchema.safeParse({ ...base, trigger: "chapter_80" }).success).toBe(false);
   });
 });

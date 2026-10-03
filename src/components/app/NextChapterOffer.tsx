@@ -14,16 +14,20 @@ interface NextChapterOfferProps {
   percentDone: number;
 }
 
-/** A live flow's discount for this chapter, preferring the one whose trigger matches this moment. */
+/** A live flow that sells the next chapter of this one with a discount, preferring the trigger matching this moment. */
 async function liveDiscount(sb: ReturnType<typeof createServiceClient>, courseId: string, completed: boolean) {
   const { data } = await sb
     .from("email_flows")
-    .select("id, trigger, course_id, discount_percent, discount_valid_days")
+    .select("id, trigger, trigger_params, offer, discount_percent, discount_valid_days")
     .eq("status", "live")
-    .not("discount_percent", "is", null)
-    .or(`course_id.is.null,course_id.eq.${courseId}`);
-  const flows = data ?? [];
-  const wanted = completed ? "chapter_completed" : "chapter_80";
+    .in("trigger", ["chapter_progress", "chapter_completed"])
+    .not("discount_percent", "is", null);
+  const flows = (data ?? []).filter((f) => {
+    const params = (f.trigger_params ?? {}) as { courseId?: string | null };
+    const offer = (f.offer ?? {}) as { kind?: string };
+    return offer.kind === "next_chapter" && (!params.courseId || params.courseId === courseId);
+  });
+  const wanted = completed ? "chapter_completed" : "chapter_progress";
   return flows.find((f) => f.trigger === wanted) ?? flows[0] ?? null;
 }
 

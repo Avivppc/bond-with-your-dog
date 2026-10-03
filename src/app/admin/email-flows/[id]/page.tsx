@@ -5,17 +5,19 @@ import { loadFlow } from "@/lib/flows/server/admin";
 import { percent } from "@/lib/flows/stats";
 import { formatUsd } from "@/lib/flows/discount";
 import { findNode } from "@/lib/flows/graph";
-import { BTN_DANGER, Card, MUTED, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../../_components/ui";
+import { BTN_DANGER, BTN_SECONDARY, Card, MUTED, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../../_components/ui";
 import { StatCard, shortDate } from "../../_components/list-kit";
 import { ConfirmSubmit } from "../../_components/ConfirmSubmit";
-import { deleteFlow } from "../actions";
+import { siteUrl } from "@/lib/email";
+import { deleteFlow, duplicateFlow } from "../actions";
 import { FlowBuilder } from "./FlowBuilder";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Email flow" };
 
 const STATUS_TONE = { live: "published", paused: "warning", draft: "draft" } as const;
 const RUN_LABEL: Record<string, string> = { active: "In the flow", waiting: "Waiting", done: "Finished", exited: "Left" };
-const EXIT_LABEL: Record<string, string> = { purchased: "bought", step_removed: "step removed", too_many_steps: "error" };
+const EXIT_LABEL: Record<string, string> = { goal: "reached the goal", purchased: "bought", step_removed: "step removed", too_many_steps: "error" };
 
 export default async function EmailFlowPage({ params }: { params: Promise<{ id: string }> }) {
   await requireStaff("sales");
@@ -24,8 +26,7 @@ export default async function EmailFlowPage({ params }: { params: Promise<{ id: 
   const [detail, chaptersRes] = await Promise.all([loadFlow(sb, id), sb.from("courses").select("id, title, chapter_number").not("chapter_number", "is", null).order("chapter_number")]);
   if (!detail) notFound();
   const { flow, totals, steps, atStep, recent } = detail;
-  // Chapters that have a next chapter to sell (the last one doesn't).
-  const chapters = (chaptersRes.data ?? []).slice(0, -1).map((c) => ({ id: c.id as string, title: c.title as string }));
+  const chapters = (chaptersRes.data ?? []).map((c) => ({ id: c.id as string, title: c.title as string }));
 
   return (
     <>
@@ -49,10 +50,16 @@ export default async function EmailFlowPage({ params }: { params: Promise<{ id: 
         settings={{
           name: flow.name,
           trigger: flow.trigger,
-          courseId: flow.course_id,
+          triggerParams: flow.trigger_params ?? {},
+          offer: flow.offer ?? { kind: "none" },
+          goal: flow.goal ?? { kind: "none" },
+          reentry: flow.reentry,
           discountPercent: flow.discount_percent,
           discountValidDays: flow.discount_valid_days,
+          smartSendingHours: flow.smart_sending_hours,
+          quietHours: flow.quiet_hours,
         }}
+        siteUrl={siteUrl()}
         graph={flow.graph}
         chapters={chapters}
         stats={{ steps, atStep }}
@@ -93,12 +100,20 @@ export default async function EmailFlowPage({ params }: { params: Promise<{ id: 
         )}
       </Card>
 
-      <form action={deleteFlow} className="mt-6">
+      <div className="mt-6 flex flex-wrap gap-2">
+      <form action={duplicateFlow}>
+        <input type="hidden" name="id" value={flow.id} />
+        <button type="submit" className={BTN_SECONDARY}>
+          Duplicate flow
+        </button>
+      </form>
+      <form action={deleteFlow}>
         <input type="hidden" name="id" value={flow.id} />
         <ConfirmSubmit className={BTN_DANGER} message="Delete this flow? Its numbers are deleted too. Codes already sent keep working.">
           Delete flow
         </ConfirmSubmit>
       </form>
+      </div>
     </>
   );
 }

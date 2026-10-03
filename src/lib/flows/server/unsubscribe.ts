@@ -1,16 +1,20 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { exactLike } from "../like";
 import { readUnsubscribeToken } from "../signing";
 import { unsubscribeSecret } from "./send";
 
-/** Applies an unsubscribe link: stops flow emails for that member. Returns false for a bad token. */
+/** Applies an unsubscribe link (member or quiz lead): stops flow and campaign emails. False for a bad token. */
 export async function unsubscribeByToken(token: string, source: "link" | "one_click"): Promise<boolean> {
-  const userId = readUnsubscribeToken(token, unsubscribeSecret());
-  if (!userId) return false;
+  const subject = readUnsubscribeToken(token, unsubscribeSecret());
+  if (!subject) return false;
   const sb = createServiceClient();
-  const { data } = await sb.auth.admin.getUserById(userId);
-  const { error } = await sb.from("email_unsubscribes").upsert({ user_id: userId, email: data.user?.email ?? null, source }, { onConflict: "user_id", ignoreDuplicates: true });
-  if (error) {
+  const userId = "userId" in subject ? subject.userId : null;
+  const email = "email" in subject ? subject.email : ((await sb.auth.admin.getUserById(subject.userId)).data.user?.email ?? null);
+  const { data: already } = await sb.rpc("is_unsubscribed", { p_user_id: userId, p_email: email });
+  if (already) return true;
+  const { error } = await sb.from("email_unsubscribes").insert({ user_id: userId, email, source });
+  if (error && error.code !== "23505") {
     console.error("[unsubscribe] failed", { error: error.message });
     return false;
   }
@@ -18,9 +22,11 @@ export async function unsubscribeByToken(token: string, source: "link" | "one_cl
 }
 
 export async function resubscribeByToken(token: string): Promise<boolean> {
-  const userId = readUnsubscribeToken(token, unsubscribeSecret());
-  if (!userId) return false;
-  const { error } = await createServiceClient().from("email_unsubscribes").delete().eq("user_id", userId);
+  const subject = readUnsubscribeToken(token, unsubscribeSecret());
+  if (!subject) return false;
+  const sb = createServiceClient();
+  const query = "userId" in subject ? sb.from("email_unsubscribes").delete().eq("user_id", subject.userId) : sb.from("email_unsubscribes").delete().ilike("email", exactLike(subject.email));
+  const { error } = await query;
   if (error) console.error("[unsubscribe] resubscribe failed", { error: error.message });
   return !error;
 }

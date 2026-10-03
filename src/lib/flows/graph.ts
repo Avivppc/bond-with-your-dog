@@ -5,9 +5,22 @@
  * Pure: shared by the builder, the validator and the engine.
  */
 
-export type FlowTrigger = "chapter_80" | "chapter_completed";
-export type ConditionCheck = "opened" | "clicked";
+import type { EmailDoc } from "@/lib/email-blocks/types";
+
+export type { FlowTrigger } from "./triggers";
+
+/** What a condition step asks. opened/clicked are about the last email this person got in the flow. */
+export type ConditionCheck = "opened" | "clicked" | "owns_chapter" | "completed_chapter" | "practiced_recently" | "has_purchased" | "is_member";
 export type Branch = "yes" | "no" | "a" | "b";
+
+/** The email an email step sends. Older flows stored plain text (subject/body/button). */
+export interface LegacyEmailData {
+  subject: string;
+  preheader: string;
+  body: string;
+  ctaLabel: string;
+}
+export type EmailStepData = EmailDoc | LegacyEmailData;
 
 interface Base {
   id: string;
@@ -24,12 +37,12 @@ export interface WaitNode extends Base {
 }
 export interface EmailNode extends Base {
   type: "email";
-  data: { subject: string; preheader: string; body: string; ctaLabel: string };
+  data: EmailStepData;
 }
 export interface ConditionNode extends Base {
   type: "condition";
-  /** Asked about the last email this member received in the flow. */
-  data: { check: ConditionCheck };
+  /** courseId for the chapter checks, days for "practiced recently". */
+  data: { check: ConditionCheck; courseId?: string | null; days?: number };
 }
 export interface SplitNode extends Base {
   type: "split";
@@ -82,6 +95,16 @@ export function triggerNode(graph: FlowGraph): TriggerNode | undefined {
   return graph.nodes.find((n): n is TriggerNode => n.type === "trigger");
 }
 
+export function isLegacyEmail(data: EmailStepData): data is LegacyEmailData {
+  return !("blocks" in data);
+}
+
+/** Whether an email step has something to say (text, a heading, an image or a button). */
+export function emailHasContent(data: EmailStepData): boolean {
+  if (isLegacyEmail(data)) return data.body.trim().length > 0;
+  return data.blocks.some((b) => (b.type === "text" || b.type === "heading" ? b.text.trim() : b.type === "image" ? b.src : b.type === "button" ? b.label.trim() : false));
+}
+
 /** Milliseconds a wait node holds a member. */
 export function waitMs(node: WaitNode): number {
   return (node.data.days * 24 + node.data.hours) * 60 * 60 * 1000;
@@ -97,9 +120,12 @@ function nodeProblems(node: FlowNode): string[] {
     case "email": {
       const problems: string[] = [];
       if (!node.data.subject.trim()) problems.push("An email is missing its subject.");
-      if (!node.data.body.trim()) problems.push("An email is missing its text.");
+      if (!emailHasContent(node.data)) problems.push("An email is missing its text.");
       return problems;
     }
+    case "condition":
+      if ((node.data.check === "owns_chapter" || node.data.check === "completed_chapter") && !node.data.courseId) return ["A condition about a chapter needs the chapter picked."];
+      return [];
     case "split":
       return node.data.percentA >= 1 && node.data.percentA <= 99 ? [] : ["An A/B split needs a share between 1% and 99%."];
     default:

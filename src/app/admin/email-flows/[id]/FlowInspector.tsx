@@ -1,12 +1,10 @@
 "use client";
 
-import { useRef } from "react";
-import type { EmailNode, FlowNode } from "@/lib/flows/graph";
+import type { ConditionCheck, ConditionNode, EmailStepData, FlowNode } from "@/lib/flows/graph";
 import type { FlowSettings } from "@/lib/flows/schema";
-import { EXAMPLE_VARS, FLOW_TAGS, renderFlowEmail } from "@/lib/flows/template";
-import { TRIGGER_LABEL } from "@/lib/flows/templates";
+import { GOAL_LABEL, OFFER_LABEL, TRIGGER_GROUPS, TRIGGERS, normalizeParams, triggerDef, type FlowTrigger, type GoalKind, type OfferKind } from "@/lib/flows/triggers";
 import { percent, type StepStats } from "@/lib/flows/stats";
-import { BTN_DANGER, BTN_SECONDARY, INPUT, LABEL, MUTED } from "../../_components/ui";
+import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, INPUT, LABEL, MUTED } from "../../_components/ui";
 
 export interface ChapterOption {
   id: string;
@@ -23,56 +21,160 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3 border-t border-[#efeeed] pt-4 first:border-0 first:pt-0">
+      <h3 className={`text-[12px] font-semibold uppercase tracking-wide ${MUTED}`}>{title}</h3>
+      {children}
+    </section>
+  );
+}
+
 const num = (value: string, fallback: number) => (Number.isFinite(Number(value)) && value !== "" ? Math.round(Number(value)) : fallback);
 
-/** Flow-wide settings: name, trigger, chapter, and the personal code. Shown when no step is selected. */
-export function SettingsPanel({ settings, chapters, onChange }: { settings: FlowSettings; chapters: readonly ChapterOption[]; onChange: (s: FlowSettings) => void }) {
+function ChapterSelect({ value, chapters, onChange, anyLabel }: { value: string | null | undefined; chapters: readonly ChapterOption[]; onChange: (id: string | null) => void; anyLabel?: string }) {
+  return (
+    <select className={INPUT} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
+      <option value="">{anyLabel ?? "Choose a chapter"}</option>
+      {chapters.map((c) => (
+        <option key={c.id} value={c.id}>
+          {c.title}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+interface SettingsPanelProps {
+  settings: FlowSettings;
+  chapters: readonly ChapterOption[];
+  onChange: (s: FlowSettings) => void;
+}
+
+/** Flow-wide settings. Shown when no step is selected. */
+export function SettingsPanel({ settings, chapters, onChange }: SettingsPanelProps) {
+  const def = triggerDef(settings.trigger);
+  const set = (patch: Partial<FlowSettings>) => onChange({ ...settings, ...patch });
+  const pickTrigger = (key: FlowTrigger) => {
+    const d = triggerDef(key).defaults;
+    set({ trigger: key, triggerParams: normalizeParams(key, {}), offer: d.offer, goal: d.goal, reentry: d.reentry });
+  };
   const hasDiscount = settings.discountPercent !== null;
   return (
     <div className="flex flex-col gap-4">
       <h2 className="text-base font-semibold text-[#1a1a19]">Flow settings</h2>
       <Field label="Name">
-        <input className={INPUT} value={settings.name} maxLength={120} onChange={(e) => onChange({ ...settings, name: e.target.value })} />
+        <input className={INPUT} value={settings.name} maxLength={120} onChange={(e) => set({ name: e.target.value })} />
       </Field>
-      <Field label="Trigger" hint="Members enter once per chapter, only when they reach this after the flow goes live.">
-        <select className={INPUT} value={settings.trigger} onChange={(e) => onChange({ ...settings, trigger: e.target.value as FlowSettings["trigger"] })}>
-          {Object.entries(TRIGGER_LABEL).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <Field label="Chapter" hint="The flow offers the chapter that comes after it.">
-        <select className={INPUT} value={settings.courseId ?? ""} onChange={(e) => onChange({ ...settings, courseId: e.target.value || null })}>
-          <option value="">Any chapter</option>
-          {chapters.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
-      </Field>
-      <label className="flex items-center gap-2 text-[14px]">
-        <input
-          type="checkbox"
-          className="h-4 w-4 accent-[#343332]"
-          checked={hasDiscount}
-          onChange={(e) => onChange({ ...settings, discountPercent: e.target.checked ? 20 : null, discountValidDays: e.target.checked ? 7 : null })}
-        />
-        Give each member a personal discount code
-      </label>
-      {hasDiscount && (
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Discount %">
-            <input className={INPUT} type="number" min={1} max={90} value={settings.discountPercent ?? ""} onChange={(e) => onChange({ ...settings, discountPercent: num(e.target.value, 20) })} />
+
+      <Section title="Trigger">
+        <Field label="Starts when someone…" hint={def.description}>
+          <select className={INPUT} value={settings.trigger} onChange={(e) => pickTrigger(e.target.value as FlowTrigger)}>
+            {TRIGGER_GROUPS.map((g) => (
+              <optgroup key={g} label={g}>
+                {TRIGGERS.filter((t) => t.group === g).map((t) => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </Field>
+        {def.params.map((p) =>
+          p.kind === "chapter" ? (
+            <Field key={p.key} label={p.label}>
+              <ChapterSelect value={settings.triggerParams.courseId} chapters={chapters} anyLabel="Any chapter" onChange={(id) => set({ triggerParams: { ...settings.triggerParams, courseId: id } })} />
+            </Field>
+          ) : (
+            <Field key={p.key} label={`${p.label}${p.unit ? ` (${p.unit})` : ""}`}>
+              <input
+                className={INPUT}
+                type="number"
+                min={p.min}
+                max={p.max}
+                value={settings.triggerParams[p.key as "percent" | "days" | "hours"] ?? p.defaultValue ?? ""}
+                onChange={(e) => set({ triggerParams: { ...settings.triggerParams, [p.key]: num(e.target.value, p.defaultValue ?? 0) } })}
+              />
+            </Field>
+          ),
+        )}
+        <Field label="Who can enter again" hint="Members only enter once they reach the trigger after the flow goes live.">
+          <select className={INPUT} value={settings.reentry} onChange={(e) => set({ reentry: e.target.value as FlowSettings["reentry"] })}>
+            <option value="each_time">Every time it happens (e.g. each chapter)</option>
+            <option value="once">Once per person, ever</option>
+          </select>
+        </Field>
+      </Section>
+
+      <Section title="What the flow offers">
+        <Field label="Offer" hint="Sets {{offer_url}}, prices and the personal code.">
+          <select className={INPUT} value={settings.offer.kind} onChange={(e) => set({ offer: { kind: e.target.value as OfferKind, courseId: null } })}>
+            {(Object.keys(OFFER_LABEL) as OfferKind[]).map((k) => (
+              <option key={k} value={k}>
+                {OFFER_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </Field>
+        {settings.offer.kind === "chapter" && (
+          <Field label="Chapter">
+            <ChapterSelect value={settings.offer.courseId} chapters={chapters} onChange={(id) => set({ offer: { kind: "chapter", courseId: id } })} />
           </Field>
-          <Field label="Valid for (days)">
-            <input className={INPUT} type="number" min={1} max={90} value={settings.discountValidDays ?? ""} onChange={(e) => onChange({ ...settings, discountValidDays: num(e.target.value, 7) })} />
-          </Field>
-        </div>
-      )}
-      <p className={`text-[12px] ${MUTED}`}>Select a step on the canvas to edit it. Drag from a dot at the bottom of a step to the top of another to connect them; select a step or line and press Delete to remove it.</p>
+        )}
+        {settings.offer.kind !== "none" && (
+          <>
+            <label className="flex items-center gap-2 text-[14px]">
+              <input type="checkbox" className="h-4 w-4 accent-[#343332]" checked={hasDiscount} onChange={(e) => set({ discountPercent: e.target.checked ? 20 : null, discountValidDays: e.target.checked ? 7 : null })} />
+              Give each member a personal discount code
+            </label>
+            {hasDiscount && (
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Discount %">
+                  <input className={INPUT} type="number" min={1} max={90} value={settings.discountPercent ?? ""} onChange={(e) => set({ discountPercent: num(e.target.value, 20) })} />
+                </Field>
+                <Field label="Valid for (days)">
+                  <input className={INPUT} type="number" min={1} max={90} value={settings.discountValidDays ?? ""} onChange={(e) => set({ discountValidDays: num(e.target.value, 7) })} />
+                </Field>
+              </div>
+            )}
+          </>
+        )}
+        <Field label="Leave the flow early when" hint="Checked before every step.">
+          <select className={INPUT} value={settings.goal.kind} onChange={(e) => set({ goal: { kind: e.target.value as GoalKind } })}>
+            {(Object.keys(GOAL_LABEL) as GoalKind[]).map((k) => (
+              <option key={k} value={k}>
+                {GOAL_LABEL[k]}
+              </option>
+            ))}
+          </select>
+        </Field>
+      </Section>
+
+      <Section title="Sending">
+        <label className="flex items-start gap-2 text-[14px]">
+          <input type="checkbox" className="mt-0.5 h-4 w-4 accent-[#343332]" checked={settings.smartSendingHours > 0} onChange={(e) => set({ smartSendingHours: e.target.checked ? 16 : 0 })} />
+          <span>
+            Smart sending: skip an email if the person got another one in the last{" "}
+            <input
+              className="w-14 rounded border border-[#d9d8d6] px-1 text-center"
+              type="number"
+              min={1}
+              max={168}
+              aria-label="Hours"
+              disabled={settings.smartSendingHours === 0}
+              value={settings.smartSendingHours || 16}
+              onChange={(e) => set({ smartSendingHours: num(e.target.value, 16) })}
+            />{" "}
+            hours
+          </span>
+        </label>
+        <label className="flex items-center gap-2 text-[14px]">
+          <input type="checkbox" className="h-4 w-4 accent-[#343332]" checked={settings.quietHours} onChange={(e) => set({ quietHours: e.target.checked })} />
+          Only send 9:00–20:00 in their time zone
+        </label>
+      </Section>
+      <p className={`text-[12px] ${MUTED}`}>Drag steps from the left onto the canvas or onto a connection, or use the + on any connection. Select a step or line and press Delete to remove it.</p>
     </div>
   );
 }
@@ -88,81 +190,90 @@ function StatLine({ label, s }: { label: string; s: StepStats }) {
   );
 }
 
-function EmailEditor({ node, stats, onData, onTest, testing }: { node: EmailNode; stats?: StepStats & { variants: Record<string, StepStats> }; onData: (d: EmailNode["data"]) => void; onTest: () => void; testing: boolean }) {
-  const body = useRef<HTMLTextAreaElement>(null);
-  const preview = renderFlowEmail(node.data, EXAMPLE_VARS);
-  const insertTag = (tag: string) => {
-    const el = body.current;
-    const text = `{{${tag}}}`;
-    if (!el) return onData({ ...node.data, body: node.data.body + text });
-    const next = node.data.body.slice(0, el.selectionStart) + text + node.data.body.slice(el.selectionEnd);
-    onData({ ...node.data, body: next });
-    requestAnimationFrame(() => {
-      el.focus();
-      el.selectionStart = el.selectionEnd = el.selectionStart + text.length;
-    });
-  };
+const CHECKS: { value: ConditionCheck; label: string }[] = [
+  { value: "opened", label: "Opened the last email" },
+  { value: "clicked", label: "Clicked in the last email" },
+  { value: "owns_chapter", label: "Has a chapter" },
+  { value: "completed_chapter", label: "Finished a chapter" },
+  { value: "practiced_recently", label: "Practiced recently" },
+  { value: "has_purchased", label: "Has bought anything" },
+  { value: "is_member", label: "Has an account (for quiz leads)" },
+];
+
+function ConditionFields({ data, chapters, onData }: { data: ConditionNode["data"]; chapters: readonly ChapterOption[]; onData: (d: ConditionNode["data"]) => void }) {
   return (
-    <div className="flex flex-col gap-4">
-      {stats && stats.sent > 0 && (
-        <div className="flex flex-col gap-1 rounded-[8px] bg-[#f8f8f8] p-3">
-          <StatLine label="All" s={stats} />
-          {Object.entries(stats.variants).map(([v, s]) => (
-            <StatLine key={v} label={`Variant ${v}`} s={s} />
+    <>
+      <Field label="Check" hint="YES and NO lead to different next steps.">
+        <select className={INPUT} value={data.check} onChange={(e) => onData({ check: e.target.value as ConditionCheck })}>
+          {CHECKS.map((c) => (
+            <option key={c.value} value={c.value}>
+              {c.label}
+            </option>
           ))}
-          {stats.bounced > 0 && <span className={`text-[12px] ${MUTED}`}>{stats.bounced} bounced</span>}
-        </div>
+        </select>
+      </Field>
+      {(data.check === "owns_chapter" || data.check === "completed_chapter") && (
+        <Field label="Chapter">
+          <ChapterSelect value={data.courseId} chapters={chapters} onChange={(id) => onData({ ...data, courseId: id })} />
+        </Field>
       )}
-      <Field label="Subject">
-        <input className={INPUT} value={node.data.subject} maxLength={200} onChange={(e) => onData({ ...node.data, subject: e.target.value })} />
-      </Field>
-      <Field label="Preview text" hint="The grey line after the subject in the inbox.">
-        <input className={INPUT} value={node.data.preheader} maxLength={200} onChange={(e) => onData({ ...node.data, preheader: e.target.value })} />
-      </Field>
-      <Field label="Text" hint="Blank lines start a new paragraph.">
-        <textarea ref={body} className={`${INPUT} min-h-[180px]`} value={node.data.body} maxLength={10000} onChange={(e) => onData({ ...node.data, body: e.target.value })} />
-      </Field>
-      <div className="flex flex-wrap gap-1.5">
-        {FLOW_TAGS.filter((t) => t.tag !== "offer_url").map((t) => (
-          <button key={t.tag} type="button" onClick={() => insertTag(t.tag)} className="rounded-full border border-[#d9d8d6] px-2.5 py-1 text-[12px] hover:bg-[#f3f3f2]" title={`Inserts {{${t.tag}}}, e.g. ${t.example}`}>
-            + {t.label}
-          </button>
-        ))}
-      </div>
-      <Field label="Button" hint="Links to checkout for the next chapter with the member's code. Leave empty for no button.">
-        <input className={INPUT} value={node.data.ctaLabel} maxLength={80} onChange={(e) => onData({ ...node.data, ctaLabel: e.target.value })} />
-      </Field>
-      <div className="rounded-[8px] border border-[#e7e6e4] bg-[#fafaf9] p-3">
-        <p className={`mb-1 text-[12px] font-semibold uppercase tracking-wide ${MUTED}`}>Preview</p>
-        <p className="mb-2 text-[14px] font-semibold">{preview.subject || "—"}</p>
-        <p className="whitespace-pre-line text-[13px] leading-relaxed text-[#1a1a19]">{preview.text}</p>
-      </div>
-      <button type="button" className={BTN_SECONDARY} onClick={onTest} disabled={testing}>
-        <span className="material-symbols-outlined text-[18px]" aria-hidden>
-          send
-        </span>
-        {testing ? "Sending…" : "Send a test to me"}
-      </button>
-    </div>
+      {data.check === "practiced_recently" && (
+        <Field label="In the last (days)">
+          <input className={INPUT} type="number" min={1} max={365} value={data.days ?? 7} onChange={(e) => onData({ ...data, days: num(e.target.value, 7) })} />
+        </Field>
+      )}
+    </>
   );
 }
 
 interface StepPanelProps {
   node: FlowNode;
+  chapters: readonly ChapterOption[];
   stats?: StepStats & { variants: Record<string, StepStats> };
   onData: (data: FlowNode["data"]) => void;
   onDelete: () => void;
+  onDuplicate: () => void;
+  onEditEmail: () => void;
   onTest: () => void;
   testing: boolean;
 }
 
-export function StepPanel({ node, stats, onData, onDelete, onTest, testing }: StepPanelProps) {
-  const titles: Record<FlowNode["type"], string> = { trigger: "Trigger", email: "Email", wait: "Wait", condition: "Condition", split: "A/B split", exit: "Exit" };
+const TITLES: Record<FlowNode["type"], string> = { trigger: "Trigger", email: "Email", wait: "Wait", condition: "Condition", split: "A/B split", exit: "Exit" };
+
+export function StepPanel({ node, chapters, stats, onData, onDelete, onDuplicate, onEditEmail, onTest, testing }: StepPanelProps) {
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-base font-semibold text-[#1a1a19]">{titles[node.type]}</h2>
-      {node.type === "trigger" && <p className={`text-[14px] ${MUTED}`}>Change the trigger and chapter in the flow settings (click the empty canvas).</p>}
-      {node.type === "email" && <EmailEditor node={node} stats={stats} onData={onData} onTest={onTest} testing={testing} />}
+      <h2 className="text-base font-semibold text-[#1a1a19]">{TITLES[node.type]}</h2>
+      {node.type === "trigger" && <p className={`text-[14px] ${MUTED}`}>Change the trigger in the flow settings (click the empty canvas).</p>}
+      {node.type === "email" && (
+        <>
+          {stats && stats.sent > 0 && (
+            <div className="flex flex-col gap-1 rounded-[8px] bg-[#f8f8f8] p-3">
+              <StatLine label="All" s={stats} />
+              {Object.entries(stats.variants).map(([v, s]) => (
+                <StatLine key={v} label={`Variant ${v}`} s={s} />
+              ))}
+            </div>
+          )}
+          <div className="rounded-[8px] border border-[#e7e6e4] p-3">
+            <p className={`text-[12px] ${MUTED}`}>Subject</p>
+            <p className="font-medium">{(node.data as EmailStepData).subject || "—"}</p>
+            {(node.data as EmailStepData).preheader && <p className={`mt-1 text-[13px] ${MUTED}`}>{(node.data as EmailStepData).preheader}</p>}
+          </div>
+          <button type="button" className={BTN_PRIMARY} onClick={onEditEmail}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>
+              edit
+            </span>
+            Edit email
+          </button>
+          <button type="button" className={BTN_SECONDARY} onClick={onTest} disabled={testing}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>
+              send
+            </span>
+            {testing ? "Sending…" : "Send a test to me"}
+          </button>
+        </>
+      )}
       {node.type === "wait" && (
         <div className="grid grid-cols-2 gap-3">
           <Field label="Days">
@@ -171,27 +282,27 @@ export function StepPanel({ node, stats, onData, onDelete, onTest, testing }: St
           <Field label="Hours">
             <input className={INPUT} type="number" min={0} max={23} value={node.data.hours} onChange={(e) => onData({ ...node.data, hours: num(e.target.value, 0) })} />
           </Field>
-          <p className={`col-span-2 text-[12px] ${MUTED}`}>Flows run once a day, so waits land on the next daily run after this time.</p>
+          <p className={`col-span-2 text-[12px] ${MUTED}`}>The flow checks every 15 minutes, so waits land within 15 minutes of this time.</p>
         </div>
       )}
-      {node.type === "condition" && (
-        <Field label="Check" hint="About the last email this member got in the flow. A click counts as an open.">
-          <select className={INPUT} value={node.data.check} onChange={(e) => onData({ check: e.target.value as "opened" | "clicked" })}>
-            <option value="opened">Opened it</option>
-            <option value="clicked">Clicked a link in it</option>
-          </select>
-        </Field>
-      )}
+      {node.type === "condition" && <ConditionFields data={node.data} chapters={chapters} onData={onData} />}
       {node.type === "split" && (
-        <Field label={`Path A gets ${node.data.percentA}%`} hint="Each member always stays on the same path. Compare the emails' open and click rates.">
+        <Field label={`Path A gets ${node.data.percentA}%`} hint="Each person always stays on the same path. Compare the emails' open and click rates.">
           <input type="range" min={1} max={99} value={node.data.percentA} onChange={(e) => onData({ percentA: num(e.target.value, 50) })} />
         </Field>
       )}
-      {node.type === "exit" && <p className={`text-[14px] ${MUTED}`}>Members who reach this step are done with the flow. Anyone who buys the next chapter leaves the flow right away.</p>}
+      {node.type === "exit" && <p className={`text-[14px] ${MUTED}`}>People who reach this step are done with the flow.</p>}
       {node.type !== "trigger" && (
-        <button type="button" className={`${BTN_DANGER} self-start`} onClick={onDelete}>
-          Delete this step
-        </button>
+        <div className="flex flex-wrap gap-2">
+          {node.type !== "exit" && (
+            <button type="button" className={BTN_SECONDARY} onClick={onDuplicate}>
+              Duplicate
+            </button>
+          )}
+          <button type="button" className={BTN_DANGER} onClick={onDelete}>
+            Delete this step
+          </button>
+        </div>
       )}
     </div>
   );

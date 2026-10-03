@@ -5,7 +5,17 @@ import type { FlowGraph } from "./graph";
 
 const NOW = new Date("2026-10-03T12:00:00Z");
 const start: RunState = { nodeId: "t", waitUntil: null, lastEmailNodeId: null };
-const facts = (over: Partial<RunFacts> = {}): RunFacts => ({ purchased: false, unsubscribed: false, opened: () => false, clicked: () => false, bucket: 0.5, ...over });
+const facts = (over: Partial<RunFacts> = {}): RunFacts => ({
+  goalReached: false,
+  unsubscribed: false,
+  recentlyEmailed: false,
+  holdUntil: null,
+  opened: () => false,
+  clicked: () => false,
+  condition: () => false,
+  bucket: 0.5,
+  ...over,
+});
 
 describe("planRun", () => {
   it("sends the first email and parks the member in the wait", () => {
@@ -32,8 +42,41 @@ describe("planRun", () => {
     expect(planRun(SAMPLE, due, facts({ clicked: (id) => id === "e1" }), NOW)).toMatchObject({ status: "done", actions: [] });
   });
 
-  it("lets buyers leave at once", () => {
-    expect(planRun(SAMPLE, start, facts({ purchased: true }), NOW)).toMatchObject({ status: "exited", exitReason: "purchased", actions: [] });
+  it("lets people who reached the goal leave at once", () => {
+    expect(planRun(SAMPLE, start, facts({ goalReached: true }), NOW)).toMatchObject({ status: "exited", exitReason: "goal", actions: [] });
+  });
+
+  it("holds an email until morning during quiet hours, then sends it", () => {
+    const night = planRun(SAMPLE, start, facts({ holdUntil: "2026-10-04T06:00:00.000Z" }), NOW);
+    expect(night).toMatchObject({ status: "waiting", actions: [], state: { nodeId: "e1", waitUntil: "2026-10-04T06:00:00.000Z" } });
+    const morning = planRun(SAMPLE, night.state, facts(), new Date("2026-10-04T06:05:00Z"));
+    expect(morning.actions).toEqual([{ kind: "send", nodeId: "e1", variant: null }]);
+    expect(morning.state.nodeId).toBe("w");
+  });
+
+  it("skips an email under smart sending but keeps the person moving", () => {
+    const plan = planRun(SAMPLE, start, facts({ recentlyEmailed: true }), NOW);
+    expect(plan.actions).toEqual([{ kind: "skip", nodeId: "e1", reason: "smart_sending" }]);
+    expect(plan.status).toBe("waiting");
+  });
+
+  it("answers member-data conditions from the facts", () => {
+    const at = { x: 0, y: 0 };
+    const graph: FlowGraph = {
+      nodes: [
+        { id: "t", type: "trigger", position: at, data: {} },
+        { id: "c", type: "condition", position: at, data: { check: "owns_chapter", courseId: "bonded-moves" } },
+        { id: "yes", type: "exit", position: at, data: {} },
+        { id: "no", type: "email", position: at, data: { subject: "S", preheader: "", body: "B", ctaLabel: "" } },
+      ],
+      edges: [
+        { id: "1", source: "t", target: "c" },
+        { id: "2", source: "c", target: "yes", sourceHandle: "yes" },
+        { id: "3", source: "c", target: "no", sourceHandle: "no" },
+      ],
+    };
+    expect(planRun(graph, start, facts({ condition: (id) => id === "c" }), NOW)).toMatchObject({ status: "done", actions: [] });
+    expect(planRun(graph, start, facts(), NOW).actions).toEqual([{ kind: "send", nodeId: "no", variant: null }]);
   });
 
   it("skips emails for unsubscribed members but keeps their place", () => {

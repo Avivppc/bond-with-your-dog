@@ -7,6 +7,19 @@ import { generateCode } from "../discount";
 
 export type ServiceClient = ReturnType<typeof createServiceClient>;
 
+const PAGE_ROWS = 1000;
+
+/** PostgREST returns at most 1000 rows per request: read every page (the query must be ordered). */
+export async function fetchAll<T>(page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>): Promise<T[]> {
+  const rows: T[] = [];
+  for (let from = 0; ; from += PAGE_ROWS) {
+    const { data, error } = await page(from, from + PAGE_ROWS - 1);
+    if (error) throw new Error(`read failed: ${error.message}`);
+    rows.push(...(data ?? []));
+    if (!data || data.length < PAGE_ROWS) return rows;
+  }
+}
+
 export interface ChapterOffer {
   slug: string;
   title: string;

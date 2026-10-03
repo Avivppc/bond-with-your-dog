@@ -2,7 +2,8 @@ import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { loadFlowList } from "@/lib/flows/server/admin";
-import { FLOW_TEMPLATES, TRIGGER_LABEL } from "@/lib/flows/templates";
+import { FLOW_TEMPLATES } from "@/lib/flows/templates";
+import { describeTrigger, triggerDef } from "@/lib/flows/triggers";
 import { percent } from "@/lib/flows/stats";
 import { formatUsd } from "@/lib/flows/discount";
 import { plural } from "@/lib/feedback/format";
@@ -25,7 +26,7 @@ export default async function EmailFlowsPage({ searchParams }: { searchParams: P
 
   return (
     <>
-      <PageHeader title="Email flows" description="Automated emails that offer members the next chapter, with a personal discount code." />
+      <PageHeader title="Email flows" description="Automated emails that go out when people do something: sign up, finish a chapter, stop practicing, leave checkout, take the quiz." />
       {error && <Notice tone="error">Couldn&apos;t create the flow. Try again.</Notice>}
 
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -62,7 +63,7 @@ export default async function EmailFlowsPage({ searchParams }: { searchParams: P
                       <Link href={`/admin/email-flows/${flow.id}`} className="font-medium text-[#1a1a19] hover:underline">
                         {flow.name}
                       </Link>
-                      <div className={`text-[12px] ${MUTED}`}>{TRIGGER_LABEL[flow.trigger]}</div>
+                      <div className={`text-[12px] ${MUTED}`}>{describeTrigger(flow.trigger, flow.trigger_params ?? {})}</div>
                     </td>
                     <td className={TD}>
                       <StatusPill tone={STATUS_TONE[flow.status]}>{flow.status[0].toUpperCase() + flow.status.slice(1)}</StatusPill>
@@ -84,7 +85,7 @@ export default async function EmailFlowsPage({ searchParams }: { searchParams: P
       </Card>
 
       <h2 className="mb-3 mt-8 text-base font-semibold text-[#1a1a19]">Start a new flow</h2>
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {FLOW_TEMPLATES.map((t) => (
           <form key={t.key} action={createFlow} className="flex flex-col gap-3 rounded-[12px] border border-[#e7e6e4] bg-white p-5 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             <input type="hidden" name="template" value={t.key} />
@@ -93,7 +94,8 @@ export default async function EmailFlowsPage({ searchParams }: { searchParams: P
               <p className={`mt-1 text-[14px] ${MUTED}`}>{t.description}</p>
             </div>
             <p className={`text-[12px] ${MUTED}`}>
-              Trigger: {TRIGGER_LABEL[t.trigger]} · {t.discountPercent}% code for {t.discountValidDays} days
+              {triggerDef(t.trigger).group} · {describeTrigger(t.trigger, t.triggerParams)}
+              {t.discountPercent ? ` · ${t.discountPercent}% code for ${t.discountValidDays} days` : ""}
             </p>
             <button type="submit" className={`${BTN_SECONDARY} self-start`}>
               Use this template

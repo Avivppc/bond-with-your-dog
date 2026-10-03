@@ -1,6 +1,6 @@
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { readUnsubscribeToken, unsubscribeToken, verifyResendWebhook } from "./signing";
+import { readUnsubscribeToken, unsubscribeToken, unsubscribeTokenForEmail, verifyResendWebhook } from "./signing";
 
 const SECRET = `whsec_${Buffer.from("test-secret-key-0123456789").toString("base64")}`;
 const NOW = new Date("2026-10-03T12:00:00Z");
@@ -26,12 +26,19 @@ describe("verifyResendWebhook", () => {
 
 describe("unsubscribe tokens", () => {
   const user = "0b641034-1111-4222-8333-444455556666";
-  it("round-trips and can't be forged for another member", () => {
+  it("round-trips a member token and can't be forged for another member", () => {
     const token = unsubscribeToken(user, "s3cret");
-    expect(readUnsubscribeToken(token, "s3cret")).toBe(user);
+    expect(readUnsubscribeToken(token, "s3cret")).toEqual({ userId: user });
     expect(readUnsubscribeToken(token, "other")).toBeNull();
     const other = "11111111-1111-4222-8333-444455556666";
     expect(readUnsubscribeToken(`${other}.${token.split(".")[1]}`, "s3cret")).toBeNull();
     expect(readUnsubscribeToken("not-a-token", "s3cret")).toBeNull();
+  });
+
+  it("round-trips an address token for people without an account", () => {
+    const token = unsubscribeTokenForEmail("Lead@Test.dev", "s3cret");
+    expect(readUnsubscribeToken(token, "s3cret")).toEqual({ email: "lead@test.dev" });
+    const forged = `e.${Buffer.from("victim@test.dev").toString("base64url")}.${token.split(".")[2]}`;
+    expect(readUnsubscribeToken(forged, "s3cret")).toBeNull();
   });
 });

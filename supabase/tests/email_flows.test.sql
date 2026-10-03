@@ -79,7 +79,7 @@ reset role;
 select t.ok((select open_count from public.email_messages where provider_id = 're_test_2') = 1, 'a retried webhook does not double-count');
 
 -- One email per member per step; failed attempts don't block a retry.
-insert into public.email_flows (id, name, trigger) values ('f4000000-0000-0000-0000-000000000001', 'Test flow', 'chapter_80');
+insert into public.email_flows (id, name, trigger) values ('f4000000-0000-0000-0000-000000000001', 'Test flow', 'chapter_progress');
 insert into public.email_flow_runs (id, flow_id, user_id, course_id, target_course_id, node_id)
 values ('f5000000-0000-0000-0000-000000000001', 'f4000000-0000-0000-0000-000000000001', '00000000-0000-0000-0000-0000000f1001', 'flow-a', 'flow-b', 't');
 insert into public.email_messages (run_id, node_id, to_email, subject, status) values ('f5000000-0000-0000-0000-000000000001', 'e1', 'x@test.dev', 'S', 'failed');

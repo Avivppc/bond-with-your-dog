@@ -34,15 +34,30 @@ export function verifyResendWebhook(secret: string, headers: WebhookHeaders, bod
   });
 }
 
+const sign = (payload: string, secret: string) => createHmac("sha256", secret).update(payload).digest("base64url").slice(0, 32);
+
 /** "<userId>.<signature>": a link that unsubscribes exactly this member and can't be guessed for another. */
 export function unsubscribeToken(userId: string, secret: string): string {
-  const sig = createHmac("sha256", secret).update(`unsubscribe:${userId}`).digest("base64url").slice(0, 32);
-  return `${userId}.${sig}`;
+  return `${userId}.${sign(`unsubscribe:${userId}`, secret)}`;
 }
 
-/** The member a valid unsubscribe token belongs to, or null. */
-export function readUnsubscribeToken(token: string, secret: string): string | null {
+/** "e.<address>.<signature>": the same for someone without an account (a quiz lead). */
+export function unsubscribeTokenForEmail(email: string, secret: string): string {
+  const address = email.trim().toLowerCase();
+  return `e.${Buffer.from(address).toString("base64url")}.${sign(`unsubscribe-email:${address}`, secret)}`;
+}
+
+export type UnsubscribeSubject = { userId: string } | { email: string };
+
+/** Who a valid unsubscribe token belongs to, or null. */
+export function readUnsubscribeToken(token: string, secret: string): UnsubscribeSubject | null {
+  if (token.startsWith("e.")) {
+    const [, encoded = ""] = token.split(".");
+    const email = Buffer.from(encoded, "base64url").toString("utf8");
+    if (!/^[^\s@]+@[^\s@]+$/.test(email)) return null;
+    return safeEqual(token, unsubscribeTokenForEmail(email, secret)) ? { email } : null;
+  }
   const userId = token.split(".")[0] ?? "";
   if (!/^[0-9a-f-]{36}$/i.test(userId)) return null;
-  return safeEqual(token, unsubscribeToken(userId, secret)) ? userId : null;
+  return safeEqual(token, unsubscribeToken(userId, secret)) ? { userId } : null;
 }

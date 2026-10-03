@@ -17,17 +17,24 @@ export interface RunState {
 }
 
 export interface RunFacts {
-  /** They bought the chapter the flow sells: they leave the flow. */
-  purchased: boolean;
+  /** They reached the flow's goal (bought the offer, practiced, signed up…): they leave the flow. */
+  goalReached: boolean;
   /** They unsubscribed: emails are skipped, the flow still runs (and stops at the end). */
   unsubscribed: boolean;
+  /** Smart sending: they got a marketing email very recently, so this one is skipped. */
+  recentlyEmailed: boolean;
+  /** Quiet hours: it's night where they are; emails wait until this moment (null = send now). */
+  holdUntil: string | null;
   opened(emailNodeId: string): boolean;
   clicked(emailNodeId: string): boolean;
-  /** A stable number in [0, 1) for this member, for A/B splits. */
+  /** Answers for conditions about member data (owns a chapter, practiced…), by condition node id. */
+  condition(conditionNodeId: string): boolean;
+  /** A stable number in [0, 1) for this person, for A/B splits. */
   bucket: number;
 }
 
-export type RunAction = { kind: "send"; nodeId: string; variant: string | null } | { kind: "skip"; nodeId: string; reason: "unsubscribed" };
+export type SkipReason = "unsubscribed" | "smart_sending";
+export type RunAction = { kind: "send"; nodeId: string; variant: string | null } | { kind: "skip"; nodeId: string; reason: SkipReason };
 
 export interface RunPlan {
   actions: RunAction[];
@@ -46,7 +53,7 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
   const finish = (status: RunStatus, exitReason: string | null = null): RunPlan => ({ actions, status, state, exitReason });
 
   for (let step = 0; step < MAX_STEPS; step++) {
-    if (facts.purchased) return finish("exited", "purchased");
+    if (facts.goalReached) return finish("exited", "goal");
     const node = findNode(graph, state.nodeId);
     if (!node) return finish("exited", "step_removed");
 
@@ -63,13 +70,25 @@ export function planRun(graph: FlowGraph, start: RunState, facts: RunFacts, now:
         state = { ...state, waitUntil: null };
         break;
       }
-      case "email":
-        actions.push(facts.unsubscribed ? { kind: "skip", nodeId: node.id, reason: "unsubscribed" } : { kind: "send", nodeId: node.id, variant });
-        state = { ...state, lastEmailNodeId: node.id };
+      case "email": {
+        if (facts.unsubscribed) actions.push({ kind: "skip", nodeId: node.id, reason: "unsubscribed" });
+        else if (facts.recentlyEmailed) actions.push({ kind: "skip", nodeId: node.id, reason: "smart_sending" });
+        else if (facts.holdUntil && actions.length === 0) {
+          // Quiet hours: stay on this email until morning where they are.
+          state = { ...state, waitUntil: facts.holdUntil };
+          return finish("waiting");
+        } else actions.push({ kind: "send", nodeId: node.id, variant });
+        state = { ...state, lastEmailNodeId: node.id, waitUntil: null };
         break;
+      }
       case "condition": {
         const last = state.lastEmailNodeId;
-        const yes = last !== null && (node.data.check === "opened" ? facts.opened(last) || facts.clicked(last) : facts.clicked(last));
+        const yes =
+          node.data.check === "opened"
+            ? last !== null && (facts.opened(last) || facts.clicked(last))
+            : node.data.check === "clicked"
+              ? last !== null && facts.clicked(last)
+              : facts.condition(node.id);
         branch = yes ? "yes" : "no";
         break;
       }
