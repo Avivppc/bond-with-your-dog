@@ -258,6 +258,32 @@ export async function uploadSiteImage(formData: FormData): Promise<UploadResult>
   }
 }
 
+export interface UploadedImage {
+  src: string;
+  name: string;
+  createdAt: string | null;
+}
+
+const MAX_LIBRARY = 300;
+
+/** Images uploaded for the website, newest first (one folder per year in the bucket). */
+export async function listSiteUploads(): Promise<UploadedImage[]> {
+  await requireStaff("content");
+  const storage = createServiceClient().storage.from(SITE_MEDIA);
+  const { data: folders, error } = await storage.list("", { limit: 100, sortBy: { column: "name", order: "desc" } });
+  if (error) {
+    console.error("[site images] list failed", { error: error.message });
+    return [];
+  }
+  const years = (folders ?? []).filter((f) => /^\d{4}$/.test(f.name)).map((f) => f.name);
+  const lists = await Promise.all(years.map((y) => storage.list(y, { limit: MAX_LIBRARY, sortBy: { column: "created_at", order: "desc" } })));
+  return lists
+    .flatMap((res, i) => (res.data ?? []).filter((f) => f.id).map((f) => ({ path: `${years[i]}/${f.name}`, createdAt: f.created_at ?? null })))
+    .sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""))
+    .slice(0, MAX_LIBRARY)
+    .map((f) => ({ src: storage.getPublicUrl(f.path).data.publicUrl, name: f.path.split("/").pop() ?? f.path, createdAt: f.createdAt }));
+}
+
 // ---------- Theme ----------
 
 export async function saveThemeDraft(rev: number, input: unknown): Promise<EditorResult> {

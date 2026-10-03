@@ -2,116 +2,46 @@
 
 import { useEffect, useState } from "react";
 import { SECTION_CATEGORIES, type SectionDef } from "@/lib/site/section-def";
-import { SECTION_DEFS, SECTION_LIST } from "@/lib/site/registry";
-import type { PageSeo, SectionInstance } from "@/lib/site/page-doc";
+import { SECTION_LIST } from "@/lib/site/registry";
+import type { PageSeo } from "@/lib/site/page-doc";
+import type { FieldValues } from "@/lib/site/fields";
+import { BLOCK_PRESETS, blocksSection } from "@/lib/site/sections/blocks";
 import { INPUT } from "@/app/admin/_components/ui";
 import { listSiteVersions, type VersionSummary } from "../actions";
 import { PanelHeader } from "./shell";
 
-const ROW_BTN = "flex h-7 w-7 items-center justify-center rounded-[6px] text-[#6c6a69] hover:bg-[#efeeed] hover:text-[#1a1a19] disabled:opacity-30";
+const PICK = "flex w-full items-start gap-2 rounded-[8px] border border-[#efeeed] px-2.5 py-2 text-left hover:border-[#d9d8d6] hover:bg-[#fafaf9]";
 
-/** The page's sections, top to bottom, with show/hide, move, duplicate and remove. */
-export function SectionList({
-  sections,
-  selected,
-  onSelect,
-  onChange,
-  onAdd,
-  onPageSettings,
-  onHistory,
-}: {
-  sections: SectionInstance[];
-  selected: string | null;
-  onSelect: (id: string) => void;
-  onChange: (next: SectionInstance[]) => void;
-  onAdd: () => void;
-  onPageSettings: () => void;
-  onHistory: () => void;
-}) {
-  const move = (i: number, to: number) => {
-    const next = [...sections];
-    const [s] = next.splice(i, 1);
-    next.splice(to, 0, s);
-    onChange(next);
-  };
-  const duplicate = (i: number) => {
-    const taken = new Set(sections.map((s) => s.id));
-    let n = 2;
-    while (taken.has(`${sections[i].id}-${n}`)) n++;
-    const copy = { ...structuredClone(sections[i]), id: `${sections[i].id}-${n}`.slice(0, 40) };
-    onChange([...sections.slice(0, i + 1), copy, ...sections.slice(i + 1)]);
-  };
-  return (
-    <div>
-      <PanelHeader title="Sections">
-        <button type="button" onClick={onHistory} className={ROW_BTN} aria-label="Versions" title="Versions">
-          <span className="material-symbols-outlined text-[18px]">history</span>
-        </button>
-        <button type="button" onClick={onPageSettings} className={ROW_BTN} aria-label="Page settings" title="Page settings">
-          <span className="material-symbols-outlined text-[18px]">settings</span>
-        </button>
-      </PanelHeader>
-      <ul className="p-2">
-        <li className="flex items-center gap-2 rounded-[8px] px-2 py-2 text-[13px] text-[#9b9997]">
-          <span className="material-symbols-outlined text-[18px]">web_asset</span>Header (edit in Theme)
-        </li>
-        {sections.map((s, i) => {
-          const def = SECTION_DEFS[s.type];
-          return (
-            <li key={s.id} className={`group flex items-center gap-1 rounded-[8px] px-1 ${selected === s.id ? "bg-[#efeeed]" : "hover:bg-[#f8f8f8]"}`}>
-              <button type="button" onClick={() => onSelect(s.id)} className={`flex min-w-0 flex-1 items-center gap-2 px-1 py-2 text-left text-[13px] ${s.hidden ? "text-[#9b9997] line-through" : ""}`}>
-                <span className="material-symbols-outlined text-[18px] text-[#6c6a69]">{def?.icon ?? "help"}</span>
-                <span className="truncate">{def?.label ?? s.type}</span>
-              </button>
-              <div className="flex opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-                <button type="button" className={ROW_BTN} disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Move up">
-                  <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
-                </button>
-                <button type="button" className={ROW_BTN} disabled={i === sections.length - 1} onClick={() => move(i, i + 1)} aria-label="Move down">
-                  <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
-                </button>
-                <button type="button" className={ROW_BTN} onClick={() => onChange(sections.map((x, j) => (j === i ? { ...x, hidden: !x.hidden } : x)))} aria-label={s.hidden ? "Show section" : "Hide section"}>
-                  <span className="material-symbols-outlined text-[18px]">{s.hidden ? "visibility_off" : "visibility"}</span>
-                </button>
-                <button type="button" className={ROW_BTN} onClick={() => duplicate(i)} aria-label="Duplicate section">
-                  <span className="material-symbols-outlined text-[18px]">content_copy</span>
-                </button>
-                <button
-                  type="button"
-                  className={ROW_BTN}
-                  onClick={() => window.confirm(`Remove "${def?.label ?? s.type}" from this page?`) && onChange(sections.filter((_, j) => j !== i))}
-                  aria-label="Remove section"
-                >
-                  <span className="material-symbols-outlined text-[18px]">delete</span>
-                </button>
-              </div>
-            </li>
-          );
-        })}
-        <li>
-          <button type="button" onClick={onAdd} className="mt-1 flex w-full items-center gap-2 rounded-[8px] px-2 py-2 text-[13px] font-medium text-[#1d4f91] hover:bg-[#e6f0fb]">
-            <span className="material-symbols-outlined text-[18px]">add_circle</span>Add section
-          </button>
-        </li>
-        <li className="flex items-center gap-2 rounded-[8px] px-2 py-2 text-[13px] text-[#9b9997]">
-          <span className="material-symbols-outlined text-[18px]">call_to_action</span>Footer (edit in Theme)
-        </li>
-      </ul>
-    </div>
-  );
-}
-
-export function AddSectionPicker({ onPick, onBack }: { onPick: (def: SectionDef) => void; onBack: () => void }) {
+export function AddSectionPicker({ onPick, onBack }: { onPick: (def: SectionDef, settings?: FieldValues) => void; onBack: () => void }) {
   const [q, setQ] = useState("");
-  const match = (d: SectionDef) => !q || `${d.label} ${d.description}`.toLowerCase().includes(q.toLowerCase());
+  const match = (d: { label: string; description: string }) => !q || `${d.label} ${d.description}`.toLowerCase().includes(q.toLowerCase());
+  const presets = BLOCK_PRESETS.filter(match);
   return (
     <div>
       <PanelHeader title="Add section" onBack={onBack} />
       <div className="p-3">
         <input className={INPUT} placeholder="Search sections" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search sections" />
       </div>
+      {presets.length > 0 && (
+        <div className="px-3 pb-3">
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-[#9b9997]">Build your own (blocks)</p>
+          <ul className="space-y-1">
+            {presets.map((p) => (
+              <li key={p.label}>
+                <button type="button" onClick={() => onPick(blocksSection, structuredClone(p.settings))} className={PICK}>
+                  <span className="material-symbols-outlined mt-0.5 text-[18px] text-[#2563eb]">{p.icon}</span>
+                  <span>
+                    <span className="block text-[13px] font-medium">{p.label}</span>
+                    <span className="block text-[12px] text-[#6c6a69]">{p.description}</span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {SECTION_CATEGORIES.map((cat) => {
-        const defs = SECTION_LIST.filter((d) => d.category === cat && match(d));
+        const defs = SECTION_LIST.filter((d) => d.category === cat && d.type !== blocksSection.type && match(d));
         if (defs.length === 0) return null;
         return (
           <div key={cat} className="px-3 pb-3">
@@ -119,7 +49,7 @@ export function AddSectionPicker({ onPick, onBack }: { onPick: (def: SectionDef)
             <ul className="space-y-1">
               {defs.map((d) => (
                 <li key={d.type}>
-                  <button type="button" onClick={() => onPick(d)} className="flex w-full items-start gap-2 rounded-[8px] border border-[#efeeed] px-2.5 py-2 text-left hover:border-[#d9d8d6] hover:bg-[#fafaf9]">
+                  <button type="button" onClick={() => onPick(d)} className={PICK}>
                     <span className="material-symbols-outlined mt-0.5 text-[18px] text-[#6c6a69]">{d.icon}</span>
                     <span>
                       <span className="block text-[13px] font-medium">{d.label}</span>

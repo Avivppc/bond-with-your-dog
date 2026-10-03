@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { isSafeImageSrc, valuesSchema, withDefaults, type FieldValues } from "./fields";
 import type { SectionDef } from "./section-def";
+import { DEFAULT_STYLE, readSectionStyle, sectionStyleSchema, type SectionStyle } from "./section-style";
 
 /** A page as the editor saves it: an ordered list of sections. Pure. */
 
@@ -10,6 +11,8 @@ export interface SectionInstance {
   type: string;
   hidden: boolean;
   settings: FieldValues;
+  /** Background, spacing, visibility and anchor (the editor's Style tab). */
+  style: SectionStyle;
 }
 
 export interface PageDoc {
@@ -46,7 +49,9 @@ export type ParsedDoc = { ok: true; doc: PageDoc } | { ok: false; error: string 
 export function parsePageDoc(raw: unknown, defs: Readonly<Record<string, SectionDef>>): ParsedDoc {
   const shape = z
     .object({
-      sections: z.array(z.object({ id: z.string().regex(SECTION_ID), type: z.string(), hidden: z.boolean(), settings: z.unknown() })).max(MAX_SECTIONS, `A page can have up to ${MAX_SECTIONS} sections.`),
+      sections: z
+        .array(z.object({ id: z.string().regex(SECTION_ID), type: z.string(), hidden: z.boolean(), settings: z.unknown(), style: sectionStyleSchema.optional() }))
+        .max(MAX_SECTIONS, `A page can have up to ${MAX_SECTIONS} sections.`),
       assistant: z.boolean(),
     })
     .safeParse(raw);
@@ -60,7 +65,7 @@ export function parsePageDoc(raw: unknown, defs: Readonly<Record<string, Section
     ids.add(s.id);
     const values = valuesSchema(def.fields).safeParse(s.settings);
     if (!values.success) return { ok: false, error: `${def.label}: ${values.error.issues[0]?.message ?? "check its fields."}` };
-    sections.push({ id: s.id, type: s.type, hidden: s.hidden, settings: values.data });
+    sections.push({ id: s.id, type: s.type, hidden: s.hidden, settings: values.data, style: s.style ?? DEFAULT_STYLE });
   }
   return { ok: true, doc: { sections, assistant: shape.data.assistant } };
 }
@@ -71,10 +76,10 @@ export function readPageDoc(raw: unknown, defs: Readonly<Record<string, SectionD
   const list = Array.isArray(obj.sections) ? obj.sections : [];
   const sections = list.flatMap((s: unknown): SectionInstance[] => {
     if (!s || typeof s !== "object") return [];
-    const { id, type, hidden, settings } = s as Record<string, unknown>;
+    const { id, type, hidden, settings, style } = s as Record<string, unknown>;
     const def = typeof type === "string" ? defs[type] : undefined;
     if (!def || typeof id !== "string") return [];
-    return [{ id, type: def.type, hidden: hidden === true, settings: withDefaults(def.fields, def.defaults, settings) }];
+    return [{ id, type: def.type, hidden: hidden === true, settings: withDefaults(def.fields, def.defaults, settings), style: readSectionStyle(style) }];
   });
   return { sections, assistant: obj.assistant === true };
 }
@@ -84,5 +89,5 @@ export function newSection(def: SectionDef, taken: ReadonlySet<string>): Section
   const base = def.type.replace(/_/g, "-");
   let n = 1;
   while (taken.has(`${base}-${n}`)) n++;
-  return { id: `${base}-${n}`, type: def.type, hidden: false, settings: structuredClone(def.defaults) };
+  return { id: `${base}-${n}`, type: def.type, hidden: false, settings: structuredClone(def.defaults), style: DEFAULT_STYLE };
 }

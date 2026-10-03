@@ -32,7 +32,20 @@ export type FieldDef =
   | (Base & { kind: "toggle" })
   | (Base & { kind: "youtube" })
   | (Base & { kind: "icon" })
-  | (Base & { kind: "list"; itemLabel: string; fields: readonly FieldDef[]; max: number; min?: number; /** Field shown as each item's title in the editor. */ titleKey?: string });
+  | (Base & { kind: "list"; itemLabel: string; fields: readonly FieldDef[]; max: number; min?: number; /** Field shown as each item's title in the editor. */ titleKey?: string })
+  /** A free list of building blocks of different kinds (heading, text, image…), each with its own fields. */
+  | (Base & { kind: "blocks"; blockTypes: readonly BlockDef[]; max: number });
+
+/** One kind of block inside a "blocks" field. */
+export interface BlockDef {
+  type: string;
+  label: string;
+  icon: string;
+  fields: readonly FieldDef[];
+  defaults: FieldValues;
+  /** Field shown as the block's title in the editor list. */
+  titleKey?: string;
+}
 
 export type FieldValue = string | boolean | ImageValue | LinkValue | FieldValues[];
 export type FieldValues = { [key: string]: FieldValue };
@@ -125,12 +138,38 @@ export function fieldSchema(field: FieldDef): z.ZodType<FieldValue> {
         .transform((v) => (v.trim() === "" ? "" : youtubeId(v)));
     case "icon":
       return z.string().refine((v) => v === "" || ICON.test(v), `${field.label}: use a Material Symbols name like "pets".`);
+    case "blocks":
+      return blocksSchema(field);
     case "list":
       return z
         .array(valuesSchema(field.fields))
         .max(field.max, `${field.label}: up to ${field.max} ${field.itemLabel.toLowerCase()}s.`)
         .refine((items) => items.length >= (field.min ?? 0), `${field.label}: add at least ${field.min ?? 0}.`);
   }
+}
+
+/** Each block is checked against its own kind's fields; its "type" is kept. */
+function blocksSchema(field: Extract<FieldDef, { kind: "blocks" }>): z.ZodType<FieldValues[]> {
+  const byType = new Map(field.blockTypes.map((b) => [b.type, b]));
+  return z
+    .array(z.unknown())
+    .max(field.max, `${field.label}: up to ${field.max} blocks.`)
+    .transform((items, ctx) =>
+      items.flatMap((raw, i): FieldValues[] => {
+        const type = raw && typeof raw === "object" ? (raw as { type?: unknown }).type : undefined;
+        const def = typeof type === "string" ? byType.get(type) : undefined;
+        if (!def) {
+          ctx.addIssue({ code: "custom", message: `${field.label}: block ${i + 1} is of an unknown kind.` });
+          return [];
+        }
+        const parsed = valuesSchema(def.fields).safeParse(raw);
+        if (!parsed.success) {
+          ctx.addIssue({ code: "custom", message: `${def.label}: ${parsed.error.issues[0]?.message ?? "check its fields."}` });
+          return [];
+        }
+        return [{ ...parsed.data, type: def.type }];
+      }),
+    ) as unknown as z.ZodType<FieldValues[]>;
 }
 
 /** Values for a set of fields: known keys only (unknown ones are dropped). */
@@ -150,6 +189,7 @@ export function emptyValue(field: FieldDef): FieldValue {
     case "toggle":
       return false;
     case "list":
+    case "blocks":
       return [];
     default:
       return "";
@@ -166,8 +206,24 @@ export function withDefaults(fields: readonly FieldDef[], defaults: FieldValues,
       if (value === undefined) return [f.key, fallback];
       // Items one by one, so a field added to a list later doesn't throw the whole list away.
       if (f.kind === "list" && Array.isArray(value)) return [f.key, value.slice(0, f.max).map((item) => withDefaults(f.fields, {}, item))];
+      if (f.kind === "blocks" && Array.isArray(value)) return [f.key, readBlocks(f, value)];
       const parsed = fieldSchema(f).safeParse(value);
       return [f.key, parsed.success ? parsed.data : fallback];
     }),
   );
+}
+
+/** Saved blocks → known kinds only, each with its defaults filled in. */
+function readBlocks(field: Extract<FieldDef, { kind: "blocks" }>, items: unknown[]): FieldValues[] {
+  const byType = new Map(field.blockTypes.map((b) => [b.type, b]));
+  return items.slice(0, field.max).flatMap((raw) => {
+    const type = raw && typeof raw === "object" ? (raw as { type?: unknown }).type : undefined;
+    const def = typeof type === "string" ? byType.get(type) : undefined;
+    return def ? [{ ...withDefaults(def.fields, def.defaults, raw), type: def.type }] : [];
+  });
+}
+
+/** A new block of a kind, with its starter content. */
+export function newBlock(def: BlockDef): FieldValues {
+  return { ...structuredClone(def.defaults), type: def.type };
 }

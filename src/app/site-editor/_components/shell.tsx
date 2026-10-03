@@ -11,29 +11,70 @@ export type Device = "desktop" | "mobile";
 
 export interface PreviewHandle {
   refresh: () => void;
-  focus: (id: string | null) => void;
+  /** Reload the preview from scratch, keeping the scroll position (after typing on the page). */
+  reload: () => void;
+  /** Outline a section; scroll to it unless it was clicked in the preview itself. */
+  focus: (id: string | null, scroll?: boolean) => void;
 }
 
-interface PreviewProps {
+export interface PreviewEvents {
+  onSelect?: (id: string) => void;
+  /** "+" between sections in the preview (index to insert at). */
+  onInsert?: (index: number) => void;
+  /** Undo/redo pressed while the preview had focus. */
+  onKey?: (key: "undo" | "redo") => void;
+  /** Text typed right on the page. */
+  onEdit?: (id: string, path: string, value: string) => void;
+  onEditEnd?: () => void;
+  /** An image or button clicked on the page: open its field. */
+  onFocusField?: (id: string, path: string) => void;
+}
+
+interface PreviewProps extends PreviewEvents {
   src: string;
   device: Device;
-  onSelect?: (id: string) => void;
 }
 
-export const PreviewFrame = forwardRef<PreviewHandle, PreviewProps>(function PreviewFrame({ src, device, onSelect }, ref) {
+type Incoming = { type?: string; id?: string; index?: number; key?: string; path?: string; value?: string };
+
+export const PreviewFrame = forwardRef<PreviewHandle, PreviewProps>(function PreviewFrame({ src, device, ...events }, ref) {
   const frame = useRef<HTMLIFrameElement>(null);
+  const restoreScroll = useRef<number | null>(null);
+  const handlers = useRef(events);
+  useEffect(() => {
+    handlers.current = events;
+  });
   const post = (msg: Record<string, unknown>) => frame.current?.contentWindow?.postMessage(msg, window.location.origin);
-  useImperativeHandle(ref, () => ({ refresh: () => post({ type: PREVIEW_MESSAGES.refresh }), focus: (id) => post({ type: PREVIEW_MESSAGES.focus, id }) }));
+  useImperativeHandle(ref, () => ({
+    refresh: () => post({ type: PREVIEW_MESSAGES.refresh }),
+    reload: () => {
+      const win = frame.current?.contentWindow;
+      if (!win) return;
+      restoreScroll.current = win.scrollY;
+      win.location.reload();
+    },
+    focus: (id, scroll = true) => post({ type: PREVIEW_MESSAGES.focus, id, scroll }),
+  }));
 
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.origin !== window.location.origin || e.source !== frame.current?.contentWindow) return;
-      const data = e.data as { type?: string; id?: string };
-      if (data.type === PREVIEW_MESSAGES.select && data.id) onSelect?.(data.id);
+      const d = e.data as Incoming;
+      const h = handlers.current;
+      if (d.type === PREVIEW_MESSAGES.select && d.id) h.onSelect?.(d.id);
+      else if (d.type === PREVIEW_MESSAGES.insert && typeof d.index === "number") h.onInsert?.(d.index);
+      else if (d.type === PREVIEW_MESSAGES.key && (d.key === "undo" || d.key === "redo")) h.onKey?.(d.key);
+      else if (d.type === PREVIEW_MESSAGES.edit && d.id && d.path && typeof d.value === "string") h.onEdit?.(d.id, d.path, d.value);
+      else if (d.type === PREVIEW_MESSAGES.editEnd) h.onEditEnd?.();
+      else if (d.type === PREVIEW_MESSAGES.focusField && d.id && d.path) h.onFocusField?.(d.id, d.path);
+      else if (d.type === PREVIEW_MESSAGES.ready && restoreScroll.current !== null) {
+        frame.current?.contentWindow?.scrollTo(0, restoreScroll.current);
+        restoreScroll.current = null;
+      }
     }
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [onSelect]);
+  }, []);
 
   return (
     <div className="flex h-full justify-center overflow-hidden bg-[#e9e8e6] p-3">
@@ -99,7 +140,7 @@ export function EditorShell({ title, status, device, onDevice, actions, panel, p
       </header>
       {notice}
       <div className="flex min-h-0 flex-1">
-        <aside className={`${panelOpen ? "flex" : "hidden"} w-full shrink-0 flex-col overflow-y-auto border-r border-[#e7e6e4] bg-white md:flex md:w-[340px]`}>{panel}</aside>
+        <aside className={`${panelOpen ? "flex" : "hidden"} w-full shrink-0 flex-col overflow-y-auto border-r border-[#e7e6e4] bg-white md:flex md:w-[380px]`}>{panel}</aside>
         <section className={`${panelOpen ? "hidden md:block" : "block"} min-w-0 flex-1`}>{preview}</section>
       </div>
     </div>

@@ -168,6 +168,12 @@ function cleanValues(fields: readonly FieldDef[], values: FieldValues): FieldVal
       const v = values[f.key];
       if (f.kind === "richtext" && typeof v === "string") return [f.key, sanitizeSiteHtml(v)];
       if (f.kind === "list" && Array.isArray(v)) return [f.key, v.map((item) => cleanValues(f.fields, item))];
+      if (f.kind === "blocks" && Array.isArray(v)) {
+        return [f.key, v.map((item) => {
+          const def = f.blockTypes.find((b) => b.type === item.type);
+          return def ? { ...cleanValues(def.fields, item), type: def.type } : item;
+        })];
+      }
       return [f.key, v];
     }),
   );

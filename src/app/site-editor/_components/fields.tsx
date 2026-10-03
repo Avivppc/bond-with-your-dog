@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { emptyValue, type FieldDef, type FieldValue, type FieldValues, type ImageValue, type LinkValue } from "@/lib/site/fields";
+import { createContext, useContext, useState } from "react";
+import { emptyValue, newBlock, type BlockDef, type FieldDef, type FieldValue, type FieldValues, type ImageValue, type LinkValue } from "@/lib/site/fields";
 import { INPUT } from "@/app/admin/_components/ui";
-import { uploadSiteImage } from "../actions";
+import { ImageLibrary } from "./ImageLibrary";
 import { RichTextField } from "./RichTextField";
 
 /** One control per field kind; values go up through onChange (the editor keeps the page state). */
@@ -27,34 +27,55 @@ const asString = (v: FieldValue | undefined) => (typeof v === "string" ? v : "")
 const asImage = (v: FieldValue | undefined): ImageValue => (v && typeof v === "object" && !Array.isArray(v) && "src" in v ? (v as ImageValue) : { src: "", alt: "" });
 const asLink = (v: FieldValue | undefined): LinkValue => (v && typeof v === "object" && !Array.isArray(v) && "href" in v ? (v as LinkValue) : { label: "", href: "" });
 
-function ImageControl({ field, value, onChange, id }: { field: FieldDef; value: ImageValue; onChange: (v: ImageValue) => void; id: string }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  async function upload(file: File | undefined) {
-    if (!file) return;
-    setBusy(true);
-    setError(null);
-    const form = new FormData();
-    form.append("file", file);
-    const result = await uploadSiteImage(form).catch(() => ({ error: "The upload didn't go through. Try again." }));
-    setBusy(false);
-    if ("error" in result) setError(result.error);
-    else onChange({ src: result.url, alt: value.alt });
+
+/**
+ * A field to bring into view (clicked on the page): the DOM id of its wrapper, and a counter so
+ * the same field can be asked for twice. Lists open the item that holds it.
+ */
+export const FieldFocusContext = createContext<{ target: string | null; nonce: number }>({ target: null, nonce: 0 });
+
+/** The wrapper id of the field at `path` in a section: "f-hero-cards-1-title". */
+export const fieldDomId = (sectionId: string, path: string) => `f-${sectionId}-${path.split("#")[0].replace(/\./g, "-")}`;
+
+function forcedIndex(target: string | null, id: string, count: number): number | null {
+  const prefix = `f-${id}-`;
+  if (!target?.startsWith(prefix)) return null;
+  const i = parseInt(target.slice(prefix.length), 10);
+  return Number.isInteger(i) && i >= 0 && i < count ? i : null;
+}
+
+/** Opens the list item holding the focused field, once per focus request. */
+function useFocusedItem(id: string, count: number, setOpen: (i: number) => void) {
+  const focus = useContext(FieldFocusContext);
+  // Requests are numbered from 1, so a list that opens because of one still acts on it.
+  const [seen, setSeen] = useState(0);
+  if (focus.nonce !== seen) {
+    setSeen(focus.nonce);
+    const i = forcedIndex(focus.target, id, count);
+    if (i !== null) setOpen(i);
   }
+}
+
+function ImageControl({ field, value, onChange, id }: { field: FieldDef; value: ImageValue; onChange: (v: ImageValue) => void; id: string }) {
+  const [library, setLibrary] = useState(false);
   return (
     <div>
       <Label field={field} htmlFor={`${id}-alt`} />
       <div className="flex gap-3">
-        <div className="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e7e6e4] bg-[#f8f8f8]">
+        <button
+          type="button"
+          onClick={() => setLibrary(true)}
+          className="flex h-16 w-20 shrink-0 items-center justify-center overflow-hidden rounded-[8px] border border-[#e7e6e4] bg-[#f8f8f8] hover:border-[#343332]"
+          aria-label={value.src ? `Change ${field.label}` : `Choose ${field.label}`}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element -- a preview of whatever image is chosen */}
-          {value.src ? <img src={value.src} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined text-[#9b9997]">image</span>}
-        </div>
+          {value.src ? <img src={value.src} alt="" className="h-full w-full object-cover" /> : <span className="material-symbols-outlined text-[#9b9997]">add_photo_alternate</span>}
+        </button>
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap gap-2">
-            <label className="cursor-pointer rounded-full border border-[#d9d8d6] bg-white px-3 py-1 text-[12px] font-medium hover:bg-[#f3f3f2]">
-              {busy ? "Uploading…" : value.src ? "Replace" : "Upload"}
-              <input type="file" accept="image/png,image/jpeg,image/gif,image/webp" className="hidden" disabled={busy} onChange={(e) => upload(e.target.files?.[0])} />
-            </label>
+            <button type="button" onClick={() => setLibrary(true)} className="rounded-full border border-[#d9d8d6] bg-white px-3 py-1 text-[12px] font-medium hover:bg-[#f3f3f2]">
+              {value.src ? "Change" : "Choose image"}
+            </button>
             {value.src && (
               <button type="button" className="rounded-full px-2 py-1 text-[12px] text-[#a4262c] hover:bg-red-50" onClick={() => onChange({ src: "", alt: value.alt })}>
                 Remove
@@ -64,8 +85,16 @@ function ImageControl({ field, value, onChange, id }: { field: FieldDef; value: 
           <input id={`${id}-alt`} className={`${INPUT} py-1 text-[13px]`} value={value.alt} maxLength={300} placeholder="Describe the image (for screen readers)" onChange={(e) => onChange({ ...value, alt: e.target.value })} />
         </div>
       </div>
-      {error && <p className="mt-1 text-[12px] text-red-700">{error}</p>}
       <Help text={field.help} />
+      {library && (
+        <ImageLibrary
+          onClose={() => setLibrary(false)}
+          onPick={(src) => {
+            onChange({ src, alt: value.alt });
+            setLibrary(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -85,6 +114,7 @@ function LinkControl({ field, value, onChange, id }: { field: FieldDef; value: L
 
 function ListControl({ field, value, onChange, id }: { field: Extract<FieldDef, { kind: "list" }>; value: FieldValues[]; onChange: (v: FieldValues[]) => void; id: string }) {
   const [open, setOpen] = useState<number | null>(null);
+  useFocusedItem(id, value.length, setOpen);
   const blank = (): FieldValues => Object.fromEntries(field.fields.map((f) => [f.key, emptyValue(f)]));
   const move = (from: number, to: number) => {
     const next = [...value];
@@ -131,6 +161,97 @@ function ListControl({ field, value, onChange, id }: { field: Extract<FieldDef, 
         </button>
       )}
       <Help text={field.help} />
+    </div>
+  );
+}
+
+
+function blockTitle(def: BlockDef | undefined, item: FieldValues): string {
+  const raw = def?.titleKey ? item[def.titleKey] : undefined;
+  const text = typeof raw === "string" ? raw.replace(/\*/g, "").trim() : raw && typeof raw === "object" && !Array.isArray(raw) && "label" in raw ? String((raw as LinkValue).label) : "";
+  return text || (def?.label ?? "Block");
+}
+
+function BlocksControl({ field, value, onChange, id }: { field: Extract<FieldDef, { kind: "blocks" }>; value: FieldValues[]; onChange: (v: FieldValues[]) => void; id: string }) {
+  const [open, setOpen] = useState<number | null>(null);
+  useFocusedItem(id, value.length, setOpen);
+  const [adding, setAdding] = useState(false);
+  const defOf = (item: FieldValues) => field.blockTypes.find((b) => b.type === item.type);
+  const move = (from: number, to: number) => {
+    const next = [...value];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    onChange(next);
+    setOpen(to);
+  };
+  return (
+    <div>
+      <ul className="space-y-1.5">
+        {value.map((item, i) => {
+          const def = defOf(item);
+          return (
+            <li key={i} className="rounded-[8px] border border-[#e7e6e4] bg-white">
+              <div className="flex items-center gap-1 px-2 py-1.5">
+                <span className="material-symbols-outlined text-[18px] text-[#6c6a69]" aria-hidden>
+                  {def?.icon ?? "help"}
+                </span>
+                <button type="button" className="min-w-0 flex-1 truncate py-1 text-left text-[13px] hover:underline" onClick={() => setOpen(open === i ? null : i)} aria-expanded={open === i}>
+                  {blockTitle(def, item)}
+                </button>
+                <button type="button" className={ICON_BTN} disabled={i === 0} onClick={() => move(i, i - 1)} aria-label="Move block up">
+                  <span className="material-symbols-outlined text-[18px]">arrow_upward</span>
+                </button>
+                <button type="button" className={ICON_BTN} disabled={i === value.length - 1} onClick={() => move(i, i + 1)} aria-label="Move block down">
+                  <span className="material-symbols-outlined text-[18px]">arrow_downward</span>
+                </button>
+                <button type="button" className={ICON_BTN} disabled={value.length >= field.max} onClick={() => onChange([...value.slice(0, i + 1), structuredClone(item), ...value.slice(i + 1)])} aria-label="Duplicate block">
+                  <span className="material-symbols-outlined text-[18px]">content_copy</span>
+                </button>
+                <button type="button" className={ICON_BTN} onClick={() => (onChange(value.filter((_, j) => j !== i)), setOpen(null))} aria-label="Remove block">
+                  <span className="material-symbols-outlined text-[18px]">delete</span>
+                </button>
+              </div>
+              {open === i && def && (
+                <div className="space-y-3 border-t border-[#efeeed] bg-[#fafaf9] p-3">
+                  <FieldsForm fields={def.fields} values={item} onChange={(v) => onChange(value.map((x, j) => (j === i ? { ...v, type: def.type } : x)))} idPrefix={`${id}-${i}`} />
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {value.length < field.max &&
+        (adding ? (
+          <div className="mt-2 rounded-[8px] border border-[#d9d8d6] bg-white p-2">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="text-[12px] font-medium text-[#6c6a69]">Add a block</span>
+              <button type="button" className={ICON_BTN} onClick={() => setAdding(false)} aria-label="Cancel">
+                <span className="material-symbols-outlined text-[18px]">close</span>
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-1">
+              {field.blockTypes.map((b) => (
+                <button
+                  key={b.type}
+                  type="button"
+                  onClick={() => {
+                    onChange([...value, newBlock(b)]);
+                    setOpen(value.length);
+                    setAdding(false);
+                  }}
+                  className="flex items-center gap-2 rounded-[6px] px-2 py-1.5 text-left text-[12px] hover:bg-[#f3f3f2]"
+                >
+                  <span className="material-symbols-outlined text-[18px] text-[#6c6a69]">{b.icon}</span>
+                  {b.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <button type="button" className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-[#1d4f91] hover:underline" onClick={() => setAdding(true)}>
+            <span className="material-symbols-outlined text-[18px]">add</span>Add block
+          </button>
+        ))}
     </div>
   );
 }
@@ -204,6 +325,8 @@ function Control({ field, value, onChange, id }: { field: FieldDef; value: Field
       return <LinkControl field={field} value={asLink(value)} onChange={onChange} id={id} />;
     case "list":
       return <ListControl field={field} value={Array.isArray(value) ? value : []} onChange={onChange} id={id} />;
+    case "blocks":
+      return <BlocksControl field={field} value={Array.isArray(value) ? value : []} onChange={onChange} id={id} />;
   }
 }
 
@@ -212,7 +335,9 @@ export function FieldsForm({ fields, values, onChange, idPrefix }: { fields: rea
   return (
     <>
       {fields.map((f) => (
-        <Control key={f.key} field={f} value={values[f.key]} id={`${idPrefix}-${f.key}`} onChange={(v) => onChange({ ...values, [f.key]: v })} />
+        <div key={f.key} id={`f-${idPrefix}-${f.key}`} className="scroll-mt-20 rounded-[8px]">
+          <Control field={f} value={values[f.key]} id={`${idPrefix}-${f.key}`} onChange={(v) => onChange({ ...values, [f.key]: v })} />
+        </div>
       ))}
     </>
   );
