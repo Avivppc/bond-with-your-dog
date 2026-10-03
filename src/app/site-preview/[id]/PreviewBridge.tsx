@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { PREVIEW_MESSAGES } from "@/lib/site/preview-messages";
-import { INLINE_CSS, markEditable, targetFor, valueOf } from "./inline";
+import { blockedByLimit, INLINE_CSS, markEditable, targetFor, valueOf } from "./inline";
 
 const sectionEl = (id: string) => document.querySelector<HTMLElement>(`[data-section-id="${CSS.escape(id)}"]`);
 
@@ -52,6 +52,10 @@ export function PreviewBridge() {
     let selected: string | null = null;
     let scrollPending = false;
     let editing: HTMLElement | null = null;
+    // Moving straight from one text to another isn't the end of typing: wait a moment.
+    let endTimer: ReturnType<typeof setTimeout> | null = null;
+    let changedSinceStart = false;
+    const END_DELAY_MS = 250;
 
     const style = document.createElement("style");
     style.textContent = INLINE_CSS;
@@ -103,6 +107,8 @@ export function PreviewBridge() {
       if (text && section) {
         e.preventDefault();
         if (editing === text) return;
+        if (endTimer) clearTimeout(endTimer);
+        endTimer = null;
         select(section);
         editing = text;
         startEditing(text, e.clientX, e.clientY);
@@ -122,14 +128,25 @@ export function PreviewBridge() {
       const el = e.target as HTMLElement;
       if (el !== editing) return;
       const section = el.closest<HTMLElement>("[data-section-id]");
+      changedSinceStart = true;
       send({ type: PREVIEW_MESSAGES.edit, id: section?.dataset.sectionId, path: el.dataset.editPath, value: valueOf(el) });
+    }
+
+    function onBeforeInput(e: Event) {
+      if (editing && e.target === editing && blockedByLimit(editing, e as InputEvent)) e.preventDefault();
     }
 
     function stopEditing() {
       if (!editing) return;
       editing.removeAttribute("contenteditable");
       editing = null;
-      send({ type: PREVIEW_MESSAGES.editEnd });
+      if (endTimer) clearTimeout(endTimer);
+      endTimer = setTimeout(() => {
+        endTimer = null;
+        if (editing) return;
+        send({ type: PREVIEW_MESSAGES.editEnd, changed: changedSinceStart });
+        changedSinceStart = false;
+      }, END_DELAY_MS);
     }
 
     function onKey(e: KeyboardEvent) {
@@ -153,6 +170,7 @@ export function PreviewBridge() {
     window.addEventListener("keydown", onKey);
     document.addEventListener("click", onClick, true);
     document.addEventListener("input", onInput, true);
+    document.addEventListener("beforeinput", onBeforeInput, true);
     document.addEventListener("focusout", onFocusOut, true);
     send({ type: PREVIEW_MESSAGES.ready });
     return () => {
@@ -162,6 +180,8 @@ export function PreviewBridge() {
       window.removeEventListener("keydown", onKey);
       document.removeEventListener("click", onClick, true);
       document.removeEventListener("input", onInput, true);
+      document.removeEventListener("beforeinput", onBeforeInput, true);
+      if (endTimer) clearTimeout(endTimer);
       document.removeEventListener("focusout", onFocusOut, true);
     };
   }, [router]);

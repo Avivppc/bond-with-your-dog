@@ -25,7 +25,8 @@ export interface PreviewEvents {
   onKey?: (key: "undo" | "redo") => void;
   /** Text typed right on the page. */
   onEdit?: (id: string, path: string, value: string) => void;
-  onEditEnd?: () => void;
+  /** Typing on the page stopped; `changed` says whether any text changed. */
+  onEditEnd?: (changed: boolean) => void;
   /** An image or button clicked on the page: open its field. */
   onFocusField?: (id: string, path: string) => void;
 }
@@ -35,7 +36,7 @@ interface PreviewProps extends PreviewEvents {
   device: Device;
 }
 
-type Incoming = { type?: string; id?: string; index?: number; key?: string; path?: string; value?: string };
+type Incoming = { type?: string; id?: string; index?: number; key?: string; path?: string; value?: string; changed?: boolean };
 
 export const PreviewFrame = forwardRef<PreviewHandle, PreviewProps>(function PreviewFrame({ src, device, ...events }, ref) {
   const frame = useRef<HTMLIFrameElement>(null);
@@ -65,7 +66,7 @@ export const PreviewFrame = forwardRef<PreviewHandle, PreviewProps>(function Pre
       else if (d.type === PREVIEW_MESSAGES.insert && typeof d.index === "number") h.onInsert?.(d.index);
       else if (d.type === PREVIEW_MESSAGES.key && (d.key === "undo" || d.key === "redo")) h.onKey?.(d.key);
       else if (d.type === PREVIEW_MESSAGES.edit && d.id && d.path && typeof d.value === "string") h.onEdit?.(d.id, d.path, d.value);
-      else if (d.type === PREVIEW_MESSAGES.editEnd) h.onEditEnd?.();
+      else if (d.type === PREVIEW_MESSAGES.editEnd) h.onEditEnd?.(d.changed === true);
       else if (d.type === PREVIEW_MESSAGES.focusField && d.id && d.path) h.onFocusField?.(d.id, d.path);
       else if (d.type === PREVIEW_MESSAGES.ready && restoreScroll.current !== null) {
         frame.current?.contentWindow?.scrollTo(0, restoreScroll.current);

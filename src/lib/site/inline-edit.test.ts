@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { FieldDef } from "./fields";
-import { applyTextEdit, editableTexts, stripStars, topField } from "./inline-edit";
+import { applyTextEdit, editableTexts, splitParagraphs, stripStars, topField } from "./inline-edit";
 
 const fields: FieldDef[] = [
   { kind: "text", key: "heading", label: "Heading", highlight: true },
@@ -26,7 +26,7 @@ const values = {
 
 describe("editableTexts", () => {
   test("lists texts, paragraphs, list items and block texts by path", () => {
-    expect(editableTexts(fields, values)).toEqual([
+    expect(editableTexts(fields, values).map((e) => ({ path: e.path, shown: e.shown, highlight: e.highlight }))).toEqual([
       { path: "heading", shown: "Learn the secret language", highlight: true },
       { path: "text#0", shown: "First paragraph.", highlight: false },
       { path: "text#1", shown: "Second paragraph.", highlight: false },
@@ -34,6 +34,11 @@ describe("editableTexts", () => {
       { path: "cards.1.title", shown: "Two", highlight: false },
       { path: "blocks.0.text", shown: "Block heading", highlight: false },
     ]);
+  });
+
+  test("carries each field's length limit", () => {
+    const limited = editableTexts([{ kind: "text", key: "t", label: "T", max: 40 }], { t: "Hi" });
+    expect(limited[0].max).toBe(40);
   });
 
   test("leaves out texts that appear twice (they can't be told apart on the page)", () => {
@@ -53,6 +58,14 @@ describe("applyTextEdit", () => {
 
   test("replaces one paragraph of a multi-paragraph text", () => {
     expect(applyTextEdit(values, "text#1", " Edited. ").text).toBe("First paragraph.\n\nEdited.");
+  });
+
+  test("clearing a paragraph and typing again stays in that paragraph", () => {
+    const three = { ...values, text: "A\n\nB\n\nC" };
+    const snap = splitParagraphs(three.text);
+    const cleared = applyTextEdit(three, "text#1", "", snap);
+    const retyped = applyTextEdit(cleared, "text#1", "x", snap);
+    expect(retyped.text).toBe("A\n\nx\n\nC");
   });
 
   test("ignores paths that don't exist", () => {

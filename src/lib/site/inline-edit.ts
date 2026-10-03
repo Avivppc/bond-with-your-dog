@@ -15,9 +15,14 @@ export interface EditableText {
   shown: string;
   /** The field allows *highlight*: the page wraps starred words in an accent span. */
   highlight: boolean;
+  /** The field's length limit (typing stops there, as in the side panel). */
+  max: number;
 }
 
 const paragraphs = (text: string) => text.split(/\n\s*\n/).map((p) => p.trim());
+// Same limits as the field kinds' defaults in fields.ts.
+const TEXT_MAX = 300;
+const TEXTAREA_MAX = 4000;
 
 export const stripStars = (text: string) => text.replace(/\*([^*]+)\*/g, "$1");
 
@@ -26,11 +31,13 @@ function collect(fields: readonly FieldDef[], values: FieldValues, prefix: strin
     const v = values[f.key];
     const path = prefix ? `${prefix}.${f.key}` : f.key;
     if (f.kind === "text" && typeof v === "string" && v.trim()) {
-      out.push({ path, shown: stripStars(v).trim(), highlight: Boolean(f.highlight) });
+      out.push({ path, shown: stripStars(v).trim(), highlight: Boolean(f.highlight), max: f.max ?? TEXT_MAX });
     } else if (f.kind === "textarea" && typeof v === "string" && v.trim()) {
       const paras = paragraphs(v);
-      if (paras.length === 1) out.push({ path, shown: paras[0], highlight: false });
-      else paras.forEach((p, i) => p && out.push({ path: `${path}#${i}`, shown: p, highlight: false }));
+      const max = f.max ?? TEXTAREA_MAX;
+      if (paras.length === 1) out.push({ path, shown: paras[0], highlight: false, max });
+      // One paragraph can use what the others leave.
+      else paras.forEach((p, i) => p && out.push({ path: `${path}#${i}`, shown: p, highlight: false, max: Math.max(0, max - (v.length - p.length)) }));
     } else if (f.kind === "list" && Array.isArray(v)) {
       v.forEach((item, i) => collect(f.fields, item, `${path}.${i}`, out));
     } else if (f.kind === "blocks" && Array.isArray(v)) {
@@ -63,14 +70,28 @@ function setIn(values: FieldValues, keys: string[], value: string): FieldValues 
   return { ...values, [key]: current.map((item, i) => (i === index ? updated : item)) as FieldValue };
 }
 
-/** The section's values with the text at `path` replaced (a "#n" path replaces one paragraph). */
-export function applyTextEdit(values: FieldValues, path: string, text: string): FieldValues {
+/** The text at a field path ("text#1" reads the whole "text"). */
+export function textAt(values: FieldValues, path: string): string | null {
+  const keys = path.split("#")[0].split(".");
+  const v = keys.reduce<FieldValue | FieldValues | undefined>((acc, k) => (Array.isArray(acc) ? acc[Number(k)] : acc && typeof acc === "object" ? (acc as FieldValues)[k] : undefined), values);
+  return typeof v === "string" ? v : null;
+}
+
+/** A multi-paragraph field split into paragraphs: take it once when typing starts (see applyTextEdit). */
+export const splitParagraphs = paragraphs;
+
+/**
+ * The section's values with the text at `path` replaced. A "#n" path replaces one paragraph of
+ * `snapshot` (the paragraphs as they were when typing started), so emptying a paragraph while
+ * typing can't shift which one is being edited.
+ */
+export function applyTextEdit(values: FieldValues, path: string, text: string, snapshot?: string[]): FieldValues {
   const [fieldPath, para] = path.split("#");
   const keys = fieldPath.split(".");
   if (para === undefined) return setIn(values, keys, text);
-  const current = keys.reduce<FieldValue | FieldValues | undefined>((v, k) => (Array.isArray(v) ? v[Number(k)] : v && typeof v === "object" ? (v as FieldValues)[k] : undefined), values);
-  if (typeof current !== "string") return values;
-  const paras = paragraphs(current);
+  const current = textAt(values, path);
+  if (current === null) return values;
+  const paras = snapshot ?? paragraphs(current);
   const i = Number(para);
   if (!Number.isInteger(i) || i < 0 || i >= paras.length) return values;
   return setIn(values, keys, paras.map((p, j) => (j === i ? text.trim() : p)).join("\n\n"));

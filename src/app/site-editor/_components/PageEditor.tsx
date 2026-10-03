@@ -10,7 +10,7 @@ import { isDefaultStyle } from "@/lib/site/section-style";
 import { BTN_PRIMARY, BTN_SECONDARY } from "@/app/admin/_components/ui";
 import { discardSiteDraft, hideSitePage, publishSitePage, restoreSiteVersion, saveSiteDraft, type EditorResult } from "../actions";
 import { FieldFocusContext, fieldDomId, FieldsForm } from "./fields";
-import { applyTextEdit } from "@/lib/site/inline-edit";
+import { applyTextEdit, editableTexts, splitParagraphs, textAt } from "@/lib/site/inline-edit";
 import { AddSectionPicker, HistoryPanel, PageSettingsPanel } from "./panels";
 import { duplicateSection, SectionList } from "./SectionList";
 import { EditorShell, PanelHeader, PreviewFrame, type Device, type PreviewHandle } from "./shell";
@@ -172,15 +172,36 @@ export function PageEditor({ page, siteUrl }: { page: EditorPage; siteUrl: strin
     focusNonce.current += 1;
     setPanel({ kind: "section", id, tab: "content", focus: { path, nonce: focusNonce.current } });
   }, []);
+  // Paragraphs of a field as they were when typing started (key "section|path").
+  const paragraphSnapshots = useRef(new Map<string, string[]>());
+  const editTicket = useRef(0);
   const onInlineEdit = (id: string, path: string, value: string) => {
     typingOnPage.current = true;
+    editTicket.current += 1;
     if (panel.kind !== "section" || panel.id !== id) onFocusField(id, path);
-    setSections((list) => list.map((s) => (s.id === id ? { ...s, settings: applyTextEdit(s.settings, path, value) } : s)));
+    const section = draft.doc.sections.find((s) => s.id === id);
+    const def = section ? SECTION_DEFS[section.type] : undefined;
+    if (!section || !def) return;
+    const limit = editableTexts(def.fields, section.settings).find((e) => e.path === path)?.max;
+    const text = limit ? value.slice(0, limit) : value;
+    const key = `${id}|${path}`;
+    if (path.includes("#") && !paragraphSnapshots.current.has(key)) {
+      const current = textAt(section.settings, path);
+      if (current !== null) paragraphSnapshots.current.set(key, splitParagraphs(current));
+    }
+    const snapshot = paragraphSnapshots.current.get(key);
+    setSections((list) => list.map((s) => (s.id === id ? { ...s, settings: applyTextEdit(s.settings, path, text, snapshot) } : s)));
   };
-  const onInlineEnd = async () => {
-    await autosave.flush();
+  const onInlineEnd = async (changed: boolean) => {
+    paragraphSnapshots.current.clear();
+    const ticket = editTicket.current;
+    const saved = await autosave.flush();
+    // Typing started again elsewhere meanwhile: that session will reload when it ends.
+    if (editTicket.current !== ticket) return;
     typingOnPage.current = false;
-    preview.current?.reload();
+    // Reload only to replace text the page changed under React; never over a failed save.
+    if (changed && saved) preview.current?.reload();
+    else if (!changed) preview.current?.refresh();
   };
 
   async function run(action: () => Promise<EditorResult>, after?: (rev?: number) => void) {

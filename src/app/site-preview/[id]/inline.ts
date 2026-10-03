@@ -45,6 +45,7 @@ export function markEditable(): void {
       const el = findText(section, entry.shown);
       if (!el || el.dataset.editPath) continue;
       el.dataset.editPath = entry.path;
+      el.dataset.editMax = String(entry.max);
       if (entry.highlight) el.dataset.editHighlight = "1";
     }
   });
@@ -55,18 +56,19 @@ export function markEditable(): void {
  * *stars*; line breaks become new lines.
  */
 export function valueOf(el: HTMLElement): string {
-  if (!el.dataset.editHighlight) return el.innerText.replace(/ /g, " ").trim();
+  // Text nodes, not innerText: innerText applies CSS (an "uppercase" eyebrow would be saved in capitals).
+  const highlight = Boolean(el.dataset.editHighlight);
   const parts: string[] = [];
   const walk = (node: Node, accent: boolean) => {
     if (node.nodeType === Node.TEXT_NODE) parts.push(accent ? `*${node.textContent ?? ""}*` : (node.textContent ?? ""));
     else if (node instanceof HTMLBRElement) parts.push("\n");
-    else if (node instanceof HTMLElement) {
-      const isAccent = !accent && node.tagName === "SPAN" && node.className.trim() !== "";
+    else if (node instanceof HTMLElement && !node.classList.contains("material-symbols-outlined")) {
+      const isAccent = highlight && !accent && node.tagName === "SPAN" && node.className.trim() !== "";
       node.childNodes.forEach((c) => walk(c, accent || isAccent));
     }
   };
   el.childNodes.forEach((c) => walk(c, false));
-  return parts.join("").replace(/\*\*/g, "").replace(/ /g, " ").trim();
+  return parts.join("").replace(/\*\*/g, "").replace(/\u00a0/g, " ").trim();
 }
 
 /** The field behind a clicked image or button, if the section knows one. */
@@ -91,3 +93,11 @@ export const INLINE_CSS = `
 [data-edit-path]:hover{box-shadow:0 0 0 2px rgba(37,99,235,.35)}
 [data-edit-path][contenteditable]{box-shadow:0 0 0 2px #2563eb;outline:none;background:rgba(37,99,235,.04)}
 `;
+
+/** Stops typing past the field's limit (the same limit the side panel has). */
+export function blockedByLimit(el: HTMLElement, e: InputEvent): boolean {
+  const max = Number(el.dataset.editMax ?? "0");
+  if (!max || !e.inputType.startsWith("insert")) return false;
+  const selected = window.getSelection()?.toString().length ?? 0;
+  return valueOf(el).length - selected + (e.data?.length ?? 1) > max;
+}
