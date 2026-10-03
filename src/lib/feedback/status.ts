@@ -97,3 +97,6 @@ export const COACH_LEVELS = [
   { value: "performance", label: "Ready" },
 ] as const;
 export type CoachLevel = (typeof COACH_LEVELS)[number]["value"];
+
+/** Shown when a member has no name on their profile (never a real first name for {{first_name}}). */
+export const UNNAMED_MEMBER = "Member";

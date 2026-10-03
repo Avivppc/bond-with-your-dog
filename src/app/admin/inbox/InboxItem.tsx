@@ -4,6 +4,7 @@ import { BTN_PRIMARY, BTN_SECONDARY, INPUT, StatusPill } from "../_components/ui
 import { Avatar } from "../_components/list-kit";
 import { answerRequest, approveStory, setRequestStatus } from "./actions";
 import { StoryPhotoStrip } from "./story-photos";
+import { InboxAnswerField } from "./InboxAnswerField";
 import type { InboxStatus, InboxTab } from "@/lib/admin-helpers/inbox";
 
 export interface SupportRequestRow {
@@ -122,13 +123,7 @@ export function InboxItem({ item, view, photoUrls }: { item: SupportRequestRow; 
         ) : (
           <form action={answerRequest} className="space-y-2">
             <ViewFields id={item.id} view={view} />
-            <label className="block">
-              <span className="sr-only">Answer</span>
-              <textarea name="answer" required maxLength={5000} rows={3} defaultValue={item.answer ?? ""} placeholder="Write your answer…" className={INPUT} />
-            </label>
-            <button type="submit" className={BTN_PRIMARY}>
-              {item.answer ? "Update answer" : "Send answer"}
-            </button>
+            <InboxAnswerField initial={item.answer ?? ""} firstName={item.full_name?.split(/\s+/)[0] ?? null} submitLabel={item.answer ? "Update answer" : "Send answer"} />
           </form>
         )}
         <form action={setRequestStatus}>

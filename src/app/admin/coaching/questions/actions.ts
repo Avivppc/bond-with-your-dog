@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 import { QUESTION_TABS } from "./tabs";
 
 /** Coaching → Lesson questions: answer (the DB trigger notifies the member), edit, hide / unhide. */
@@ -12,7 +13,7 @@ export type AnswerResult = { ok: true } | { ok: false; error: string };
 
 const Answer = z.object({
   id: z.string().uuid(),
-  answer: z.string().trim().min(1, "Write an answer first.").max(4000, "Answers can be up to 4,000 characters."),
+  answer: z.string().trim().min(1, "Write an answer first.").max(4000, "Answers can be up to 4,000 characters.").refine(isFilledIn, UNFILLED_TAGS_ERROR),
 });
 
 async function lessonPathOf(lessonId: string): Promise<string | null> {

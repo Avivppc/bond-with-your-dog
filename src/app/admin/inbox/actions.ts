@@ -8,9 +8,10 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { parsePage } from "@/lib/admin-helpers/pagination";
 import { inboxHref, parseInboxStatus, parseInboxTab } from "@/lib/admin-helpers/inbox";
+import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 
 const Id = z.string().uuid();
-const Answer = z.string().trim().min(1, "Write an answer first.").max(5000, "Keep the answer under 5,000 characters.");
+const Answer = z.string().trim().min(1, "Write an answer first.").max(5000, "Keep the answer under 5,000 characters.").refine(isFilledIn, UNFILLED_TAGS_ERROR);
 const ApprovalNote = z.string().trim().max(5000).optional();
 
 function back(formData: FormData, params: Record<string, string>): never {

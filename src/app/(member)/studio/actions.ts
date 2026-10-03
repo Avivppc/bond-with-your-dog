@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
+import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { notifyMemberByEmail } from "@/lib/feedback/notify-email";
 import type { EmailOutcome } from "@/lib/feedback/email-outcome";
@@ -93,7 +94,7 @@ export async function setCoachLevel(input: z.input<typeof Level>): Promise<Studi
   return { ok: true, data: undefined };
 }
 
-const Send = z.object({ videoId: id, summary: z.string().trim().min(1, "Write a short summary first.").max(4000) });
+const Send = z.object({ videoId: id, summary: z.string().trim().min(1, "Write a short summary first.").max(4000).refine(isFilledIn, UNFILLED_TAGS_ERROR) });
 
 /** Sends (or updates) Roni's feedback. The first send notifies the member in the app (DB trigger) and by email. */
 export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioResult<{ email: EmailOutcome | null; firstSend: boolean }>> {
@@ -125,7 +126,7 @@ export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioR
   return { ok: true, data: { email, firstSend } };
 }
 
-const Reply = z.object({ videoId: id, body: z.string().trim().min(1, "Write your reply first.").max(2000) });
+const Reply = z.object({ videoId: id, body: z.string().trim().min(1, "Write your reply first.").max(2000).refine(isFilledIn, UNFILLED_TAGS_ERROR) });
 
 /** Roni's team answers the member under a video; the member gets a notification (and an email). */
 export async function replyAsStaff(input: z.input<typeof Reply>): Promise<StudioResult<{ email: EmailOutcome }>> {

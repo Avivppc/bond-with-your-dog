@@ -25,7 +25,7 @@ describe("adminNavFor", () => {
   });
 
   it("links the coaching tools, including Roni's Studio outside the admin", () => {
-    expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/home"]));
+    expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/admin/coaching/replies", "/home"]));
   });
 
   it("hides Team, General and Payments from editors but keeps the settings they send with", () => {
