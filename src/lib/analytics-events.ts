@@ -28,7 +28,9 @@ export type PlanCtaLocation =
   | "courses_stage"
   | "courses_final"
   | "quiz_result"
-  | "stories";
+  | "stories"
+  /** A button in a section built in the website editor. */
+  | "site_section";
 
 export interface PlanCtaProps {
   plan: Tier;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import SalesAssistant from "@/components/assistant/SalesAssistant";
 import { createClient } from "@/lib/supabase/server";
@@ -58,7 +58,7 @@ export default async function CheckoutPage({
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-28 pb-20 max-w-2xl mx-auto px-5 min-h-screen" style={{ backgroundColor: "#edf8ff" }}>
         <p className="text-xs font-bold uppercase tracking-widest mb-2" style={{ color: "#8b4b00" }}>
           Checkout

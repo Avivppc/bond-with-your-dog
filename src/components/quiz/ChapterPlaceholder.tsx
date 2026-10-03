@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import type { Tier, TierResultContent } from "@/lib/quiz/data";
 import TrackOnMount from "@/components/analytics/TrackOnMount";
@@ -15,7 +15,7 @@ interface ChapterPlaceholderProps {
 export default function ChapterPlaceholder({ tier, result }: ChapterPlaceholderProps) {
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <TrackOnMount event={EVENTS.chapterPageViewed} props={{ plan: tier }} />
       <main className="pt-32 pb-24 px-6 md:px-8 min-h-screen">
         <div className="max-w-3xl mx-auto text-center">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { resubscribeByToken, unsubscribeByToken } from "@/lib/flows/server/unsubscribe";
 
@@ -38,7 +38,7 @@ export default async function UnsubscribePage({ searchParams }: { searchParams: 
           : { title: "Stop emails about new chapters?", body: "You'll stop getting offers and updates about upcoming chapters. Emails about your account and lessons still arrive." };
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-32 pb-24 px-6 min-h-[70vh] flex items-center">
         <div className="max-w-xl mx-auto text-center">
           <p className="font-label text-sm font-semibold text-secondary uppercase tracking-widest mb-4">Email preferences</p>

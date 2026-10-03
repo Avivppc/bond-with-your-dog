@@ -1,15 +1,8 @@
 import Link from "next/link";
 import { loadSiteSettings } from "@/lib/site-settings-server";
 import { SOCIAL_INFO, SOCIAL_KEYS, type SiteSettings } from "@/lib/site-settings";
-
-const LOGO_URL = "/images/logo.png";
-
-const exploreLinks = [
-  { href: "/courses", label: "Bonded Journey" },
-  { href: "/quiz", label: "Find Your Journey" },
-  { href: "/stories", label: "Stories" },
-  { href: "/about", label: "About Roni" },
-];
+import { loadLiveTheme } from "@/lib/site/server";
+import type { SiteTheme } from "@/lib/site/theme";
 
 const supportLinks = (contactEmail: string) => [
   { href: `mailto:${contactEmail}`, label: "Contact Us" },
@@ -23,25 +16,23 @@ const supportLinks = (contactEmail: string) => [
 const linkClass =
   "text-sm text-on-surface-variant hover:text-primary transition-colors";
 
-/** The public footer. Contact email and social links come from Settings → General. */
+/** The public footer. Contact email and social links come from Settings → General; the rest from Website → Theme. */
 export default async function Footer() {
-  return <FooterView settings={await loadSiteSettings()} />;
+  const [settings, theme] = await Promise.all([loadSiteSettings(), loadLiveTheme()]);
+  return <FooterView settings={settings} theme={theme} />;
 }
 
-export function FooterView({ settings }: { settings: SiteSettings }) {
+export function FooterView({ settings, theme }: { settings: SiteSettings; theme: SiteTheme }) {
   const { contactEmail, academyName, social } = settings;
+  const { logo, footer } = theme;
   const socialLinks = SOCIAL_KEYS.flatMap((k) => (social[k] ? [{ key: k, href: social[k], label: SOCIAL_INFO[k].label }] : []));
   return (
     <footer className="w-full mt-20 bg-surface-container-low border-t border-outline-variant/20">
       <div className="max-w-7xl mx-auto px-6 py-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           <div className="md:col-span-2">
-            <img alt="BONDED Logo" className="h-12 w-auto mb-6" src={LOGO_URL} />
-            <p className="text-sm text-on-surface-variant leading-relaxed max-w-sm">
-              Learn your dog&apos;s secret language. A step-by-step journey from
-              trust and communication to your first dance together, created by
-              Roni Sagi.
-            </p>
+            <img alt="BONDED Logo" className="h-12 w-auto mb-6" src={logo} />
+            <p className="text-sm text-on-surface-variant leading-relaxed max-w-sm">{footer.tagline}</p>
           </div>
 
           <div>
@@ -49,7 +40,7 @@ export function FooterView({ settings }: { settings: SiteSettings }) {
               Explore
             </h4>
             <ul className="space-y-4">
-              {exploreLinks.map(({ href, label }) => (
+              {footer.links.map(({ href, label }) => (
                 <li key={href}>
                   <Link href={href} className={linkClass}>
                     {label}

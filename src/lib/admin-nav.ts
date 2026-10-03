@@ -50,6 +50,14 @@ const MAIN: NavDef[] = [
     ],
   },
   {
+    label: "Website",
+    icon: "language",
+    children: [
+      { href: "/admin/website", label: "Pages", needs: "content" },
+      { href: "/site-editor/theme", label: "Theme", needs: "content" },
+    ],
+  },
+  {
     label: "Sales",
     icon: "sell",
     children: [

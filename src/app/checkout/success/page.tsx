@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
 import { AutoRefresh } from "./AutoRefresh";
@@ -28,7 +28,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-32 pb-20 max-w-xl mx-auto px-5 min-h-screen text-center" style={{ backgroundColor: "#edf8ff" }}>
         {order.status === "paid" && (
           <>
