@@ -8,8 +8,8 @@ export const AUDIENCE_LABEL: Record<AudienceKind, string> = {
   not_owns_chapter: "Members who don't have a chapter yet",
   completed_chapter: "Members who finished a chapter",
   inactive_practice: "Members who stopped practicing",
-  quiz_leads: "Quiz leads (no account yet)",
-  everyone: "Everyone (members and quiz leads)",
+  quiz_leads: "Leads without an account (quiz and imported)",
+  everyone: "Everyone (members and leads)",
   has_tag: "Everyone with a tag",
 };
 

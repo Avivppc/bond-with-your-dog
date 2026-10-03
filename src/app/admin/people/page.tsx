@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { pageWindow, parsePage } from "@/lib/admin-helpers/pagination";
 import { formatAmounts } from "@/lib/admin-helpers/money";
-import { BTN_PRIMARY, Card, EmptyState, Notice, PageHeader, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, Notice, PageHeader, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
 import { Avatar, MENU_ITEM, OptionsMenu, Pagination, shortDate } from "../_components/list-kit";
 import { ContactsToolbar } from "./ContactsToolbar";
 import { PasswordResetButton } from "./PasswordResetButton";
@@ -88,9 +88,23 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
       <PageHeader
         title="Contacts"
         actions={
-          <Link href="/admin/people/add" className={BTN_PRIMARY}>
-            Add contacts
-          </Link>
+          <>
+            <Link href="/admin/people/export" className={BTN_SECONDARY} prefetch={false}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                download
+              </span>
+              Export
+            </Link>
+            <Link href="/admin/people/import" className={BTN_SECONDARY}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                upload
+              </span>
+              Import
+            </Link>
+            <Link href="/admin/people/add" className={BTN_PRIMARY}>
+              Add contacts
+            </Link>
+          </>
         }
       />
       {typeof params.ok === "string" && <Notice tone="success">{params.ok}</Notice>}
