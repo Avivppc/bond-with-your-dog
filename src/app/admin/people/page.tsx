@@ -6,6 +6,8 @@ import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, Notice, PageHeader, TABLE
 import { Avatar, MENU_ITEM, OptionsMenu, Pagination, shortDate } from "../_components/list-kit";
 import { ContactsToolbar } from "./ContactsToolbar";
 import { PasswordResetButton } from "./PasswordResetButton";
+import { BULK_FORM_ID, BulkBar, SelectAllBox } from "./BulkBar";
+import { loadOfferOptions } from "./_lib/person-data";
 import { loadPeople, parseSegment, PEOPLE_PER_PAGE, SEGMENTS, type PeoplePage, type PersonRow, type Segment } from "./_lib/people-data";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +27,9 @@ function ContactRow({ person }: { person: PersonRow }) {
   const href = `/admin/people/${person.userId}`;
   return (
     <tr className={TROW}>
+      <td className={`${TD} w-10 pr-0`}>
+        <input type="checkbox" name="ids" value={person.userId} form={BULK_FORM_ID} aria-label={`Select ${person.email}`} className="h-4 w-4 accent-[#343332]" />
+      </td>
       <td className={TD}>
         <Link href={href} className="flex items-center gap-3 font-medium hover:underline">
           <Avatar name={name} src={person.avatarUrl} />
@@ -75,7 +80,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   const q = typeof params.q === "string" ? params.q.trim().slice(0, MAX_SEARCH) : "";
   const segment = parseSegment(params.segment);
   const requested = parsePage(params.page);
-  const result = await loadPeopleClamped(q, segment, requested);
+  const [result, offers] = await Promise.all([loadPeopleClamped(q, segment, requested), loadOfferOptions()]);
   const win = pageWindow(result.total, requested, PEOPLE_PER_PAGE);
 
   const hrefFor = (page: number) => {
@@ -123,6 +128,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
             <Pagination page={win.page} pages={win.pages} hrefFor={hrefFor} />
           </span>
         </div>
+        <BulkBar offers={offers} returnTo={hrefFor(win.page)} />
         {result.failed ? (
           <EmptyState title="Contacts couldn't be loaded.">Please refresh the page. If it keeps happening, check the server logs.</EmptyState>
         ) : result.rows.length === 0 ? (
@@ -134,6 +140,9 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
             <table className={TABLE}>
               <thead className={THEAD}>
                 <tr>
+                  <th className={`${TH} w-10 pr-0`}>
+                    <SelectAllBox />
+                  </th>
                   <th className={TH}>Name</th>
                   <th className={TH}>Email</th>
                   <th className={TH}>Email marketing</th>
