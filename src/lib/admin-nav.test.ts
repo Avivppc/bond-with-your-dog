@@ -16,6 +16,7 @@ describe("adminNavFor", () => {
       "All Products",
       "Courses",
       "Moves Library",
+      "Assessments",
       "Community",
     ]);
     expect(nav.main.find((e) => e.label === "Contacts")?.children?.map((c) => c.href)).toEqual(["/admin/people", "/admin/insights", "/admin/leads", "/admin/inbox"]);

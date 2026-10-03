@@ -45,6 +45,7 @@ const MAIN: NavDef[] = [
       { href: "/admin/products", label: "All Products", needs: "content" },
       { href: "/admin/courses", label: "Courses", needs: "content" },
       { href: "/admin/moves", label: "Moves Library", needs: "content" },
+      { href: "/admin/assessments", label: "Assessments", needs: "content" },
       { href: "/admin/community", label: "Community", needs: "content" },
     ],
   },

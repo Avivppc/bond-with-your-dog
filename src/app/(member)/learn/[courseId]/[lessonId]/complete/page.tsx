@@ -7,6 +7,8 @@ import { lessonNeighbors } from "@/lib/course-progress";
 import { dogName, requireMember } from "@/lib/member/viewer";
 import { Ms, formatMinutes } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
+import { createServiceClient } from "@/lib/supabase/admin";
+import { pendingChapterSurvey } from "@/lib/surveys/server";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Lesson complete" };
@@ -29,6 +31,8 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
   const { next, number } = lessonNeighbors(data.lessons, lessonId);
   const nextState = next ? data.states.get(next.id) : null;
   const courseDone = data.progress.completed >= data.progress.total && data.progress.total > 0;
+  // A finished chapter may come with a short survey from Roni.
+  const survey = courseDone ? await pendingChapterSurvey(createServiceClient(), viewer.userId, courseId) : null;
   const dog = dogName(viewer);
 
   return (
@@ -109,6 +113,20 @@ export default async function LessonCompletePage({ params }: { params: Promise<{
         </Link>
       </div>
     </div>
+    {survey && (
+      <div className="card tight" style={{ maxWidth: 880, margin: "0 auto", width: "100%", flexDirection: "row", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
+        <span className="ms" style={{ color: "var(--teal)" }} aria-hidden>
+          rate_review
+        </span>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <b>Two minutes for Roni?</b>
+          <div className="faint">{survey.title}: tell her how {data.course.title} went for you and {dog}.</div>
+        </div>
+        <Link className="btn btn-ghost btn-sm" href={`/surveys/${survey.id}`}>
+          Answer
+        </Link>
+      </div>
+    )}
     {/* From 80% of the chapter: the next chapter, with the member's personal code when a flow offers one. */}
     <div style={{ maxWidth: 880, margin: "0 auto", width: "100%" }}>
       <NextChapterOffer userId={viewer.userId} courseId={courseId} percentDone={data.progress.percent} />
