@@ -11,11 +11,12 @@ export function InstallAppButton() {
   const install = useInstallState();
   if (!install || install.state === "installed" || install.state === "unsupported") return null;
   return (
-    <button type="button" className="install-btn" aria-label="Install app" onClick={() => openInstallGuide("button")}>
+    <button type="button" className="install-btn" onClick={() => openInstallGuide("button")}>
       <span className="ms" aria-hidden>
         add
       </span>
-      <span className="install-btn-label">Install app</span>
+      {/* Always a word, never a bare "+": nobody knows what a lone plus does (SkiFit learned this). */}
+      Install<span className="install-btn-more"> app</span>
     </button>
   );
 }

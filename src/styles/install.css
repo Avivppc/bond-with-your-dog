@@ -5,11 +5,17 @@
 .member-app .install-btn { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px 0 10px; border-radius: 999px; background: var(--orange-soft); color: var(--cognac); font-weight: 600; font-size: 13.5px; white-space: nowrap; transition: background .2s, transform .2s; }
 .member-app .install-btn:hover { background: #ffe6c4; transform: translateY(-1px); }
 .member-app .install-btn .ms { font-size: 18px; }
-/* Small phones: the logo, bell, dog and avatar need the room; the "+" alone stays. */
+/* Small phones: "Install" keeps its word. Until the app is installed, the top-bar search (squeezed
+   to a sliver there) steps aside and the bar tightens; once installed the button is gone and the
+   search is back. */
 .member-app .topbar .brand-mini { flex-shrink: 0; }
-@media (max-width: 420px) {
-  .member-app .install-btn { width: 36px; padding: 0; justify-content: center; }
-  .member-app .install-btn-label { display: none; }
+@media (max-width: 480px) {
+  .member-app .install-btn { height: 34px; padding: 0 12px 0 8px; font-size: 13px; flex-shrink: 0; }
+  .member-app .install-btn-more { display: none; }
+  .member-app .topbar:has(.install-btn) { padding-left: 12px; padding-right: 12px; gap: 8px; }
+  .member-app .topbar:has(.install-btn) form[role="search"] { display: none; }
+  .member-app .topbar:has(.install-btn) .top-right { gap: 8px; margin-left: auto; }
+  .member-app .topbar:has(.install-btn) .brand-mini img { width: 92px !important; }
 }
 
 .member-app .install-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(10, 20, 24, .38); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: install-fade .2s ease-out; }
