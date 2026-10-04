@@ -19,8 +19,8 @@ grant select on monday to authenticated;
 set role authenticated;
 select t.login('00000000-0000-0000-0000-0000000c0a01');
 select public.book_coaching_session((select day0 + interval '10 hours' from monday), 'Heelwork');
-select t.ok((select status = 'awaiting_payment' and price_cents = 15000 and ends_at - starts_at = interval '45 minutes'
-               from public.coaching_bookings where user_id = '00000000-0000-0000-0000-0000000c0a01'), 'an open time is booked, waiting for payment');
+select t.ok((select status = 'awaiting_payment' and price_cents = 15000 and ends_at - starts_at = interval '45 minutes' and meeting_url is null
+               from public.coaching_bookings where user_id = '00000000-0000-0000-0000-0000000c0a01'), 'an open time is booked, waiting for payment, without the link');
 
 select t.fails_with($$select public.book_coaching_session((select day0 + interval '10 hours 30 minutes' from monday), null)$$, '22023', 'off the slot grid');
 select t.fails_with($$select public.book_coaching_session((select day0 + interval '12 hours' from monday), null)$$, '22023', 'outside the weekly hours');

@@ -79,9 +79,10 @@ export async function updateBooking(formData: FormData): Promise<void> {
   const { id, action } = parsed.data;
   const sb = createServiceClient();
   const now = new Date().toISOString();
+  const settings = action === "paid" ? await loadCoachingSettings() : null;
   const patch =
     action === "paid"
-      ? { status: "confirmed", paid_at: now }
+      ? { status: "confirmed", paid_at: now, meeting_url: settings?.meeting_url ?? null }
       : action === "cancel"
         ? { status: "canceled", canceled_at: now, canceled_by: "team" }
         : { status: "completed" };
@@ -94,7 +95,7 @@ export async function updateBooking(formData: FormData): Promise<void> {
   const booking = data as Booking;
 
   if (action === "paid") {
-    const [settings, { data: profile }] = await Promise.all([loadCoachingSettings(), sb.from("profiles").select("timezone").eq("id", booking.user_id).maybeSingle()]);
+    const { data: profile } = await sb.from("profiles").select("timezone").eq("id", booking.user_id).maybeSingle();
     if (settings) await tellMemberConfirmed(booking, settings, (profile?.timezone as string | null) ?? null);
   }
   if (action === "cancel") {

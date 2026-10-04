@@ -23,6 +23,9 @@ describe("safeLandingPath", () => {
     expect(safeLandingPath("//evil.example")).toBe("/courses");
     expect(safeLandingPath("/\\evil.example")).toBe("/courses");
     expect(safeLandingPath(null)).toBe("/courses");
+    expect(safeLandingPath("/\t/evil.example")).toBe("/courses");
+    expect(safeLandingPath("/\n/evil.example")).toBe("/courses");
+    expect(safeLandingPath("/checkout/moves?code=SPRING20")).toBe("/checkout/moves?code=SPRING20");
   });
 });
 

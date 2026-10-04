@@ -25,10 +25,23 @@ export function suggestAffiliateCode(name: string): string {
   return slug.length >= 3 ? slug : `${slug}-partner`.replace(/^-/, "");
 }
 
-/** Where an affiliate link may send people: a path on our own site, never another site. */
+const FALLBACK = "/courses";
+const PROBE = "http://landing.invalid";
+
+/**
+ * Where an affiliate link may send people: a path on our own site, never another site. Browsers
+ * drop tabs and newlines before parsing (so "/\t/evil.com" would become "//evil.com"); anything with
+ * control characters is refused, and the parsed result must stay on our origin.
+ */
 export function safeLandingPath(raw: string | null): string {
-  if (!raw || !raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) return "/courses";
-  return raw.slice(0, 200);
+  if (!raw || !raw.startsWith("/") || /[\u0000-\u001f\u007f\\]/.test(raw)) return FALLBACK;
+  try {
+    const url = new URL(raw, PROBE);
+    if (url.origin !== PROBE) return FALLBACK;
+    return `${url.pathname}${url.search}`.slice(0, 200);
+  } catch {
+    return FALLBACK;
+  }
 }
 
 /** The commission on what was paid (tax excluded), rounded down to the cent. */

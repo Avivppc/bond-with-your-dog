@@ -5,6 +5,8 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
 import { BOOKING_COLUMNS, loadCoachingSettings, tellTeamAboutBooking, type Booking } from "@/lib/coaching/server";
+import { notifyTeam } from "@/lib/notify-team";
+import { formatCents } from "@/lib/sales/pricing";
 
 const Book = z.object({ startsAt: z.string().datetime(), topic: z.string().trim().max(1000).default("") });
 
@@ -39,11 +41,28 @@ export async function bookSession(input: z.input<typeof Book>): Promise<ActionRe
 /** Cancels the member's own booking (the database enforces how late that's allowed). */
 export async function cancelSession(bookingId: string): Promise<ActionResult> {
   if (!z.string().uuid().safeParse(bookingId).success) return fail("Unknown session.");
-  const { error } = await (await createClient()).rpc("cancel_coaching_booking", { p_booking_id: bookingId });
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  // RLS: only the member's own booking is found.
+  const { data: before } = await supabase.from("coaching_bookings").select(BOOKING_COLUMNS).eq("id", bookingId).maybeSingle();
+  const { error } = await supabase.rpc("cancel_coaching_booking", { p_booking_id: bookingId });
   if (error) {
     if (error.code === "22023") return fail("It's too close to the session to cancel here. Please write to us from Help.");
     console.error("[coaching] cancel failed", { bookingId, error: error.message });
     return fail("Couldn't cancel. Please try again.");
+  }
+  const booking = before as Booking | null;
+  if (booking?.paid_at) {
+    await notifyTeam("orders", {
+      subject: "A paid 1:1 session was canceled by the member",
+      lines: [
+        `${user?.email ?? "A member"} canceled their paid session on ${new Date(booking.starts_at).toUTCString()}.`,
+        `They paid ${formatCents(booking.price_cents, booking.currency)}: refund them or agree on a new time.`,
+      ],
+      path: "/admin/coaching/sessions",
+    });
   }
   revalidatePath("/coaching");
   return ok(undefined);

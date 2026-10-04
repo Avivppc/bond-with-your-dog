@@ -1,4 +1,5 @@
 import { createServiceClient } from "@/lib/supabase/admin";
+import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/member/viewer";
 import { formatCents } from "@/lib/sales/pricing";
 import { affiliateForMember, affiliateLink, loadAffiliateStats } from "@/lib/affiliates/server";
@@ -14,7 +15,10 @@ const RECENT = 20;
 /** An affiliate's own page: their link, visits, sales and earnings (not visible to anyone else). */
 export default async function AffiliatePage() {
   const viewer = await requireMember("/affiliate");
-  const affiliate = await affiliateForMember({ id: viewer.userId, email: viewer.email ?? undefined });
+  const {
+    data: { user },
+  } = await (await createClient()).auth.getUser();
+  const affiliate = await affiliateForMember({ id: viewer.userId, email: viewer.email ?? undefined, emailConfirmed: Boolean(user?.email_confirmed_at) });
   if (!affiliate) {
     return (
       <StateCard icon="handshake" eyebrow="Affiliates" title="This page is for Bonded affiliates">

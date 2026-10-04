@@ -88,6 +88,7 @@ export default async function AffiliatePage({ params, searchParams }: { params: 
           stats.pendingCents > 0 ? (
             <form action={markCommissionsPaid}>
               <input type="hidden" name="id" value={affiliate.id} />
+              <input type="hidden" name="upto" value={rows.find((c) => c.status === "pending")?.created_at ?? ""} />
               <button type="submit" className={BTN_PRIMARY}>
                 Mark {formatCents(stats.pendingCents, "USD")} as paid
               </button>

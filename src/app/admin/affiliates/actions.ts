@@ -31,7 +31,7 @@ export async function createAffiliate(formData: FormData): Promise<void> {
   const v = parsed.data;
 
   const sb = createServiceClient();
-  const { data: account } = await sb.rpc("find_user_id_by_email", { p_email: v.email });
+  // Not linked to an account here: it links when they open /affiliate signed in with this (confirmed) email.
   const { data, error } = await sb
     .from("affiliates")
     .insert({
@@ -40,7 +40,6 @@ export async function createAffiliate(formData: FormData): Promise<void> {
       code: v.code,
       commission_percent: v.commission_percent,
       note: v.note,
-      user_id: typeof account === "string" ? account : null,
       created_by: user.id,
     })
     .select("id")
@@ -77,7 +76,7 @@ export async function updateAffiliate(formData: FormData): Promise<void> {
   back(`/admin/affiliates/${id}`, { ok: "Saved." });
 }
 
-const Payout = z.object({ id: z.string().uuid() });
+const Payout = z.object({ id: z.string().uuid(), upto: z.string().datetime({ offset: true }) });
 
 /** "Mark all as paid": every pending commission of this affiliate, after paying them outside Bonded. */
 export async function markCommissionsPaid(formData: FormData): Promise<void> {
@@ -89,6 +88,8 @@ export async function markCommissionsPaid(formData: FormData): Promise<void> {
     .update({ status: "paid", paid_at: new Date().toISOString() })
     .eq("affiliate_id", parsed.data.id)
     .eq("status", "pending")
+    // Only what the page showed: a sale that arrived meanwhile waits for the next payout.
+    .lte("created_at", parsed.data.upto)
     .select("id");
   if (error) {
     console.error("[affiliates] payout failed", { id: parsed.data.id, error: error.message });

@@ -97,13 +97,17 @@ export async function loadAffiliateStats(affiliateId: string): Promise<Affiliate
   };
 }
 
-/** The signed-in member's affiliate account (by account, else by email, which links it to the account). */
-export async function affiliateForMember(user: { id: string; email: string | undefined }): Promise<Affiliate | null> {
+/**
+ * The signed-in member's affiliate account: by account, else by email, which then links it to the
+ * account. Only a confirmed email links (anyone can sign up with someone else's address).
+ */
+export async function affiliateForMember(user: { id: string; email: string | undefined; emailConfirmed: boolean }): Promise<Affiliate | null> {
   const sb = createServiceClient();
   const { data: byUser } = await sb.from("affiliates").select(AFFILIATE_COLUMNS).eq("user_id", user.id).maybeSingle();
   if (byUser) return byUser as Affiliate;
-  if (!user.email) return null;
-  const { data: byEmail } = await sb.from("affiliates").select(AFFILIATE_COLUMNS).ilike("email", user.email).is("user_id", null).maybeSingle();
+  if (!user.email || !user.emailConfirmed) return null;
+  // Stored lower-case; an exact match (ilike would treat _ and % as wildcards).
+  const { data: byEmail } = await sb.from("affiliates").select(AFFILIATE_COLUMNS).eq("email", user.email.trim().toLowerCase()).is("user_id", null).maybeSingle();
   if (!byEmail) return null;
   const { error } = await sb.from("affiliates").update({ user_id: user.id }).eq("id", byEmail.id).is("user_id", null);
   if (error) console.error("[affiliates] linking account failed", { affiliateId: byEmail.id, error: error.message });

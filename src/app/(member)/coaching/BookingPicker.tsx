@@ -40,7 +40,9 @@ export function BookingPicker({ slots, priceLabel, durationMinutes }: BookingPic
   if (days.length === 0) {
     return <p className="muted">No open times in the coming weeks. Check back soon, or ask us from Help.</p>;
   }
-  const times = days.find(([d]) => d === day)?.[1] ?? [];
+  // After a refresh the chosen day may have no times left: fall back to the first open day.
+  const activeDay = days.some(([d]) => d === day) ? day : days[0][0];
+  const times = days.find(([d]) => d === activeDay)?.[1] ?? [];
 
   function book() {
     if (!time) return;
@@ -62,7 +64,7 @@ export function BookingPicker({ slots, priceLabel, durationMinutes }: BookingPic
     <div className="stack" style={{ gap: 16 }}>
       <div className="row" style={{ gap: 8, flexWrap: "wrap" }} role="group" aria-label="Day">
         {days.map(([d, list]) => (
-          <button key={d} type="button" className={`btn btn-sm ${d === day ? "btn-primary" : "btn-ghost"}`} onClick={() => (setDay(d), setTime(null))}>
+          <button key={d} type="button" className={`btn btn-sm ${d === activeDay ? "btn-primary" : "btn-ghost"}`} onClick={() => (setDay(d), setTime(null))}>
             {dayLabel(list[0])}
           </button>
         ))}
