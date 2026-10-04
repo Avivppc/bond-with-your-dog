@@ -75,6 +75,7 @@ const MAIN: NavDef[] = [
     children: [
       { href: "/admin/email-flows", label: "Email flows", needs: "sales" },
       { href: "/admin/campaigns", label: "Campaigns", needs: "sales" },
+      { href: "/admin/coupons", label: "Coupons", needs: "sales" },
       { href: "/admin/discount-codes", label: "Discount codes", needs: "sales" },
     ],
   },

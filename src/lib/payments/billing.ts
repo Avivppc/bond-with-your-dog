@@ -5,6 +5,7 @@ import type { BillingEvent } from "./types";
 import { validatePayment } from "./validate-payment";
 import { notifyTeamSafely } from "@/lib/notify-team";
 import { formatMoney } from "@/lib/pricing";
+import { deliverGift } from "@/lib/sales/server";
 
 /**
  * Applies provider-agnostic billing events to orders, subscriptions and access.
@@ -87,6 +88,15 @@ async function revoke(sb: Sb, userId: string, offerId: string, orderId: string |
   if (error) throw new Error(`revoke_offer_access failed: ${error.message}`);
 }
 
+/** A refunded gift: the recipient's access from this order ends, or the waiting invite is withdrawn. */
+async function revokeGift(sb: Sb, orderId: string, offerId: string, email: string) {
+  const { data: recipientId, error } = await sb.rpc("find_user_id_by_email", { p_email: email });
+  if (error) throw new Error(`gift recipient lookup failed: ${error.message}`);
+  if (typeof recipientId === "string") await revoke(sb, recipientId, offerId, orderId);
+  const { error: inviteError } = await sb.from("access_invites").delete().eq("offer_id", offerId).ilike("email", email).is("claimed_at", null);
+  if (inviteError) throw new Error(`gift invite withdrawal failed: ${inviteError.message}`);
+}
+
 /** Emails the buyer the course links. Never throws — access is already granted. */
 export async function notifyAccessGranted(userId: string, offerId: string): Promise<void> {
   try {
@@ -163,10 +173,11 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
   const sb = createServiceClient();
   const { data: order } = await sb
     .from("orders")
-    .select("id, user_id, offer_id, status, amount_cents, currency, discount_code_id")
+    .select("id, user_id, offer_id, status, amount_cents, currency, discount_code_id, bump_offer_id, gift_recipient_email, gift_recipient_name, gift_message")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) throw new Error(`order ${orderId} not found`);
+  const isGift = Boolean(order.gift_recipient_email);
   if (order.status !== "pending" && order.status !== "paid") {
     throw new BillingIgnored(`order ${orderId} is ${order.status}; not fulfilling`);
   }
@@ -178,7 +189,14 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
       : offer.days_of_access
         ? new Date(Date.now() + offer.days_of_access * 86_400_000).toISOString()
         : null;
-  await grant(sb, order.user_id, order.offer_id, order.id, offer.payment_type === "subscription" ? "subscription" : "order", expiresAt);
+  // A gift's access goes to the recipient (below, once the order is paid), not the buyer.
+  if (!isGift) await grant(sb, order.user_id, order.offer_id, order.id, offer.payment_type === "subscription" ? "subscription" : "order", expiresAt);
+  // An order bump bought with it: its own access (one-time offers only, see addOnUsable).
+  const bump = order.bump_offer_id ? await loadOffer(sb, order.bump_offer_id) : null;
+  if (bump && order.bump_offer_id) {
+    const bumpExpires = bump.days_of_access ? new Date(Date.now() + bump.days_of_access * 86_400_000).toISOString() : null;
+    await grant(sb, order.user_id, order.bump_offer_id, order.id, "order", bumpExpires);
+  }
 
   if (payment.subscriptionRef) {
     const { error } = await sb.from("subscriptions").upsert(
@@ -224,7 +242,15 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     payment_method: payment.paymentMethod,
   });
   const firstTimePaid = (transitioned ?? []).length > 0;
-  if (firstTimePaid) await notifyAccessGranted(order.user_id, order.offer_id);
+  if (firstTimePaid && !isGift) await notifyAccessGranted(order.user_id, order.offer_id);
+  if (firstTimePaid && order.bump_offer_id) await notifyAccessGranted(order.user_id, order.bump_offer_id);
+  // Idempotent (gift_delivered_at), so a webhook retry after a failure delivers it once.
+  if (isGift) {
+    await deliverGift(
+      { id: order.id, user_id: order.user_id, offer_id: order.offer_id, gift_recipient_email: order.gift_recipient_email!, gift_recipient_name: order.gift_recipient_name, gift_message: order.gift_message },
+      { title: offer.title, days_of_access: offer.days_of_access ?? null },
+    );
+  }
 
   // Referral: converts a referred friend's first purchase / consumes a used reward. Idempotent, so a
   // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).
@@ -365,7 +391,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
 
       const { data: order } = await sb
         .from("orders")
-        .select("id, user_id, offer_id")
+        .select("id, user_id, offer_id, bump_offer_id, gift_recipient_email")
         .eq("provider", provider)
         .eq("provider_ref", event.providerRef)
         .maybeSingle();
@@ -376,7 +402,10 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
       await sb.from("orders").update({ status: "refunded", refunded_at: new Date().toISOString() }).eq("id", order.id);
       const { error: referralError } = await sb.rpc("referral_order_refunded", { p_order_id: order.id });
       if (referralError) throw new Error(`referral reversal failed for order ${order.id}: ${referralError.message}`);
-      await revoke(sb, order.user_id, order.offer_id, order.id);
+      // Every access this order gave: the buyer's (or a gift recipient's) and an order bump's.
+      if (order.gift_recipient_email) await revokeGift(sb, order.id, order.offer_id, order.gift_recipient_email);
+      else await revoke(sb, order.user_id, order.offer_id, order.id);
+      if (order.bump_offer_id) await revoke(sb, order.user_id, order.bump_offer_id, order.id);
       return;
     }
   }
