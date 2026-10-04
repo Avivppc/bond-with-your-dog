@@ -73,3 +73,17 @@
 @media (prefers-reduced-motion: reduce) {
   .member-app .install-sheet, .member-app .install-backdrop, .member-app .install-go, .member-app .install-nudge, .member-app .install-go-arrow.ms { animation: none; }
 }
+
+/* Phone notifications: the card on the Notifications page and the ask after installing. */
+.member-app .push-banner { flex-direction: row; align-items: center; gap: 14px; flex-wrap: wrap; }
+.member-app .push-banner-icon.ms { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--orange-soft); color: var(--cognac); flex-shrink: 0; }
+.member-app .push-prompt { position: fixed; z-index: 85; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 20px 14px; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-lift); text-align: center; animation: install-rise .32s cubic-bezier(.2, .9, .3, 1); }
+.member-app .push-prompt .btn { width: 100%; }
+.member-app .push-prompt-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; color: var(--ink-2); }
+.member-app .push-prompt-list li::before { content: "✓  "; color: var(--teal); font-weight: 700; }
+@media (min-width: 961px) {
+  .member-app .push-prompt { bottom: 24px; right: 24px; left: auto; margin: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .member-app .push-prompt { animation: none; }
+}

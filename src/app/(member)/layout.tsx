@@ -11,6 +11,8 @@ import { MemberPreviewBridge } from "@/components/app/MemberPreviewBridge";
 import { RegisterServiceWorker } from "@/components/app/RegisterServiceWorker";
 import { InstallGuide } from "@/components/app/install/InstallGuide";
 import { InstallNudge } from "@/components/app/install/InstallNudge";
+import { PushPrompt } from "@/components/app/push/PushPrompt";
+import { pushConfig } from "@/lib/push/server";
 import { MEMBER_APP_METADATA } from "@/lib/install/member-app-metadata";
 import { loadMemberArea } from "@/lib/member-area/server";
 import { activeBanners, memberCss, memberFontsHref, memberNav } from "@/lib/member-area/settings";
@@ -83,6 +85,7 @@ export default async function MemberLayout({ children }: { children: React.React
           <RegisterServiceWorker />
           <InstallGuide email={viewer.email} />
           <InstallNudge />
+          <PushPrompt publicKey={pushConfig()?.publicKey ?? null} />
         </>
       )}
       {preview && <MemberPreviewBridge />}
