@@ -4,6 +4,7 @@ import "./globals.css";
 import AnalyticsIdentity from "@/components/analytics/AnalyticsIdentity";
 import { loadLiveTheme } from "@/lib/site/server";
 import { themeCss, themeFontsHref } from "@/lib/site/theme";
+import { StandaloneGuard } from "@/components/app/StandaloneGuard";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -70,6 +71,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased min-h-screen flex flex-col">
         <AnalyticsIdentity />
+        <StandaloneGuard />
         {children}
       </body>
     </html>

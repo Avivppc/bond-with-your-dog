@@ -13,6 +13,8 @@ export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   "plan", "practice", "profile", "progress", "refer", "routine", "search", "settings", "studio", "surveys",
   // staff and technical
   "admin", "api", "site-editor", "site-preview", "images", "sketches", "tails", "favicon", "robots", "sitemap", "icon", "apple-icon",
+  // the installed member app (manifest, service worker, icons, install videos)
+  "app.webmanifest", "sw", "icons", "videos",
 ]);
 
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;

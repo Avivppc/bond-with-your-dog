@@ -8,6 +8,6 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     // `tails` is the PostHog reverse proxy; it, the service worker and the manifest need no Supabase session refresh.
-    "/((?!_next/static|_next/image|tails|sw\\.js|manifest\\.webmanifest|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|tails|sw\\.js|app\\.webmanifest|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|mp4|webm)$).*)",
   ],
 };

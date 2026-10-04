@@ -1,31 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-
-/** Member App areas (src/app/(member)) and older member URLs that redirect into it. */
-const MEMBER_PREFIXES = [
-  "/dashboard",
-  "/home",
-  "/welcome",
-  "/my-courses",
-  "/learn",
-  "/certificates",
-  "/practice",
-  "/plan",
-  "/routine",
-  "/moves",
-  "/search",
-  "/feedback",
-  "/progress",
-  "/community",
-  "/refer",
-  "/profile",
-  "/dogs",
-  "/settings",
-  "/membership",
-  "/notifications",
-  "/help",
-  "/studio",
-];
+// Member App areas (src/app/(member)) and older member URLs that redirect into it.
+import { isMemberPath } from "@/lib/member-paths";
 
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
@@ -57,7 +33,7 @@ export async function updateSession(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
   // Pages here need a signed-in member (the page itself checks again).
-  const isProtected = MEMBER_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const isProtected = isMemberPath(pathname);
 
   if (isProtected && !user) {
     const url = request.nextUrl.clone();

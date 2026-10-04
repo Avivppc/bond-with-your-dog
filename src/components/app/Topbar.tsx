@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { MemberViewer } from "@/lib/member/viewer";
 import { DogChip, type ChipDog } from "./DogChip";
 import { Ms } from "./ui";
+import { InstallAppButton } from "./install/InstallAppButton";
 
 const AGE: Record<string, string> = { puppy: "Puppy", adult: "Adult", senior: "Senior" };
 
@@ -25,6 +26,7 @@ export function Topbar({ viewer, logo = "/app/img/logo.png" }: { viewer: MemberV
         </label>
       </form>
       <div className="top-right">
+        <InstallAppButton />
         <Link className="icon-btn" href="/notifications" aria-label={viewer.unreadNotifications ? `Notifications (${viewer.unreadNotifications} new)` : "Notifications"} data-tour="notifications">
           <Ms name="notifications" />
           {viewer.unreadNotifications > 0 && <span className="dot" />}

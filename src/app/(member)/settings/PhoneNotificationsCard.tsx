@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import { openInstallGuide } from "@/components/app/install/install-store";
 import { isDeviceOn, removePushSubscription, savePushSubscription, sendPushTest } from "./push-actions";
 
 type Device = "checking" | "unsupported" | "install-first" | "ready";
@@ -137,9 +138,12 @@ export function PhoneNotificationsCard({ publicKey }: { publicKey: string | null
       <h2 className="h3">Phone notifications</h2>
       <p className="faint">Get Roni&apos;s feedback, answers, new lessons and practice reminders on this device, even when Bonded is closed.</p>
       {device === "install-first" && (
-        <p>
-          On iPhone, first add Bonded to your home screen: tap <b>Share</b>, then <b>Add to Home Screen</b>. Open Bonded from the new icon and come back here.
-        </p>
+        <>
+          <p>On iPhone, notifications work once Bonded is on your Home Screen. Install it, open Bonded from the new icon and come back here.</p>
+          <button type="button" className="btn btn-primary btn-sm" style={{ alignSelf: "flex-start" }} onClick={() => openInstallGuide("settings")}>
+            Show me how
+          </button>
+        </>
       )}
       {device === "unsupported" && <p className="faint">This browser doesn&apos;t support notifications. Try Chrome, Edge, Firefox or Safari.</p>}
       {device === "ready" && status === "blocked" && (

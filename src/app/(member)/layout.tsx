@@ -9,16 +9,20 @@ import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
 import { MemberBanners } from "@/components/app/MemberBanners";
 import { MemberPreviewBridge } from "@/components/app/MemberPreviewBridge";
 import { RegisterServiceWorker } from "@/components/app/RegisterServiceWorker";
+import { InstallGuide } from "@/components/app/install/InstallGuide";
+import { InstallNudge } from "@/components/app/install/InstallNudge";
+import { MEMBER_APP_METADATA } from "@/lib/install/member-app-metadata";
 import { loadMemberArea } from "@/lib/member-area/server";
 import { activeBanners, memberCss, memberFontsHref, memberNav } from "@/lib/member-area/settings";
 import { loadLiveTheme } from "@/lib/site/server";
 import { createClient } from "@/lib/supabase/server";
 import "@/styles/member-app.css";
+import "@/styles/install.css";
 
 // Roni's signature on certificates.
 const script = Mrs_Saint_Delafield({ weight: "400", subsets: ["latin"], variable: "--font-script", display: "swap" });
 
-export const metadata = { robots: { index: false, follow: false } };
+export const metadata = MEMBER_APP_METADATA;
 
 /** Today in the member's time zone (banners run by calendar day). */
 function today(timezone: string | null): string {
@@ -74,7 +78,13 @@ export default async function MemberLayout({ children }: { children: React.React
       </div>
       <Tabbar tabs={nav.tabs} />
       {!viewer.profile.timezone && <TimeZoneCapture />}
-      {!preview && <RegisterServiceWorker />}
+      {!preview && (
+        <>
+          <RegisterServiceWorker />
+          <InstallGuide email={viewer.email} />
+          <InstallNudge />
+        </>
+      )}
       {preview && <MemberPreviewBridge />}
       {/* The tour would cover the screen in the editor's preview. */}
       {!preview && (

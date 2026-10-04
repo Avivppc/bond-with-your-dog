@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 720px; height: 920px; overflow: hidden; }
+  body { font-family: Roboto, -apple-system, system-ui, sans-serif; }
+
+  #canvas { position: relative; width: 720px; height: 920px;
+    background: linear-gradient(160deg, #dfecf7 0%, #f2f8fd 55%, #e6f0f9 100%); overflow: hidden; }
+  #camera { position: absolute; left: 0; top: 0; width: 720px; height: 920px; transform-origin: 0 0; }
+
+  /* ---------- phone ---------- */
+  #phone { position: absolute; left: 160.5px; top: 42px; width: 399px; height: 836px;
+    background: #10151c; border-radius: 44px;
+    box-shadow: 0 30px 60px rgba(13,43,69,.28), 0 4px 14px rgba(13,43,69,.18),
+      inset 0 0 0 2px #3a4552; }
+  #screen { position: absolute; left: 12px; top: 12px; width: 375px; height: 812px;
+    border-radius: 34px; overflow: hidden; background: #fff; }
+  .punch { position: absolute; left: 50%; top: 16px; transform: translateX(-50%);
+    width: 16px; height: 16px; border-radius: 50%; background: #10151c; z-index: 40; }
+
+  .layer { position: absolute; inset: 0; }
+
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 26px 0; font-size: 14px; font-weight: 500; z-index: 30; }
+  .statusbar .sicons { display: flex; gap: 6px; align-items: center; }
+
+  /* ---------- Chrome top bar ---------- */
+  #chromebar { position: absolute; top: 0; left: 0; right: 0; height: 96px;
+    background: #ffffff; z-index: 20; border-bottom: 1px solid #e8eaed; }
+  .chromerow { display: flex; align-items: center; gap: 10px; padding: 46px 10px 0 14px; }
+  .omnibox { flex: 1; height: 40px; background: #f1f3f4; border-radius: 20px;
+    display: flex; align-items: center; gap: 8px; padding: 0 14px; font-size: 15px;
+    color: #202124; }
+  .omnibox svg { flex-shrink: 0; }
+  .tabcount { width: 26px; height: 26px; border: 2px solid #5f6368; border-radius: 7px;
+    display: grid; place-items: center; font-size: 12.5px; font-weight: 700; color: #5f6368; }
+  #kebab { position: relative; padding: 4px 5px; border-radius: 50%; }
+  #kebab svg { display: block; }
+  #kebab .halo { position: absolute; inset: -5px; border: 3px solid #8b4b00;
+    border-radius: 50%; opacity: 0; }
+
+  /* ---------- Bonded member app mock (below chrome bar) ---------- */
+  #app { background: #edf8ff; color: #243036; }
+  .app-head { display: flex; align-items: center; justify-content: space-between;
+    padding: 112px 20px 10px; }
+  .app-logo { font-weight: 800; font-size: 22px; letter-spacing: -0.3px; }
+  .app-logo span { color: #8b4b00; }
+  .install-pill { display: flex; align-items: center; gap: 5px; font-size: 12.5px;
+    font-weight: 600; color: #8b4b00; border: 1.5px solid #8b4b0040; background: #8b4b0014;
+    border-radius: 999px; padding: 6px 12px; }
+  .hero { margin: 8px 16px; height: 150px; border-radius: 18px; overflow: hidden; position: relative; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; }
+  .hero .cap { position: absolute; left: 14px; bottom: 12px; color: #fff; font-weight: 700;
+    font-size: 15px; text-shadow: 0 1px 8px rgba(0,0,0,.45); }
+  .hero .cap small { display: block; font-size: 11px; font-weight: 600; opacity: .9; }
+  .card { margin: 12px 16px; background: #fff; border-radius: 16px; padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(13,43,69,.06); }
+  .card h3 { font-size: 15px; margin-bottom: 4px; }
+  .card p { font-size: 12px; color: #637178; margin-bottom: 10px; }
+  .bar { height: 7px; background: #e4f3fc; border-radius: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 62%; background: #8b4b00; border-radius: 4px; }
+  .startbtn { margin-top: 12px; background: #243036; color: #fff; text-align: center;
+    border-radius: 12px; padding: 11px; font-size: 14px; font-weight: 700; }
+  .statrow { display: flex; gap: 12px; margin: 0 16px; }
+  .statrow .card { flex: 1; margin: 0; text-align: center; padding: 12px 8px; }
+  .statrow b { font-size: 18px; } .statrow small { font-size: 10.5px; color: #637178; }
+  .apptabs { position: absolute; left: 0; right: 0; bottom: 24px; height: 58px;
+    display: flex; background: #ffffffee; border-top: 1px solid #e2ebf3; }
+  .apptabs div { flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; font-size: 9.5px; color: #637178; font-weight: 600; }
+  .apptabs div.on { color: #8b4b00; }
+  .gesturebar { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 4px; border-radius: 2px; background: #202124; opacity: .8; z-index: 35; }
+  .gesturebar.light { background: #fff; }
+
+  #dim { background: #000; opacity: 0; z-index: 24; }
+
+  /* ---------- Chrome kebab menu ---------- */
+  #menu { position: absolute; top: 48px; right: 8px; width: 246px; background: #fff;
+    border-radius: 10px; box-shadow: 0 6px 26px rgba(0,0,0,.28); z-index: 25;
+    transform-origin: 92% 4%; padding: 6px 0; }
+  .mitem { height: 47px; display: flex; align-items: center; gap: 16px; padding: 0 18px;
+    font-size: 15px; color: #202124; position: relative; }
+  .mitem svg { color: #5f6368; flex-shrink: 0; position: relative; z-index: 2; }
+  .mitem span { position: relative; z-index: 2; }
+  #miATHS .flash { position: absolute; inset: 0; background: #e8eaed; opacity: 0; }
+  #miATHS .halo { position: absolute; inset: 1px 6px; border: 3px solid #8b4b00;
+    border-radius: 8px; opacity: 0; }
+
+  /* ---------- install dialog (bottom sheet) ---------- */
+  #dialog { position: absolute; left: 0; right: 0; bottom: 0; background: #fff;
+    border-radius: 18px 18px 0 0; z-index: 26; padding: 10px 22px 26px;
+    box-shadow: 0 -6px 30px rgba(0,0,0,.2); }
+  .dgrab { width: 34px; height: 4px; border-radius: 2px; background: #dadce0; margin: 4px auto 14px; }
+  #dialog h4 { font-size: 17px; color: #202124; margin-bottom: 16px; font-weight: 600; }
+  .drow { display: flex; gap: 14px; align-items: center; margin-bottom: 20px; }
+  .drow img { width: 52px; height: 52px; border-radius: 12px; }
+  .drow b { display: block; font-size: 15.5px; color: #202124; }
+  .drow span { font-size: 12.5px; color: #5f6368; }
+  .dbtns { display: flex; justify-content: flex-end; gap: 10px; }
+  .dbtn { font-size: 14.5px; font-weight: 600; padding: 10px 18px; border-radius: 999px; }
+  .dbtn.ghost { color: #1a73e8; }
+  .dbtn.fill { color: #fff; background: #1a73e8; position: relative; }
+  .dbtn.fill .halo { position: absolute; inset: -6px; border: 3px solid #8b4b00;
+    border-radius: 999px; opacity: 0; }
+
+  /* ---------- home screen ---------- */
+  #home { z-index: 27; }
+  #home .wall { position: absolute; inset: 0; }
+  #home .wall img { width: 100%; height: 100%; object-fit: cover; }
+  #home .wall::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(10,25,40,.35), rgba(10,25,40,0) 30%,
+      rgba(10,25,40,0) 70%, rgba(10,25,40,.35)); }
+  .grid { position: absolute; top: 84px; left: 0; right: 0; display: grid;
+    grid-template-columns: repeat(4, 1fr); row-gap: 26px; padding: 0 20px; }
+  .icon { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .icon i { width: 58px; height: 58px; border-radius: 50%; display: grid;
+    place-items: center; font-style: normal; font-size: 25px; color: #ffffffd9;
+    box-shadow: 0 3px 8px rgba(0,0,0,.22); }
+  .icon span { font-size: 11px; color: #fff; font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  #appIcon { position: relative; }
+  #appIcon .ic { position: relative; z-index: 2; transform-origin: 50% 50%; }
+  #appIcon .ic img { width: 58px; height: 58px; border-radius: 50%; display: block;
+    box-shadow: 0 3px 10px rgba(0,0,0,.3); margin: 0 auto 6px; background: #fff; }
+  #appIcon .glow { position: absolute; left: 50%; top: 29px; width: 92px; height: 92px;
+    margin: -46px 0 0 -46px; border: 4px solid #ffffff; border-radius: 50%; opacity: 0; }
+  .searchpill { position: absolute; left: 24px; right: 24px; bottom: 24px; height: 48px;
+    border-radius: 24px; background: rgba(255,255,255,.92); display: flex; align-items: center;
+    gap: 10px; padding: 0 18px; font-size: 14px; color: #5f6368;
+    box-shadow: 0 3px 10px rgba(0,0,0,.2); }
+  .dockrow { position: absolute; left: 0; right: 0; bottom: 92px; display: flex;
+    justify-content: space-around; padding: 0 30px; }
+  .dockrow i { width: 56px; height: 56px; border-radius: 50%; display: grid;
+    place-items: center; font-style: normal; font-size: 24px; color: #ffffffd9;
+    box-shadow: 0 3px 8px rgba(0,0,0,.22); }
+
+  /* ---------- finger + ripples ---------- */
+  #finger { position: absolute; left: 0; top: 0; width: 130px; z-index: 60;
+    transform-origin: 26px 6px; filter: drop-shadow(0 10px 14px rgba(13,43,69,.35));
+    pointer-events: none; }
+  .rip { position: absolute; z-index: 55; border: 4px solid #fff; border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255,255,255,.8), inset 0 0 10px rgba(255,255,255,.5);
+    transform: translate(-50%, -50%); pointer-events: none; }
+
+  #fade { position: absolute; inset: 0; z-index: 90;
+    background: linear-gradient(160deg, #dfecf7, #f2f8fd); opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="canvas">
+  <div id="camera">
+    <div id="phone">
+      <div id="screen">
+
+        <!-- Bonded in Chrome -->
+        <div class="layer" id="app">
+          <div class="app-head">
+            <div class="app-logo"><img src="logo.png" alt="" style="height:24px;display:block" /></div>
+            <div class="install-pill">＋ Install app</div>
+          </div>
+          <div class="hero"><img src="app-home-1.jpeg" alt="" />
+            <div class="cap"><small>CHAPTER 1 · FOUNDATIONS</small>Luna is 62% there</div>
+          </div>
+          <div class="card">
+            <h3>Today's practice</h3>
+            <p>Spin &amp; Twist · 10 min · With Luna</p>
+            <div class="bar"><i></i></div>
+            <div class="startbtn">Start practice</div>
+          </div>
+          <div class="statrow">
+            <div class="card"><b>12</b><br /><small>PRACTICES</small></div>
+            <div class="card"><b>5</b><br /><small>DAY STREAK</small></div>
+          </div>
+          <div class="apptabs">
+            <div class="on">●<br/>Home</div><div>▤<br/>Practice</div>
+            <div>▲<br/>Progress</div><div>◦<br/>Profile</div>
+          </div>
+        </div>
+
+        <!-- Chrome chrome -->
+        <div id="chromebar">
+          <div class="statusbar"><span>9:41</span>
+            <span class="sicons">
+              <svg width="16" height="12" viewBox="0 0 16 12"><path d="M15 0 1 12h14Z" fill="#202124"/></svg>
+              <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 12 2 5.5 A9 9 0 0 1 15 5.5 Z" fill="#202124"/></svg>
+              <svg width="10" height="14" viewBox="0 0 10 14"><rect x="1" y="1" width="8" height="12" rx="1.5" fill="none" stroke="#202124" stroke-width="1.4"/><rect x="1" y="6" width="8" height="7" rx="1.5" fill="#202124"/></svg>
+            </span>
+          </div>
+          <div class="chromerow">
+            <div class="omnibox">
+              <svg width="13" height="16" viewBox="0 0 13 16"><path d="M2 7V5a4.5 4.5 0 0 1 9 0v2h.5A1.5 1.5 0 0 1 13 8.5v5A1.5 1.5 0 0 1 11.5 15h-10A1.5 1.5 0 0 1 0 13.5v-5A1.5 1.5 0 0 1 1.5 7Zm2 0h5V5a2.5 2.5 0 0 0-5 0Z" fill="#5f6368"/></svg>
+              bonded.dog
+            </div>
+            <div class="tabcount">3</div>
+            <span id="kebab">
+              <span class="halo"></span>
+              <svg width="6" height="24" viewBox="0 0 6 24"><g fill="#5f6368"><circle cx="3" cy="4" r="2.4"/><circle cx="3" cy="12" r="2.4"/><circle cx="3" cy="20" r="2.4"/></g></svg>
+            </span>
+          </div>
+        </div>
+
+        <div class="layer" id="dim"></div>
+
+        <!-- kebab menu -->
+        <div id="menu">
+          <div class="mitem">
+            <svg width="18" height="18" viewBox="0 0 18 18"><path d="M9 2v14M2 9h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>
+            <span>New tab</span></div>
+          <div class="mitem">
+            <svg width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="7.4"/><path d="M9 4.5V9l3 2" stroke-linecap="round"/></g></svg>
+            <span>History</span></div>
+          <div class="mitem">
+            <svg width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9 2v9M5.5 8 9 11.5 12.5 8"/><path d="M3 15h12"/></g></svg>
+            <span>Downloads</span></div>
+          <div class="mitem">
+            <svg width="16" height="18" viewBox="0 0 16 18"><path d="M2 2.5A1.5 1.5 0 0 1 3.5 1h9A1.5 1.5 0 0 1 14 2.5V17l-6-4.5L2 17Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+            <span>Bookmarks</span></div>
+          <div class="mitem">
+            <svg width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="4" cy="9" r="2.2"/><circle cx="14" cy="4" r="2.2"/><circle cx="14" cy="14" r="2.2"/><path d="m6 8 6-3M6 10l6 3"/></g></svg>
+            <span>Share…</span></div>
+          <div class="mitem">
+            <svg width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="m12.5 12.5 4 4"/></g></svg>
+            <span>Find in page</span></div>
+          <div class="mitem" id="miATHS">
+            <div class="flash"></div><div class="halo"></div>
+            <svg width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="1" y="1" width="16" height="16" rx="4"/><path d="M9 5.5v7M5.5 9h7"/></g></svg>
+            <span><b>Add to Home screen</b></span></div>
+          <div class="mitem">
+            <svg width="18" height="18" viewBox="0 0 18 18"><g fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="9" cy="9" r="2.6"/><path d="M9 1.5v2M9 14.5v2M1.5 9h2M14.5 9h2M3.7 3.7l1.4 1.4M12.9 12.9l1.4 1.4M14.3 3.7l-1.4 1.4M5.1 12.9l-1.4 1.4" stroke-linecap="round"/></g></svg>
+            <span>Settings</span></div>
+        </div>
+
+        <!-- install dialog -->
+        <div id="dialog">
+          <div class="dgrab"></div>
+          <h4>Add to Home screen</h4>
+          <div class="drow">
+            <img src="icon-192.png" alt="" />
+            <div><b>Bonded</b><span>bonded.dog</span></div>
+          </div>
+          <div class="dbtns">
+            <span class="dbtn ghost">Cancel</span>
+            <span class="dbtn fill" id="installBtn"><span class="halo"></span>Install</span>
+          </div>
+        </div>
+
+        <!-- home screen -->
+        <div class="layer" id="home">
+          <div class="wall"><img src="app-home-1.jpeg" alt="" /></div>
+          <div class="statusbar" style="color:#fff"><span>9:41</span>
+            <span class="sicons">
+              <svg width="16" height="12" viewBox="0 0 16 12"><path d="M15 0 1 12h14Z" fill="#fff"/></svg>
+              <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 12 2 5.5 A9 9 0 0 1 15 5.5 Z" fill="#fff"/></svg>
+              <svg width="10" height="14" viewBox="0 0 10 14"><rect x="1" y="1" width="8" height="12" rx="1.5" fill="none" stroke="#fff" stroke-width="1.4"/><rect x="1" y="6" width="8" height="7" rx="1.5" fill="#fff"/></svg>
+            </span>
+          </div>
+          <div class="grid">
+            <div class="icon"><i style="background:linear-gradient(150deg,#8e9aab,#5d6b7e)">✉</i><span>Mail</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#ffd465,#f5a623)">☀</i><span>Weather</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#69d76c,#2ba946)">✆</i><span>Phone</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#c48ef2,#8e46d8)">♪</i><span>Music</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#5fc6f5,#1f8fe8)">✈</i><span>Travel</span></div>
+            <div class="icon" id="appIcon">
+              <div class="glow"></div>
+              <div class="ic"><img src="icon-192.png" alt="" /><span style="font-size:11px;color:#fff;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.5)">Bonded</span></div>
+            </div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#ff8f8f,#e5484d)">♥</i><span>Health</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#4b5563,#1f2937)">⚙</i><span>Settings</span></div>
+          </div>
+          <div class="dockrow">
+            <i style="background:linear-gradient(150deg,#5fc6f5,#1f8fe8)">🌐</i>
+            <i style="background:linear-gradient(150deg,#67d449,#2fae1d)">💬</i>
+            <i style="background:linear-gradient(150deg,#ffd465,#f5a623)">📷</i>
+            <i style="background:linear-gradient(150deg,#c48ef2,#8e46d8)">♪</i>
+          </div>
+          <div class="searchpill">
+            <svg width="16" height="16" viewBox="0 0 16 16"><g fill="none" stroke="#4285f4" stroke-width="2" stroke-linecap="round"><circle cx="7" cy="7" r="5"/><path d="m11 11 3.5 3.5" stroke="#34a853"/></g></svg>
+            Search
+          </div>
+          <div class="gesturebar light"></div>
+        </div>
+
+        <div class="punch"></div>
+        <div class="gesturebar"></div>
+      </div>
+    </div>
+
+    <!-- finger: tip anchor at (26, 6) -->
+    <svg id="finger" viewBox="0 0 130 170" width="130">
+      <g>
+        <path d="M18 14 Q18 4 26 4 Q34 4 34 14 L34 78 L18 78 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M34 62 Q36 50 44 52 Q52 54 50 66 L48 80 L34 80 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M50 66 Q52 56 60 58 Q68 60 66 72 L64 84 L50 84 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M66 72 Q68 62 75 65 Q82 68 80 78 L78 90 L66 90 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M14 84 Q10 70 18 66 Q26 63 30 74 L32 84 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M14 82 Q12 74 18 72 L80 76 Q86 78 86 92 L86 120 Q86 150 60 150 L40 150 Q16 150 14 122 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+      </g>
+    </svg>
+
+  </div><!-- /camera -->
+  <div id="fade"></div>
+</div>
+
+<script src="engine.js"></script>
+<script>
+const { track, ripple, press } = window.__engine
+const $ = (id) => document.getElementById(id)
+
+/* Aviv (1 Sep 2026): a touch slower — see ios.html. */
+const SLOW = 1.25
+const DUR = 7600
+window.__duration = DUR * SLOW
+
+/* kebab: screen (357, 66) -> canvas (172.5+357, 54+66) = (529.5, 120)
+ * ATHS row: menu top 48 + pad 6 + 6.5 rows*47 -> y ~ 48+6+305 = 359 center ~ 336?
+ *   rows at 54+6: item i center = 48+6+47*i+23.5 (screen) ; i=6 -> 359.5 -> canvas 413.5
+ *   x: menu spans 375-8-246=121..367 screen -> tap x ~ 290 -> canvas 462.5
+ * Install btn: dialog bottom: buttons y ~ 812-26-20 ~ 758 (screen) -> canvas 812
+ *   x ~ 300 -> canvas 472.5 */
+const camPos = track([
+  [500, [360, 460]], [1250, [360, 300]],
+  [2700, [360, 300]], [3250, [360, 660]],
+  [4300, [360, 660]], [4950, [360, 460]],
+])
+const camScale = track([
+  [500, 1], [1250, 1.5], [2700, 1.5], [3250, 1.45], [4300, 1.45], [4950, 1],
+])
+
+const fingerPos = track([
+  [0, [630, 990]], [350, [560, 600], 'out'], [800, [529.5, 124], 'inOut'],
+  [1100, [529.5, 124]], [1500, [560, 330], 'inOut'],
+  [2000, [462.5, 413.5], 'inOut'],
+  [2500, [462.5, 413.5]], [2900, [540, 560], 'inOut'],
+  [3600, [472.5, 816], 'inOut'],
+  [4100, [472.5, 816]], [4500, [590, 890], 'inOut'],
+])
+const fingerOpacity = track([[0, 0], [280, 1], [4450, 1], [4750, 0]])
+const fingerPress = (t) =>
+  Math.max(press(t, 850, 1000), press(t, 2150, 2320), press(t, 3750, 3920))
+
+const menuScale = track([[950, 0], [1250, 1, 'out'], [2500, 1], [2750, 0, 'in']])
+const menuOpacity = track([[950, 0], [1100, 1], [2500, 1], [2700, 0]])
+const dimOpacity = track([[950, 0], [1400, 0.28], [4250, 0.28], [4700, 0]])
+const miFlash = track([[2150, 0], [2230, 1], [2320, 1], [2550, 0]])
+const miHalo = track([[1750, 0], [1950, 1], [2150, 1], [2300, 0]])
+const dialogY = track([[2750, 260], [3180, 0, 'out'], [4200, 0], [4600, 300, 'in']])
+const dialogOpacity = track([[2750, 0], [3000, 1], [4200, 1], [4550, 0]])
+const installHalo = track([[3400, 0], [3580, 1], [3750, 1], [3950, 0]])
+const homeOpacity = track([[4380, 0], [4850, 1]])
+const iconScale = track([[5050, 0], [5400, 1.16, 'out'], [5600, 0.94], [5800, 1]])
+const iconOpacity = track([[5050, 0], [5250, 1]])
+const glowScale = track([[5250, 0.55], [6100, 1.6, 'out']])
+const glowOpacity = track([[5250, 0], [5400, 0.9], [6200, 0]])
+const endFade = track([[0, 1], [300, 0, 'out'], [7250, 0], [7600, 1, 'in']])
+
+const TAPS = [860, 2160, 3760]
+const ripEls = TAPS.map(() => {
+  const el = document.createElement('div')
+  el.className = 'rip'
+  $('camera').appendChild(el)
+  return el
+})
+
+window.setT = (raw) => {
+  const t = raw / SLOW
+  const [fx, fy] = camPos(t)
+  const s = camScale(t)
+  $('camera').style.transform =
+    `translate(${360 - fx * s}px, ${460 - fy * s}px) scale(${s})`
+
+  const [px, py] = fingerPos(t)
+  const pr = fingerPress(t)
+  $('finger').style.transform =
+    `translate(${px - 26}px, ${py - 6}px) rotate(-14deg) scale(${1 - 0.07 * pr})`
+  $('finger').style.opacity = fingerOpacity(t)
+
+  TAPS.forEach((t0, i) => {
+    const { r, o } = ripple(t, t0)
+    const [rx, ry] = fingerPos(t0 - 10)
+    ripEls[i].style.left = rx + 'px'
+    ripEls[i].style.top = ry + 'px'
+    ripEls[i].style.width = ripEls[i].style.height = r * 2 + 'px'
+    ripEls[i].style.opacity = o
+  })
+
+  $('dim').style.opacity = dimOpacity(t)
+  $('menu').style.transform = `scale(${menuScale(t)})`
+  $('menu').style.opacity = menuOpacity(t)
+  $('menu').style.display = t < 950 ? 'none' : 'block'
+  document.querySelector('#miATHS .flash').style.opacity = miFlash(t)
+  document.querySelector('#miATHS .halo').style.opacity = miHalo(t)
+  $('dialog').style.transform = `translateY(${dialogY(t)}px)`
+  $('dialog').style.opacity = dialogOpacity(t)
+  $('dialog').style.display = t < 2750 ? 'none' : 'block'
+  document.querySelector('#installBtn .halo').style.opacity = installHalo(t)
+  $('home').style.opacity = homeOpacity(t)
+  $('home').style.display = t < 4380 ? 'none' : 'block'
+  const icEl = document.querySelector('#appIcon .ic')
+  icEl.style.transform = `scale(${iconScale(t)})`
+  icEl.style.opacity = iconOpacity(t)
+  const glow = document.querySelector('#appIcon .glow')
+  glow.style.transform = `scale(${glowScale(t)})`
+  glow.style.opacity = glowOpacity(t)
+  $('fade').style.opacity = endFade(t)
+}
+window.setT(0)
+</script>
+</body>
+</html>
