@@ -7,6 +7,7 @@ import { Sidebar, Tabbar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
 import { MemberBanners } from "@/components/app/MemberBanners";
+import { HomeSearchSlot } from "@/components/app/HomeSearchSlot";
 import { MemberPreviewBridge } from "@/components/app/MemberPreviewBridge";
 import { RegisterServiceWorker } from "@/components/app/RegisterServiceWorker";
 import { InstallGuide } from "@/components/app/install/InstallGuide";
@@ -74,6 +75,7 @@ export default async function MemberLayout({ children }: { children: React.React
         <main className="content" id="content">
           <div className="screen on">
             <MemberBanners banners={banners} />
+            <HomeSearchSlot />
             {children}
           </div>
         </main>

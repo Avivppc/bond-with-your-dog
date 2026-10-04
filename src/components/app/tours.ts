@@ -23,7 +23,7 @@ export const TOURS: Tour[] = [
       { target: "nav-pets", title: "Practice mode", body: "Guided steps with a timer and a rep counter, at your own pace." },
       { target: "nav-auto_stories", title: "Moves Library", body: "Every move with its cue and a short clip. Mark each one Learning, then Reliable." },
       { target: "ask-roni", title: "Ask Roni", body: "Film 30–90 seconds of a move and Roni replies with notes pinned to moments in your clip." },
-      { target: "dog-chip", title: "Your dog", body: "Training more than one dog? Switch here — each keeps their own progress." },
+      { target: "account-menu", title: "Your dog and settings", body: "Tap your picture to switch dogs (each keeps their own progress), open Settings or sign out." },
       { target: "notifications", title: "Notifications", body: "Roni's replies, answers to your questions and new achievements land here." },
     ],
   },

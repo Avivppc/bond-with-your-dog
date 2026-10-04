@@ -3,6 +3,7 @@ import type { MemberViewer } from "@/lib/member/viewer";
 import { DogChip, type ChipDog } from "./DogChip";
 import { Ms } from "./ui";
 import { InstallAppButton } from "./install/InstallAppButton";
+import { AccountMenu } from "./AccountMenu";
 
 const AGE: Record<string, string> = { puppy: "Puppy", adult: "Adult", senior: "Senior" };
 
@@ -10,7 +11,7 @@ export function dogSubtitle(d: { breed: string | null; age_group: string }): str
   return [d.breed, AGE[d.age_group]].filter(Boolean).join(" · ");
 }
 
-/** Sticky header: search, notifications, dog switcher, profile. */
+/** Sticky header: search, notifications, dog switcher and the account menu (on phones: logo, bell, account). */
 export function Topbar({ viewer, logo = "/app/img/logo.png" }: { viewer: MemberViewer; logo?: string }) {
   const dogs: ChipDog[] = viewer.dogs.map((d) => ({ id: d.id, name: d.name, subtitle: dogSubtitle(d), photo: d.photo_url }));
   return (
@@ -33,14 +34,14 @@ export function Topbar({ viewer, logo = "/app/img/logo.png" }: { viewer: MemberV
         </Link>
         <span className="vr" />
         <DogChip dogs={dogs} activeId={viewer.activeDog?.id ?? null} />
-        <Link href="/profile" className="avatar-initials" aria-label="Your profile" style={viewer.profile.avatar_url ? { padding: 0, overflow: "hidden" } : undefined}>
-          {viewer.profile.avatar_url ? (
-            // eslint-disable-next-line @next/next/no-img-element -- member-uploaded photo
-            <img src={viewer.profile.avatar_url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-          ) : (
-            viewer.initials
-          )}
-        </Link>
+        <AccountMenu
+          name={viewer.profile.full_name?.trim() || viewer.firstName}
+          email={viewer.email}
+          initials={viewer.initials}
+          avatarUrl={viewer.profile.avatar_url}
+          dogs={dogs}
+          activeDogId={viewer.activeDog?.id ?? null}
+        />
       </div>
     </header>
   );
