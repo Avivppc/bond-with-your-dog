@@ -87,6 +87,7 @@ const MAIN: NavDef[] = [
       { href: "/studio", label: "Roni's Studio", needs: "content" },
       { href: "/admin/coaching/questions", label: "Lesson questions", needs: "content" },
       { href: "/admin/coaching/live-qa", label: "Live Q&A", needs: "content" },
+      { href: "/admin/coaching/sessions", label: "1:1 sessions", needs: "content" },
       { href: "/admin/coaching/replies", label: "Saved replies", needs: "content" },
       { href: "/admin/assistant", label: "AI assistant", needs: "content" },
     ],
