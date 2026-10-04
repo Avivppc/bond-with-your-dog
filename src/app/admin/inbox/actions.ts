@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { pushSoon } from "@/lib/push/server";
+import { loadNotificationSettings } from "@/lib/notification-settings/server";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { parsePage } from "@/lib/admin-helpers/pagination";
 import { inboxHref, parseInboxStatus, parseInboxTab } from "@/lib/admin-helpers/inbox";
@@ -58,6 +59,12 @@ export async function answerRequest(formData: FormData): Promise<void> {
   }
 
   pushSoon(request.user_id);
+  // Admin → Member notifications: the bell follows it in the database, the email here.
+  const topic = (await loadNotificationSettings()).topics.support_answered;
+  if (!topic.enabled || !topic.email) {
+    done();
+    back(formData, { ok: "Answer saved. No email was sent (turned off in Member notifications)." });
+  }
   const to = await memberEmail(request.user_id);
   const emailed =
     to !== null &&

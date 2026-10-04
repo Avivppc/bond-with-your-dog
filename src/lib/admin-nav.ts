@@ -114,7 +114,8 @@ const BOTTOM: NavDef[] = [
     icon: "settings",
     children: [
       { href: "/admin/settings/general", label: "General", needs: "settings" },
-      { href: "/admin/settings/notifications", label: "Notifications", needs: "sales" },
+      { href: "/admin/settings/member-notifications", label: "Member notifications", needs: "content" },
+      { href: "/admin/settings/notifications", label: "Team notifications", needs: "sales" },
       { href: "/admin/settings/email", label: "Email", needs: "sales" },
       { href: "/admin/settings/payments", label: "Payments", needs: "settings" },
       { href: "/admin/team", label: "Users & access", needs: "staff" },

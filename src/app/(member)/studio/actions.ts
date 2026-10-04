@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { pushSoon } from "@/lib/push/server";
+import { loadNotificationSettings } from "@/lib/notification-settings/server";
+import { noticeText } from "@/lib/notification-settings/topics";
 import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { notifyMemberByEmail } from "@/lib/feedback/notify-email";
@@ -116,13 +118,17 @@ export async function sendFeedback(input: z.input<typeof Send>): Promise<StudioR
   }
   if (!updated?.length) return fail("Someone on the team just sent this. Reload to see their feedback.");
   if (firstSend) pushSoon(video.user_id as string);
-  const email = firstSend
-    ? await notifyMemberByEmail(sb, video.user_id as string, {
-        subject: `Roni replied to your ${video.title} video`,
-        lead: `Roni watched your ${video.title} video and left you notes.`,
-        path: `/feedback/${videoId}`,
-      })
-    : null;
+  // The bell follows Admin → Member notifications in the database; the email follows it here.
+  const topic = (await loadNotificationSettings()).topics.feedback_reply;
+  const email = !firstSend
+    ? null
+    : topic.enabled && topic.email
+      ? await notifyMemberByEmail(sb, video.user_id as string, {
+          subject: `Roni replied to your ${video.title} video`,
+          lead: `Roni watched your ${video.title} video and left you notes.`,
+          path: `/feedback/${videoId}`,
+        })
+      : "off";
   done();
   revalidatePath(`/feedback/${videoId}`);
   return { ok: true, data: { email, firstSend } };
@@ -144,20 +150,35 @@ export async function replyAsStaff(input: z.input<typeof Reply>): Promise<Studio
     console.error("[studio] staff reply failed", { videoId, error: error.message });
     return fail("The reply didn't send. Please try again.");
   }
-  const { error: notifyError } = await sb.from("notifications").insert({
-    user_id: video.user_id,
-    kind: "feedback",
-    title: `Roni answered you about ${String(video.title).slice(0, 100)}`,
-    body: body.slice(0, 200),
-    href: `/feedback/${videoId}`,
-  });
-  if (notifyError) console.error("[studio] reply notification failed", { videoId, error: notifyError.message });
-  else pushSoon(video.user_id as string);
-  const email = await notifyMemberByEmail(sb, video.user_id as string, {
-    subject: `Roni answered you about ${video.title}`,
-    lead: body,
-    path: `/feedback/${videoId}`,
-  });
+  // Admin → Member notifications decides whether this is sent, how it reads and whether it emails.
+  const settings = await loadNotificationSettings();
+  const topic = settings.topics.staff_reply;
+  if (topic.enabled) {
+    const { data: profile } = await sb.from("profiles").select("full_name").eq("id", video.user_id).maybeSingle();
+    const text = noticeText(settings, "staff_reply", {
+      first_name: ((profile?.full_name as string | null) ?? "").trim().split(/\s+/)[0],
+      video_title: String(video.title).slice(0, 100),
+      reply: body.slice(0, 200),
+    });
+    const { error: notifyError } = await sb.from("notifications").insert({
+      user_id: video.user_id,
+      kind: "feedback",
+      topic: "staff_reply",
+      title: text.title.slice(0, 160),
+      body: text.body?.slice(0, 400) ?? null,
+      href: `/feedback/${videoId}`,
+    });
+    if (notifyError) console.error("[studio] reply notification failed", { videoId, error: notifyError.message });
+    else pushSoon(video.user_id as string);
+  }
+  const email: EmailOutcome =
+    topic.enabled && topic.email
+      ? await notifyMemberByEmail(sb, video.user_id as string, {
+          subject: `Roni answered you about ${video.title}`,
+          lead: body,
+          path: `/feedback/${videoId}`,
+        })
+      : "off";
   done();
   revalidatePath(`/feedback/${videoId}`);
   return { ok: true, data: { email } };
