@@ -17,6 +17,8 @@ export const MEMBER_PREFIXES = [
   "/progress",
   "/community",
   "/refer",
+  "/affiliate",
+  "/coaching",
   "/profile",
   "/dogs",
   "/settings",

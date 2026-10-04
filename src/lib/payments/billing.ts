@@ -6,6 +6,7 @@ import { validatePayment } from "./validate-payment";
 import { notifyTeamSafely } from "@/lib/notify-team";
 import { formatMoney } from "@/lib/pricing";
 import { deliverGift } from "@/lib/sales/server";
+import { recordCommission, voidCommission } from "@/lib/affiliates/server";
 
 /**
  * Applies provider-agnostic billing events to orders, subscriptions and access.
@@ -90,10 +91,11 @@ async function revoke(sb: Sb, userId: string, offerId: string, orderId: string |
 
 /** A refunded gift: the recipient's access from this order ends, or the waiting invite is withdrawn. */
 async function revokeGift(sb: Sb, orderId: string, offerId: string, email: string) {
+  // Claimed invites grant with this order (claim_access_invites), so revoking by order covers both.
   const { data: recipientId, error } = await sb.rpc("find_user_id_by_email", { p_email: email });
   if (error) throw new Error(`gift recipient lookup failed: ${error.message}`);
   if (typeof recipientId === "string") await revoke(sb, recipientId, offerId, orderId);
-  const { error: inviteError } = await sb.from("access_invites").delete().eq("offer_id", offerId).ilike("email", email).is("claimed_at", null);
+  const { error: inviteError } = await sb.from("access_invites").delete().eq("order_id", orderId).is("claimed_at", null);
   if (inviteError) throw new Error(`gift invite withdrawal failed: ${inviteError.message}`);
 }
 
@@ -173,7 +175,7 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
   const sb = createServiceClient();
   const { data: order } = await sb
     .from("orders")
-    .select("id, user_id, offer_id, status, amount_cents, currency, discount_code_id, bump_offer_id, gift_recipient_email, gift_recipient_name, gift_message")
+    .select("id, user_id, offer_id, status, amount_cents, currency, discount_code_id, bump_offer_id, gift_recipient_email, gift_recipient_name, gift_message, affiliate_id")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) throw new Error(`order ${orderId} not found`);
@@ -269,6 +271,9 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     // Only one open/paid order can hold a code (orders_one_per_code), so this should never happen.
     if (!redeemed?.length) console.error("[billing] discount code was already used by another order", { orderId: order.id, codeId: order.discount_code_id });
   }
+
+  // An affiliate's commission on what was paid (tax excluded). Idempotent; throws so the webhook retries.
+  await recordCommission(order, (payment.amountCents ?? order.amount_cents) - payment.taxCents);
 
   // Last, once everything that matters is done; it never throws.
   if (firstTimePaid) await notifyTeamOfPurchase(sb, order.user_id, offer.title, payment.amountCents ?? order.amount_cents, order.currency);
@@ -406,6 +411,7 @@ export async function applyBillingEvent(provider: string, event: BillingEvent): 
       if (order.gift_recipient_email) await revokeGift(sb, order.id, order.offer_id, order.gift_recipient_email);
       else await revoke(sb, order.user_id, order.offer_id, order.id);
       if (order.bump_offer_id) await revoke(sb, order.user_id, order.bump_offer_id, order.id);
+      await voidCommission(order.id);
       return;
     }
   }

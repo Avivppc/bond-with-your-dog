@@ -10,6 +10,8 @@ import { fulfillOrder, recordBillingEvent, markBillingEvent } from "@/lib/paymen
 import { siteUrl } from "@/lib/email";
 import { cookies } from "next/headers";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
+import { AFFILIATE_COOKIE } from "@/lib/affiliates/rules";
+import { affiliateForCheckout } from "@/lib/affiliates/server";
 import { claimReferralCode } from "@/lib/referrals-server";
 import { planCheckout } from "@/lib/sales/checkout-plan";
 import { OFFER_FOR_SALE_COLUMNS, ownsOffer, type OfferForSale } from "@/lib/sales/server";
@@ -71,6 +73,8 @@ export async function startCheckout(formData: FormData): Promise<void> {
   const jar = await cookies();
   const referralCode = jar.get(REFERRAL_COOKIE)?.value;
   if (referralCode && (await claimReferralCode(await createClient(), referralCode))) jar.delete(REFERRAL_COOKIE);
+  // An affiliate's link visited in the last 30 days earns them a commission on this purchase.
+  const affiliateId = await affiliateForCheckout(jar.get(AFFILIATE_COOKIE)?.value, { id: user.id, email: user.email });
 
   const plan = await planCheckout({
     userId: user.id,
@@ -113,10 +117,12 @@ export async function startCheckout(formData: FormData): Promise<void> {
       gift_recipient_email: plan.gift?.recipientEmail ?? null,
       gift_recipient_name: plan.gift?.recipientName ?? null,
       gift_message: plan.gift?.message || null,
+      affiliate_id: affiliateId,
     })
     .select("id")
     .single();
   if (error?.code === "23505") back({ error: "code-used" });
+  if (error?.code === "54000") back({ error: "code-limit" });
   if (error || !order) {
     console.error("[checkout] order insert failed", { slug: slug.data, error: error?.message });
     back({ error: "failed" });

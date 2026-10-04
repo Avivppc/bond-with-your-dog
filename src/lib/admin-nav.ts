@@ -67,6 +67,7 @@ const MAIN: NavDef[] = [
       { href: "/admin/offers", label: "Offers", needs: "sales" },
       { href: "/admin/orders", label: "Orders", needs: "sales" },
       { href: "/admin/referrals", label: "Referrals", needs: "sales" },
+      { href: "/admin/affiliates", label: "Affiliates", needs: "sales" },
     ],
   },
   {
