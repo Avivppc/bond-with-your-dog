@@ -12,7 +12,8 @@ const MAILTO = /^mailto:/i;
 
 const OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: ["p", "br", "h2", "h3", "h4", "strong", "em", "u", "s", "a", "ul", "ol", "li", "blockquote", "code", "pre", "hr"],
-  allowedAttributes: { a: ["href", "target", "rel"] },
+  // Headings may carry an id so "#cookies"-style links into a page work.
+  allowedAttributes: { a: ["href", "target", "rel"], h2: ["id"], h3: ["id"] },
   allowedSchemes: ["https", "http", "mailto"],
   allowProtocolRelative: false,
   transformTags: {

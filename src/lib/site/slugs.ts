@@ -6,7 +6,7 @@
  */
 export const RESERVED_SLUGS: ReadonlySet<string> = new Set([
   // public site and account
-  "about", "account-deleted", "auth", "blog", "chapter", "checkout", "courses", "dashboard", "forgot-password", "login",
+  "about", "accessibility", "account-deleted", "auth", "blog", "chapter", "checkout", "courses", "dashboard", "forgot-password", "login",
   "privacy", "quiz", "r", "refund-policy", "reset-password", "signup", "spotlight", "stories", "terms", "unsubscribe", "welcome",
   // member area
   "certificates", "community", "dogs", "feedback", "help", "home", "learn", "membership", "moves", "my-courses", "notifications",

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { reportMarketingConsent } from "@/lib/analytics-marketing-client";
 import { setNewsletter, setNotifPref } from "./actions";
 
 /**
@@ -21,7 +22,9 @@ export function SwitchRow({ prefKey, label, hint, initial }: { prefKey: string; 
       if (!res.ok) {
         setOn(!next);
         setError(res.error);
+        return;
       }
+      if (prefKey === "newsletter") void reportMarketingConsent(true);
     });
   }
 

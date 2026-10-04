@@ -27,6 +27,12 @@ export function identifyByEmail(email: string, traits: EventProps = {}): void {
   posthog.identify(id, { email: id, ...traits });
 }
 
+/** Set properties on the identified person (they stay on the person until changed). */
+export function setPersonProperties(props: EventProps): void {
+  if (!isEnabled()) return;
+  posthog.setPersonProperties(props);
+}
+
 export function resetAnalytics(): void {
   if (!isEnabled()) return;
   posthog.reset();

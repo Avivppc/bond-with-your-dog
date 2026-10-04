@@ -3,13 +3,13 @@ import { homeTemplate } from "./templates/home";
 import { aboutTemplate } from "./templates/about";
 import { coursesTemplate } from "./templates/courses";
 import { storiesTemplate } from "./templates/stories";
-import { privacyTemplate, refundTemplate, termsTemplate } from "./templates/legal";
+import { accessibilityTemplate, privacyTemplate, refundTemplate, termsTemplate } from "./templates/legal";
 
 /**
  * The site's built-in pages. Until someone edits one, the site shows its template (the
  * hand-built page, rebuilt from sections); the first edit copies it into the database.
  */
-export type SystemKey = "home" | "about" | "courses" | "stories" | "privacy" | "terms" | "refund";
+export type SystemKey = "home" | "about" | "courses" | "stories" | "privacy" | "terms" | "refund" | "accessibility";
 
 export interface SystemPage {
   key: SystemKey;
@@ -29,7 +29,8 @@ export const SYSTEM_PAGES: readonly SystemPage[] = [
   { key: "stories", slug: "stories", title: "Student Stories", seo: seo("Student Stories", "Real BONDED students on three continents, in their own words."), template: storiesTemplate },
   { key: "privacy", slug: "privacy", title: "Privacy Policy", seo: seo("Privacy Policy"), template: privacyTemplate },
   { key: "terms", slug: "terms", title: "Terms of Service", seo: seo("Terms of Service"), template: termsTemplate },
-  { key: "refund", slug: "refund-policy", title: "Refund Policy", seo: seo("Refund Policy"), template: refundTemplate },
+  { key: "refund", slug: "refund-policy", title: "Refund and Cancellation Policy", seo: seo("Refund and Cancellation Policy"), template: refundTemplate },
+  { key: "accessibility", slug: "accessibility", title: "Accessibility Statement", seo: seo("Accessibility Statement"), template: accessibilityTemplate },
 ];
 
 export function systemPage(key: SystemKey): SystemPage {

@@ -8,10 +8,15 @@ export const SITE_SETTINGS_TAG = "site-settings";
 
 /** Throws on failure so a failed read is never cached. */
 async function readSiteSettings(): Promise<SiteSettings> {
-  const { data, error } = await createServiceClient().from("site_settings").select("academy_name, contact_email, social").eq("id", 1).maybeSingle();
+  const { data, error } = await createServiceClient().from("site_settings").select("academy_name, contact_email, social, legal_name, business_number, business_address, business_phone").eq("id", 1).maybeSingle();
   if (error) throw new Error(error.message);
   if (!data) return DEFAULT_SITE_SETTINGS;
-  return { academyName: data.academy_name, contactEmail: data.contact_email, social: readSocial(data.social) };
+  return {
+    academyName: data.academy_name,
+    contactEmail: data.contact_email,
+    social: readSocial(data.social),
+    legal: { name: data.legal_name, businessNumber: data.business_number, address: data.business_address, phone: data.business_phone },
+  };
 }
 
 /** Saving refreshes it at once; the hour is only a safety net if a page was built while the database was down. */

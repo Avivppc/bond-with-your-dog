@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { EMPTY_LEGAL_DETAILS, type LegalDetails } from "./legal";
 
 /** Settings → General: how the academy presents itself on the public site. Pure (no database). */
 
@@ -17,9 +18,11 @@ export interface SiteSettings {
   academyName: string;
   contactEmail: string;
   social: Partial<Record<SocialKey, string>>;
+  /** Printed on the Terms, Refund and Privacy pages. */
+  legal: LegalDetails;
 }
 
-export const DEFAULT_SITE_SETTINGS: SiteSettings = { academyName: "Bonded", contactEmail: "info.bonded@gmail.com", social: {} };
+export const DEFAULT_SITE_SETTINGS: SiteSettings = { academyName: "Bonded", contactEmail: "info.bonded@gmail.com", social: {}, legal: EMPTY_LEGAL_DETAILS };
 
 /** A link to that network: https, and the network's own domain (or a subdomain of it). */
 export function isSocialUrl(key: SocialKey, value: string): boolean {
@@ -59,7 +62,15 @@ export const siteSettingsForm = z.object({
   facebook: socialField("facebook"),
   tiktok: socialField("tiktok"),
   whatsapp: socialField("whatsapp"),
+  legal_name: z.string().trim().max(120, "The registered name can be up to 120 characters."),
+  business_number: z.string().trim().max(40, "The business number can be up to 40 characters."),
+  business_address: z.string().trim().max(300, "The address can be up to 300 characters."),
+  business_phone: z.string().trim().max(40, "The phone number can be up to 40 characters."),
 });
+
+export function legalFromForm(form: z.infer<typeof siteSettingsForm>): LegalDetails {
+  return { name: form.legal_name, businessNumber: form.business_number, address: form.business_address, phone: form.business_phone };
+}
 
 export function socialFromForm(form: z.infer<typeof siteSettingsForm>): SiteSettings["social"] {
   return Object.fromEntries(SOCIAL_KEYS.flatMap((k) => (form[k] ? [[k, form[k]]] : [])));

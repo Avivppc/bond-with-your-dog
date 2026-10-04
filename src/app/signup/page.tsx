@@ -1,10 +1,11 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import GoogleButton from "@/components/auth/GoogleButton";
 import TestimonialCard from "@/components/TestimonialCard";
 import { testimonialById } from "@/lib/testimonials";
-import { MARKETING_CONSENT_LABEL } from "@/lib/auth/marketing-consent";
+import { MARKETING_CONSENT_LABEL, marketingPreTickAllowed, requestCountry } from "@/lib/auth/marketing-consent";
 import { Turnstile } from "@/components/Turnstile";
 import TrackOnMount from "@/components/analytics/TrackOnMount";
 import { EVENTS } from "@/lib/analytics-events";
@@ -36,6 +37,9 @@ export default async function SignupPage({
 }) {
   const { error, message, next } = await searchParams;
   const testimonial = testimonialById(SIGNUP_TESTIMONIAL_ID);
+  // Ticked for visitors where opt-out marketing is lawful; unticked in the EU, UK, Israel and other
+  // opt-in countries, and whenever the country is unknown.
+  const marketingPreTicked = marketingPreTickAllowed(requestCountry(await headers()));
 
   return (
     <>
@@ -126,6 +130,7 @@ export default async function SignupPage({
                     name="marketing_opt_in"
                     type="checkbox"
                     value="yes"
+                    defaultChecked={marketingPreTicked}
                     className="h-4 w-4 shrink-0 rounded border-outline-variant accent-[#8b4b00]"
                   />
                   <span>{MARKETING_CONSENT_LABEL}</span>
@@ -151,8 +156,14 @@ export default async function SignupPage({
               </form>
 
               <p className="text-xs text-outline mt-5 leading-relaxed">
-                We&apos;ll only email you about your account, plus Roni&apos;s tips if you
-                check the box above. You can unsubscribe at any time.
+                We&apos;ll only email you about your account, plus Roni&apos;s tips while the
+                box above is ticked. Untick it, or unsubscribe from any email, whenever you like.
+              </p>
+
+              <p className="text-xs text-outline mt-3 leading-relaxed">
+                By creating an account you confirm you are 18 or older and agree to our{" "}
+                <Link href="/terms" className="underline">Terms</Link> and{" "}
+                <Link href="/privacy" className="underline">Privacy Policy</Link>.
               </p>
 
               <p className="text-sm text-center mt-6 text-on-surface-variant">
