@@ -45,4 +45,15 @@ select t.denied($$select * from public.affiliate_commissions$$, 'members cannot 
 select t.denied($$select public.record_affiliate_visit('dana')$$, 'members cannot count visits directly');
 reset role;
 
+-- Affiliate codes: an ordinary coupon tied to one affiliate, one each, gone with the affiliate.
+select t.fails_with($$update public.affiliates set coupon_percent = 95 where code = 'dana'$$, '23514', 'a code takes off at most 90%');
+update public.affiliates set coupon_percent = 10 where code = 'dana';
+insert into public.coupons (code, percent_off, affiliate_id) values ('DANA10', 10, 'af000000-0000-0000-0000-000000000001');
+select t.fails_with($$insert into public.coupons (code, percent_off, affiliate_id) values ('DANA20', 20, 'af000000-0000-0000-0000-000000000001')$$, '23505', 'one code per affiliate');
+insert into public.coupons (code, percent_off) values ('SPRING20', 20), ('SUMMER20', 20);
+select t.ok((select count(*) = 3 from public.coupons where code in ('DANA10', 'SPRING20', 'SUMMER20')), 'team coupons are not limited to one');
+delete from public.affiliate_commissions where affiliate_id = 'af000000-0000-0000-0000-000000000001';
+delete from public.affiliates where id = 'af000000-0000-0000-0000-000000000001';
+select t.ok((select count(*) = 0 from public.coupons where code = 'DANA10'), 'a removed affiliate''s code goes too');
+
 rollback;

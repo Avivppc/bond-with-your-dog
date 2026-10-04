@@ -2,10 +2,12 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/member/viewer";
 import { formatCents } from "@/lib/sales/pricing";
-import { affiliateForMember, affiliateLink, loadAffiliateStats } from "@/lib/affiliates/server";
+import { affiliateForMember, affiliateLink, loadAffiliateCoupon, loadAffiliateStats } from "@/lib/affiliates/server";
+import { suggestCouponCode } from "@/lib/affiliates/rules";
 import { CopyButton } from "@/components/app/CopyButton";
 import { StateCard, Tip } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
+import { CouponCodeForm } from "./CouponCodeForm";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Affiliate" };
@@ -27,7 +29,7 @@ export default async function AffiliatePage() {
     );
   }
 
-  const [stats, { data: recent, error }] = await Promise.all([
+  const [stats, { data: recent, error }, coupon] = await Promise.all([
     loadAffiliateStats(affiliate.id),
     createServiceClient()
       .from("affiliate_commissions")
@@ -35,6 +37,7 @@ export default async function AffiliatePage() {
       .eq("affiliate_id", affiliate.id)
       .order("created_at", { ascending: false })
       .limit(RECENT),
+    loadAffiliateCoupon(affiliate.id),
   ]);
   if (error) console.error("[affiliate] recent failed", { affiliateId: affiliate.id, error: error.message });
   const link = affiliateLink(affiliate.code);
@@ -57,6 +60,33 @@ export default async function AffiliatePage() {
           <CopyButton value={link} label="Copy link" className="btn btn-primary btn-sm" />
         </div>
       </div>
+
+      {coupon ? (
+        <div className="card">
+          <h2 className="h3">Your discount code</h2>
+          <p className="muted">
+            Anyone who types it at checkout gets {coupon.percent_off}% off, and you earn your {affiliate.commission_percent}% on what they pay. Used {coupon.uses} time
+            {coupon.uses === 1 ? "" : "s"} so far.
+          </p>
+          <div className="row">
+            <input className="input" readOnly value={coupon.code} aria-label="Your discount code" style={{ flex: 1, minWidth: 180, fontFamily: "var(--font-mono, monospace)" }} />
+            <CopyButton value={coupon.code} label="Copy code" className="btn btn-ghost btn-sm" />
+          </div>
+          {!coupon.active && <p className="faint">Your code is paused right now.</p>}
+        </div>
+      ) : (
+        affiliate.coupon_percent &&
+        affiliate.active && (
+          <div className="card">
+            <h2 className="h3">Create your discount code</h2>
+            <p className="muted">
+              Pick a code that&apos;s easy to say in a video or a post. It gives your people {affiliate.coupon_percent}% off, and every purchase with it earns you your{" "}
+              {affiliate.commission_percent}%, even if they never opened your link. You can create one code.
+            </p>
+            <CouponCodeForm suggestion={suggestCouponCode(affiliate.code, affiliate.coupon_percent)} />
+          </div>
+        )
+      )}
 
       {!affiliate.active && <Tip icon="pause_circle">Your link is paused right now, so new purchases don&apos;t earn a commission. Ask us from Help if that&apos;s a surprise.</Tip>}
 

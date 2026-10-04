@@ -117,7 +117,8 @@ export async function startCheckout(formData: FormData): Promise<void> {
       gift_recipient_email: plan.gift?.recipientEmail ?? null,
       gift_recipient_name: plan.gift?.recipientName ?? null,
       gift_message: plan.gift?.message || null,
-      affiliate_id: affiliateId,
+      // A typed affiliate code wins over a link visited earlier.
+      affiliate_id: plan.codeAffiliateId ?? affiliateId,
     })
     .select("id")
     .single();

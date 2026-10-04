@@ -4,7 +4,7 @@ import type { PaymentProvider } from "@/lib/payments/types";
 import { referralQuote } from "@/lib/referrals-server";
 import { upsellQuote } from "@/lib/flows/server/checkout";
 import { couponQuote, loadAddOn, ownsOffer, OFFER_FOR_SALE_COLUMNS, type OfferForSale, type UsableAddOn } from "./server";
-import { bestDiscount, checkGift, effectivePercent, orderTotal, upsellStillOpen, type DiscountKind, type GiftInput } from "./pricing";
+import { bestDiscount, checkGift, effectivePercent, orderTotal, PERSONAL_CODE, upsellStillOpen, type DiscountKind, type GiftInput } from "./pricing";
 
 /**
  * What a checkout will charge and why: one discount (referral, personal code, coupon or an
@@ -53,9 +53,10 @@ export interface CheckoutPlan {
   totalCents: number;
   /** Whether our own prices are charged (codes, bumps and upsells need it). */
   ownPricing: boolean;
+  /** The affiliate whose code was typed (it wins over a link visited earlier). */
+  codeAffiliateId: string | null;
 }
 
-const PERSONAL_CODE = /^BOND-/i;
 const UUID = /^[0-9a-f-]{36}$/;
 
 type Candidate = PlanDiscount;
@@ -85,7 +86,13 @@ async function referralCandidate(input: PlanInput): Promise<Candidate | null> {
   );
 }
 
-async function codeCandidate(input: PlanInput, ownPricing: boolean): Promise<{ candidate: Candidate | null; problem: string | null }> {
+interface CodeResult {
+  candidate: Candidate | null;
+  problem: string | null;
+  affiliateId?: string | null;
+}
+
+async function codeCandidate(input: PlanInput, ownPricing: boolean): Promise<CodeResult> {
   const code = input.code.trim();
   if (!code) return { candidate: null, problem: null };
   if (!ownPricing) return { candidate: null, problem: "Codes can't be used here yet." };
@@ -99,11 +106,12 @@ async function codeCandidate(input: PlanInput, ownPricing: boolean): Promise<{ c
     };
   }
   if (offer.payment_type !== "one_time") return { candidate: null, problem: "Codes work on one-time purchases." };
-  const quote = await couponQuote({ userId: input.userId, offer, code });
+  const quote = await couponQuote({ userId: input.userId, userEmail: input.userEmail, offer, code });
   if (!quote.ok) return { candidate: null, problem: quote.reason };
   return {
     candidate: candidate({ kind: "coupon", label: `Code ${quote.code}: ${quote.label}`, amountCents: quote.amountCents, couponId: quote.couponId, code: quote.code }, offer.price_cents),
     problem: null,
+    affiliateId: quote.affiliateId,
   };
 }
 
@@ -173,5 +181,6 @@ export async function planCheckout(input: PlanInput): Promise<CheckoutPlan> {
     giftProblem: giftCheck && !giftCheck.ok ? giftCheck.reason : null,
     totalCents: orderTotal(mainCents, bumpAccepted && bump ? bump.priceCents : null),
     ownPricing,
+    codeAffiliateId: code.affiliateId ?? null,
   };
 }

@@ -92,6 +92,11 @@ export default async function AffiliatesPage({ searchParams }: { searchParams: P
             <span className={LABEL}>Commission (%)</span>
             <input name="commission_percent" type="number" required min={1} max={90} defaultValue={20} className={INPUT} />
           </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>Their discount code takes off (%)</span>
+            <input name="coupon_percent" type="number" min={1} max={90} defaultValue={10} placeholder="No code" className={INPUT} />
+            <span className={`text-[12px] ${MUTED}`}>They create the code themselves on their affiliate page. Leave empty for no code.</span>
+          </label>
           <label className="flex flex-col gap-1.5 md:col-span-2">
             <span className={LABEL}>Note (only the team sees it)</span>
             <input name="note" maxLength={200} placeholder="Agility trainer, Tel Aviv" className={INPUT} />

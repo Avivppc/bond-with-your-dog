@@ -6,7 +6,7 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { parsePriceToCents } from "@/lib/pricing";
-import { COUPON_CODE, normalizeCode } from "@/lib/sales/pricing";
+import { COUPON_CODE, normalizeCode, PERSONAL_CODE } from "@/lib/sales/pricing";
 
 function back(params: Record<string, string>): never {
   redirect(`/admin/coupons?${new URLSearchParams(params).toString()}`);
@@ -15,7 +15,10 @@ function back(params: Record<string, string>): never {
 const dateOrNull = z.preprocess((v) => (typeof v === "string" && v ? v : null), z.string().date().nullable());
 
 const NewCoupon = z.object({
-  code: z.string().transform(normalizeCode).pipe(z.string().regex(COUPON_CODE, "Codes: 3–40 letters, numbers, - or _ (e.g. SPRING20).")),
+  code: z
+    .string()
+    .transform(normalizeCode)
+    .pipe(z.string().regex(COUPON_CODE, "Codes: 3–40 letters, numbers, - or _ (e.g. SPRING20).").refine((c) => !PERSONAL_CODE.test(c), "BOND- codes are members' personal codes; pick another.")),
   kind: z.enum(["percent", "amount"]),
   value: z.string().trim().min(1, "Enter how much the code takes off."),
   offer_ids: z.array(z.string().uuid()).default([]),

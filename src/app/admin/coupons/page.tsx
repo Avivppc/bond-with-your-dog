@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { formatCents } from "@/lib/sales/pricing";
@@ -20,6 +21,7 @@ interface CouponRow {
   active: boolean;
   note: string | null;
   created_at: string;
+  affiliates: { id: string; name: string } | null;
 }
 
 function status(c: CouponRow, now: Date): { tone: "published" | "draft" | "warning"; label: string } {
@@ -35,11 +37,14 @@ export default async function CouponsPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const sb = createServiceClient();
   const [{ data: coupons, error }, { data: offers }] = await Promise.all([
-    sb.from("coupons").select("id, code, percent_off, amount_off_cents, offer_ids, max_redemptions, starts_at, expires_at, active, note, created_at").order("created_at", { ascending: false }),
+    sb
+      .from("coupons")
+      .select("id, code, percent_off, amount_off_cents, offer_ids, max_redemptions, starts_at, expires_at, active, note, created_at, affiliates(id, name)")
+      .order("created_at", { ascending: false }),
     sb.from("offers").select("id, title, currency").eq("payment_type", "one_time").order("title"),
   ]);
   if (error) console.error("[coupons] list failed", error.message);
-  const rows = (coupons ?? []) as CouponRow[];
+  const rows = (coupons ?? []) as unknown as CouponRow[];
   const offerTitle = new Map((offers ?? []).map((o) => [o.id as string, o.title as string]));
   const counts = await Promise.all(rows.map((c) => sb.rpc("coupon_redemptions", { p_coupon_id: c.id })));
   const now = new Date();
@@ -138,6 +143,11 @@ export default async function CouponsPage({ searchParams }: { searchParams: Prom
                     <tr key={c.id} className={TROW}>
                       <td className={TD}>
                         <span className="font-mono font-semibold">{c.code}</span>
+                        {c.affiliates && (
+                          <Link href={`/admin/affiliates/${c.affiliates.id}`} className={`block text-[12px] hover:underline ${MUTED}`}>
+                            Affiliate: {c.affiliates.name}
+                          </Link>
+                        )}
                         {c.note && <span className={`block text-[12px] ${MUTED}`}>{c.note}</span>}
                       </td>
                       <td className={TD}>{c.percent_off !== null ? `${c.percent_off}% off` : `${formatCents(c.amount_off_cents ?? 0, "USD")} off`}</td>

@@ -3,6 +3,8 @@
  * bonded.dog/a/<code> and earn a commission in money on purchases made within 30 days. Pure.
  */
 
+import { COUPON_CODE, normalizeCode, PERSONAL_CODE } from "../sales/pricing";
+
 export const AFFILIATE_COOKIE = "bonded_aff";
 export const AFFILIATE_COOKIE_DAYS = 30;
 
@@ -23,6 +25,36 @@ export function suggestAffiliateCode(name: string): string {
     .slice(0, 30)
     .replace(/-+$/, "");
   return slug.length >= 3 ? slug : `${slug}-partner`.replace(/^-/, "");
+}
+
+/** "dana-levi" with 10% off → "DANALEVI10" (a starting point; the affiliate picks their own). */
+export function suggestCouponCode(affiliateCode: string, percent: number): string {
+  return `${affiliateCode.replace(/-/g, "").toUpperCase().slice(0, 36)}${percent}`;
+}
+
+/** The discount code an affiliate types for themselves, as stored (upper-case, no spaces). */
+export function checkAffiliateCouponCode(raw: string): { ok: true; code: string } | { ok: false; reason: string } {
+  const code = normalizeCode(raw);
+  if (!COUPON_CODE.test(code)) return { ok: false, reason: "Use 3–40 letters and numbers (dashes are fine), starting with a letter or number." };
+  if (PERSONAL_CODE.test(code)) return { ok: false, reason: "Codes can't start with BOND-. Try another one." };
+  return { ok: true, code };
+}
+
+interface CouponSetting {
+  active: boolean;
+  coupon_percent: number | null;
+}
+
+/**
+ * What saving an affiliate does to their code: off when they're paused or have no discount, on
+ * again only when they come back, otherwise just the discount (a code the team switched off in
+ * Coupons stays off).
+ */
+export function affiliateCouponPatch(before: CouponSetting, after: CouponSetting): { percent_off?: number; active?: boolean } {
+  if (!after.coupon_percent) return { active: false };
+  if (!after.active) return { percent_off: after.coupon_percent, active: false };
+  const cameBack = !before.active || !before.coupon_percent;
+  return cameBack ? { percent_off: after.coupon_percent, active: true } : { percent_off: after.coupon_percent };
 }
 
 const FALLBACK = "/courses";

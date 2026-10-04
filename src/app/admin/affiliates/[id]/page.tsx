@@ -3,7 +3,8 @@ import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { formatCents } from "@/lib/sales/pricing";
-import { AFFILIATE_COLUMNS, affiliateLink, loadAffiliateStats, type Affiliate } from "@/lib/affiliates/server";
+import Link from "next/link";
+import { AFFILIATE_COLUMNS, affiliateLink, loadAffiliateCoupon, loadAffiliateStats, type Affiliate } from "@/lib/affiliates/server";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, INPUT, LABEL, MUTED, Notice, PageHeader, StatusPill, TABLE, TD, TH, THEAD, TROW } from "../../_components/ui";
 import { shortDate } from "../../_components/list-kit";
 import { CopyLinkButton } from "../../media/CopyLinkButton";
@@ -22,7 +23,7 @@ interface CommissionRow {
   created_at: string;
   paid_at: string | null;
   voided_at: string | null;
-  orders: { offers: { title: string } | null } | null;
+  orders: { coupon_id: string | null; offers: { title: string } | null } | null;
 }
 
 const TONE = { pending: "warning", paid: "published", void: "draft" } as const;
@@ -38,15 +39,16 @@ export default async function AffiliatePage({ params, searchParams }: { params: 
   const [{ id }, query] = await Promise.all([params, searchParams]);
   if (!z.string().uuid().safeParse(id).success) notFound();
   const sb = createServiceClient();
-  const [{ data: row }, { data: commissions, error }, stats] = await Promise.all([
+  const [{ data: row }, { data: commissions, error }, stats, coupon] = await Promise.all([
     sb.from("affiliates").select(AFFILIATE_COLUMNS).eq("id", id).maybeSingle(),
     sb
       .from("affiliate_commissions")
-      .select("id, base_cents, percent, amount_cents, currency, status, created_at, paid_at, voided_at, orders(offers(title))")
+      .select("id, base_cents, percent, amount_cents, currency, status, created_at, paid_at, voided_at, orders(coupon_id, offers(title))")
       .eq("affiliate_id", id)
       .order("created_at", { ascending: false })
       .limit(200),
     loadAffiliateStats(id),
+    loadAffiliateCoupon(id),
   ]);
   if (!row) notFound();
   if (error) console.error("[affiliates] commissions failed", { id, error: error.message });
@@ -81,6 +83,22 @@ export default async function AffiliatePage({ params, searchParams }: { params: 
         </div>
       </Card>
 
+      <Card title="Discount code" description="The affiliate creates it on their own page. It's listed in Coupons too, and purchases with it earn them the commission.">
+        {coupon ? (
+          <p className="text-[14px]">
+            <span className="font-mono font-semibold">{coupon.code}</span> · {coupon.percent_off}% off · used {coupon.uses} time{coupon.uses === 1 ? "" : "s"}
+            {!coupon.active && <span className={MUTED}> · off</span>} ·{" "}
+            <Link href="/admin/coupons" className="underline">
+              Coupons
+            </Link>
+          </p>
+        ) : (
+          <p className={`text-[14px] ${MUTED}`}>
+            {affiliate.coupon_percent ? `Not created yet. They can create one with ${affiliate.coupon_percent}% off on their affiliate page.` : "No code: set a discount below to let them create one."}
+          </p>
+        )}
+      </Card>
+
       <Card
         title="Commissions"
         flush
@@ -113,7 +131,10 @@ export default async function AffiliatePage({ params, searchParams }: { params: 
               {rows.map((c) => (
                 <tr key={c.id} className={TROW}>
                   <td className={`${TD} whitespace-nowrap`}>{shortDate(c.created_at)}</td>
-                  <td className={TD}>{c.orders?.offers?.title ?? "Purchase"}</td>
+                  <td className={TD}>
+                    {c.orders?.offers?.title ?? "Purchase"}
+                    <span className={`block text-[12px] ${MUTED}`}>{c.orders?.coupon_id && c.orders.coupon_id === coupon?.id ? `With code ${coupon.code}` : "Through the link"}</span>
+                  </td>
                   <td className={`${TD} tabular-nums max-md:hidden`}>{formatCents(c.base_cents, c.currency)}</td>
                   <td className={`${TD} tabular-nums font-medium`}>
                     {formatCents(c.amount_cents, c.currency)} <span className={`text-[12px] font-normal ${MUTED}`}>({c.percent}%)</span>
@@ -134,6 +155,10 @@ export default async function AffiliatePage({ params, searchParams }: { params: 
           <label className="flex flex-col gap-1.5">
             <span className={LABEL}>Commission (%) for future sales</span>
             <input name="commission_percent" type="number" min={1} max={90} defaultValue={affiliate.commission_percent} className={INPUT} />
+          </label>
+          <label className="flex flex-col gap-1.5">
+            <span className={LABEL}>Their discount code takes off (%)</span>
+            <input name="coupon_percent" type="number" min={1} max={90} defaultValue={affiliate.coupon_percent ?? ""} placeholder="No code" className={INPUT} />
           </label>
           <label className="flex flex-col gap-1.5">
             <span className={LABEL}>Note</span>

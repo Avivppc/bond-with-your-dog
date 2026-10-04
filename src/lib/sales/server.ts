@@ -2,6 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { ownsEverything, type AccessLevel } from "@/lib/offer-ownership";
+import { isOwnPurchase } from "@/lib/affiliates/rules";
 import { addOnUsable, applyCoupon, normalizeCode, type AddOnOffer, type Coupon, type CouponCheck } from "./pricing";
 
 export interface OfferForSale {
@@ -26,15 +27,23 @@ export interface OfferForSale {
 export const OFFER_FOR_SALE_COLUMNS =
   "id, title, slug, payment_type, price_cents, currency, days_of_access, bump_offer_id, bump_price_cents, bump_headline, bump_text, upsell_offer_id, upsell_price_cents, upsell_headline, upsell_text, giftable";
 
-export type CouponQuote = (CouponCheck & { ok: true; couponId: string; code: string }) | { ok: false; reason: string };
+/** affiliateId: the affiliate whose code it is (the purchase earns them the commission). */
+export type CouponQuote = (CouponCheck & { ok: true; couponId: string; code: string; affiliateId: string | null }) | { ok: false; reason: string };
+
+interface CouponAffiliate {
+  user_id: string | null;
+  email: string;
+  active: boolean;
+  coupon_percent: number | null;
+}
 
 /** A public coupon applied to an offer for this buyer, or why it can't be. */
-export async function couponQuote(input: { userId: string; offer: OfferForSale; code: string }, now = new Date()): Promise<CouponQuote> {
+export async function couponQuote(input: { userId: string; userEmail: string; offer: OfferForSale; code: string }, now = new Date()): Promise<CouponQuote> {
   const code = normalizeCode(input.code);
   const sb = createServiceClient();
   const { data, error } = await sb
     .from("coupons")
-    .select("id, code, percent_off, amount_off_cents, offer_ids, max_redemptions, starts_at, expires_at, active")
+    .select("id, code, percent_off, amount_off_cents, offer_ids, max_redemptions, starts_at, expires_at, active, affiliate_id, affiliates(user_id, email, active, coupon_percent)")
     .eq("code", code)
     .maybeSingle();
   if (error) {
@@ -42,7 +51,15 @@ export async function couponQuote(input: { userId: string; offer: OfferForSale; 
     return { ok: false, reason: "We couldn't check that code. Try again." };
   }
   if (!data) return { ok: false, reason: "That code isn't valid." };
-  const coupon = data as Coupon;
+  const row = data as unknown as Coupon & { affiliate_id: string | null; affiliates: CouponAffiliate | null };
+  const owner = row.affiliates;
+  if (row.affiliate_id) {
+    // A paused (or removed) affiliate's code stops working; their own code is for the people they share it with.
+    if (!owner?.active || !owner.coupon_percent) return { ok: false, reason: "That code isn't active." };
+    if (isOwnPurchase(owner, { id: input.userId, email: input.userEmail })) return { ok: false, reason: "That's your own affiliate code. It's for the people you share it with." };
+  }
+  // The discount the team set on the affiliate is the one charged (the coupon row only mirrors it).
+  const coupon: Coupon = owner?.coupon_percent ? { ...row, percent_off: owner.coupon_percent, amount_off_cents: null } : row;
   // Only a paid order uses it up for this buyer; an unpaid attempt is replaced when they start again.
   const [redemptions, used] = await Promise.all([
     sb.rpc("coupon_redemptions", { p_coupon_id: coupon.id, p_exclude_user: input.userId }),
@@ -57,7 +74,7 @@ export async function couponQuote(input: { userId: string; offer: OfferForSale; 
     { id: input.offer.id, priceCents: input.offer.price_cents, currency: input.offer.currency, paymentType: input.offer.payment_type },
     { now, redemptions: Number(redemptions.data ?? 0), usedByBuyer: (used.count ?? 0) > 0 },
   );
-  return check.ok ? { ...check, couponId: coupon.id, code } : check;
+  return check.ok ? { ...check, couponId: coupon.id, code, affiliateId: row.affiliate_id } : check;
 }
 
 export interface UsableAddOn {

@@ -26,6 +26,9 @@ export function normalizeCode(raw: string): string {
 
 export const COUPON_CODE = /^[A-Z0-9][A-Z0-9_-]{2,39}$/;
 
+/** Members' personal codes (BOND-XXXX-XXXX, from email flows); a coupon can't look like one. */
+export const PERSONAL_CODE = /^BOND-/i;
+
 /** What a coupon does to an offer's price, or why it can't be used. */
 export function applyCoupon(
   coupon: Coupon,
