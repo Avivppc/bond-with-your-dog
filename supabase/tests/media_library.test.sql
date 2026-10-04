@@ -29,7 +29,8 @@ select t.ok((select count(*) = 3 from everything), 'images from the two public b
 select t.ok((select path = 'bonded-foundations/cover.png' and total_count = 3 from everything limit 1), 'newest first, with the total');
 select t.ok((select count(*) = 2 from public.admin_media_library(null, 'website', 50, 0)), 'website filter');
 select t.ok((select count(*) = 1 from public.admin_media_library('cover', null, 50, 0)), 'name search');
-select t.ok((select count(*) = 3 from public.admin_media_library('%', null, 50, 0)), 'wildcards in a search are ignored');
+select t.ok((select count(*) = 1 from public.admin_media_library('%', null, 50, 0)), 'a % in a search matches only a real %');
+select t.ok((select count(*) = 1 from public.admin_media_library('rhythm_100', null, 50, 0)), 'an underscore matches itself');
 reset role;
 
 set role authenticated;

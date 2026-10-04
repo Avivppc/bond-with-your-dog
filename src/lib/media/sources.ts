@@ -3,7 +3,8 @@
  *   site-media/<year>/…               website and library uploads
  *   course-images/imported/…          images imported from Kajabi
  *   course-images/lessons/<id>/…      lesson thumbnails
- *   course-images/shared/…            library images reused elsewhere (copies of lesson thumbnails)
+ *   course-images/shared/…            library images reused elsewhere (lasting copies)
+ *   course-images/moves/…             Moves Library images
  *   course-images/<course id>/…       course covers
  */
 
@@ -27,6 +28,7 @@ export function mediaOrigin(bucket: string, path: string): string {
   if (path.startsWith("imported/")) return "Imported from Kajabi";
   if (path.startsWith("lessons/")) return "Lesson thumbnail";
   if (path.startsWith("shared/")) return "Course image";
+  if (path.startsWith("moves/")) return "Move image";
   return "Course cover";
 }
 

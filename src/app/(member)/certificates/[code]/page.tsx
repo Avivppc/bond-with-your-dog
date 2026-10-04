@@ -5,7 +5,7 @@ import { NextChapterOffer } from "@/components/app/NextChapterOffer";
 import { CopyButton } from "@/components/app/CopyButton";
 import { Ms } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
-import { loadCertificateDesign } from "@/lib/certificates/server";
+import { certificateLessonCount, loadCertificateDesign } from "@/lib/certificates/server";
 import { certificateText } from "@/lib/certificates/design";
 
 export const dynamic = "force-dynamic";
@@ -30,11 +30,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
   ]);
   if (!cert) notFound();
   const pdf = `/api/certificates/${encodeURIComponent(cert.code)}`;
-  const [lessonsRes, design] = await Promise.all([
-    own ? supabase.from("lessons").select("id", { count: "exact", head: true }).eq("course_id", own.course_id) : null,
-    loadCertificateDesign(),
-  ]);
-  const text = certificateText(design, { studentName: cert.student_name, dogName: cert.dog_name, lessons: lessonsRes?.count ?? null });
+  const [lessons, design] = await Promise.all([certificateLessonCount(cert.code), loadCertificateDesign()]);
+  const text = certificateText(design, { studentName: cert.student_name, dogName: cert.dog_name, lessons });
 
   return (
     <>

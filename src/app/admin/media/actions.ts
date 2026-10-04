@@ -9,17 +9,19 @@ import { libraryPublicBases, loadMediaLibrary, storeLibraryImage, type MediaItem
 import { isLibraryUrl, parseMediaSource } from "@/lib/media/sources";
 import { revalidateCourseContent } from "@/app/admin/courses/revalidate";
 import { COURSE_IMAGES_BUCKET } from "@/lib/lesson-files";
-import { LESSON_THUMBNAIL_PREFIX, lessonThumbnailPathFromUrl } from "@/lib/content/lesson-thumbnail";
+import { lessonThumbnailPathFromUrl } from "@/lib/content/lesson-thumbnail";
 
 type Service = ReturnType<typeof createServiceClient>;
 
 /**
- * A lesson's own thumbnail is deleted with that lesson. When one is picked for something else, use
- * a copy in course-images/shared/ (never deleted) so deleting the first lesson can't break it.
+ * Files in course-images belong to something that may delete them later (a lesson's thumbnail, a
+ * move's image). When one is picked for something else, use a copy in course-images/shared/ (never
+ * deleted). Website/library uploads (site-media) and Kajabi imports are never deleted, so they're
+ * used as they are.
  */
 async function lastingUrl(sb: Service, url: string): Promise<string | null> {
   const base = sb.storage.from(COURSE_IMAGES_BUCKET).getPublicUrl("").data.publicUrl;
-  if (!url.startsWith(`${base}${LESSON_THUMBNAIL_PREFIX}`)) return url;
+  if (!url.startsWith(base) || url.startsWith(`${base}shared/`) || url.startsWith(`${base}imported/`)) return url;
   const path = url.slice(base.length);
   const target = `shared/${randomUUID()}${path.slice(path.lastIndexOf("."))}`;
   const { error } = await sb.storage.from(COURSE_IMAGES_BUCKET).copy(path, target);

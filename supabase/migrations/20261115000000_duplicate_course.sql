@@ -54,7 +54,9 @@ begin
                                 cues, practice_steps, practice_minutes)
     values (p_new_id, (select new_id from dup_modules where old_id = v_lesson.module_id), v_lesson.position, v_lesson.title,
             v_lesson.description, v_lesson.duration_seconds, v_lesson.free_preview, v_lesson.kind, v_lesson.available_after_days,
-            v_lesson.pass_threshold, v_lesson.published, v_lesson.body_html, v_lesson.thumbnail_url, v_lesson.key_takeaways,
+            v_lesson.pass_threshold, v_lesson.published, v_lesson.body_html,
+            -- An uploaded thumbnail is the original's file: the server gives the copy its own one.
+            case when v_lesson.thumbnail_upload_url is null then v_lesson.thumbnail_url end, v_lesson.key_takeaways,
             v_lesson.cues, v_lesson.practice_steps, v_lesson.practice_minutes)
     returning id into v_new;
     insert into dup_lessons values (v_lesson.id, v_new);

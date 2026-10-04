@@ -21,7 +21,8 @@ begin
        and (p_source is null
             or (p_source = 'website' and o.bucket_id = 'site-media')
             or (p_source = 'courses' and o.bucket_id = 'course-images'))
-       and (coalesce(p_search, '') = '' or o.name ilike '%' || replace(replace(p_search, '%', ''), '_', '') || '%')
+       and (coalesce(p_search, '') = ''
+            or o.name ilike '%' || replace(replace(replace(p_search, '\', '\\'), '%', '\%'), '_', '\_') || '%')
      order by o.created_at desc nulls last
      limit least(greatest(coalesce(p_limit, 60), 1), 200)
     offset greatest(coalesce(p_offset, 0), 0);
