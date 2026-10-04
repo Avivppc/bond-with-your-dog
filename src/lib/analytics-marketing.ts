@@ -1,4 +1,4 @@
-import { EVENTS, setPersonProperties, track, type EventProps } from "./analytics";
+import { EVENTS, isEnabled, setPersonProperties, track, type EventProps } from "./analytics";
 
 /** A member's marketing-email answer, as stored on their profile. */
 export interface MarketingConsentState {
@@ -61,6 +61,8 @@ export function syncMarketingConsent(
   store: KeyValueStore,
   announceChange: boolean,
 ): void {
+  // Nothing is sent without PostHog, so nothing may be remembered as sent either.
+  if (!isEnabled()) return;
   const fingerprint = `${userId}:${state.optIn}:${state.optInAt ?? ""}`;
   if (readLastReported(store) === fingerprint) return;
   setPersonProperties(marketingPersonProps(state));

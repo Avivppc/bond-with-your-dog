@@ -24,7 +24,7 @@ export const REFUND_HTML = blocks(
   "<p>We refund you within <strong>7 business days</strong> of your cancellation, to the card you paid with, in the currency you paid in, through our payment provider PayPlus. Your bank or card company may take a few more days to show it. Access to what you cancelled ends when the refund is processed.</p>",
 
   "<h2>Memberships and subscriptions</h2>",
-  "<p>You can cancel a membership at any time. Cancelling stops all future charges within three business days at the latest, usually immediately, and you keep access until the end of the period you have already paid for. Payments for a period you have already used are not refunded, except for the first payment during the 14 days described above. For plans that renew after a year or longer, we email you before the renewal so you can cancel in time.</p>",
+  "<p>You can cancel a membership at any time. Cancelling stops all future charges within three business days at the latest, usually immediately, and you keep access until the end of the period you have already paid for. Payments for a period you have already used are not refunded, except for the first payment during the 14 days described above. The date a plan renews next is always shown on your <strong>Membership &amp; purchases</strong> page, so you can cancel before it renews.</p>",
 
   "<h2>After the 14 days</h2>",
   "<p>After 14 days we don&#39;t refund purchases you decided not to use. We do refund, or put right, a purchase that doesn&#39;t work as described: for example if a course can&#39;t be opened or played and we can&#39;t fix it, or what you bought isn&#39;t what we described. Write to us and we will sort it out. Your legal rights are never affected.</p>",

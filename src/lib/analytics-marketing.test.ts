@@ -121,9 +121,15 @@ describe("syncMarketingConsent", () => {
   test("does nothing when PostHog was never initialised", () => {
     posthogMock.__loaded = false;
 
-    syncMarketingConsent("user-1", agreed, fakeStorage(), true);
+    const storage = fakeStorage();
+    syncMarketingConsent("user-1", agreed, storage, true);
 
     expect(posthogMock.setPersonProperties).not.toHaveBeenCalled();
     expect(posthogMock.capture).not.toHaveBeenCalled();
+
+    // ...and the answer is not remembered as reported, so it is sent once PostHog is available.
+    posthogMock.__loaded = true;
+    syncMarketingConsent("user-1", agreed, storage, true);
+    expect(posthogMock.setPersonProperties).toHaveBeenCalledTimes(1);
   });
 });

@@ -3,7 +3,8 @@ import type { EventName, EventProps } from "./analytics-events";
 
 export * from "./analytics-events";
 
-function isEnabled(): boolean {
+/** Whether PostHog was initialised in this browser (false without its key). */
+export function isEnabled(): boolean {
   return typeof window !== "undefined" && posthog.__loaded;
 }
 

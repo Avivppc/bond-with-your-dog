@@ -70,7 +70,7 @@ export const PRIVACY_HTML = blocks(
   "<h2>How long we keep it</h2>",
   "<ul>",
   "<li><strong>Your account, dogs, progress, posts and uploaded files and videos:</strong> until you delete them or your account.</li>",
-  "<li><strong>Payment and order records:</strong> kept for seven years after the transaction, because Israeli tax and bookkeeping law requires it. This continues after you delete your account.</li>",
+  "<li><strong>Payment records:</strong> the receipts and tax invoices we issue, and our payment ledger (amount, date, currency and payment reference), are kept for seven years after the transaction, because Israeli tax and bookkeeping law requires it. When you delete your account, your orders and subscription details are deleted and the ledger is kept without a link to your account.</li>",
   "<li><strong>Marketing consent record:</strong> until you withdraw it.</li>",
   "<li><strong>Support messages:</strong> for as long as needed to help you and to answer later questions.</li>",
   "<li><strong>Analytics:</strong> for a limited period set in our analytics tool.</li>",

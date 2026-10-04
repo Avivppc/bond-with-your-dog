@@ -18,6 +18,12 @@ export async function unsubscribeByToken(token: string, source: "link" | "one_cl
     console.error("[unsubscribe] failed", { error: error.message });
     return false;
   }
+  // A member's unsubscribe is also a withdrawal of marketing consent: Settings must show it off and
+  // the consent proof must go (the profiles trigger clears it). The unsubscribe itself already holds.
+  if (userId) {
+    const { error: consentError } = await sb.from("profiles").update({ marketing_opt_in: false }).eq("id", userId);
+    if (consentError) console.error("[unsubscribe] consent was not cleared", { error: consentError.message });
+  }
   return true;
 }
 

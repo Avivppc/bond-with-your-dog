@@ -45,7 +45,8 @@ to an opt-in country (`marketing_opt_in_prechecked = true` finds them).
 ## Promises in the copy the product must keep
 
 - **Renewal reminder emails** before a plan that renews after a year or longer (Israeli Consumer Protection Law s.13A: notice 21-60 days before
-  the term ends; a silent auto-renewal is void) **[verify section number]**. `offers.interval` can be `year`, so annual plans exist. **Not implemented yet.**
+  the term ends; a silent auto-renewal is void) **[verify section number]**. `offers.interval` can be `year`, so annual plans exist. **Not implemented, and the copy
+  no longer promises it** (it says the renewal date is shown on Membership & purchases). Build the reminder job before selling annual plans.
 - **Cancelling a membership stops billing within 3 business days** (s.13C-13D **[verify]**). The Cancel button does this immediately.
 - **Refund within 7 business days** of cancellation to the original card. Refund is currently a manual action: make sure someone owns it.
 - **Advance notice before a chapter is withdrawn.**
