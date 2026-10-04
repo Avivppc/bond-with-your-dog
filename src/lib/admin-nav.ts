@@ -56,6 +56,7 @@ const MAIN: NavDef[] = [
       { href: "/admin/website", label: "Pages", needs: "content" },
       { href: "/site-editor/theme", label: "Theme", needs: "content" },
       { href: "/site-editor/member", label: "Member area", needs: "content" },
+      { href: "/admin/media", label: "Media library", needs: "content" },
     ],
   },
   {

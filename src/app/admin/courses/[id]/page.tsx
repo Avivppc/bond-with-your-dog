@@ -5,45 +5,24 @@ import { requireStaff } from "@/lib/admin";
 import { canPerform } from "@/lib/staff";
 import { updateCourse } from "@/app/admin/actions";
 import { buildOutline } from "@/lib/course-outline";
-import {
-  BTN_SECONDARY,
-  Card,
-  Notice,
-  StatusPill,
-  Tabs,
-  Breadcrumbs,
-  type TabItem,
-} from "@/app/admin/_components/ui";
+import { BTN_SECONDARY, Card, Notice, StatusPill, Tabs, Breadcrumbs, type TabItem } from "@/app/admin/_components/ui";
 import { CourseThumb } from "@/app/admin/_components/CourseTable";
 import { CourseForm } from "@/app/admin/_components/CourseForm";
 import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 import { CourseImageUpload } from "./CourseImageUpload";
 import { ChapterDetailsCard, type ChapterDefaults } from "./ChapterDetailsCard";
-import {
-  CourseOffersTab,
-  CourseSettingsTab,
-  CourseStudentsTab,
-} from "./CourseTabs";
+import { CourseOffersTab, CourseSettingsTab, CourseStudentsTab } from "./CourseTabs";
 import { CourseEngagementTab } from "./EngagementTab";
 
 export const metadata = { title: "Course" };
 
 export const dynamic = "force-dynamic";
 
-const TAB_KEYS = [
-  "outline",
-  "details",
-  "engagement",
-  "offers",
-  "students",
-  "settings",
-] as const;
+const TAB_KEYS = ["outline", "details", "engagement", "offers", "students", "settings"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 function asTab(value: string | undefined): TabKey {
-  return (TAB_KEYS as readonly string[]).includes(value ?? "")
-    ? (value as TabKey)
-    : "outline";
+  return (TAB_KEYS as readonly string[]).includes(value ?? "") ? (value as TabKey) : "outline";
 }
 
 export default async function EditCoursePage({
@@ -51,12 +30,7 @@ export default async function EditCoursePage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{
-    tab?: string;
-    saved?: string;
-    error?: string;
-    deleted?: string;
-  }>;
+  searchParams: Promise<{ tab?: string; saved?: string; error?: string; deleted?: string }>;
 }) {
   const { role } = await requireStaff("content");
   const { id } = await params;
@@ -64,11 +38,7 @@ export default async function EditCoursePage({
   const canSell = canPerform(role, "sales");
 
   const sb = createServiceClient();
-  const { data: course } = await sb
-    .from("courses")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
+  const { data: course } = await sb.from("courses").select("*").eq("id", id).maybeSingle();
   if (!course) notFound();
 
   const base = `/admin/courses/${id}`;
@@ -85,33 +55,19 @@ export default async function EditCoursePage({
     { key: "settings", label: "Settings", href: `${base}?tab=settings` },
   ];
   const requested = asTab(tabParam);
-  const activeTab = tabs.some((t) => t.key === requested)
-    ? requested
-    : "outline";
+  const activeTab = tabs.some((t) => t.key === requested) ? requested : "outline";
 
   return (
     <div className="space-y-6">
       <div>
-        <Breadcrumbs
-          items={[
-            { label: "Courses", href: "/admin/courses" },
-            { label: course.title },
-          ]}
-        />
+        <Breadcrumbs items={[{ label: "Courses", href: "/admin/courses" }, { label: course.title }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-4">
-            <CourseThumb
-              src={course.image || null}
-              className="h-14 w-24 max-sm:hidden"
-            />
+            <CourseThumb src={course.image || null} className="h-14 w-24 max-sm:hidden" />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight sm:truncate">
-                  {course.title}
-                </h1>
-                <StatusPill tone={course.published ? "published" : "draft"}>
-                  {course.published ? "Published" : "Draft"}
-                </StatusPill>
+                <h1 className="text-2xl font-semibold tracking-tight sm:truncate">{course.title}</h1>
+                <StatusPill tone={course.published ? "published" : "draft"}>{course.published ? "Published" : "Draft"}</StatusPill>
               </div>
               <div className="mt-3">
                 <Tabs items={tabs} active={activeTab} />
@@ -119,15 +75,8 @@ export default async function EditCoursePage({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Link
-              href={`/learn/${id}`}
-              target="_blank"
-              className={BTN_SECONDARY}
-            >
-              <span
-                className="material-symbols-outlined text-[18px]"
-                aria-hidden
-              >
+            <Link href={`/learn/${id}`} target="_blank" className={BTN_SECONDARY}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
                 visibility
               </span>
               Preview
@@ -136,24 +85,15 @@ export default async function EditCoursePage({
         </div>
       </div>
 
-      {saved && (
-        <Notice tone="success">
-          {saved === "created"
+      {saved && <Notice tone="success">{saved === "created"
             ? "Course created. Add your first module below."
             : saved === "duplicated"
               ? "Course duplicated. This is the draft copy: rename it in Details and publish it when it's ready."
-              : "Course details saved."}
-        </Notice>
-      )}
+              : "Course details saved."}</Notice>}
       {deleted === "lesson" && <Notice tone="success">Lesson deleted.</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
 
-      {activeTab === "outline" && (
-        <OutlineTab
-          courseId={id}
-          paywallAfterModuleId={course.paywall_after_module_id ?? null}
-        />
-      )}
+      {activeTab === "outline" && <OutlineTab courseId={id} paywallAfterModuleId={course.paywall_after_module_id ?? null} />}
 
       {activeTab === "details" && (
         <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -171,11 +111,7 @@ export default async function EditCoursePage({
             </Card>
             <ChapterDetailsTab course={course} />
           </div>
-          <CourseImageUpload
-            courseId={id}
-            currentUrl={course.image || null}
-            currentAlt={course.image_alt || null}
-          />
+          <CourseImageUpload courseId={id} currentUrl={course.image || null} currentAlt={course.image_alt || null} />
         </div>
       )}
 
@@ -187,54 +123,25 @@ export default async function EditCoursePage({
   );
 }
 
-async function OutlineTab({
-  courseId,
-  paywallAfterModuleId,
-}: {
-  courseId: string;
-  paywallAfterModuleId: string | null;
-}) {
+async function OutlineTab({ courseId, paywallAfterModuleId }: { courseId: string; paywallAfterModuleId: string | null }) {
   const sb = createServiceClient();
   const [modulesRes, lessonsRes] = await Promise.all([
-    sb
-      .from("modules")
-      .select("id, parent_id, title, description, position, published")
-      .eq("course_id", courseId),
-    sb
-      .from("lessons")
-      .select(
-        "id, module_id, title, position, published, kind, free_preview, available_after_days",
-      )
-      .eq("course_id", courseId),
+    sb.from("modules").select("id, parent_id, title, description, position, published").eq("course_id", courseId),
+    sb.from("lessons").select("id, module_id, title, position, published, kind, free_preview, available_after_days").eq("course_id", courseId),
   ]);
   if (modulesRes.error || lessonsRes.error) {
-    console.error("course outline load failed", {
-      courseId,
-      error: modulesRes.error?.message ?? lessonsRes.error?.message,
-    });
+    console.error("course outline load failed", { courseId, error: modulesRes.error?.message ?? lessonsRes.error?.message });
   }
   const outline = buildOutline(modulesRes.data ?? [], lessonsRes.data ?? []);
   return (
     <Card>
-      <CourseOutlineEditor
-        courseId={courseId}
-        outline={outline}
-        paywallAfterModuleId={paywallAfterModuleId}
-      />
+      <CourseOutlineEditor courseId={courseId} outline={outline} paywallAfterModuleId={paywallAfterModuleId} />
     </Card>
   );
 }
 
 async function ChapterDetailsTab({ course }: { course: ChapterDefaults }) {
-  const { data, error } = await createServiceClient()
-    .from("courses")
-    .select("id, title")
-    .neq("id", course.id)
-    .order("title");
-  if (error)
-    console.error("[course] course list load failed", {
-      courseId: course.id,
-      error: error.message,
-    });
+  const { data, error } = await createServiceClient().from("courses").select("id, title").neq("id", course.id).order("title");
+  if (error) console.error("[course] course list load failed", { courseId: course.id, error: error.message });
   return <ChapterDetailsCard course={course} otherCourses={data ?? []} />;
 }

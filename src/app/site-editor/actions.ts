@@ -1,6 +1,5 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
@@ -13,7 +12,7 @@ import { slugify, slugProblem, type SystemKey, SYSTEM_PAGES } from "@/lib/site/s
 import { themeSchema } from "@/lib/site/theme";
 import { memberAreaSchema } from "@/lib/member-area/settings";
 import { MEMBER_AREA_TAG } from "@/lib/member-area/server";
-import { sniffImageType, validateEmailImage } from "@/app/admin/_components/email-editor/upload-rules";
+import { storeLibraryImage } from "@/lib/media/server";
 import { heroVideo } from "@/lib/site/sections/home";
 import { newSection } from "@/lib/site/page-doc";
 
@@ -22,7 +21,6 @@ import { newSection } from "@/lib/site/page-doc";
 export type EditorResult = { ok: true; rev?: number; message?: string } | { ok: false; error: string; conflict?: boolean };
 
 const SITE_MEDIA = "site-media";
-const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 const Id = z.string().uuid();
 
 function pathOf(slug: string): string {
@@ -233,31 +231,12 @@ export async function restoreSiteVersion(pageId: string, versionId: string): Pro
 
 export type UploadResult = { url: string } | { error: string };
 
-/** An image for a website section (field "file"), stored in the public site-media bucket. */
+/** An image for a website section (field "file"), stored in the media library (site-media bucket). */
 export async function uploadSiteImage(formData: FormData): Promise<UploadResult> {
   const { user } = await requireStaff("content");
   const file = formData.get("file");
   if (!(file instanceof File)) return { error: "Choose an image to upload." };
-  const invalid = validateEmailImage({ type: file.type, size: Math.min(file.size, 1) });
-  if (invalid) return { error: invalid };
-  if (file.size > MAX_IMAGE_BYTES) return { error: "Images can be up to 5 MB. Try a smaller or compressed version." };
-  const bytes = new Uint8Array(await file.arrayBuffer());
-  const type = sniffImageType(bytes);
-  if (!type || type !== file.type) return { error: "That file doesn't look like a valid image. Try exporting it again as PNG or JPG." };
-  const ext = type.split("/")[1].replace("jpeg", "jpg");
-  const path = `${new Date().getUTCFullYear()}/${randomUUID()}.${ext}`;
-  try {
-    const storage = createServiceClient().storage.from(SITE_MEDIA);
-    const { error } = await storage.upload(path, bytes, { contentType: type, cacheControl: "31536000", upsert: false });
-    if (error) {
-      console.error("[site images] upload failed", { userId: user.id, path, error: error.message });
-      return { error: "Could not upload the image. Please try again." };
-    }
-    return { url: storage.getPublicUrl(path).data.publicUrl };
-  } catch (err) {
-    console.error("[site images] upload threw", { userId: user.id, error: err instanceof Error ? err.message : String(err) });
-    return { error: "Could not upload the image. Please try again." };
-  }
+  return storeLibraryImage(user.id, file);
 }
 
 export interface UploadedImage {
