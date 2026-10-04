@@ -4,6 +4,7 @@ import { isAuthorizedCron } from "@/lib/reminders/cron-auth";
 import { runReminderJobs } from "@/lib/reminders/server/run";
 import { recordJobRun } from "@/lib/job-runs";
 import { sendPendingPush } from "@/lib/push/server";
+import { cleanStaleStoryUploads } from "@/lib/stories/cleanup";
 
 // Vercel caps Hobby functions at 60 seconds.
 export const maxDuration = 60;
@@ -29,6 +30,8 @@ export async function GET(req: NextRequest) {
 
   const summary = await runReminderJobs(sb);
   await recordJobRun(sb, "reminders", summary.ok);
+  // Housekeeping: photos visitors uploaded on "Share your story" but never sent.
+  const staleStoryPhotos = await cleanStaleStoryUploads(sb);
   // Today's reminders (and anything else notified in the last half hour) to members' phones,
   // within what's left of the function's time.
   const pushes = await Promise.race([
@@ -38,5 +41,5 @@ export async function GET(req: NextRequest) {
     }),
     new Promise<"timed out">((resolve) => setTimeout(() => resolve("timed out"), PUSH_DEADLINE_MS)),
   ]);
-  return NextResponse.json({ ...summary, pushes }, { status: summary.ok ? 200 : 500 });
+  return NextResponse.json({ ...summary, pushes, staleStoryPhotos }, { status: summary.ok ? 200 : 500 });
 }

@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 interface TurnstileApi {
   render: (el: HTMLElement, options: Record<string, unknown>) => string;
   remove: (widgetId: string) => void;
+  reset: (widgetId: string) => void;
 }
 
 declare global {
@@ -26,15 +27,19 @@ const SCRIPT_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render
 interface TurnstileProps {
   onToken?: (token: string | null) => void;
   className?: string;
+  /** Change it to get a fresh token (a token works once, so after a failed submit). */
+  resetKey?: number;
 }
 
-export function Turnstile({ onToken, className }: TurnstileProps) {
+export function Turnstile({ onToken, className, resetKey = 0 }: TurnstileProps) {
   const box = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(() => typeof window !== "undefined" && Boolean(window.turnstile));
   const tokenCallback = useRef(onToken);
   useEffect(() => {
     tokenCallback.current = onToken;
   }, [onToken]);
+
+  const widgetId = useRef<string | null>(null);
 
   useEffect(() => {
     if (!SITE_KEY || !ready || !box.current || !window.turnstile) return;
@@ -45,8 +50,18 @@ export function Turnstile({ onToken, className }: TurnstileProps) {
       "expired-callback": () => tokenCallback.current?.(null),
       "error-callback": () => tokenCallback.current?.(null),
     });
-    return () => window.turnstile?.remove(id);
+    widgetId.current = id;
+    return () => {
+      widgetId.current = null;
+      window.turnstile?.remove(id);
+    };
   }, [ready]);
+
+  useEffect(() => {
+    if (resetKey === 0 || !widgetId.current) return;
+    tokenCallback.current?.(null);
+    window.turnstile?.reset(widgetId.current);
+  }, [resetKey]);
 
   if (!SITE_KEY) return null;
   return (

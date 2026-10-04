@@ -34,23 +34,31 @@ export function ResumeNotice({ at, onStartOver, onDismiss }: { at: number; onSta
 }
 
 interface EndCardProps {
+  /** False when the member skipped ahead: the lesson isn't done until most of the video was watched. */
+  completed: boolean;
   next: { href: string; title: string } | null;
   doneHref: string;
   practiceHref: string;
   onReplay: () => void;
 }
 
-/** Shown when the video ends: the lesson counts as done, and the obvious next steps are one tap away. */
-export function EndCard({ next, doneHref, practiceHref, onReplay }: EndCardProps) {
+/** Shown when the video ends: whether the lesson counts as done, and the obvious next steps one tap away. */
+export function EndCard({ completed, next, doneHref, practiceHref, onReplay }: EndCardProps) {
   return (
-    <div className="end-card" role="dialog" aria-label="Lesson finished">
+    <div className="end-card" role="dialog" aria-label={completed ? "Lesson finished" : "Video ended"}>
       <div className="row" style={{ gap: 10, flexWrap: "nowrap" }}>
-        <span className="state-ic done" aria-hidden>
-          <Ms name="check" size="sm" />
+        <span className={completed ? "state-ic done" : "state-ic"} aria-hidden>
+          <Ms name={completed ? "check" : "play_arrow"} size="sm" />
         </span>
-        <b>Lesson complete</b>
+        <b>{completed ? "Lesson complete" : "Not complete yet"}</b>
       </div>
-      <p>{next ? <>Up next: {next.title}</> : "That was the last lesson of this chapter."}</p>
+      <p>
+        {!completed
+          ? "Parts of the video were skipped. Watch it through to complete this lesson."
+          : next
+            ? <>Up next: {next.title}</>
+            : "That was the last lesson of this chapter."}
+      </p>
       <div className="row" style={{ gap: 8, justifyContent: "center" }}>
         <Link className="btn btn-primary btn-sm" href={next?.href ?? doneHref}>
           {next ? "Next lesson" : "Continue"}

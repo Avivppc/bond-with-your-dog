@@ -8,6 +8,7 @@ const PUBLIC_ROUTES: Array<{ path: string; priority: number }> = [
   { path: "/quiz", priority: 0.8 },
   { path: "/about", priority: 0.8 },
   { path: "/stories", priority: 0.5 },
+  { path: "/stories/share", priority: 0.3 },
   { path: "/chapter/foundations", priority: 0.7 },
   { path: "/chapter/moves", priority: 0.6 },
   { path: "/chapter/lets-dance", priority: 0.6 },

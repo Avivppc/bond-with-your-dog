@@ -7,10 +7,11 @@ import VimeoPlayer from "@vimeo/player";
 import { createClient } from "@/lib/supabase/client";
 import type { PlaybackResponse } from "@/app/api/lessons/[lessonId]/playback/route";
 import { resumeFrom } from "@/lib/member/resume";
-import { playbackErrorMessage, watchedEnough } from "@/lib/member/watch";
+import { isWatchRequired, playbackErrorMessage, playedEnough, playedStep, watchedEnough } from "@/lib/member/watch";
 import { EndCard, PlayerPoster, ResumeNotice } from "./PlayerOverlays";
 
 const PROGRESS_EVERY_SECONDS = 15;
+const RETRY_AFTER_PLAYED_SECONDS = 15;
 /** How long "Picking up at …" stays on the video. */
 const RESUME_NOTICE_MS = 8000;
 
@@ -22,6 +23,8 @@ interface LessonPlayerProps {
   /** Lesson artwork, shown while the video loads or when there is none yet. */
   poster: string | null;
   completed: boolean;
+  /** Seconds of this video already played on earlier visits (counts toward completing it). */
+  playedSeconds: number;
   next: { href: string; title: string } | null;
   /** The "Lesson complete" screen. */
   doneHref: string;
@@ -45,58 +48,103 @@ interface PlayerControls {
 
 /**
  * Watch time and completion go through DB functions that check access; watch time never clears a
- * completion. Watching 90% counts as finishing, and the last position is saved when the member
- * pauses or leaves the page, not only every 15 seconds.
+ * completion. Two numbers are saved: the furthest point (for resuming) and the seconds actually
+ * played (seeking doesn't count), which must reach 80% before the lesson can complete. Reaching
+ * 90% of the timeline with enough played finishes the lesson. Progress is saved every 15 seconds
+ * of playback (also after jumping back, e.g. "Start over"), and when the member pauses, leaves the
+ * page or moves to another one.
  */
-function useProgressRecorder(lessonId: string, alreadyCompleted: boolean, onCompleted: () => void) {
+function useProgressRecorder(lessonId: string, alreadyCompleted: boolean, playedBefore: number, onCompleted: () => void, onEnough: () => void) {
   const completedRef = useRef(alreadyCompleted);
   const lastSaved = useRef(0);
   const lastSeen = useRef(0);
-  const onCompletedRef = useRef(onCompleted);
+  // Seconds played: saved so far (from earlier visits too) and not yet saved.
+  const playedSaved = useRef(playedBefore);
+  const playedPending = useRef(0);
+  const durationRef = useRef(0);
+  const enoughShown = useRef(false);
+  const callbacks = useRef({ onCompleted, onEnough });
   const lessonRef = useRef(lessonId);
   useEffect(() => {
-    onCompletedRef.current = onCompleted;
+    callbacks.current = { onCompleted, onEnough };
     lessonRef.current = lessonId;
   });
 
+  const played = () => playedSaved.current + playedPending.current;
+  /** Something not saved yet: played seconds, or a point further than the saved one. */
+  const unsaved = () => playedPending.current >= 1 || lastSeen.current > lastSaved.current;
+
   const saveRef = useRef(async (seconds: number) => {
     lastSaved.current = seconds;
-    const { error } = await createClient().rpc("record_lesson_progress", { p_lesson_id: lessonRef.current, p_watch_seconds: Math.floor(seconds) });
-    if (error) console.error("record_lesson_progress failed", error.message);
+    const delta = Math.floor(playedPending.current);
+    playedPending.current -= delta;
+    const { error } = await createClient().rpc("record_lesson_progress", {
+      p_lesson_id: lessonRef.current,
+      p_watch_seconds: Math.floor(seconds),
+      p_played_seconds: delta,
+    });
+    if (error) {
+      console.error("record_lesson_progress failed", error.message);
+      playedPending.current += delta; // sent with the next save
+      return;
+    }
+    playedSaved.current += delta;
+    // Enough watched but not at the end yet: refresh once so "Complete lesson" opens up.
+    if (!completedRef.current && !enoughShown.current && playedEnough(playedSaved.current, durationRef.current)) {
+      enoughShown.current = true;
+      callbacks.current.onEnough();
+    }
   });
 
+  // When the database still says "watch first" (a save went missing), wait for more playback.
+  const retryAtPlayed = useRef(0);
+
   async function complete(seconds: number) {
-    if (completedRef.current) return;
+    if (completedRef.current || played() < retryAtPlayed.current || !playedEnough(played(), durationRef.current)) return;
     completedRef.current = true;
     await saveRef.current(seconds);
     const { error } = await createClient().rpc("complete_lesson", { p_lesson_id: lessonRef.current });
     if (error) {
-      console.error("complete_lesson failed", error.message);
-      completedRef.current = false; // try again on the next time update or "ended"
+      if (isWatchRequired(error)) retryAtPlayed.current = played() + RETRY_AFTER_PLAYED_SECONDS;
+      else console.error("complete_lesson failed", error.message);
+      completedRef.current = false; // try again on a later time update or "ended"
       return;
     }
-    onCompletedRef.current();
+    callbacks.current.onCompleted();
   }
 
   useEffect(() => {
     const flush = () => {
-      if (document.visibilityState === "hidden" && lastSeen.current > lastSaved.current) void saveRef.current(lastSeen.current);
+      if (unsaved()) void saveRef.current(lastSeen.current);
     };
-    document.addEventListener("visibilitychange", flush);
-    return () => document.removeEventListener("visibilitychange", flush);
+    const flushWhenHidden = () => {
+      if (document.visibilityState === "hidden") flush();
+    };
+    document.addEventListener("visibilitychange", flushWhenHidden);
+    return () => {
+      document.removeEventListener("visibilitychange", flushWhenHidden);
+      flush(); // moving to another page in the app
+    };
   }, []);
 
   return {
     onTime(seconds: number, durationSeconds: number) {
+      playedPending.current += playedStep(lastSeen.current, seconds);
       lastSeen.current = seconds;
+      if (durationSeconds > 0) durationRef.current = durationSeconds;
       if (watchedEnough(seconds, durationSeconds)) void complete(seconds);
-      if (seconds - lastSaved.current >= PROGRESS_EVERY_SECONDS) void saveRef.current(seconds);
+      if (playedPending.current >= PROGRESS_EVERY_SECONDS || seconds - lastSaved.current >= PROGRESS_EVERY_SECONDS) void saveRef.current(seconds);
     },
     onPause(seconds: number) {
       lastSeen.current = seconds;
-      if (seconds > lastSaved.current) void saveRef.current(seconds);
+      if (unsaved()) void saveRef.current(seconds);
     },
     onEnded(seconds: number) {
+      lastSeen.current = seconds;
+      if (completedRef.current || !playedEnough(played(), durationRef.current)) {
+        if (unsaved()) void saveRef.current(seconds);
+        return;
+      }
       void complete(seconds);
     },
   };
@@ -195,16 +243,26 @@ function MuxLessonVideo({ playbackId, token, lessonId, resumeAt, events, onContr
   );
 }
 
-export default function LessonPlayer({ lessonId, hasPlayback, resumeAt, poster, completed, next, doneHref, practiceHref }: LessonPlayerProps) {
+export default function LessonPlayer({ lessonId, hasPlayback, resumeAt, poster, completed, playedSeconds, next, doneHref, practiceHref }: LessonPlayerProps) {
   const router = useRouter();
   const [data, setData] = useState<PlaybackResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [ended, setEnded] = useState(false);
   const [resumedAt, setResumedAt] = useState<number | null>(null);
+  const [completedHere, setCompletedHere] = useState(false);
   const controls = useRef<PlayerControls | null>(null);
-  // A lesson finished by watching ticks off in the lesson list and the "Complete lesson" button.
-  const progress = useProgressRecorder(lessonId, completed, () => router.refresh());
+  // A lesson finished (or watched enough) updates the lesson list and the "Complete lesson" button.
+  const progress = useProgressRecorder(
+    lessonId,
+    completed,
+    playedSeconds,
+    () => {
+      setCompletedHere(true);
+      router.refresh();
+    },
+    () => router.refresh(),
+  );
 
   useEffect(() => {
     if (!hasPlayback) return;
@@ -271,6 +329,7 @@ export default function LessonPlayer({ lessonId, hasPlayback, resumeAt, poster, 
       )}
       {ended && (
         <EndCard
+          completed={completed || completedHere}
           next={next}
           doneHref={doneHref}
           practiceHref={practiceHref}

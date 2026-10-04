@@ -1,25 +1,18 @@
 "use client";
 
 import { useId, useState, type Dispatch, type SetStateAction } from "react";
-import { Ms } from "@/components/app/ui";
 import { MAX_STORY_PHOTOS, STORY_PHOTO_ACCEPT } from "@/lib/community/story-media";
 import { uploadStoryPhoto, type UploadedStoryPhoto } from "@/lib/community/upload-story-photo";
-import { startStoryPhotoUpload } from "./hub-actions";
+import { startVisitorPhotoUpload } from "./actions";
 
-export type StoryPhoto = UploadedStoryPhoto;
-
-const THUMB = 64;
-
-const uploadPhoto = (file: File) => uploadStoryPhoto(file, startStoryPhotoUpload);
-
-interface StoryPhotosProps {
-  photos: readonly StoryPhoto[];
-  setPhotos: Dispatch<SetStateAction<StoryPhoto[]>>;
+interface VisitorPhotosProps {
+  photos: readonly UploadedStoryPhoto[];
+  setPhotos: Dispatch<SetStateAction<UploadedStoryPhoto[]>>;
   onBusyChange: (busy: boolean) => void;
 }
 
-/** Up to 3 photos for a story: thumbnails with remove buttons and an "Add photos" picker. */
-export function StoryPhotos({ photos, setPhotos, onBusyChange }: StoryPhotosProps) {
+/** Up to 3 photos with the story: thumbnails with remove buttons and an "Add photos" picker. */
+export function VisitorPhotos({ photos, setPhotos, onBusyChange }: VisitorPhotosProps) {
   const id = useId();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +26,7 @@ export function StoryPhotos({ photos, setPhotos, onBusyChange }: StoryPhotosProp
     onBusyChange(true);
     try {
       for (const file of picked) {
-        const res = await uploadPhoto(file);
+        const res = await uploadStoryPhoto(file, startVisitorPhotoUpload);
         if ("error" in res) {
           setError(res.error);
           continue;
@@ -49,35 +42,44 @@ export function StoryPhotos({ photos, setPhotos, onBusyChange }: StoryPhotosProp
     }
   }
 
-  function remove(photo: StoryPhoto) {
+  function remove(photo: UploadedStoryPhoto) {
     if (photo.preview) URL.revokeObjectURL(photo.preview);
     setPhotos((list) => list.filter((p) => p.path !== photo.path));
   }
 
   return (
-    <div className="stack" style={{ gap: 8 }}>
-      <div className="row" style={{ gap: 10 }}>
+    <div className="flex flex-col gap-2 text-left">
+      <span className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Photos (optional)</span>
+      <div className="flex flex-wrap items-center gap-3">
         {photos.map((p) => (
-          <div key={p.path} style={{ position: "relative", width: THUMB, height: THUMB, borderRadius: 12, overflow: "hidden", background: "rgba(255,255,255,0.12)", display: "grid", placeItems: "center" }}>
+          <div key={p.path} className="relative grid h-20 w-20 place-items-center overflow-hidden rounded-xl bg-surface-container">
             {p.preview ? (
               // eslint-disable-next-line @next/next/no-img-element -- local preview of the photo just uploaded
-              <img src={p.preview} alt={p.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              <img src={p.preview} alt={p.name} className="h-full w-full object-cover" />
             ) : (
-              <Ms name="photo" color="#bcd0d8" />
+              <span className="material-symbols-outlined text-on-surface-variant" aria-hidden>
+                photo
+              </span>
             )}
             <button
               type="button"
               onClick={() => remove(p)}
               aria-label={`Remove ${p.name}`}
-              style={{ position: "absolute", top: 4, right: 4, width: 22, height: 22, borderRadius: "50%", background: "rgba(0,0,0,0.6)", color: "#fff", display: "grid", placeItems: "center" }}
+              className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-black/60 text-sm leading-none text-white"
             >
-              <Ms name="close" size="sm" />
+              ×
             </button>
           </div>
         ))}
         {room > 0 && (
-          <label htmlFor={id} className="btn btn-ghost btn-sm" style={{ background: "#fff", cursor: busy ? "progress" : "pointer" }} aria-busy={busy}>
-            <Ms name={busy ? "hourglass_top" : "add_a_photo"} size="sm" />
+          <label
+            htmlFor={id}
+            aria-busy={busy}
+            className={`inline-flex items-center gap-2 rounded-full border border-outline-variant/60 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-surface-container ${busy ? "cursor-progress opacity-70" : "cursor-pointer"}`}
+          >
+            <span className="material-symbols-outlined text-base" aria-hidden>
+              {busy ? "hourglass_top" : "add_a_photo"}
+            </span>
             {busy ? "Uploading…" : photos.length === 0 ? "Add photos" : "Add another"}
           </label>
         )}
@@ -95,8 +97,8 @@ export function StoryPhotos({ photos, setPhotos, onBusyChange }: StoryPhotosProp
           }}
         />
       </div>
-      <span className="faint" role={error ? "alert" : undefined} style={{ color: error ? "#ffc2b3" : "#bcd0d8" }}>
-        {error ?? `Up to ${MAX_STORY_PHOTOS} photos (JPG, PNG, WebP or HEIC, 10 MB each). Optional.`}
+      <span className={`text-sm ${error ? "text-error" : "text-on-surface-variant"}`} role={error ? "alert" : undefined}>
+        {error ?? `Up to ${MAX_STORY_PHOTOS} photos of you and your dog (JPG, PNG, WebP or HEIC, 10 MB each).`}
       </span>
     </div>
   );

@@ -52,7 +52,12 @@ function Member({ item }: { item: SupportRequestRow }) {
       <Avatar name={name} size={28} />
       <span className="min-w-0">
         <span className="block truncate font-medium">{name}</span>
-        {item.email && <span className="block truncate text-[12px] text-[#6c6a69]">{item.email}</span>}
+        {item.email && (
+          <span className="block truncate text-[12px] text-[#6c6a69]">
+            {item.email}
+            {!item.user_id && " · Website visitor"}
+          </span>
+        )}
       </span>
     </>
   );
@@ -67,14 +72,14 @@ function Member({ item }: { item: SupportRequestRow }) {
 
 function StoryActions({ item, view }: { item: SupportRequestRow; view: View }) {
   if (!item.consent_public) {
-    return <p className="text-[12px] text-[#8a5a00]">The member did not agree to share this story publicly.</p>;
+    return <p className="text-[12px] text-[#8a5a00]">They did not agree to share this story publicly.</p>;
   }
   if (item.status === "closed") return null;
   return (
     <form action={approveStory} className="flex flex-wrap items-end gap-2">
       <ViewFields id={item.id} view={view} />
       <label className="flex min-w-56 flex-1 flex-col gap-1">
-        <span className="text-[12px] text-[#6c6a69]">Note to the member (optional)</span>
+        <span className="text-[12px] text-[#6c6a69]">{item.user_id ? "Note to the member (optional)" : "Note emailed to them (optional)"}</span>
         <input name="note" maxLength={5000} placeholder="Thank you for sharing your story…" className={INPUT} />
       </label>
       <button type="submit" className={BTN_PRIMARY}>

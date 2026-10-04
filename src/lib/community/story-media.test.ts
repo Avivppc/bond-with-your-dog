@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isOwnStoryPhotoPath, isPreviewablePhoto, storyPhotoPath, storyPhotoType, validateStoryPhoto } from "./story-media";
+import { guestStoryPhotoPath, isGuestStoryPhotoPath, isOwnStoryPhotoPath, isPreviewablePhoto, storyPhotoPath, storyPhotoType, validateStoryPhoto } from "./story-media";
 
 const UID = "00000000-0000-0000-0000-000000000001";
 const OTHER = "00000000-0000-0000-0000-000000000002";
@@ -41,5 +41,22 @@ describe("storyPhotoPath / isOwnStoryPhotoPath", () => {
   it("previews everything but HEIC", () => {
     expect(isPreviewablePhoto(`${UID}/stories/a.jpg`)).toBe(true);
     expect(isPreviewablePhoto(`${UID}/stories/a.heic`)).toBe(false);
+  });
+});
+
+describe("guestStoryPhotoPath / isGuestStoryPhotoPath", () => {
+  const session = "11111111-1111-1111-1111-111111111111";
+
+  it("puts a visitor's photo under guest/<their upload session>", () => {
+    const path = guestStoryPhotoPath(session, "image/png", "abc-123");
+    expect(path).toBe(`guest/${session}/stories/abc-123.png`);
+    expect(isGuestStoryPhotoPath(path, session)).toBe(true);
+  });
+
+  it("refuses another session's photos, member folders and odd names", () => {
+    expect(isGuestStoryPhotoPath(`guest/22222222-2222-2222-2222-222222222222/stories/a.jpg`, session)).toBe(false);
+    expect(isGuestStoryPhotoPath(`${session}/stories/a.jpg`, session)).toBe(false);
+    expect(isGuestStoryPhotoPath(`guest/${session}/stories/../x.jpg`, session)).toBe(false);
+    expect(isGuestStoryPhotoPath(`guest/${session}/stories/a.gif`, session)).toBe(false);
   });
 });
