@@ -1,5 +1,6 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
+import type { PushStatus } from "@/lib/push/devices";
 import { loadPersonExtras } from "./people-data";
 
 const RECENT = 20;
@@ -22,6 +23,7 @@ export interface PersonDetail {
   };
   marketingOptIn: boolean;
   lifetimeValue: { currency: string; net_cents: number }[];
+  push: PushStatus;
   staffRole: string | null;
   dogs: { id: string; name: string; breed: string | null; age_group: string | null; size: string | null; limitations: string[] | null; limitation_note: string | null }[];
   enrollments: { course_id: string; source: string; expires_at: string | null; access_level: string | null; enrolled_at: string; title: string }[];
@@ -90,6 +92,7 @@ export async function loadPerson(userId: string): Promise<PersonDetail | null> {
       location: (p?.location as string | null) ?? null,
     },
     marketingOptIn: extras.marketingOptIn,
+    push: extras.push,
     lifetimeValue: extras.lifetimeValue,
     staffRole: staff.data?.role ?? null,
     dogs: dogs.data ?? [],

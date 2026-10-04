@@ -50,6 +50,15 @@ function ContactRow({ person }: { person: PersonRow }) {
           <span className="text-[#9b9997]">Not subscribed</span>
         )}
       </td>
+      <td className={`${TD} whitespace-nowrap max-md:hidden`}>
+        {person.push.devices > 0 ? (
+          <span className="rounded-full bg-[#e3f5e8] px-2.5 py-0.5 text-[12px] font-medium text-[#1c6b35]" title={`Phone notifications on: ${person.push.label}`}>
+            On · {person.push.label}
+          </span>
+        ) : (
+          <span className="text-[#9b9997]">Off</span>
+        )}
+      </td>
       <td className={`${TD} whitespace-nowrap tabular-nums max-md:hidden`}>{formatAmounts(person.lifetimeValue)}</td>
       <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-lg:hidden`}>{shortDate(person.createdAt)}</td>
       <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-lg:hidden`}>{person.lastSignInAt ? shortDate(person.lastSignInAt) : "Never signed in"}</td>
@@ -149,6 +158,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
                   <th className={TH}>Name</th>
                   <th className={`${TH} max-md:hidden`}>Email</th>
                   <th className={`${TH} max-md:hidden`}>Email marketing</th>
+                  <th className={`${TH} max-md:hidden`}>Phone notifications</th>
                   <th className={`${TH} max-md:hidden`}>Lifetime value</th>
                   <th className={`${TH} max-lg:hidden`}>Added date</th>
                   <th className={`${TH} max-lg:hidden`}>Last activity</th>
