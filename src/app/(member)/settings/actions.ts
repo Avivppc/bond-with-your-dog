@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
+import { consentEvidence, requestCountry } from "@/lib/auth/marketing-consent";
 import { createClient } from "@/lib/supabase/server";
 import { isNotifPrefKey, withNotifPref } from "@/lib/feedback/prefs";
 import { requestOrigin } from "@/lib/feedback/request-origin";
@@ -58,13 +60,14 @@ export async function setTimeZone(timeZone: string): Promise<SettingsResult> {
   return { ok: true };
 }
 
-/** The Bonded newsletter (marketing consent, with the time it was given). */
+/** The Bonded newsletter (marketing consent, with the time and place it was given; turning it off clears them). */
 export async function setNewsletter(value: boolean): Promise<SettingsResult> {
   if (typeof value !== "boolean") return { ok: false, error: "Unknown setting." };
   const { supabase, user } = await signedIn();
+  const proof = value ? consentEvidence("settings", requestCountry(await headers())) : {};
   const { error } = await supabase
     .from("profiles")
-    .update({ marketing_opt_in: value, marketing_opt_in_at: value ? new Date().toISOString() : null })
+    .update({ marketing_opt_in: value, marketing_opt_in_at: value ? new Date().toISOString() : null, ...proof })
     .eq("id", user.id);
   if (error) {
     console.error("[settings] newsletter update failed", error.message);

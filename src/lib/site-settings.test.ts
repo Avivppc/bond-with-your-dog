@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { isSocialUrl, readSocial, siteSettingsForm, socialFromForm } from "./site-settings";
+import { isSocialUrl, legalFromForm, readSocial, siteSettingsForm, socialFromForm } from "./site-settings";
 import { notifyPrefsFromForm, readNotifyPrefs, teamRecipient, DEFAULT_NOTIFY } from "./notifications";
 
 describe("isSocialUrl", () => {
@@ -31,7 +31,7 @@ describe("readSocial", () => {
 });
 
 describe("siteSettingsForm", () => {
-  const base = { academy_name: " Bonded ", contact_email: "info@bonded.dog", instagram: "", youtube: "", facebook: "", tiktok: "", whatsapp: "" };
+  const base = { academy_name: " Bonded ", contact_email: "info@bonded.dog", instagram: "", youtube: "", facebook: "", tiktok: "", whatsapp: "", legal_name: "", business_number: "", business_address: "", business_phone: "" };
 
   test("trims and drops empty social fields", () => {
     const parsed = siteSettingsForm.parse({ ...base, instagram: " https://instagram.com/bonded " });
@@ -43,6 +43,11 @@ describe("siteSettingsForm", () => {
     const result = siteSettingsForm.safeParse({ ...base, youtube: "https://vimeo.com/x" });
     expect(result.success).toBe(false);
     expect(result.error?.issues[0].message).toContain("YouTube");
+  });
+
+  test("reads the business details the legal pages print", () => {
+    const parsed = siteSettingsForm.parse({ ...base, legal_name: " Roni Ltd ", business_number: " 515123456 ", business_address: " 1 Herzl St\nTel Aviv ", business_phone: " +972 50 1234567 " });
+    expect(legalFromForm(parsed)).toEqual({ name: "Roni Ltd", businessNumber: "515123456", address: "1 Herzl St\nTel Aviv", phone: "+972 50 1234567" });
   });
 
   test("requires a name and a real contact email", () => {

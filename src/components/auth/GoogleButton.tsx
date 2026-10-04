@@ -35,9 +35,9 @@ export default function GoogleButton({
       const checkbox = document.querySelector<HTMLInputElement>(
         `input[name="${consentInputName}"]`
       );
-      if (checkbox?.checked) {
-        document.cookie = `${MARKETING_CONSENT_COOKIE}=1; max-age=${CONSENT_COOKIE_MAX_AGE_SECONDS}; path=/; samesite=lax`;
-      }
+      // Always rewrite the cookie, so unticking the box after an abandoned attempt removes the old yes.
+      const maxAge = checkbox?.checked ? CONSENT_COOKIE_MAX_AGE_SECONDS : 0;
+      document.cookie = `${MARKETING_CONSENT_COOKIE}=${checkbox?.checked ? "1" : ""}; max-age=${maxAge}; path=/; samesite=lax`;
     }
 
     const supabase = createClient();

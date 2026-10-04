@@ -18,6 +18,7 @@ export const EVENTS = {
   chapterPageViewed: "chapter_page_viewed",
   waitlistClicked: "waitlist_clicked",
   signupCompleted: "signup_completed",
+  marketingConsentChanged: "marketing_consent_changed",
   installPromptShown: "install_prompt_shown",
   installPromptClicked: "install_prompt_clicked",
   installWizardStep: "install_wizard_step",

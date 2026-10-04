@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { consentEvidence, requestCountry } from "@/lib/auth/marketing-consent";
 import { clientIp, TURNSTILE_FIELD, verifyTurnstile } from "@/lib/turnstile";
 
 const Schema = z.object({
@@ -48,6 +49,8 @@ export async function signup(formData: FormData) {
       data: {
         full_name: parsed.data.full_name,
         marketing_opt_in: parsed.data.marketing_opt_in,
+        // Where, from which country and whether the box came ticked: proof of the yes (no proof for a no).
+        ...(parsed.data.marketing_opt_in ? consentEvidence("signup_form", requestCountry(h)) : {}),
       },
       emailRedirectTo: `${origin}/auth/callback?${nextParam}`,
     },

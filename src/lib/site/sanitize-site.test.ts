@@ -17,4 +17,8 @@ describe("sanitizeSiteHtml", () => {
   test("keeps the editor's placeholders", () => {
     expect(sanitizeSiteHtml('<p><a href="mailto:{{contact_email}}">{{contact_email}}</a></p>')).toBe('<p><a href="mailto:{{contact_email}}">{{contact_email}}</a></p>');
   });
+
+  test("keeps an id on headings (for #anchor links into a page) and on nothing else", () => {
+    expect(sanitizeSiteHtml('<h2 id="cookies" class="x">Cookies</h2><p id="y">t</p>')).toBe('<h2 id="cookies">Cookies</h2><p>t</p>');
+  });
 });

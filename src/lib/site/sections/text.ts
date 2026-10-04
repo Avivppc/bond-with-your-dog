@@ -1,5 +1,6 @@
 import { TESTIMONIALS } from "@/lib/testimonials";
 import { BACKGROUND_OPTIONS, defineSection, HIGHLIGHT_HELP } from "../section-def";
+import { LEGAL_UPDATED, PRIVACY_HTML } from "../legal-copy";
 
 /**
  * Sections first built for the Stories page and the legal pages (any page can use them).
@@ -7,31 +8,8 @@ import { BACKGROUND_OPTIONS, defineSection, HIGHLIGHT_HELP } from "../section-de
  */
 
 /** Help for rich text bodies that accept the placeholders the components fill in. */
-const PLACEHOLDER_HELP = "{{contact_email}} becomes the academy's contact email and {{legal_name}} the registered business name.";
-
-/** Joins block-level HTML without whitespace between the blocks (as the hand-built JSX rendered). */
-export const blocks = (...parts: string[]): string => parts.join("");
-
-/** The Privacy Policy as hand-built (Oct 2026). */
-const PRIVACY_HTML = blocks(
-  "<p>{{legal_name}} respects your privacy. This policy explains what we collect and why.</p>",
-  "<h2>What we collect</h2>",
-  "<ul>",
-  "<li>Account details: your name, email address and profile information you choose to add (such as your dog's name).</li>",
-  "<li>Learning data: the courses you have access to, your lesson progress, quiz results and certificates.</li>",
-  "<li>Content you upload, such as training videos.</li>",
-  "<li>Quiz answers and email when you take our “Find your journey” quiz.</li>",
-  "<li>Basic usage analytics to improve the site.</li>",
-  "</ul>",
-  "<h2>Payments</h2>",
-  "<p>Payments are processed by Paddle.com, our Merchant of Record. We never see or store your card details; Paddle shares with us only what we need to give you access (such as your email and the order).</p>",
-  "<h2>How we use it</h2>",
-  "<p>To provide your courses, track your progress, send emails about your account and purchases, and — only if you opted in — send news and training tips. You can unsubscribe at any time.</p>",
-  "<h2>Service providers</h2>",
-  "<p>We use trusted providers to run the service: hosting and database (Vercel, Supabase), video (Vimeo, Mux), email (Resend), payments (Paddle) and analytics (PostHog).</p>",
-  "<h2>Your rights</h2>",
-  '<p>You can ask to see, correct or delete your data by emailing <a href="mailto:{{contact_email}}">{{contact_email}}</a>.</p>',
-);
+const PLACEHOLDER_HELP =
+  "{{contact_email}} becomes the academy's contact email, {{legal_name}} the registered business name and {{business_details}} a block with the name, business number, address, phone and email from Settings → General.";
 
 export const photoHero = defineSection({
   type: "photo_hero",
@@ -109,7 +87,7 @@ export const legalText = defineSection({
   ],
   defaults: {
     heading: "Privacy Policy",
-    updated: "October 1, 2026",
+    updated: LEGAL_UPDATED,
     body: PRIVACY_HTML,
   },
 });

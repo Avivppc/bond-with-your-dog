@@ -36,6 +36,31 @@ export default async function GeneralSettingsPage({ searchParams }: { searchPara
           </div>
         </Card>
 
+        <Card
+          title="Business details"
+          description="Printed on the Terms, Refund and Privacy pages. Your payment provider checks them, so fill them in exactly as registered before you apply."
+        >
+          <div className="grid max-w-3xl gap-5 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5">
+              <span className={LABEL}>Registered business name</span>
+              <input name="legal_name" className={INPUT} maxLength={120} defaultValue={settings.legal.name} placeholder="Roni Sagi Ltd." />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={LABEL}>Company or dealer number</span>
+              <input name="business_number" className={INPUT} maxLength={40} defaultValue={settings.legal.businessNumber} placeholder="e.g. 515123456" />
+              <span className={`text-[12px] ${MUTED}`}>Your ח.פ. (company) or ע.מ. (authorised or exempt dealer).</span>
+            </label>
+            <label className="flex flex-col gap-1.5 sm:col-span-2">
+              <span className={LABEL}>Business address</span>
+              <textarea name="business_address" rows={3} className={INPUT} maxLength={300} defaultValue={settings.legal.address} placeholder={"Street 1\nCity, Israel"} />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className={LABEL}>Business phone</span>
+              <input name="business_phone" type="tel" className={INPUT} maxLength={40} defaultValue={settings.legal.phone} placeholder="+972 50 000 0000" />
+            </label>
+          </div>
+        </Card>
+
         <Card title="Social links" description="Each one you fill in appears in the website footer. Leave a field empty to hide it.">
           <div className="grid max-w-3xl gap-5 sm:grid-cols-2">
             {SOCIAL_KEYS.map((key) => (

@@ -11,6 +11,7 @@ const supportLinks = (contactEmail: string) => [
   { href: "/terms", label: "Terms" },
   { href: "/refund-policy", label: "Refund Policy" },
   { href: "/privacy", label: "Privacy" },
+  { href: "/accessibility", label: "Accessibility" },
 ];
 
 const linkClass =

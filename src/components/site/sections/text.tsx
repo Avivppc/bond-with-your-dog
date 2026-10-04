@@ -1,5 +1,5 @@
 import TestimonialCard from "@/components/TestimonialCard";
-import { LEGAL_NAME } from "@/lib/legal";
+import { ENV_LEGAL_NAME, fillLegalPlaceholders } from "@/lib/legal";
 import { sanitizeSiteHtml } from "@/lib/site/sanitize-site";
 import { loadSiteSettings } from "@/lib/site-settings-server";
 import { TESTIMONIALS } from "@/lib/testimonials";
@@ -8,14 +8,10 @@ import type { SectionProps } from "./types";
 
 // ---------- Rich text bodies ----------
 
-const HTML_ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-const escapeHtml = (value: string): string => value.replace(/[&<>"']/g, (ch) => HTML_ESCAPES[ch] ?? ch);
-
-/** Fills {{contact_email}} and {{legal_name}} (escaped), then sanitizes the stored HTML again. */
+/** Fills {{legal_name}}, {{contact_email}} and {{business_details}} (escaped), then sanitizes the stored HTML again. */
 async function renderBodyHtml(body: string): Promise<string> {
-  const { contactEmail } = await loadSiteSettings();
-  const filled = body.replaceAll("{{contact_email}}", escapeHtml(contactEmail)).replaceAll("{{legal_name}}", escapeHtml(LEGAL_NAME));
-  return sanitizeSiteHtml(filled);
+  const { contactEmail, legal, academyName } = await loadSiteSettings();
+  return sanitizeSiteHtml(fillLegalPlaceholders(body, { legal, contactEmail, fallbackName: ENV_LEGAL_NAME || academyName }));
 }
 
 async function RichBody({ body, className }: { body: string; className: string }) {

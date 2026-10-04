@@ -3,7 +3,8 @@ import type { EventName, EventProps } from "./analytics-events";
 
 export * from "./analytics-events";
 
-function isEnabled(): boolean {
+/** Whether PostHog was initialised in this browser (false without its key). */
+export function isEnabled(): boolean {
   return typeof window !== "undefined" && posthog.__loaded;
 }
 
@@ -25,6 +26,12 @@ export function identifyByEmail(email: string, traits: EventProps = {}): void {
   const id = email.trim().toLowerCase();
   if (!id || posthog.get_distinct_id() === id) return;
   posthog.identify(id, { email: id, ...traits });
+}
+
+/** Set properties on the identified person (they stay on the person until changed). */
+export function setPersonProperties(props: EventProps): void {
+  if (!isEnabled()) return;
+  posthog.setPersonProperties(props);
 }
 
 export function resetAnalytics(): void {
