@@ -19,6 +19,7 @@ const ERRORS: Record<string, string> = {
   failed: "Something went wrong starting your checkout. Please try again.",
   owned: "You already have access to everything in this offer — head to your dashboard to keep learning.",
   "code-used": "That code is already on another purchase.",
+  "code-limit": "That code has just been used up. You can still buy at the regular price.",
   gift: "Check the gift details: their first name, their email (not yours), and a message without links.",
 };
 

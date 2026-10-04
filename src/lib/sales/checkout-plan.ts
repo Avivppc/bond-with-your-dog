@@ -122,7 +122,8 @@ async function afterCandidate(input: PlanInput, ownPricing: boolean): Promise<{ 
   if (!parent || parent.status !== "paid" || !upsellStillOpen(parent.paid_at, new Date())) return expired;
   const [{ data: parentOffer }, { count: taken }] = await Promise.all([
     sb.from("offers").select(OFFER_FOR_SALE_COLUMNS).eq("id", parent.offer_id).maybeSingle(),
-    sb.from("orders").select("id", { count: "exact", head: true }).eq("upsell_of_order_id", parent.id).in("status", ["pending", "paid"]),
+    // Only a paid upsell closes it; an unpaid attempt is replaced when they start again.
+    sb.from("orders").select("id", { count: "exact", head: true }).eq("upsell_of_order_id", parent.id).eq("status", "paid"),
   ]);
   if (!parentOffer || (taken ?? 0) > 0) return expired;
   const upsell = await loadAddOn(parentOffer as unknown as OfferForSale, "upsell");

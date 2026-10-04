@@ -5,6 +5,8 @@
 --   2. offers: selling tools        order bump, after-purchase upsell, gift, offer to stay
 --   3. orders                       which coupon / bump / upsell / gift an order carries
 --   4. subscriptions                the offer to stay, once accepted
+--   5. access_invites.order_id      a gift for someone without an account remembers its order, so a
+--                                   refund can take the access back after they sign up
 -- Only the server writes any of it (service role); offers stay readable as before.
 
 -- ── 1. Coupons ──────────────────────────────────────────────────────────────
@@ -68,15 +70,76 @@ create unique index if not exists orders_one_upsell_per_order
   on public.orders (upsell_of_order_id) where upsell_of_order_id is not null and status in ('pending', 'paid');
 create index if not exists orders_coupon on public.orders (coupon_id) where coupon_id is not null;
 
--- How many times a coupon is taken: paid orders, plus unpaid ones from the last day (a checkout in progress).
-create or replace function public.coupon_redemptions(p_coupon_id uuid)
+-- How many times a coupon is taken: paid orders, plus unpaid ones from the last hour (a checkout in
+-- progress). A buyer's own unpaid attempt doesn't count against them (starting again replaces it).
+drop function if exists public.coupon_redemptions(uuid);
+create or replace function public.coupon_redemptions(p_coupon_id uuid, p_exclude_user uuid default null)
 returns int language sql stable security definer set search_path = '' as $$
   select count(*)::int from public.orders
    where coupon_id = p_coupon_id
-     and (status = 'paid' or (status = 'pending' and created_at > now() - interval '1 day'));
+     and (status = 'paid'
+          or (status = 'pending' and created_at > now() - interval '1 hour'
+              and (p_exclude_user is null or user_id <> p_exclude_user)));
 $$;
-revoke all on function public.coupon_redemptions(uuid) from public, anon, authenticated;
-grant execute on function public.coupon_redemptions(uuid) to service_role;
+revoke all on function public.coupon_redemptions(uuid, uuid) from public, anon, authenticated;
+grant execute on function public.coupon_redemptions(uuid, uuid) to service_role;
+
+-- The limit holds even when several checkouts start at once: each new order with a coupon locks
+-- the coupon and counts again before it's saved.
+create or replace function private.enforce_coupon_limit()
+returns trigger language plpgsql security definer set search_path = '' as $$
+declare
+  v_max int;
+begin
+  if new.coupon_id is null or new.status <> 'pending' then return new; end if;
+  select max_redemptions into v_max from public.coupons where id = new.coupon_id for update;
+  if v_max is not null and public.coupon_redemptions(new.coupon_id, new.user_id) >= v_max then
+    raise exception 'coupon used up' using errcode = '54000';
+  end if;
+  return new;
+end;
+$$;
+drop trigger if exists orders_coupon_limit on public.orders;
+create trigger orders_coupon_limit before insert on public.orders
+  for each row execute function private.enforce_coupon_limit();
+
+-- ── 5. Gifts for people without an account ──────────────────────────────────
+alter table public.access_invites add column if not exists order_id uuid references public.orders(id) on delete set null;
+
+-- Same as before, plus: an invite from a paid order (a gift) grants with that order, so refunding
+-- the order takes the access back.
+create or replace function public.claim_access_invites()
+returns int
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_email text;
+  v_invite public.access_invites%rowtype;
+  v_count int := 0;
+begin
+  if v_uid is null then return 0; end if;
+  v_email := public.verified_email(v_uid);
+  if v_email is null then return 0; end if;
+
+  for v_invite in
+    select * from public.access_invites
+     where lower(email) = v_email and claimed_at is null
+     for update
+  loop
+    perform public.grant_offer_access(
+      v_uid, v_invite.offer_id,
+      case when v_invite.order_id is null then 'grant' else 'order' end, v_invite.order_id,
+      case when v_invite.days_of_access is null then null else now() + make_interval(days => v_invite.days_of_access) end
+    );
+    update public.access_invites set claimed_at = now(), claimed_by = v_uid where id = v_invite.id;
+    v_count := v_count + 1;
+  end loop;
+  return v_count;
+end;
+$$;
 
 -- ── 4. Subscriptions: the offer to stay ─────────────────────────────────────
 alter table public.subscriptions

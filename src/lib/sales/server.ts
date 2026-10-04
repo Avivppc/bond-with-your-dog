@@ -43,9 +43,10 @@ export async function couponQuote(input: { userId: string; offer: OfferForSale; 
   }
   if (!data) return { ok: false, reason: "That code isn't valid." };
   const coupon = data as Coupon;
+  // Only a paid order uses it up for this buyer; an unpaid attempt is replaced when they start again.
   const [redemptions, used] = await Promise.all([
-    sb.rpc("coupon_redemptions", { p_coupon_id: coupon.id }),
-    sb.from("orders").select("id", { count: "exact", head: true }).eq("user_id", input.userId).eq("coupon_id", coupon.id).in("status", ["pending", "paid"]),
+    sb.rpc("coupon_redemptions", { p_coupon_id: coupon.id, p_exclude_user: input.userId }),
+    sb.from("orders").select("id", { count: "exact", head: true }).eq("user_id", input.userId).eq("coupon_id", coupon.id).eq("status", "paid"),
   ]);
   if (redemptions.error || used.error) {
     console.error("[sales] coupon usage lookup failed", { error: redemptions.error?.message ?? used.error?.message });
@@ -137,19 +138,11 @@ function giftEmail(order: GiftOrder, giverName: string, offerTitle: string, hasA
 
 /**
  * A paid gift: access goes to the recipient (now if they have an account, otherwise waiting for
- * their sign-up with this email) and they get an email. Idempotent: gift_delivered_at marks it done.
+ * their sign-up with this email, tied to this order) and they get one email. Safe to run again:
+ * the access steps are idempotent and gift_delivered_at is set only after them, guarding the email.
  */
 export async function deliverGift(order: GiftOrder, offer: { title: string; days_of_access: number | null }): Promise<void> {
   const sb = createServiceClient();
-  const { data: claimed, error: claimError } = await sb
-    .from("orders")
-    .update({ gift_delivered_at: new Date().toISOString() })
-    .eq("id", order.id)
-    .is("gift_delivered_at", null)
-    .select("id");
-  if (claimError) throw new Error(`gift delivery claim failed for order ${order.id}: ${claimError.message}`);
-  if (!claimed?.length) return; // already delivered (webhook retry)
-
   const { data: recipientId, error: lookupError } = await sb.rpc("find_user_id_by_email", { p_email: order.gift_recipient_email });
   if (lookupError) throw new Error(`gift recipient lookup failed: ${lookupError.message}`);
   const expiresAt = offer.days_of_access ? new Date(Date.now() + offer.days_of_access * 86_400_000).toISOString() : null;
@@ -157,10 +150,21 @@ export async function deliverGift(order: GiftOrder, offer: { title: string; days
     const { error } = await sb.rpc("grant_offer_access", { p_user_id: recipientId, p_offer_id: order.offer_id, p_source: "order", p_order_id: order.id, p_expires_at: expiresAt });
     if (error) throw new Error(`gift grant failed for order ${order.id}: ${error.message}`);
   } else {
-    const { error } = await sb.from("access_invites").insert({ email: order.gift_recipient_email, offer_id: order.offer_id, days_of_access: offer.days_of_access, invited_by: order.user_id });
-    // Already waiting for them (an earlier gift or invite): nothing more to save.
+    const { error } = await sb
+      .from("access_invites")
+      .insert({ email: order.gift_recipient_email, offer_id: order.offer_id, days_of_access: offer.days_of_access, invited_by: order.user_id, order_id: order.id });
+    // Already waiting for them (this order on a retry, or an earlier invite): nothing more to save.
     if (error && error.code !== "23505") throw new Error(`gift invite failed for order ${order.id}: ${error.message}`);
   }
+
+  const { data: claimed, error: claimError } = await sb
+    .from("orders")
+    .update({ gift_delivered_at: new Date().toISOString() })
+    .eq("id", order.id)
+    .is("gift_delivered_at", null)
+    .select("id");
+  if (claimError) throw new Error(`gift delivery mark failed for order ${order.id}: ${claimError.message}`);
+  if (!claimed?.length) return; // delivered before (webhook retry): the email went already
 
   const { data: giver } = await sb.from("profiles").select("full_name").eq("id", order.user_id).maybeSingle();
   const giverName = (giver?.full_name as string | null)?.trim().split(/\s+/)[0] || "A friend";

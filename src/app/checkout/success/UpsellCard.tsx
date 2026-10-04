@@ -20,7 +20,7 @@ export async function UpsellCard({ orderId, userId }: UpsellCardProps) {
   if (!order || order.status !== "paid" || !upsellStillOpen(order.paid_at, new Date())) return null;
   const [{ data: offer }, { count: taken }] = await Promise.all([
     sb.from("offers").select(OFFER_FOR_SALE_COLUMNS).eq("id", order.offer_id).maybeSingle(),
-    sb.from("orders").select("id", { count: "exact", head: true }).eq("upsell_of_order_id", order.id).in("status", ["pending", "paid"]),
+    sb.from("orders").select("id", { count: "exact", head: true }).eq("upsell_of_order_id", order.id).eq("status", "paid"),
   ]);
   if (!offer || (taken ?? 0) > 0) return null;
   const upsell = await loadAddOn(offer as unknown as OfferForSale, "upsell");

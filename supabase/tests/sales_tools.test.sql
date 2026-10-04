@@ -27,7 +27,17 @@ select t.fails_with($$insert into public.orders (user_id, offer_id, status, amou
                     '23505', 'a buyer uses a coupon once');
 set role service_role;
 select t.ok(public.coupon_redemptions('5a1e0000-0000-0000-0000-0000000000c1') = 2, 'paid and fresh pending orders count, canceled ones do not');
+select t.ok(public.coupon_redemptions('5a1e0000-0000-0000-0000-0000000000c1', '00000000-0000-0000-0000-0000005a1e02') = 1,
+            'a buyer''s own unpaid attempt does not count against them');
 reset role;
+
+-- The limit holds at insert time: a 2-use coupon with one paid and one fresh pending order is full.
+update public.coupons set max_redemptions = 2 where id = '5a1e0000-0000-0000-0000-0000000000c1';
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-0000005a1e03', 'buyer3@test.dev');
+select t.fails_with($$insert into public.orders (user_id, offer_id, status, amount_cents, currency, provider, coupon_id, discount_kind)
+                      values ('00000000-0000-0000-0000-0000005a1e03', '5a1e0000-0000-0000-0000-000000000001', 'pending', 7920, 'USD', 'test', '5a1e0000-0000-0000-0000-0000000000c1', 'coupon')$$,
+                    '54000', 'a used-up coupon cannot start another order');
+update public.coupons set max_redemptions = null where id = '5a1e0000-0000-0000-0000-0000000000c1';
 
 -- One after-purchase upsell per first purchase.
 insert into public.orders (id, user_id, offer_id, status, amount_cents, currency, provider) values
