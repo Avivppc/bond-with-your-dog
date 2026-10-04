@@ -115,6 +115,7 @@ const BOTTOM: NavDef[] = [
     children: [
       { href: "/admin/settings/general", label: "General", needs: "settings" },
       { href: "/admin/settings/member-notifications", label: "Member notifications", needs: "content" },
+      { href: "/admin/settings/certificate", label: "Certificate", needs: "content" },
       { href: "/admin/settings/notifications", label: "Team notifications", needs: "sales" },
       { href: "/admin/settings/email", label: "Email", needs: "sales" },
       { href: "/admin/settings/payments", label: "Payments", needs: "settings" },
