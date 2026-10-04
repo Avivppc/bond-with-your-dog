@@ -12,12 +12,13 @@ import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 import { CourseImageUpload } from "./CourseImageUpload";
 import { ChapterDetailsCard, type ChapterDefaults } from "./ChapterDetailsCard";
 import { CourseOffersTab, CourseSettingsTab, CourseStudentsTab } from "./CourseTabs";
+import { CourseEngagementTab } from "./EngagementTab";
 
 export const metadata = { title: "Course" };
 
 export const dynamic = "force-dynamic";
 
-const TAB_KEYS = ["outline", "details", "offers", "students", "settings"] as const;
+const TAB_KEYS = ["outline", "details", "engagement", "offers", "students", "settings"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 function asTab(value: string | undefined): TabKey {
@@ -44,6 +45,7 @@ export default async function EditCoursePage({
   const tabs: TabItem[] = [
     { key: "outline", label: "Outline", href: base },
     { key: "details", label: "Details", href: `${base}?tab=details` },
+    { key: "engagement", label: "Engagement", href: `${base}?tab=engagement` },
     ...(canSell
       ? [
           { key: "offers", label: "Offers", href: `${base}?tab=offers` },
@@ -109,6 +111,7 @@ export default async function EditCoursePage({
         </div>
       )}
 
+      {activeTab === "engagement" && <CourseEngagementTab courseId={id} />}
       {activeTab === "offers" && <CourseOffersTab courseId={id} />}
       {activeTab === "students" && <CourseStudentsTab courseId={id} />}
       {activeTab === "settings" && <CourseSettingsTab courseId={id} />}
