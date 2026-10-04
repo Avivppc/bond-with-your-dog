@@ -102,12 +102,11 @@ async function insertCopy(sb: ServiceClient, source: Record<string, unknown>): P
 
 /** Video reference, quiz questions, downloads (storage copies) and the uploaded thumbnail. */
 async function copyChildren(sb: ServiceClient, sourceId: string, copyId: string, uploadUrl: string | null): Promise<string | null> {
-  const [videoRes, questionsRes, filesRes] = await Promise.all([
+  const [videoRes, questionsRes] = await Promise.all([
     sb.from("lesson_videos").select("provider, external_id, external_hash, playback_policy, duration_seconds, thumbnail_url, source_url").eq("lesson_id", sourceId).maybeSingle(),
     sb.from("quiz_questions").select("position, prompt, kind, options, correct, explanation").eq("lesson_id", sourceId),
-    sb.from("lesson_files").select("file_name, storage_path, size_bytes, content_type, position").eq("lesson_id", sourceId),
   ]);
-  const loadError = videoRes.error ?? questionsRes.error ?? filesRes.error;
+  const loadError = videoRes.error ?? questionsRes.error;
   if (loadError) return loadError.message;
 
   if (videoRes.data) {
@@ -118,6 +117,16 @@ async function copyChildren(sb: ServiceClient, sourceId: string, copyId: string,
     const { error } = await sb.from("quiz_questions").insert((questionsRes.data ?? []).map((q) => ({ ...q, lesson_id: copyId })));
     if (error) return error.message;
   }
+  return copyStoredContent(sb, sourceId, copyId, uploadUrl);
+}
+
+/**
+ * The parts of a lesson kept in storage: downloads and the uploaded thumbnail. Each copy gets its
+ * own objects, so deleting one lesson never removes the other's files. Returns an error message.
+ */
+export async function copyStoredContent(sb: ServiceClient, sourceId: string, copyId: string, uploadUrl: string | null): Promise<string | null> {
+  const filesRes = await sb.from("lesson_files").select("file_name, storage_path, size_bytes, content_type, position").eq("lesson_id", sourceId);
+  if (filesRes.error) return filesRes.error.message;
   for (const file of filesRes.data ?? []) {
     const path = lessonFilePath(copyId, file.file_name as string, randomUUID().slice(0, 8));
     const { error: copyError } = await sb.storage.from(LESSON_FILES_BUCKET).copy(file.storage_path as string, path);

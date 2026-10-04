@@ -3,7 +3,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { deleteCourse } from "@/app/admin/actions";
 import { formatOfferPrice, type PricedOffer } from "@/lib/pricing";
 import { isEnrollmentActive } from "@/lib/enrollment";
-import { BTN_DANGER, BTN_PRIMARY, Card, EmptyState, StatusPill } from "@/app/admin/_components/ui";
+import { BTN_DANGER, BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, StatusPill } from "@/app/admin/_components/ui";
+import { duplicateCourse } from "./duplicate-action";
 import { ConfirmSubmit } from "@/app/admin/_components/ConfirmSubmit";
 
 const STUDENTS_SHOWN = 100;
@@ -120,13 +121,29 @@ export async function CourseStudentsTab({ courseId }: { courseId: string }) {
 
 export function CourseSettingsTab({ courseId }: { courseId: string }) {
   return (
-    <Card title="Delete course" description="Removes the course with all its modules, lessons and student progress. This can't be undone.">
-      <form action={deleteCourse}>
-        <input type="hidden" name="id" value={courseId} />
-        <ConfirmSubmit className={BTN_DANGER} message="Delete this course with all its modules, lessons and student progress? This can't be undone.">
-          Delete course
-        </ConfirmSubmit>
-      </form>
-    </Card>
+    <div className="space-y-6">
+      <Card
+        title="Duplicate course"
+        description="Makes a draft copy with every module, lesson, video, quiz, download and thumbnail. Students, progress and offers stay with this course."
+      >
+        <form action={duplicateCourse}>
+          <input type="hidden" name="id" value={courseId} />
+          <button type="submit" className={BTN_SECONDARY}>
+            <span className="material-symbols-outlined text-[18px]" aria-hidden>
+              content_copy
+            </span>
+            Duplicate course
+          </button>
+        </form>
+      </Card>
+      <Card title="Delete course" description="Removes the course with all its modules, lessons and student progress. This can't be undone.">
+        <form action={deleteCourse}>
+          <input type="hidden" name="id" value={courseId} />
+          <ConfirmSubmit className={BTN_DANGER} message="Delete this course with all its modules, lessons and student progress? This can't be undone.">
+            Delete course
+          </ConfirmSubmit>
+        </form>
+      </Card>
+    </div>
   );
 }

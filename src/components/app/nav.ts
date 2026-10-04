@@ -13,6 +13,7 @@ export const MEMBER_NAV: MemberNavItem[] = [
   { href: "/practice", label: "Practice", icon: "pets", match: ["/practice", "/plan", "/routine"] },
   { href: "/moves", label: "Moves Library", icon: "auto_stories", match: ["/moves", "/search"] },
   { href: "/feedback", label: "Feedback", icon: "rate_review", match: ["/feedback"] },
+  { href: "/coaching", label: "1:1 with Roni", icon: "video_call", match: ["/coaching", "/affiliate"] },
   { href: "/progress", label: "Progress", icon: "insights", match: ["/progress"] },
   { href: "/community", label: "Community", icon: "groups", match: ["/community", "/refer", "/spotlight"] },
 ];

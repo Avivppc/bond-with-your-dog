@@ -6,6 +6,8 @@ import { COURSE_IMAGES_BUCKET, validateCourseImage } from "@/lib/lesson-files";
 import { effectiveThumbnail, LESSON_THUMBNAIL_HINT } from "@/lib/content/lesson-thumbnail";
 import { BTN_SECONDARY, Card } from "@/app/admin/_components/ui";
 import { finishLessonThumbnailUpload, removeLessonThumbnail, startLessonThumbnailUpload } from "./thumbnail-actions";
+import { MediaPicker } from "@/app/admin/media/MediaPicker";
+import { setLessonThumbnailFromLibrary } from "@/app/admin/media/actions";
 
 interface LessonThumbnailCardProps {
   courseId: string;
@@ -114,6 +116,16 @@ export function LessonThumbnailCard({ courseId, lessonId, uploadUrl, videoThumbn
               }}
             />
           </label>
+          <MediaPicker
+            disabled={busy}
+            onPick={async (picked) => {
+              const res = await setLessonThumbnailFromLibrary({ courseId, lessonId, url: picked });
+              if (!res.ok) return res.error;
+              setUpload(res.data.url);
+              setStatus({ tone: "info", text: "Thumbnail updated." });
+              return null;
+            }}
+          />
           {upload && (
             <button type="button" onClick={() => void remove()} disabled={busy} className="text-sm text-red-700 hover:underline disabled:opacity-50">
               Remove

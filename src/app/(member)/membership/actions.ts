@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { getPaymentProvider } from "@/lib/payments/provider";
 import { canCancelSubscription, type SubscriptionLike } from "@/lib/feedback/membership";
+import { notifyTeam } from "@/lib/notify-team";
+import { retentionLabel } from "@/lib/sales/pricing";
 
 export type CancelResult = { ok: true; message: string } | { ok: false; error: string };
 
@@ -61,4 +63,53 @@ export async function cancelSubscription(subscriptionId: string): Promise<Cancel
     ok: true,
     message: provider.name === "test" ? "Subscription canceled" : "Canceled. You keep access until the end of the period you paid for.",
   };
+}
+
+/**
+ * The offer to stay: the member keeps the subscription and the discount is recorded for their next
+ * payments. PayPlus renewals charge it once payments are connected; the team is told meanwhile.
+ */
+export async function acceptOfferToStay(subscriptionId: string): Promise<CancelResult> {
+  if (!z.string().uuid().safeParse(subscriptionId).success) return { ok: false, error: "Unknown subscription." };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login?next=/membership");
+
+  // RLS: members only see their own subscriptions.
+  const { data: sub } = await supabase
+    .from("subscriptions")
+    .select("id, status, current_period_end, canceled_at, retention_accepted_at, offers(title, interval, retention_percent, retention_cycles)")
+    .eq("id", subscriptionId)
+    .maybeSingle();
+  if (!sub) return { ok: false, error: "Unknown subscription." };
+  const offer = sub.offers as unknown as { title: string; interval: "month" | "year" | null; retention_percent: number | null; retention_cycles: number | null } | null;
+  if (!offer?.retention_percent || !offer.retention_cycles || sub.retention_accepted_at || !canCancelSubscription(sub as unknown as SubscriptionLike)) {
+    return { ok: false, error: "This offer isn't available anymore." };
+  }
+
+  const { data: saved, error } = await createServiceClient()
+    .from("subscriptions")
+    .update({
+      retention_percent: offer.retention_percent,
+      retention_cycles_left: offer.retention_cycles,
+      retention_accepted_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", sub.id)
+    .is("retention_accepted_at", null)
+    .select("id");
+  if (error || !saved?.length) {
+    console.error("[membership] offer to stay failed", { subscriptionId, error: error?.message ?? "already accepted" });
+    return { ok: false, error: "Couldn't save that. Please try again." };
+  }
+  const label = retentionLabel(offer.retention_percent, offer.retention_cycles, offer.interval);
+  await notifyTeam("orders", {
+    subject: `A member stayed with ${offer.title} (${label})`.slice(0, 150),
+    lines: [`${user.email} was about to cancel ${offer.title} and took the offer to stay: ${label}.`, "Their next payments should be charged with this discount."],
+    path: "/admin/orders",
+  });
+  revalidatePath("/membership");
+  return { ok: true, message: `You're staying: ${label}. Thank you!` };
 }

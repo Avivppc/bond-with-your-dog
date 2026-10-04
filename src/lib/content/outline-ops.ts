@@ -9,6 +9,15 @@ export function copyTitle(title: string): string {
   return `${base.slice(0, MAX_TITLE_LENGTH - COPY_SUFFIX.length)}${COPY_SUFFIX}`;
 }
 
+/** Course ids are slugs (max 80 chars); a copy of "foundations" is "foundations-copy", then "-copy-2"… */
+export function nextCopyId(id: string, taken: ReadonlySet<string>): string {
+  const base = `${id.slice(0, 70)}-copy`;
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n += 1;
+  return `${base}-${n}`;
+}
+
 /** `ids` with `insertId` moved to sit right after `afterId` (appended when `afterId` is missing). */
 export function orderAfter(ids: readonly string[], afterId: string, insertId: string): string[] {
   const rest = ids.filter((id) => id !== insertId);

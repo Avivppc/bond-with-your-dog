@@ -3,7 +3,7 @@
 -- profiles.marketing_opt_in / marketing_opt_in_at already say THAT and WHEN a member agreed;
 -- these columns say WHERE they agreed, from which country, and whether the box came pre-ticked
 -- (it does outside opt-in countries, see src/lib/auth/marketing-regions.ts).
--- Apply AFTER 20261113000000_public_stories.sql
+-- Apply AFTER 20261120000000_coaching.sql
 -- ============================================================
 
 alter table public.profiles

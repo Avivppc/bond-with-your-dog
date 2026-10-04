@@ -56,6 +56,7 @@ const MAIN: NavDef[] = [
       { href: "/admin/website", label: "Pages", needs: "content" },
       { href: "/site-editor/theme", label: "Theme", needs: "content" },
       { href: "/site-editor/member", label: "Member area", needs: "content" },
+      { href: "/admin/media", label: "Media library", needs: "content" },
     ],
   },
   {
@@ -66,6 +67,7 @@ const MAIN: NavDef[] = [
       { href: "/admin/offers", label: "Offers", needs: "sales" },
       { href: "/admin/orders", label: "Orders", needs: "sales" },
       { href: "/admin/referrals", label: "Referrals", needs: "sales" },
+      { href: "/admin/affiliates", label: "Affiliates", needs: "sales" },
     ],
   },
   {
@@ -74,6 +76,7 @@ const MAIN: NavDef[] = [
     children: [
       { href: "/admin/email-flows", label: "Email flows", needs: "sales" },
       { href: "/admin/campaigns", label: "Campaigns", needs: "sales" },
+      { href: "/admin/coupons", label: "Coupons", needs: "sales" },
       { href: "/admin/discount-codes", label: "Discount codes", needs: "sales" },
     ],
   },
@@ -84,6 +87,7 @@ const MAIN: NavDef[] = [
       { href: "/studio", label: "Roni's Studio", needs: "content" },
       { href: "/admin/coaching/questions", label: "Lesson questions", needs: "content" },
       { href: "/admin/coaching/live-qa", label: "Live Q&A", needs: "content" },
+      { href: "/admin/coaching/sessions", label: "1:1 sessions", needs: "content" },
       { href: "/admin/coaching/replies", label: "Saved replies", needs: "content" },
       { href: "/admin/assistant", label: "AI assistant", needs: "content" },
     ],
@@ -115,6 +119,7 @@ const BOTTOM: NavDef[] = [
     children: [
       { href: "/admin/settings/general", label: "General", needs: "settings" },
       { href: "/admin/settings/member-notifications", label: "Member notifications", needs: "content" },
+      { href: "/admin/settings/certificate", label: "Certificate", needs: "content" },
       { href: "/admin/settings/notifications", label: "Team notifications", needs: "sales" },
       { href: "/admin/settings/email", label: "Email", needs: "sales" },
       { href: "/admin/settings/payments", label: "Payments", needs: "settings" },

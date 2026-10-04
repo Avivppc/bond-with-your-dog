@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { copyTitle, MAX_TITLE_LENGTH, moduleScope, orderAfter } from "./outline-ops";
+import { copyTitle, MAX_TITLE_LENGTH, moduleScope, nextCopyId, orderAfter } from "./outline-ops";
 
 describe("copyTitle", () => {
   it("adds a copy suffix", () => {
@@ -55,5 +55,17 @@ describe("moduleScope", () => {
 
   it("covers nothing for an unknown module", () => {
     expect(moduleScope(modules, "nope")).toEqual([]);
+  });
+});
+
+describe("nextCopyId", () => {
+  it("adds -copy, then numbers further copies", () => {
+    expect(nextCopyId("foundations", new Set())).toBe("foundations-copy");
+    expect(nextCopyId("foundations", new Set(["foundations-copy"]))).toBe("foundations-copy-2");
+    expect(nextCopyId("foundations", new Set(["foundations-copy", "foundations-copy-2"]))).toBe("foundations-copy-3");
+  });
+
+  it("keeps long ids within the 80-character limit", () => {
+    expect(nextCopyId("a".repeat(80), new Set()).length).toBeLessThanOrEqual(80);
   });
 });
