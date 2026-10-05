@@ -9,8 +9,8 @@ export const dynamic = "force-dynamic";
 
 const INPUT = "rounded-lg border border-slate-200 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-orange-300";
 
-export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const { error } = await searchParams;
+export default async function ResetPasswordPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
+  const { error, notice } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -29,6 +29,11 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
           <p className="mb-8 text-sm" style={{ color: "#515d64" }}>
             For {user.email}.
           </p>
+          {notice === "secured" && (
+            <div className="mb-4 rounded-lg bg-green-50 p-3 text-sm text-green-800">
+              Your email is confirmed. To keep your account safe, please choose a password now.
+            </div>
+          )}
           {error && <div className="mb-4 rounded-lg bg-red-50 p-3 text-sm text-red-700">{decodeURIComponent(error)}</div>}
           <form action={updatePassword} className="flex flex-col gap-4">
             <label className="flex flex-col gap-1.5">

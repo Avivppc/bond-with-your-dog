@@ -2,6 +2,7 @@
 
 import { PhotoDrop } from "@/components/app/PhotoDrop";
 import { Days, Ms, WEEKDAYS, WEEK_ORDER } from "@/components/app/ui";
+import { unlockSentence, type CourseChoice } from "@/lib/member/course-choice";
 import { AGE_GROUPS, GOALS, LIMITATIONS, SESSION_LENGTHS } from "@/lib/member/schemas";
 import type { Goal } from "@/lib/member/viewer";
 import { countWord } from "@/lib/practice/achievements";
@@ -21,15 +22,6 @@ export interface DogDraft {
   photoUrl: string | null;
 }
 
-export interface FirstLesson {
-  courseTitle: string;
-  title: string;
-  href: string;
-  minutes: string | null;
-  image: string | null;
-  number: number;
-}
-
 function toggle<T>(list: readonly T[], item: T): T[] {
   return list.includes(item) ? list.filter((x) => x !== item) : [...list, item];
 }
@@ -37,7 +29,7 @@ function toggle<T>(list: readonly T[], item: T): T[] {
 export function StepWelcome({ firstName, fullName, avatarUrl, onChange }: { firstName: string; fullName: string; avatarUrl: string | null; onChange: (patch: { fullName?: string; avatarUrl?: string | null }) => void }) {
   return (
     <div className="stack-lg">
-      <span className="eyebrow">Step 1 of 4</span>
+      <span className="eyebrow">Step 1 of 5</span>
       <h1 className="display" style={{ fontSize: 42 }}>
         Hi {firstName},
         <br />
@@ -69,7 +61,7 @@ export function StepDog({ dog, onChange }: { dog: DogDraft; onChange: (patch: Pa
   const none = dog.limitations.length === 0;
   return (
     <div className="stack-lg">
-      <span className="eyebrow">Step 2 of 4</span>
+      <span className="eyebrow">Step 2 of 5</span>
       <h1 className="h1">Meet your dog</h1>
       <PhotoDrop kind="dog" value={dog.photoUrl} onChange={(url) => onChange({ photoUrl: url })} size={104} label={<>Add a photo so we can<br />put a face to the name</>} />
       <div className="grid-2" style={{ gap: 16 }}>
@@ -113,7 +105,7 @@ export function StepDog({ dog, onChange }: { dog: DogDraft; onChange: (patch: Pa
 export function StepGoals({ goals, minutes, days, onChange }: { goals: Goal[]; minutes: 5 | 10 | 15; days: number[]; onChange: (patch: { goals?: Goal[]; minutes?: 5 | 10 | 15; days?: number[] }) => void }) {
   return (
     <div className="stack-lg">
-      <span className="eyebrow">Step 3 of 4</span>
+      <span className="eyebrow">Step 3 of 5</span>
       <h1 className="h1">What would you love to do together?</h1>
       <div className="goal-grid">
         {GOALS.map((g) => (
@@ -147,31 +139,76 @@ export function StepGoals({ goals, minutes, days, onChange }: { goals: Goal[]; m
   );
 }
 
-export function StepPlan({ dogName, minutes, days, first }: { dogName: string; minutes: number; days: number[]; first: FirstLesson | null }) {
-  const count = days.length;
+export function StepCourse({ courses, selectedId, onSelect }: { courses: CourseChoice[]; selectedId: string | null; onSelect: (id: string) => void }) {
   return (
     <div className="stack-lg">
-      <span className="eyebrow">Step 4 of 4</span>
+      <span className="eyebrow">Step 4 of 5</span>
+      <h1 className="h1">Where would you like to begin?</h1>
+      <p className="lede">Three chapters, one partnership. Most teams start with Foundations, but you know your dog best.</p>
+      {courses.length === 0 ? (
+        <p className="tip">
+          <Ms name="schedule" />
+          <span>The chapters are being prepared. You can choose one from My Chapters as soon as they open.</span>
+        </p>
+      ) : (
+        <div className="stack" role="radiogroup" aria-label="Your chapter">
+          {courses.map((c) => {
+            const on = c.id === selectedId;
+            return (
+              <button key={c.id} type="button" role="radio" aria-checked={on} className={`goal course-pick ${on ? "on" : ""}`} onClick={() => onSelect(c.id)}>
+                <span className="media">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- course image */}
+                  <img src={c.image || "/app/img/roni-kneel.jpg"} alt="" />
+                </span>
+                <span className="grow">
+                  <span className="row" style={{ gap: 8 }}>
+                    <span className="title">{c.title}</span>
+                    {c.chapterNumber === 1 && !c.owned && <span className="pill reliable">Recommended start</span>}
+                    {c.owned && <span className="pill learning">In your plan</span>}
+                  </span>
+                  <span className="faint">{c.description}</span>
+                  {c.lockedByTitle && <span className="faint">Opens after {c.lockedByTitle}.</span>}
+                </span>
+                <Ms name={on ? "radio_button_checked" : "radio_button_unchecked"} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function planLede(course: CourseChoice | null): string {
+  if (!course) return "Pick a chapter and your first lesson will be waiting. ";
+  if (course.owned) return `You'll start with ${course.title}. `;
+  return `You chose ${course.title}. ${unlockSentence(course.offer)} `;
+}
+
+export function StepPlan({ dogName, minutes, days, course }: { dogName: string; minutes: number; days: number[]; course: CourseChoice | null }) {
+  const count = days.length;
+  const first = course?.firstLesson ?? null;
+  return (
+    <div className="stack-lg">
+      <span className="eyebrow">Step 5 of 5</span>
       <h1 className="h1">Your plan with {dogName}</h1>
       <p className="lede">
-        {first ? `You'll start with ${first.courseTitle}. ` : "Pick a chapter and your first lesson will be waiting. "}
+        {planLede(course)}
         {count > 0 ? `${countTitle(count)} ${minutes}-minute session${count === 1 ? "" : "s"} a week.` : "Pick practice days any time from your plan."}
       </p>
       <div className="card flat tight">
         <Days days={days.map((d) => ({ weekday: d, planned: true, minutes }))} />
       </div>
-      {first && (
+      {course && (
         <div className="list-row">
-          <div className="media" style={{ width: 120, aspectRatio: "16/10", borderRadius: 14, flexShrink: 0 }}>
-            {/* eslint-disable-next-line @next/next/no-img-element -- lesson image */}
-            <img src={first.image || "/app/img/roni-kneel.jpg"} alt="" />
+          <div className="media plan-thumb">
+            {/* eslint-disable-next-line @next/next/no-img-element -- lesson or course image */}
+            <img src={first?.image || course.image || "/app/img/roni-kneel.jpg"} alt="" />
           </div>
           <div className="grow">
-            <span className="eyebrow muted">{first.number === 1 ? "First lesson" : `Lesson ${first.number}`}</span>
-            <div className="title">{first.title}</div>
-            <div className="faint">
-              {[first.minutes, first.courseTitle].filter(Boolean).join(" · ")}
-            </div>
+            <span className="eyebrow muted">{first ? (first.number === 1 ? "First lesson" : `Lesson ${first.number}`) : "Your chapter"}</span>
+            <div className="title">{first ? first.title : course.title}</div>
+            <div className="faint">{first ? course.title : course.offer ? course.offer.price : "Opening soon"}</div>
           </div>
         </div>
       )}

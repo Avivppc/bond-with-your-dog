@@ -17,7 +17,7 @@ export interface CourseCardData {
   lockedByTitle: string | null;
   course: StudentCourse | null;
   moveNames: string[];
-  offers: { slug: string; title: string; price: string }[];
+  offers: { slug: string; title: string; price: string; free: boolean }[];
 }
 
 export interface CertificateRow {
@@ -75,7 +75,7 @@ export async function loadMyCourses(userId: string): Promise<{ cards: CourseCard
     const required = r.requires_course_id ? byId.get(r.requires_course_id)?.row : null;
     const offers = ((offersRes.data ?? []) as unknown as { course_id: string; access_level: string; offers: (PricedOffer & { slug: string; title: string; status: string }) | null }[])
       .filter((o) => o.course_id === r.id && o.offers?.status === "published" && (!course?.isLimited || o.access_level === "full"))
-      .map((o) => ({ slug: o.offers!.slug, title: o.offers!.title, price: formatOfferPrice(o.offers!) }));
+      .map((o) => ({ slug: o.offers!.slug, title: o.offers!.title, price: formatOfferPrice(o.offers!), free: o.offers!.payment_type === "free" }));
     return {
       id: r.id,
       title: r.title,

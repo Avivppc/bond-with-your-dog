@@ -8,7 +8,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { notifyAccessGranted } from "@/lib/payments/billing";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { DaysOfAccess } from "@/lib/admin-helpers/form-fields";
-import { findUserId, grantOffer, saveAccessInvite } from "../people/_lib/access-server";
+import { findAccount, grantOffer, holdUntilVerified, saveAccessInvite } from "../people/_lib/access-server";
 
 /** Where these forms live now: the Contacts list or one contact's page. */
 const ReturnTo = z
@@ -38,7 +38,7 @@ function signupInvite(email: string) {
       "Hi,",
       "",
       "You've been given access to a Bonded course.",
-      `Create your account with this email address at ${siteUrl()}/signup — your course will be waiting for you.`,
+      `Create your account with this email address at ${siteUrl()}/signup, then confirm your email from the welcome message. Your course will be waiting for you.`,
       "",
       "The Bonded team",
     ].join("\n"),
@@ -46,8 +46,8 @@ function signupInvite(email: string) {
 }
 
 /**
- * Grants an offer to an email. Existing accounts get access now; otherwise the grant
- * waits in access_invites and is claimed when they sign up with that (verified) email.
+ * Grants an offer to an email. Verified accounts get access now; otherwise the grant waits
+ * in access_invites and is claimed once the owner of that email has confirmed it.
  */
 export async function grantAccessByEmail(formData: FormData): Promise<void> {
   const { user: staff } = await requireStaff("sales");
@@ -56,18 +56,32 @@ export async function grantAccessByEmail(formData: FormData): Promise<void> {
   if (!parsed.success) back(returnTo, { error: parsed.error.issues[0].message });
   const { email, offer_id: offerId, days } = parsed.data;
 
-  let userId: string | null;
+  let account: Awaited<ReturnType<typeof findAccount>>;
   try {
-    userId = await findUserId(email);
+    account = await findAccount(email);
   } catch (error: unknown) {
     console.error("[students] user lookup failed", { email, error: error instanceof Error ? error.message : error });
     back(returnTo, { error: "Could not look up that email." });
   }
 
-  if (userId) {
-    const grantError = await grantOffer(userId, offerId, days);
+  if (account && !account.verified) {
+    const held = await holdUntilVerified(email, { offerId, offerTitle: null, days, staffId: staff.id });
+    if (!held.saved) back(returnTo, { error: "Could not save the invitation." });
+    revalidateContacts();
+    back(
+      returnTo,
+      held.emailed
+        ? { ok: `${email} hasn't confirmed their email yet. We sent them a link; access unlocks once they confirm.` }
+        : {
+            error: `${email} hasn't confirmed their email yet. Access is saved, but the confirm email could not be sent. Ask them to sign in and press “Send me a new link” on their Home page.`,
+          }
+    );
+  }
+
+  if (account) {
+    const grantError = await grantOffer(account.userId, offerId, days);
     if (grantError) back(returnTo, { error: grantError });
-    await notifyAccessGranted(userId, offerId);
+    await notifyAccessGranted(account.userId, offerId);
     revalidateContacts();
     back(returnTo, { ok: `Access granted to ${email}.` });
   }

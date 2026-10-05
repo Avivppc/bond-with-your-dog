@@ -1,11 +1,9 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/member/viewer";
-import { loadEnrolled } from "@/lib/member/home";
-import { loadStudentCourse } from "@/lib/student-course-server";
-import { formatMinutes } from "@/components/app/ui";
+import { loadMyCourses } from "@/lib/member/courses";
+import { chapterChoices, defaultChoiceId, toCourseChoice } from "@/lib/member/course-choice";
 import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
-import { OnboardingWizard, type FirstLesson } from "./OnboardingWizard";
+import { OnboardingWizard } from "./OnboardingWizard";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Welcome" };
@@ -16,21 +14,8 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
   // Finished members go home, unless they chose to redo it from their profile.
   if (viewer.profile.onboarded_at && !again) redirect("/home");
 
-  const supabase = await createClient();
-  const enrolled = await loadEnrolled(supabase);
-  const course = enrolled[0] ? await loadStudentCourse(supabase, enrolled[0].courseId, viewer.userId) : null;
-  const lesson = course ? (course.progress.next ?? course.lessons[0] ?? null) : null;
-  const first: FirstLesson | null =
-    course && lesson
-      ? {
-          courseTitle: course.course.title,
-          title: lesson.title,
-          href: `/learn/${course.course.id}/${lesson.id}`,
-          minutes: formatMinutes(lesson.duration_seconds),
-          image: lesson.thumbnail_url || course.course.image,
-          number: course.lessons.findIndex((l) => l.id === lesson.id) + 1,
-        }
-      : null;
+  const { cards } = await loadMyCourses(viewer.userId);
+  const courses = chapterChoices(cards.map(toCourseChoice));
   const dog = viewer.activeDog;
 
   return (
@@ -47,8 +32,9 @@ export default async function WelcomePage({ searchParams }: { searchParams: Prom
           goals: viewer.profile.goals,
           sessionMinutes: viewer.profile.session_minutes,
           practiceDays: viewer.profile.practice_days,
+          courseId: defaultChoiceId(courses, viewer.profile.chosen_course_id),
         }}
-        firstLesson={first}
+        courses={courses}
       />
     </>
   );

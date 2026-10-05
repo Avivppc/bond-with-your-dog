@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import AnalyticsIdentity from "@/components/analytics/AnalyticsIdentity";
+import SignupCompletedTracker from "@/components/analytics/SignupCompletedTracker";
 import { loadLiveTheme } from "@/lib/site/server";
 import { themeCss, themeFontsHref } from "@/lib/site/theme";
 import { StandaloneGuard } from "@/components/app/StandaloneGuard";
@@ -71,6 +72,7 @@ export default async function RootLayout({
       </head>
       <body className="antialiased min-h-screen flex flex-col">
         <AnalyticsIdentity />
+        <SignupCompletedTracker />
         <StandaloneGuard />
         {children}
       </body>

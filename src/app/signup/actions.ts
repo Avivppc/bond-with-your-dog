@@ -2,10 +2,17 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { after } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { createVerifyLink } from "@/lib/auth/email-verification";
+import { sendEmail } from "@/lib/email";
+import { welcomeEmail } from "@/lib/welcome-email";
+import { REFERRAL_COOKIE } from "@/lib/referrals";
+import { claimReferralCode } from "@/lib/referrals-server";
+import { SIGNUP_COMPLETED_COOKIE, SIGNUP_MARKER_MAX_AGE_SECONDS } from "@/lib/signup-marker";
 import { clientIp, TURNSTILE_FIELD, verifyTurnstile } from "@/lib/turnstile";
 
 const Schema = z.object({
@@ -40,7 +47,7 @@ export async function signup(formData: FormData) {
   const supabase = await createClient();
   const origin = h.get("origin") ?? "";
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -57,9 +64,30 @@ export async function signup(formData: FormData) {
     redirect(`/signup?${nextParam}&error=` + encodeURIComponent(error.message));
   }
 
+  // No session means "Confirm email" is still on in Supabase: keep the old flow working.
+  if (!data.session) {
+    redirect(
+      `/signup?${nextParam}&message=` +
+        encodeURIComponent("Check your email to confirm your account, then sign in.")
+    );
+  }
+
+  // Welcome (with the confirm-your-email link) goes out after the redirect, so the
+  // member lands in the app without waiting on Supabase or Resend.
+  const { email, full_name: fullName } = parsed.data;
+  after(async () => {
+    const verifyUrl = await createVerifyLink(email, origin);
+    await sendEmail(welcomeEmail({ to: email, fullName, baseUrl: origin, verifyUrl }));
+  });
+
+  const jar = await cookies();
+  // Instant signup skips /auth/callback, so attribute a friend's referral link here.
+  const referralCode = jar.get(REFERRAL_COOKIE)?.value;
+  if (referralCode && (await claimReferralCode(supabase, referralCode))) jar.delete(REFERRAL_COOKIE);
+  // No page renders "signup done" any more; the tracker reads this and sends signup_completed.
+  jar.set(SIGNUP_COMPLETED_COOKIE, "password", { maxAge: SIGNUP_MARKER_MAX_AGE_SECONDS, path: "/", sameSite: "lax" });
+
   revalidatePath("/", "layout");
-  redirect(
-    `/signup?${nextParam}&message=` +
-      encodeURIComponent("Check your email to confirm your account, then sign in.")
-  );
+  // New members have no onboarded_at, so /home sends them on to /welcome.
+  redirect(next);
 }

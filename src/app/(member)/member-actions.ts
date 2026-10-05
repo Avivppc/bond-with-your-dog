@@ -1,11 +1,17 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { isOwnPhotoUrl } from "@/lib/member/photos";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
 import { AboutYouInput, DogInput, PracticePrefsInput } from "@/lib/member/schemas";
+import { createVerifyLink, isEmailVerified } from "@/lib/auth/email-verification";
+import { nextResend } from "@/lib/auth/resend-throttle";
+import { createServiceClient } from "@/lib/supabase/admin";
+import { sendEmail, siteUrl } from "@/lib/email";
+import { confirmEmail } from "@/lib/welcome-email";
 
 async function signedIn() {
   const supabase = await createClient();
@@ -107,6 +113,51 @@ export async function savePracticePrefs(input: PracticePrefsInput): Promise<Acti
     return fail("Could not save. Please try again.");
   }
   refresh();
+  return ok(undefined);
+}
+
+/** The chapter the member wants to follow (onboarding "Your course"). Access still comes from enrollments. */
+export async function saveChosenCourse(courseId: string): Promise<ActionResult> {
+  if (!z.string().min(1).max(100).safeParse(courseId).success) return fail("Please choose a course.");
+  const { supabase, user } = await signedIn();
+  if (!user) return fail("Please sign in again.");
+  // RLS only shows published courses, so this also rejects drafts.
+  const { data: course } = await supabase.from("courses").select("id").eq("id", courseId).maybeSingle();
+  if (!course) return fail("That course isn't available. Please pick another.");
+  const { error } = await supabase.from("profiles").update({ chosen_course_id: courseId }).eq("id", user.id);
+  if (error) {
+    console.error("[onboarding] course choice failed", { userId: user.id, error: error.message });
+    return fail("Could not save. Please try again.");
+  }
+  refresh();
+  return ok(undefined);
+}
+
+/** Emails a fresh confirm-your-email link (Home reminder), at most every few minutes. */
+export async function resendVerifyEmail(): Promise<ActionResult> {
+  const { supabase, user } = await signedIn();
+  if (!user?.email) return fail("Please sign in again.");
+  if (await isEmailVerified(supabase)) return ok(undefined);
+
+  // Send times live in app_metadata, which only the server can write.
+  const decision = nextResend(user.app_metadata?.verify_link_sends ?? [], Date.now());
+  if (!decision.allowed) {
+    const minutes = Math.ceil(decision.retryInSeconds / 60);
+    return fail(`We just sent you a link. You can ask for another in ${minutes} minute${minutes === 1 ? "" : "s"}.`);
+  }
+  const { error: recordError } = await createServiceClient().auth.admin.updateUserById(user.id, {
+    app_metadata: { verify_link_sends: decision.history },
+  });
+  if (recordError) {
+    console.error("[verify-email] could not record resend", { userId: user.id, error: recordError.message });
+    return fail("We couldn't send the email right now. Please try again in a few minutes.");
+  }
+
+  const origin = (await headers()).get("origin") ?? siteUrl();
+  const link = await createVerifyLink(user.email, origin);
+  if (!link || !(await sendEmail(confirmEmail(user.email, link)))) {
+    return fail("We couldn't send the email right now. Please try again in a few minutes.");
+  }
   return ok(undefined);
 }
 
