@@ -6,6 +6,8 @@ import { memberViewer } from "@/lib/member/viewer";
 import { Sidebar, Tabbar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
+import { StaffInviteBanner } from "@/components/app/StaffInviteBanner";
+import { stuckStaffInvite } from "@/lib/auth/staff-invite-proof";
 import { MemberBanners } from "@/components/app/MemberBanners";
 import { HomeSearchSlot } from "@/components/app/HomeSearchSlot";
 import { MemberPreviewBridge } from "@/components/app/MemberPreviewBridge";
@@ -55,6 +57,7 @@ async function hasChapter(userId: string): Promise<boolean> {
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const viewer = await memberViewer();
   if (!viewer) redirect("/login");
+  const staffInvite = viewer.isStaff ? null : await stuckStaffInvite({ id: viewer.userId, email: viewer.email });
 
   const [{ settings, preview }, site] = await Promise.all([loadMemberArea(viewer.isStaff), loadLiveTheme()]);
   // Only ask the database when a banner is aimed at members with or without a chapter.
@@ -73,6 +76,7 @@ export default async function MemberLayout({ children }: { children: React.React
       <div className="main">
         <Topbar viewer={viewer} logo={settings.look.logo} />
         <main className="content" id="content">
+          {staffInvite && <StaffInviteBanner email={viewer.email} role={staffInvite.role} />}
           <div className="screen on">
             <MemberBanners banners={banners} />
             <HomeSearchSlot />

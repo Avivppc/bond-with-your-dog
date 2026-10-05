@@ -31,6 +31,24 @@ describe("buildTeamRows", () => {
     });
     expect(rows).toHaveLength(1);
   });
+
+  it("flags an invitee who signed up without opening the invite, with their real last sign-in", () => {
+    const rows = buildTeamRows({
+      bootstrapEmails: [],
+      members: [],
+      invites: [{ id: "i1", email: "roni@example.com", role: "owner", createdAt: "2026-10-01T00:00:00Z", account: { lastSignInAt: "2026-10-02T00:00:00Z" } }],
+    });
+    expect(rows[0]).toEqual(expect.objectContaining({ status: "signed-up", lastSignInAt: "2026-10-02T00:00:00Z", inviteId: "i1" }));
+  });
+
+  it("keeps an invite as invited while its account has never signed in", () => {
+    const rows = buildTeamRows({
+      bootstrapEmails: [],
+      members: [],
+      invites: [{ id: "i1", email: "new@example.com", role: "editor", createdAt: "2026-10-01T00:00:00Z", account: { lastSignInAt: null } }],
+    });
+    expect(rows[0]).toEqual(expect.objectContaining({ status: "invited", lastSignInAt: null }));
+  });
 });
 
 describe("roleChangeError", () => {

@@ -4,7 +4,8 @@
  */
 import type { StaffRole } from "./staff";
 
-export type TeamStatus = "bootstrap" | "active" | "invited";
+/** "signed-up": invited, but they made an account without opening the invite, so their inbox is unproven. */
+export type TeamStatus = "bootstrap" | "active" | "invited" | "signed-up";
 
 export interface TeamMember {
   userId: string;
@@ -20,6 +21,8 @@ export interface TeamInvite {
   email: string;
   role: StaffRole;
   createdAt: string;
+  /** The account already registered with this email, if any (an unopened invite creates one too). */
+  account?: { lastSignInAt: string | null } | null;
 }
 
 export interface TeamRow {
@@ -50,7 +53,11 @@ export function buildTeamRows(input: { bootstrapEmails: readonly string[]; membe
   const taken = new Set([...bootstrap, ...memberByEmail.keys()]);
   const invites: TeamRow[] = input.invites
     .filter((i) => !taken.has(normalize(i.email)))
-    .map((i) => ({ key: `invite:${i.id}`, email: normalize(i.email), name: null, role: i.role, status: "invited", userId: null, inviteId: i.id, lastSignInAt: null, addedAt: i.createdAt }));
+    .map((i) => {
+      const lastSignInAt = i.account?.lastSignInAt ?? null;
+      const status: TeamStatus = lastSignInAt ? "signed-up" : "invited";
+      return { key: `invite:${i.id}`, email: normalize(i.email), name: null, role: i.role, status, userId: null, inviteId: i.id, lastSignInAt, addedAt: i.createdAt };
+    });
   return [...owners, ...members, ...invites];
 }
 

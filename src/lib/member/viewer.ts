@@ -74,7 +74,8 @@ async function load(supabase: ServerSupabase): Promise<MemberViewer | null> {
     supabase.from("profiles").select(PROFILE_COLUMNS).eq("id", user.id).maybeSingle(),
     supabase.from("dogs").select(DOG_COLUMNS).order("created_at"),
     supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
-    supabase.rpc("current_staff_role"),
+    // Also claims a pending admin invite once the inbox is proven (returns an existing role as is).
+    supabase.rpc("claim_staff_invite"),
   ]);
   if (profileRes.error) console.error("[viewer] profile load failed", profileRes.error.message);
   if (dogsRes.error) console.error("[viewer] dogs load failed", dogsRes.error.message);
