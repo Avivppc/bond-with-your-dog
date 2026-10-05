@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { EmailDoc } from "@/lib/email-blocks/types";
-import { duplicateBlock, insertAtCursor, insertBlock, moveBlockBy, moveBlockTo, patchBlock, removeBlock, setTextField } from "./doc-ops";
+import { duplicateBlock, insertAtCursor, insertBlock, moveBlockBy, moveBlockTo, patchBlock, removeBlock, setArt, setTextField } from "./doc-ops";
 
 const DOC: EmailDoc = {
   subject: "S",
@@ -62,5 +62,14 @@ describe("doc-ops", () => {
     expect(insertAtCursor("Hi !", 3, 3, "{{first_name}}")).toEqual({ value: "Hi {{first_name}}!", caret: 17 });
     expect(insertAtCursor("Hi XX!", 5, 3, "Y")).toEqual({ value: "Hi Y!", caret: 4 });
     expect(insertAtCursor("ab", 10, 10, "c")).toEqual({ value: "abc", caret: 3 });
+  });
+});
+
+describe("setArt", () => {
+  it("sets the picture, and clears it back to the default, without mutating", () => {
+    const withArt = setArt(DOC, "sketch");
+    expect(withArt.art).toBe("sketch");
+    expect(DOC.art).toBeUndefined();
+    expect("art" in setArt(withArt, undefined)).toBe(false);
   });
 });

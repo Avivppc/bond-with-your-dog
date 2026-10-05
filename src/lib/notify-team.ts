@@ -46,7 +46,7 @@ export async function notifyTeam(event: NotifyEvent, note: TeamNote): Promise<bo
     // "They wrote:" sits in the same paragraph as the quote, so even a one-line quote is never a lone "Label: https://…" line.
     const quoted = note.quoted ? ["", "They wrote:", quoteLines(note.quoted)] : [];
     const text = [...note.lines.filter((l): l is string => l !== null), ...quoted, "", `Open it: ${siteUrl()}${note.path}`].join("\n");
-    return await sendEmail({ to, subject: note.subject, text });
+    return await sendEmail({ to, subject: note.subject, text, audience: "internal" });
   } catch (error: unknown) {
     console.error("[notify] team email failed", { event, error: error instanceof Error ? error.message : String(error) });
     return false;

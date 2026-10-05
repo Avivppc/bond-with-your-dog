@@ -3,6 +3,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { newCampaignBlock } from "@/lib/email-blocks/defaults";
 import type { EmailDoc } from "@/lib/email-blocks/types";
+import type { EmailArtKind } from "@/lib/email-art";
 import type { Audience, AudienceKind } from "@/lib/flows/server/campaigns";
 import { EXAMPLE_VARS, FLOW_TAGS } from "@/lib/flows/template";
 import { BLOCK_TYPES } from "../../_components/email-editor/block-meta";
@@ -28,6 +29,8 @@ interface CampaignEditorProps {
   initial: { name: string; audience: Audience; email: EmailDoc };
   chapters: readonly ChapterOption[];
   siteUrl: string;
+  /** The picture Settings → Email gives flow and campaign emails. */
+  defaultArt: EmailArtKind;
 }
 
 /** Campaigns only fill names and app links (no flow offer), so the editor offers those tags. */
@@ -43,7 +46,7 @@ function localInput(iso: string | null): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function CampaignEditor({ id, status: initialStatus, scheduledAt, scheduledLocal, initial, chapters, siteUrl }: CampaignEditorProps) {
+export function CampaignEditor({ id, status: initialStatus, scheduledAt, scheduledLocal, initial, chapters, siteUrl, defaultArt }: CampaignEditorProps) {
   const [name, setName] = useState(initial.name);
   const [audience, setAudience] = useState<Audience>(initial.audience);
   const [email, setEmail] = useState<EmailDoc>(initial.email);
@@ -137,6 +140,7 @@ export function CampaignEditor({ id, status: initialStatus, scheduledAt, schedul
         tags={CAMPAIGN_TAGS}
         exampleVars={EXAMPLE}
         siteUrl={siteUrl}
+        defaultArt={defaultArt}
         uploadImage={uploadImage}
         blockTypes={CAMPAIGN_BLOCKS}
         makeBlock={newCampaignBlock}

@@ -4,6 +4,7 @@ import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from "r
 import { fillVars } from "@/lib/email-blocks/markup";
 import { renderEmailDoc } from "@/lib/email-blocks/render";
 import type { EmailDoc } from "@/lib/email-blocks/types";
+import type { EmailArtKind } from "@/lib/email-art";
 import { MUTED } from "../ui";
 import { Segmented } from "./controls";
 
@@ -20,6 +21,8 @@ interface PreviewProps {
   doc: EmailDoc;
   siteUrl: string;
   exampleVars: Record<string, string>;
+  /** The picture Settings → Email gives this kind of email, for when the email doesn't choose its own. */
+  defaultArt?: EmailArtKind;
 }
 
 function useElementWidth<T extends HTMLElement>(): [React.RefObject<T | null>, number] {
@@ -35,11 +38,11 @@ function useElementWidth<T extends HTMLElement>(): [React.RefObject<T | null>, n
   return [ref, width];
 }
 
-export function Preview({ doc, siteUrl, exampleVars }: PreviewProps) {
+export function Preview({ doc, siteUrl, exampleVars, defaultArt }: PreviewProps) {
   const headingId = useId();
   const [device, setDevice] = useState<Device>("desktop");
   const deferredDoc = useDeferredValue(doc);
-  const rendered = useMemo(() => renderEmailDoc(deferredDoc, { siteUrl, vars: exampleVars }), [deferredDoc, siteUrl, exampleVars]);
+  const rendered = useMemo(() => renderEmailDoc(deferredDoc, { siteUrl, vars: exampleVars, art: defaultArt }), [deferredDoc, siteUrl, exampleVars, defaultArt]);
   const srcDoc = useMemo(() => rendered.html.replace("<head>", '<head>\n<base target="_blank">'), [rendered.html]);
   const preheader = fillVars(deferredDoc.preheader, exampleVars).replace(/\s+/g, " ").trim();
   const [boxRef, boxWidth] = useElementWidth<HTMLDivElement>();

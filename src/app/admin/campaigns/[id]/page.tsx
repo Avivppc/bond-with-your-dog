@@ -4,6 +4,7 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { siteUrl } from "@/lib/email";
 import { emailDocFromNodeData } from "@/lib/email-blocks/defaults";
 import { renderEmailDoc } from "@/lib/email-blocks/render";
+import { loadEmailSettings } from "@/lib/flows/server/email-settings";
 import { loadCampaign, ATTRIBUTION_DAYS } from "@/lib/flows/server/campaign-stats";
 import { percent } from "@/lib/flows/stats";
 import { formatUsd } from "@/lib/flows/discount";
@@ -22,7 +23,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
   await requireStaff("sales");
   const { id } = await params;
   const sb = createServiceClient();
-  const [loaded, chaptersRes] = await Promise.all([loadCampaign(sb, id), sb.from("courses").select("id, title, chapter_number").not("chapter_number", "is", null).order("chapter_number")]);
+  const [loaded, chaptersRes, emailSettings] = await Promise.all([loadCampaign(sb, id), sb.from("courses").select("id, title, chapter_number").not("chapter_number", "is", null).order("chapter_number"), loadEmailSettings(sb)]);
   if (!loaded) notFound();
   const { campaign: c, stats } = loaded;
   const chapters = (chaptersRes.data ?? []).map((ch) => ({ id: ch.id as string, title: ch.title as string }));
@@ -38,7 +39,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
       />
 
       {editable ? (
-        <CampaignEditor id={c.id} status={c.status as "draft" | "scheduled"} scheduledAt={c.scheduled_at} scheduledLocal={c.local_time ? c.scheduled_local : null} initial={{ name: c.name, audience: c.audience, email: doc }} chapters={chapters} siteUrl={siteUrl()} />
+        <CampaignEditor id={c.id} status={c.status as "draft" | "scheduled"} scheduledAt={c.scheduled_at} scheduledLocal={c.local_time ? c.scheduled_local : null} initial={{ name: c.name, audience: c.audience, email: doc }} chapters={chapters} siteUrl={siteUrl()} defaultArt={emailSettings.emailArt.flows} />
       ) : (
         <>
           <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-5">
@@ -58,7 +59,7 @@ export default async function CampaignPage({ params }: { params: Promise<{ id: s
               title="Email as sent"
               sandbox=""
               className="h-[640px] w-full rounded-[8px] border border-[#e7e6e4]"
-              srcDoc={renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...EXAMPLE_VARS } }).html}
+              srcDoc={renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...EXAMPLE_VARS }, art: emailSettings.emailArt.flows }).html}
             />
             <p className={`mt-2 text-[12px] ${MUTED}`}>Shown with example names.</p>
           </Card>

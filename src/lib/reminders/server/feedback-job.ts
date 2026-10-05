@@ -63,5 +63,5 @@ export async function runFeedbackOverdueJob(ctx: JobContext): Promise<JobResult>
   );
   const fresh = videos.filter((_, i) => claims[i] === "sent");
   if (fresh.length === 0) return { outcomes, emails: [] };
-  return { outcomes, emails: [{ to: inbox, ...overdueDigestEmail(fresh, ctx.siteUrl, ctx.settings.feedbackOverdue.days) }] };
+  return { outcomes, emails: [{ to: inbox, audience: "internal" as const, ...overdueDigestEmail(fresh, ctx.siteUrl, ctx.settings.feedbackOverdue.days) }] };
 }

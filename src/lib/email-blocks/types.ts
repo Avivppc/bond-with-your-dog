@@ -4,6 +4,8 @@
  * a tiny inline markup: **bold**, *italic*, [label](https://url). Pure data, stored as JSON.
  */
 
+import type { EmailArtKind } from "../email-art";
+
 export type Align = "left" | "center";
 
 export interface HeadingBlock {
@@ -73,6 +75,8 @@ export interface EmailDoc {
   /** Inbox preview line. */
   preheader: string;
   blocks: EmailBlock[];
+  /** Picture at the top of this email. Unset = use the default from Settings → Email. */
+  art?: EmailArtKind;
 }
 
 /** Values the renderer needs besides the tags: links for the frame and the code box. */
@@ -83,4 +87,8 @@ export interface RenderContext {
   unsubscribeUrl?: string;
   /** The business postal address marketing email must show (Settings → Email). */
   postalAddress?: string | null;
+  /** Picture at the top of the card. Default: a photo, unless the email's first block is an image. */
+  art?: EmailArtKind;
+  /** The send time, which decides the day's picture (default: now). */
+  now?: Date;
 }

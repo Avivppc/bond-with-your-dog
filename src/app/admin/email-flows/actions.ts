@@ -183,6 +183,7 @@ export async function sendTestEmail(docInput: unknown): Promise<FlowActionResult
     vars: { ...EXAMPLE_VARS, first_name: firstName },
     unsubscribeUrl: links.page,
     postalAddress: settings.postalAddress,
+    art: settings.emailArt.flows,
   });
   const result = await sendMarketingEmail({
     to: user.email,

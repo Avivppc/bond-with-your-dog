@@ -63,6 +63,7 @@ async function notifyTeam(flow: FlowRow, person: Person, message: string, settin
   const who = [person.firstName, person.email].filter(Boolean).join(" · ") || "Someone";
   const sent = await sendEmail({
     to,
+    audience: "internal",
     subject: `[${flow.name}] ${who}`,
     text: `${fillNote(message, flow, person)}\n\nFlow: ${flow.name}\nPerson: ${who}\n\nOpen the flow: ${siteUrl()}/admin/email-flows/${flow.id}`,
   });

@@ -127,7 +127,7 @@ async function deliverEmail(
     return NOTHING;
   }
   const links = unsubscribeLinks({ userId: run.user_id, email: person.email ?? "" });
-  const rendered = renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...(await ctx.vars()) }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress });
+  const rendered = renderEmailDoc(doc, { siteUrl: siteUrl(), vars: { ...(await ctx.vars()) }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress, art: settings.emailArt.flows });
   const { data: queued, error: queueError } = await sb.from("email_messages").insert({ ...base, subject: rendered.subject, status: "queued" }).select("id").single();
   if (queueError?.code === "23505") return NOTHING; // this step already went out (an earlier run or another job)
   if (queueError || !queued) {

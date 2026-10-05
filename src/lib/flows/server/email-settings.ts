@@ -1,6 +1,7 @@
 import "server-only";
 import type { ServiceClient } from "./data";
 import { DEFAULT_NOTIFY, readNotifyPrefs, type NotifyPrefs } from "@/lib/notifications";
+import { DEFAULT_ART_SETTINGS, readArtSettings, type EmailArtSettings } from "@/lib/email-art";
 
 /** Settings → Email: how marketing email presents the sender, and where team notes go. */
 export interface EmailSettings {
@@ -11,15 +12,17 @@ export interface EmailSettings {
   teamEmail: string | null;
   /** Which events email the team (Settings → Notifications). */
   notify: NotifyPrefs;
+  /** The picture at the top of each kind of email. */
+  emailArt: EmailArtSettings;
 }
 
-export const DEFAULT_EMAIL_SETTINGS: EmailSettings = { senderName: "Bonded", replyTo: null, postalAddress: null, teamEmail: null, notify: DEFAULT_NOTIFY };
+export const DEFAULT_EMAIL_SETTINGS: EmailSettings = { senderName: "Bonded", replyTo: null, postalAddress: null, teamEmail: null, notify: DEFAULT_NOTIFY, emailArt: DEFAULT_ART_SETTINGS };
 
 export async function loadEmailSettings(sb: ServiceClient): Promise<EmailSettings> {
-  const { data, error } = await sb.from("email_settings").select("sender_name, reply_to, postal_address, team_email, notify").eq("id", 1).maybeSingle();
+  const { data, error } = await sb.from("email_settings").select("sender_name, reply_to, postal_address, team_email, notify, email_art").eq("id", 1).maybeSingle();
   if (error) throw new Error(`email settings unavailable: ${error.message}`);
   if (!data) return DEFAULT_EMAIL_SETTINGS;
-  return { senderName: data.sender_name, replyTo: data.reply_to, postalAddress: data.postal_address, teamEmail: data.team_email, notify: readNotifyPrefs(data.notify) };
+  return { senderName: data.sender_name, replyTo: data.reply_to, postalAddress: data.postal_address, teamEmail: data.team_email, notify: readNotifyPrefs(data.notify), emailArt: readArtSettings(data.email_art) };
 }
 
 /** Marketing email may only go out once the business postal address is filled in. */

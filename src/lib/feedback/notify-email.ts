@@ -29,6 +29,7 @@ export async function notifyMemberByEmail(sb: Service, userId: string, message: 
   const first = ((profile?.full_name as string | null) ?? "").trim().split(/\s+/)[0] || "there";
   const sent = await sendEmail({
     to: account.user.email,
+    audience: "member",
     subject: message.subject,
     text: [
       `Hi ${first},`,

@@ -25,7 +25,7 @@ const block = z.discriminatedUnion("type", [
   z.object({ id, type: z.literal("spacer"), size: z.number().int().min(8).max(64) }),
 ]);
 
-export const emailDocSchema = z.object({ subject: text(200), preheader: text(200), blocks: z.array(block).max(60) });
+export const emailDocSchema = z.object({ subject: text(200), preheader: text(200), blocks: z.array(block).max(60), art: z.enum(["photo", "sketch", "none"]).optional() });
 const legacyEmail = z.object({ subject: text(200), preheader: text(200), body: text(10_000), ctaLabel: text(80) });
 
 const courseId = z.string().min(1).max(100).nullish();

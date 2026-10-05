@@ -3,6 +3,8 @@
 import { useCallback, useRef, useState } from "react";
 import { blockId, newBlock } from "@/lib/email-blocks/defaults";
 import type { EmailBlock, EmailBlockType, EmailDoc } from "@/lib/email-blocks/types";
+import { DEFAULT_ART_SETTINGS, type EmailArtKind } from "@/lib/email-art";
+import { ArtField } from "./ArtField";
 import { BLOCK_TYPES } from "./block-meta";
 import { BlockFields } from "./BlockFields";
 import { BlockList } from "./BlockList";
@@ -14,6 +16,7 @@ import {
   moveBlockTo,
   patchBlock,
   removeBlock,
+  setArt,
   setTextField,
   type BlockPatch,
   type FieldTarget,
@@ -37,6 +40,8 @@ export interface EmailEditorProps {
   tags: readonly TagOption[];
   exampleVars: Record<string, string>;
   siteUrl: string;
+  /** The picture Settings → Email gives this kind of email (default: a photo). */
+  defaultArt?: EmailArtKind;
   /** When given, image blocks get an Upload button (see upload-client.ts → uploadImage). */
   uploadImage?: UploadImage;
   /** Which blocks the palette offers (default: all). */
@@ -52,7 +57,7 @@ interface FocusedField {
 
 const NO_FIELD_MESSAGE = "Click into a text field first, then pick a tag.";
 
-export function EmailEditor({ value, onChange, tags, exampleVars, siteUrl, uploadImage, blockTypes = BLOCK_TYPES, makeBlock = newBlock }: EmailEditorProps) {
+export function EmailEditor({ value, onChange, tags, exampleVars, siteUrl, defaultArt = DEFAULT_ART_SETTINGS.flows, uploadImage, blockTypes = BLOCK_TYPES, makeBlock = newBlock }: EmailEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drag, setDrag] = useState<DragItem | null>(null);
   const [tagMessage, setTagMessage] = useState<string | null>(null);
@@ -123,6 +128,7 @@ export function EmailEditor({ value, onChange, tags, exampleVars, siteUrl, uploa
             hint="The grey line inboxes show after the subject."
             onChange={(preheader) => onChange({ ...value, preheader })}
           />
+          <ArtField value={value.art} defaultArt={defaultArt} onChange={(art) => onChange(setArt(value, art))} />
         </div>
         <div className="z-20 -mx-1 border-b border-[#efeeed] bg-white/95 px-1 py-2 backdrop-blur lg:sticky lg:top-0">
           <TagChips tags={tags} onInsert={insertTag} message={tagMessage} />
@@ -144,7 +150,7 @@ export function EmailEditor({ value, onChange, tags, exampleVars, siteUrl, uploa
             renderFields={renderFields}
           />
           <div className="lg:sticky lg:top-24 lg:self-start xl:top-16">
-            <Preview doc={value} siteUrl={siteUrl} exampleVars={exampleVars} />
+            <Preview doc={value} siteUrl={siteUrl} exampleVars={exampleVars} defaultArt={defaultArt} />
           </div>
         </div>
       </div>

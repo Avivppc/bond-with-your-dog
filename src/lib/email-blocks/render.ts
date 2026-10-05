@@ -1,4 +1,5 @@
 import type { EmailBlock, EmailDoc, RenderContext } from "./types";
+import { emailCard, pickEmailArt, type EmailArt } from "../email-art";
 import { escapeHtml, fillVarsInert, markupToHtml, markupToText, safeHttpUrl, splitParagraphs } from "./markup";
 
 /**
@@ -166,9 +167,10 @@ interface FrameParts {
   site: string;
   unsubscribeUrl: string | null;
   postalAddress: string;
+  art: EmailArt | null;
 }
 
-function frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress }: FrameParts): string {
+function frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress, art }: FrameParts): string {
   const preheaderHtml = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;mso-hide:all">${escapeHtml(preheader)}</div>\n`
     : "";
@@ -191,8 +193,8 @@ ${preheaderHtml}<table role="presentation" width="100%" cellspacing="0" cellpadd
       <tr><td align="center" style="padding:0 0 20px">
         <a href="${escapeHtml(site)}" style="text-decoration:none"><img src="${escapeHtml(site)}/images/logo.png" width="150" height="60" alt="Bonded" style="display:block;border:0"></a>
       </td></tr>
-      <tr><td style="background:${COLORS.card};border:1px solid ${COLORS.line};border-radius:16px;padding:32px 28px;font-family:${FONT};color:${COLORS.ink}">
-${body}
+      <tr><td style="background:${COLORS.card};border:1px solid ${COLORS.line};border-radius:16px">
+${emailCard(body, art, site, `font-family:${FONT};color:${COLORS.ink}`)}
       </td></tr>
       <tr><td align="center" style="padding:20px 8px 0;font-size:12px;line-height:1.5;color:${COLORS.muted}">
         Bonded · Learn your dog's secret language<br>
@@ -229,9 +231,12 @@ export function renderEmailDoc(doc: EmailDoc, ctx: RenderContext): RenderedEmail
     .join("\n");
   const blocks = doc.blocks.map((b) => renderBlock(b, ctx, fill)).filter((b): b is BlockOutput => b !== null);
   const body = blocks.map((b) => b.html).join("\n");
+  // The email's own choice wins; otherwise the Settings default, except that an email opening with its own image keeps that image as the picture.
+  const defaultKind = doc.blocks[0]?.type === "image" ? "none" : (ctx.art ?? "photo");
+  const art = pickEmailArt(doc.art ?? defaultKind, ctx.now ?? new Date(), subject);
   return {
     subject,
-    html: frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress }),
+    html: frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress, art }),
     text: plainText(blocks, site, unsubscribeUrl, postalAddress),
   };
 }
