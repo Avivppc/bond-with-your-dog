@@ -6,6 +6,8 @@ import { memberViewer } from "@/lib/member/viewer";
 import { Sidebar, Tabbar } from "@/components/app/Sidebar";
 import { Topbar } from "@/components/app/Topbar";
 import { TimeZoneCapture } from "@/components/app/TimeZoneCapture";
+import { StaffInviteBanner } from "@/components/app/StaffInviteBanner";
+import { stuckStaffInvite } from "@/lib/auth/staff-invite-proof";
 import "@/styles/member-app.css";
 
 // Roni's signature on certificates.
@@ -20,6 +22,7 @@ export const metadata = { robots: { index: false, follow: false } };
 export default async function MemberLayout({ children }: { children: React.ReactNode }) {
   const viewer = await memberViewer();
   if (!viewer) redirect("/login");
+  const staffInvite = viewer.isStaff ? null : await stuckStaffInvite({ id: viewer.userId, email: viewer.email });
 
   return (
     <div className={`member-app ${script.variable}`}>
@@ -27,6 +30,7 @@ export default async function MemberLayout({ children }: { children: React.React
       <div className="main">
         <Topbar viewer={viewer} />
         <main className="content" id="content">
+          {staffInvite && <StaffInviteBanner email={viewer.email} role={staffInvite.role} />}
           <div className="screen on">{children}</div>
         </main>
       </div>

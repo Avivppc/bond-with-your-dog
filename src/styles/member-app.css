@@ -370,6 +370,8 @@
 .member-app .state-card .big-ic .ms { font-size: 34px; }
 .member-app .studio-banner { display: flex; align-items: center; gap: 14px; padding: 14px 20px; border-radius: 18px; background: var(--ink); color: #eaf6fb; font-size: 14px; }
 .member-app .studio-banner .ms { color: #ffd59a; }
+.member-app .staff-invite-banner { flex-wrap: wrap; margin-bottom: 20px; }
+.member-app .staff-invite-banner .staff-invite-text { flex: 1 1 240px; min-width: 0; }
 .member-app .queue-row { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) 90px 110px; gap: 14px; align-items: center; padding: 14px 16px; border-radius: 16px; font-size: 14px; text-align: left; width: 100%; }
 .member-app .queue-row:hover { background: var(--tint); }
 .member-app .queue-row.on { background: var(--orange-soft); }

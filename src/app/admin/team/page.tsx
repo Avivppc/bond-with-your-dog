@@ -46,20 +46,39 @@ async function loadMembers(sb: Service): Promise<TeamMember[]> {
   );
 }
 
+/** The account already registered with an invited email, so the list shows whether they've signed in. */
+async function loadInviteAccount(sb: Service, email: string): Promise<TeamInvite["account"]> {
+  const { data: account, error } = await sb.rpc("find_account_by_email", { p_email: email }).maybeSingle<{ user_id: string }>();
+  if (error) console.error("[team] invite account lookup failed", { email, error: error.message });
+  if (!account) return null;
+  const { data, error: userError } = await sb.auth.admin.getUserById(account.user_id);
+  if (userError) console.error("[team] user lookup failed", { userId: account.user_id, error: userError.message });
+  return { lastSignInAt: data.user?.last_sign_in_at ?? null };
+}
+
 async function loadInvites(sb: Service): Promise<TeamInvite[]> {
   const { data, error } = await sb.from("staff_invites").select("id, email, role, created_at").is("accepted_at", null).order("created_at");
   if (error) console.error("[team] load invites failed", error.message);
-  return (data ?? []).map((i) => ({ id: i.id as string, email: i.email as string, role: i.role as StaffRole, createdAt: i.created_at as string }));
+  return Promise.all(
+    (data ?? []).map(async (i): Promise<TeamInvite> => ({
+      id: i.id as string,
+      email: i.email as string,
+      role: i.role as StaffRole,
+      createdAt: i.created_at as string,
+      account: await loadInviteAccount(sb, i.email as string),
+    })),
+  );
 }
 
 function StatusCell({ row }: { row: TeamRow }) {
   if (row.status === "invited") return <StatusPill tone="warning">Invited</StatusPill>;
+  if (row.status === "signed-up") return <StatusPill tone="warning">Signed up · email not confirmed</StatusPill>;
   if (row.status === "bootstrap") return <StatusPill tone="info">Owner in Vercel</StatusPill>;
   return <StatusPill tone="published">Active</StatusPill>;
 }
 
 function RowActions({ row, isMe }: { row: TeamRow; isMe: boolean }) {
-  if (row.status === "invited" && row.inviteId) {
+  if ((row.status === "invited" || row.status === "signed-up") && row.inviteId) {
     return (
       <OptionsMenu label={`Options for ${row.email}`}>
         <form action={resendInvite}>
@@ -143,6 +162,9 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                             {isMe && <span className="ml-2 text-xs font-normal text-[#6c6a69]">(you)</span>}
                           </span>
                           {row.name && <span className="block truncate text-xs text-[#6c6a69]">{row.email}</span>}
+                          {row.status === "signed-up" && (
+                            <span className="block text-xs text-[#8a5a00]">Signed up without opening the invite. Resend invite emails them a fresh confirmation link.</span>
+                          )}
                         </span>
                       </span>
                     </td>
@@ -151,7 +173,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                       <StatusCell row={row} />
                     </td>
                     <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>
-                      {row.status === "invited" ? "—" : row.lastSignInAt ? shortDate(row.lastSignInAt) : "Never signed in"}
+                      {row.lastSignInAt ? shortDate(row.lastSignInAt) : row.status === "invited" ? "—" : "Never signed in"}
                     </td>
                     <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(row.addedAt)}</td>
                     <td className={`${TD} text-right`}>
@@ -173,6 +195,10 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
               <dd className="text-[#6c6a69]">{r.can}</dd>
             </div>
           ))}
+          <div>
+            <dt className="font-medium">Signed up · email not confirmed</dt>
+            <dd className="text-[#6c6a69]">They made an account without opening the invite link. Admin access starts once they open the confirmation link we email them.</dd>
+          </div>
           <div>
             <dt className="font-medium">Owner in Vercel</dt>
             <dd className="text-[#6c6a69]">Set in the ADMIN_EMAILS setting on Vercel, so the account can never be locked out. Change it there, not here.</dd>

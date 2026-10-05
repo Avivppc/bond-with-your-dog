@@ -7,16 +7,16 @@ type LinkType = "invite" | "recovery";
 /**
  * One-time sign-in links that work on any device: Supabase issues a hashed token and
  * /auth/confirm verifies it (verifyOtp) — no PKCE verifier from the admin's browser needed.
- * They land on /reset-password so the person chooses a password.
+ * By default they land on /reset-password so the person chooses a password.
  */
-function confirmUrl(tokenHash: string, type: LinkType): string {
-  const params = new URLSearchParams({ token_hash: tokenHash, type, next: "/reset-password" });
+function confirmUrl(tokenHash: string, type: LinkType, next: string): string {
+  const params = new URLSearchParams({ token_hash: tokenHash, type, next });
   return `${siteUrl()}/auth/confirm?${params.toString()}`;
 }
 
 export type LinkResult = { ok: true; link: string; userId: string } | { ok: false; reason: string };
 
-async function generate(type: LinkType, email: string): Promise<LinkResult> {
+async function generate(type: LinkType, email: string, next = "/reset-password"): Promise<LinkResult> {
   const { data, error } = await createServiceClient().auth.admin.generateLink({ type, email });
   const tokenHash = data?.properties?.hashed_token;
   if (error || !tokenHash || !data.user) {
@@ -24,7 +24,7 @@ async function generate(type: LinkType, email: string): Promise<LinkResult> {
     const exists = error?.message?.toLowerCase().includes("already") ?? false;
     return { ok: false, reason: exists ? "An account with this email already exists." : "Supabase could not create the link." };
   }
-  return { ok: true, link: confirmUrl(tokenHash, type), userId: data.user.id };
+  return { ok: true, link: confirmUrl(tokenHash, type, next), userId: data.user.id };
 }
 
 /** Creates the account (unconfirmed until they click) and returns its invitation link. */
@@ -34,6 +34,11 @@ export function createInviteLink(email: string): Promise<LinkResult> {
 
 export function createRecoveryLink(email: string): Promise<LinkResult> {
   return generate("recovery", email);
+}
+
+/** Signs them in and proves the inbox without asking for a new password, then continues to `next`. */
+export function createSignInLink(email: string, next: string): Promise<LinkResult> {
+  return generate("recovery", email, next);
 }
 
 export function inviteEmail(to: string, link: string, offerTitle: string | null): OutgoingEmail {

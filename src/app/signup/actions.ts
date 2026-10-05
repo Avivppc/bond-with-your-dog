@@ -6,6 +6,7 @@ import { headers } from "next/headers";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
+import { sendStaffConfirmLink } from "@/lib/auth/staff-invite-proof";
 
 const Schema = z.object({
   full_name: z.string().min(2),
@@ -35,7 +36,7 @@ export async function signup(formData: FormData) {
   const h = await headers();
   const origin = h.get("origin") ?? "";
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: parsed.data.email,
     password: parsed.data.password,
     options: {
@@ -51,6 +52,10 @@ export async function signup(formData: FormData) {
   if (error) {
     redirect(`/signup?${nextParam}&error=` + encodeURIComponent(error.message));
   }
+
+  // Signing up with an email that has a pending admin invite doesn't prove the inbox (signup
+  // doesn't confirm email), so the invite waits for a link we email them.
+  if (data.session && data.user) await sendStaffConfirmLink(data.user, "sign-in");
 
   revalidatePath("/", "layout");
   redirect(
