@@ -2,6 +2,7 @@ import "server-only";
 import type { createServiceClient } from "@/lib/supabase/admin";
 import { parseMemberRow, type ReminderMember } from "../members";
 import type { Notice } from "../copy";
+import type { Topic } from "@/lib/notification-settings/topics";
 import type { DeliveryOutcome } from "../summary";
 
 export type Service = ReturnType<typeof createServiceClient>;
@@ -42,6 +43,33 @@ export interface Delivery {
   noticeKind: NoticeKind;
   /** null = only claim (used for emails that have no in-app notice) */
   notice: Notice | null;
+  /** Which notification type this is (Admin → Member notifications); decides the phone push. */
+  topic: Topic;
+}
+
+const SENT_KEYS_LIMIT = 50000;
+
+/**
+ * "userId:ref" of deliveries of these kinds sent since `since`. The job runs every hour and most
+ * candidates were reminded in an earlier run; skipping them keeps a run well inside its time.
+ */
+export async function sentDeliveryKeys(sb: Service, kinds: readonly DeliveryKind[], since: Date): Promise<Set<string>> {
+  const { data, error } = await sb
+    .from("reminder_deliveries")
+    .select("user_id, kind, ref")
+    .in("kind", kinds as DeliveryKind[])
+    .gte("sent_at", since.toISOString())
+    .limit(SENT_KEYS_LIMIT);
+  if (error) {
+    // Not fatal: deliver_reminder still refuses repeats, the run is just slower.
+    console.error("[reminders] sent keys lookup failed", error.message);
+    return new Set();
+  }
+  return new Set((data ?? []).map((r) => `${r.kind as string}:${r.user_id as string}:${r.ref as string}`));
+}
+
+export function deliveryKey(d: Pick<Delivery, "kind" | "userId" | "ref">): string {
+  return `${d.kind}:${d.userId}:${d.ref}`;
 }
 
 /**
@@ -57,6 +85,7 @@ export async function deliver(sb: Service, d: Delivery): Promise<DeliveryOutcome
     p_title: d.notice?.title ?? null,
     p_body: d.notice?.body ?? null,
     p_href: d.notice?.href ?? null,
+    p_topic: d.topic,
   });
   if (error) {
     console.error("[reminders] delivery failed", { kind: d.kind, ref: d.ref, userId: d.userId, error: error.message });

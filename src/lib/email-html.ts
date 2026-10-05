@@ -56,8 +56,20 @@ function paragraph(block: string): string {
   return `<p style="margin:0 0 14px;font-size:15px;line-height:1.6;color:${COLORS.ink}">${lines.map(linkify).join("<br>\n")}</p>`;
 }
 
-export function renderEmailHtml(email: { subject: string; text: string }, siteUrl: string): string {
+/** Marketing extras: inbox preview text, and the unsubscribe link every marketing email must carry. */
+export interface EmailExtras {
+  preheader?: string;
+  unsubscribeUrl?: string;
+}
+
+export function renderEmailHtml(email: { subject: string; text: string }, siteUrl: string, extras: EmailExtras = {}): string {
   const site = siteUrl.replace(/\/$/, "");
+  const preheader = extras.preheader?.trim()
+    ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(extras.preheader.trim())}</div>\n`
+    : "";
+  const unsubscribe = extras.unsubscribeUrl
+    ? `<br>\n        <a href="${escapeHtml(extras.unsubscribeUrl)}" style="color:${COLORS.muted}">Unsubscribe from these emails</a>`
+    : "";
   const body = email.text
     .trim()
     .split(/\n\s*\n/)
@@ -71,7 +83,7 @@ export function renderEmailHtml(email: { subject: string; text: string }, siteUr
 <title>${escapeHtml(email.subject)}</title>
 </head>
 <body style="margin:0;padding:0;background:${COLORS.page};font-family:${FONT}">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${COLORS.page}">
+${preheader}<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:${COLORS.page}">
   <tr><td align="center" style="padding:32px 16px">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px">
       <tr><td align="center" style="padding:0 0 20px">
@@ -82,7 +94,7 @@ ${body}
       </td></tr>
       <tr><td align="center" style="padding:20px 8px 0;font-size:12px;line-height:1.5;color:${COLORS.muted}">
         Bonded · Learn your dog's secret language<br>
-        <a href="${escapeHtml(site)}" style="color:${COLORS.muted}">${escapeHtml(site.replace(/^https?:\/\//, ""))}</a>
+        <a href="${escapeHtml(site)}" style="color:${COLORS.muted}">${escapeHtml(site.replace(/^https?:\/\//, ""))}</a>${unsubscribe}
       </td></tr>
     </table>
   </td></tr>

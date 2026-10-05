@@ -12,7 +12,7 @@ export interface ChipDog {
   photo: string | null;
 }
 
-function DogFace({ dog, size }: { dog: ChipDog; size: number }) {
+export function DogFace({ dog, size }: { dog: ChipDog; size: number }) {
   if (dog.photo) {
     // eslint-disable-next-line @next/next/no-img-element -- member-uploaded photo
     return <img src={dog.photo} alt="" style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover" }} />;

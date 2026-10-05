@@ -6,6 +6,7 @@ import type { ReminderMember } from "../members";
 import { loadReminderMembers, type Service } from "./data";
 import { runLessonJob, runPracticeJob, runSessionJob, type JobContext, type JobResult } from "./member-jobs";
 import { runFeedbackOverdueJob } from "./feedback-job";
+import { loadNotificationSettings } from "@/lib/notification-settings/server";
 
 export type JobName = "practice" | "lessons" | "liveSessions" | "feedbackOverdue";
 
@@ -53,8 +54,8 @@ async function loadMembersSafely(sb: Service): Promise<{ members: ReminderMember
 }
 
 export async function runReminderJobs(sb: Service, now: Date = new Date()): Promise<ReminderRunSummary> {
-  const { members, error: membersError } = await loadMembersSafely(sb);
-  const ctx: JobContext = { sb, now, members, emailConfigured: isEmailConfigured(), siteUrl: siteUrl() };
+  const [{ members, error: membersError }, settings] = await Promise.all([loadMembersSafely(sb), loadNotificationSettings()]);
+  const ctx: JobContext = { sb, now, members, emailConfigured: isEmailConfigured(), siteUrl: siteUrl(), settings };
   // Without the member list the member jobs would wrongly find nobody due; skip them instead.
   const jobs: [JobName, Job][] = [...(membersError ? [] : MEMBER_JOBS), ["feedbackOverdue", runFeedbackOverdueJob]];
   const results = await Promise.all(jobs.map(async ([name, job]) => ({ name, ...(await runJob(name, job, ctx)) })));

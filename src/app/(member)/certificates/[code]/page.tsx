@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/member/viewer";
+import { NextChapterOffer } from "@/components/app/NextChapterOffer";
 import { CopyButton } from "@/components/app/CopyButton";
 import { Ms } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
@@ -87,6 +88,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
           </div>
         </div>
       </div>
+      {/* Your own certificate: the next chapter, with your personal code when a flow offers one. */}
+      {own && <NextChapterOffer userId={viewer.userId} courseId={own.course_id} percentDone={100} />}
     </>
   );
 }

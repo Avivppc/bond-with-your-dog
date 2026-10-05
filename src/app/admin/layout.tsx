@@ -7,21 +7,22 @@ import { AdminTopBar } from "./_components/AdminTopBar";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: { absolute: "Bonded Academy · Admin" }, robots: { index: false, follow: false } };
+export const metadata = { title: { default: "Bonded Academy · Admin", template: "%s · Admin" }, robots: { index: false, follow: false } };
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-admin" });
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, role } = await requireStaff("content");
+  const nav = adminNavFor(role);
 
   return (
     <div
       className={`${inter.variable} min-h-screen bg-[#f8f8f8] text-[14px] leading-[1.45] text-[#1a1a19] antialiased`}
       style={{ fontFamily: "var(--font-admin), Inter, system-ui, sans-serif" }}
     >
-      <AdminSidebar nav={adminNavFor(role)} />
+      <AdminSidebar nav={nav} />
       <div className="lg:pl-[217px]">
-        <AdminTopBar email={user.email ?? ""} canSeeContacts={canPerform(role, "sales")} />
+        <AdminTopBar email={user.email ?? ""} canSeeContacts={canPerform(role, "sales")} nav={nav} />
         <main className="mx-auto max-w-[1180px] px-4 py-8 sm:px-8">{children}</main>
       </div>
     </div>

@@ -47,7 +47,7 @@ export default async function ReferPage() {
         </p>
         {link ? (
           <div className="row">
-            <input className="input" readOnly value={link} aria-label="Your referral link" style={{ flex: 1, minWidth: 220, background: "#fff" }} />
+            <input className="input" readOnly value={link} aria-label="Your referral link" style={{ flex: 1, minWidth: 220, background: "#fff", color: "var(--ink)" }} />
             <CopyButton value={link} label="Copy link" className="btn btn-primary btn-sm" />
           </div>
         ) : (
@@ -55,7 +55,7 @@ export default async function ReferPage() {
         )}
       </div>
 
-      <div className="grid-3">
+      <div className="stat-row">
         {[
           { label: "Friends joined", value: summary?.friends_joined ?? 0 },
           { label: "Friends who bought", value: summary?.friends_converted ?? 0 },

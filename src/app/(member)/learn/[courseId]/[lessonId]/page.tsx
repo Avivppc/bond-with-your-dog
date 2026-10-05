@@ -10,13 +10,22 @@ import { Breadcrumbs, Ms, StateCard, Tip } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
 import LessonPlayer from "./LessonPlayer";
 import { resumePoint } from "@/lib/member/resume";
+import { minutesLeftToWatch } from "@/lib/member/watch";
 import QuizPlayer from "./QuizPlayer";
 import { CompleteLessonButton } from "./CompleteLessonButton";
 import { LessonAside } from "./LessonAside";
 import { DownloadsTab, OverviewTab, PracticeTab, QuestionsTab, TabBar, type QuestionRow } from "./LessonTabs";
 import { asTab, parsePracticeSteps } from "./lesson-data";
+import LessonAssistant from "@/components/assistant/LessonAssistant";
 
 export const dynamic = "force-dynamic";
+
+/** The browser tab shows the lesson's name instead of the marketing site's title. */
+export async function generateMetadata({ params }: { params: Promise<{ lessonId: string }> }) {
+  const { lessonId } = await params;
+  const { data } = await (await createClient()).from("lessons").select("title").eq("id", lessonId).maybeSingle();
+  return { title: (data?.title as string | undefined) ?? "Lesson" };
+}
 
 export default async function LessonPage({ params, searchParams }: { params: Promise<{ courseId: string; lessonId: string }>; searchParams: Promise<{ tab?: string }> }) {
   const { courseId, lessonId } = await params;
@@ -35,10 +44,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
   const [data, { data: canAccess }, videoRes, filesRes, questionsRes, progressRes] = await Promise.all([
     loadStudentCourse(supabase, courseId, viewer.userId),
     supabase.rpc("can_access_lesson", { p_lesson_id: lessonId }),
-    createServiceClient().from("lesson_videos").select("lesson_id").eq("lesson_id", lessonId).maybeSingle(),
+    createServiceClient().from("lesson_videos").select("lesson_id, duration_seconds").eq("lesson_id", lessonId).maybeSingle(),
     supabase.from("lesson_files").select("id, file_name, size_bytes").eq("lesson_id", lessonId).order("position"),
     supabase.rpc("lesson_questions_for", { p_lesson_id: lessonId }),
-    supabase.from("lesson_progress").select("watch_seconds").eq("user_id", viewer.userId).eq("lesson_id", lessonId).maybeSingle(),
+    supabase.from("lesson_progress").select("watch_seconds, played_seconds").eq("user_id", viewer.userId).eq("lesson_id", lessonId).maybeSingle(),
   ]);
   if (progressRes.error) console.error("[lesson] progress load failed", progressRes.error.message);
   if (!data) notFound();
@@ -60,6 +69,10 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
   const questions = (questionsRes.data ?? []) as QuestionRow[];
   const steps = parsePracticeSteps(lesson.practice_steps);
   const completed = state?.kind === "completed";
+  // Video lessons complete once most of the video was played (checked again in complete_lesson).
+  const playedSeconds = (progressRes.data?.played_seconds as number | null | undefined) ?? 0;
+  const videoSeconds = (videoRes.data?.duration_seconds as number | null | undefined) ?? 0;
+  const minutesToWatch = completed || videoSeconds <= 0 ? 0 : minutesLeftToWatch(playedSeconds, videoSeconds);
   const base = `/learn/${courseId}/${lessonId}`;
   const lessonHref = (id: string) => `/learn/${courseId}/${id}`;
   const idx = data.lessons.findIndex((l) => l.id === lessonId);
@@ -92,6 +105,12 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
                 lessonId={lesson.id}
                 hasPlayback={Boolean(videoRes.data)}
                 resumeAt={resumePoint({ watchSeconds: (progressRes.data?.watch_seconds as number | null | undefined) ?? null, completed })}
+                poster={data.lessons[idx]?.thumbnail_url || data.course.image}
+                completed={completed}
+                playedSeconds={playedSeconds}
+                next={next ? { href: lessonHref(next.id), title: next.title } : null}
+                doneHref={`${base}/complete`}
+                practiceHref={`/practice?lesson=${lessonId}`}
               />
             </div>
           )}
@@ -118,10 +137,12 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
                 Previous
               </Link>
             ) : (
-              <span />
+              <span className="faint" style={{ paddingLeft: 8 }}>
+                Lesson {number} of {data.lessons.length}
+              </span>
             )}
             <div className="row">
-              {!scheduled && lesson.kind !== "quiz" && <CompleteLessonButton lessonId={lesson.id} completed={completed} doneHref={`${base}/complete`} />}
+              {!scheduled && lesson.kind !== "quiz" && <CompleteLessonButton lessonId={lesson.id} completed={completed} minutesToWatch={minutesToWatch} doneHref={`${base}/complete`} />}
               {next && (
                 <Link className="btn btn-ghost btn-sm" href={lessonHref(next.id)} aria-label={`Next: ${next.title}`}>
                   Next
@@ -138,6 +159,7 @@ export default async function LessonPage({ params, searchParams }: { params: Pro
               {tab === "practice" && <PracticeTab steps={steps} lessonId={lessonId} minutes={lesson.practice_minutes} />}
               {tab === "downloads" && <DownloadsTab lessonId={lessonId} files={files} />}
               {tab === "questions" && <QuestionsTab questions={questions} lessonId={lessonId} courseId={courseId} />}
+              {canAccess && <LessonAssistant lessonId={lessonId} />}
             </>
           )}
         </div>

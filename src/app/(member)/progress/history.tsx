@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { SoonLink } from "@/components/app/SoonLink";
 import type { SkillLevel } from "@/lib/member/viewer";
 import { dateLabel, type SkillMilestone } from "@/lib/practice/skill-history";
@@ -22,7 +21,7 @@ export function RecentMilestonesCard({ rows, todayIso }: { rows: readonly Milest
       <span className="eyebrow muted">Recent milestones</span>
       <div className="list">
         {rows.map((m) => (
-          <SoonLink key={`${m.moveId}-${m.level}-${m.on}`} className="list-row" href={`/moves?move=${m.slug}`} style={{ padding: "10px 0", gap: 12 }}>
+          <SoonLink key={`${m.moveId}-${m.level}-${m.on}`} className="list-row" href={`/moves?move=${m.slug}`} style={{ padding: "10px 0", gap: 12 }} quiet>
             <div className="grow">
               <b>{m.name}</b>
               <div className="faint">

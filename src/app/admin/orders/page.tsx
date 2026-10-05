@@ -10,6 +10,8 @@ import { Card, EmptyState, INPUT, PageHeader, StatusPill, TABLE, TD, TH, THEAD, 
 import { Pagination } from "../_components/list-kit";
 import { loadOrders, ORDERS_PER_PAGE, type OrderRow } from "./orders-data";
 
+export const metadata = { title: "Orders" };
+
 export const dynamic = "force-dynamic";
 
 function OrderTableRow({ order }: { order: OrderRow }) {

@@ -147,7 +147,7 @@ export default async function MyCoursesPage() {
       ))}
 
       {owned > 0 && (
-        <Link className="card flat" href={certificates[0] ? `/certificates/${certificates[0].code}` : "/progress"} style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
+        <Link className="card flat cert-row" href={certificates[0] ? `/certificates/${certificates[0].code}` : "/progress"} style={{ flexDirection: "row", alignItems: "center", gap: 18 }}>
           <div className="badge" style={{ padding: 0, background: "none", boxShadow: "none" }}>
             <div className="seal">
               <Ms name="workspace_premium" fill />

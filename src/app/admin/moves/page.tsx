@@ -5,6 +5,8 @@ import { matchesMoveSearch } from "@/lib/content/moves";
 import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, INPUT, Notice, PageHeader, StatusPill } from "@/app/admin/_components/ui";
 import type { MoveRow } from "./data";
 
+export const metadata = { title: "Moves Library" };
+
 export const dynamic = "force-dynamic";
 
 const MAX_MOVES = 500;

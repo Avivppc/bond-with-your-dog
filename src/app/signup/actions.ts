@@ -13,6 +13,7 @@ import { welcomeEmail } from "@/lib/welcome-email";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
 import { claimReferralCode } from "@/lib/referrals-server";
 import { SIGNUP_COMPLETED_COOKIE, SIGNUP_MARKER_MAX_AGE_SECONDS } from "@/lib/signup-marker";
+import { clientIp, TURNSTILE_FIELD, verifyTurnstile } from "@/lib/turnstile";
 
 const Schema = z.object({
   full_name: z.string().min(2),
@@ -38,8 +39,12 @@ export async function signup(formData: FormData) {
     );
   }
 
-  const supabase = await createClient();
   const h = await headers();
+  if (!(await verifyTurnstile(String(formData.get(TURNSTILE_FIELD) ?? ""), clientIp(h)))) {
+    redirect(`/signup?${nextParam}&error=` + encodeURIComponent("Please confirm you're not a robot and try again."));
+  }
+
+  const supabase = await createClient();
   const origin = h.get("origin") ?? "";
 
   const { data, error } = await supabase.auth.signUp({

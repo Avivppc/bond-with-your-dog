@@ -1,4 +1,4 @@
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import Link from "next/link";
 
@@ -7,7 +7,7 @@ export const metadata = { title: "5 Tips for Better Flow", robots: { index: fals
 export default function BlogPost5TipsPage() {
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-20">
 
         {/* Breadcrumb */}

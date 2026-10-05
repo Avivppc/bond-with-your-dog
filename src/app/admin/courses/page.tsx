@@ -4,6 +4,8 @@ import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, INPUT, PageHeader } from 
 import { CourseTable } from "../_components/CourseTable";
 import { loadAdminCourses } from "../_components/course-stats";
 
+export const metadata = { title: "Courses" };
+
 export const dynamic = "force-dynamic";
 
 export default async function AdminCoursesPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {

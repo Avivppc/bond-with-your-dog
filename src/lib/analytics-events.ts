@@ -18,6 +18,13 @@ export const EVENTS = {
   chapterPageViewed: "chapter_page_viewed",
   waitlistClicked: "waitlist_clicked",
   signupCompleted: "signup_completed",
+  installPromptShown: "install_prompt_shown",
+  installPromptClicked: "install_prompt_clicked",
+  installWizardStep: "install_wizard_step",
+  installWizardGo: "install_wizard_go",
+  installAccepted: "install_accepted",
+  installDismissed: "install_dismissed",
+  appInstalled: "app_installed",
 } as const;
 
 export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
@@ -28,7 +35,9 @@ export type PlanCtaLocation =
   | "courses_stage"
   | "courses_final"
   | "quiz_result"
-  | "stories";
+  | "stories"
+  /** A button in a section built in the website editor. */
+  | "site_section";
 
 export interface PlanCtaProps {
   plan: Tier;

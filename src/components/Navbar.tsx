@@ -4,17 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { DEFAULT_THEME, type NavLink } from "@/lib/site/theme";
 
-const LOGO_URL = "/images/logo.png";
+interface NavbarProps {
+  /** From Website → Theme (the SiteHeader server component passes them); defaults = the built-in design. */
+  links?: readonly NavLink[];
+  button?: NavLink;
+  logo?: string;
+}
 
-const navLinks = [
-  { href: "/courses", label: "Bonded Journey" },
-  { href: "/stories", label: "Stories" },
-  { href: "/about", label: "About Roni" },
-  { href: "/quiz", label: "Find Your Journey" },
-];
-
-export default function Navbar() {
+export default function Navbar({ links: navLinks = DEFAULT_THEME.header.links, button = DEFAULT_THEME.header.button, logo = DEFAULT_THEME.logo }: NavbarProps) {
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const [isAuthed, setIsAuthed] = useState<boolean | null>(null);
@@ -46,7 +45,7 @@ export default function Navbar() {
     >
       <div className="flex justify-between items-center px-6 md:px-8 h-20 max-w-7xl mx-auto">
         <Link href="/" className="block">
-          <img alt="BONDED Logo" className="h-10 w-auto" src={LOGO_URL} />
+          <img alt="BONDED Logo" className="h-10 w-auto" src={logo} />
         </Link>
 
         <div
@@ -80,10 +79,10 @@ export default function Navbar() {
             </Link>
           )}
           <Link
-            href="/signup"
+            href={button.href}
             className="bg-primary text-on-primary px-6 py-2.5 rounded-full font-headline font-bold text-sm hover:scale-95 active:scale-90 transition-transform"
           >
-            Build Your Bond
+            {button.label}
           </Link>
           <button
             className="md:hidden p-2 rounded-lg text-slate-600 hover:bg-surface-container transition-colors"

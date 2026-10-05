@@ -8,6 +8,8 @@ import { AnalyticsFilters } from "@/app/admin/_components/AnalyticsFilters";
 import { AreaChart, BarList, Donut } from "@/app/admin/_components/charts";
 import { analyticsContext, type AnalyticsSearchParams } from "@/app/admin/_components/analytics-context";
 
+export const metadata = { title: "Analytics" };
+
 export const dynamic = "force-dynamic";
 
 const RETENTION_MONTHS = 4;

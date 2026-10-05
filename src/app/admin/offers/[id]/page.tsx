@@ -7,6 +7,8 @@ import { priceText, type AccessLevel, type OfferFormState, type OfferFormValues 
 import { Notice, PageHeader } from "@/app/admin/_components/ui";
 import { OfferForm, type OfferCourseOption } from "./OfferForm";
 
+export const metadata = { title: "Offer" };
+
 export const dynamic = "force-dynamic";
 
 interface OfferRow {

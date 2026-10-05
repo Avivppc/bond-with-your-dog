@@ -34,7 +34,8 @@ export function PersonHeader({ person }: { person: PersonDetail }) {
         <p className="mt-0.5 text-[14px] text-[#3d3c3a]">{person.email}</p>
         <p className="mt-1 text-[12px] text-[#6c6a69]">
           Joined {shortDate(person.createdAt)} · Last sign-in {person.lastSignInAt ? shortDate(person.lastSignInAt) : "never"} · Lifetime value{" "}
-          {formatAmounts(person.lifetimeValue)} · Email marketing: {person.marketingOptIn ? "subscribed" : "not subscribed"}
+          {formatAmounts(person.lifetimeValue)} · Email marketing: {person.marketingOptIn ? "subscribed" : "not subscribed"} · Phone notifications:{" "}
+          {person.push.devices > 0 ? `on (${person.push.label})` : "off"}
         </p>
       </div>
     </header>

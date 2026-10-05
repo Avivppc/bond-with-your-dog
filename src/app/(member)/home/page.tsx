@@ -9,6 +9,8 @@ import { ArrowLink, Days, Ms } from "@/components/app/ui";
 import { WEEKDAYS } from "@/components/app/ui";
 import { VerifyEmailNotice } from "./VerifyEmailNotice";
 import { CourseProgressLine, LiveAndLibrary, RoniCard, SkillsStrip, WeekCard, lessonHref, lessonLength, mediaFor } from "./sections";
+import { loadMemberArea } from "@/lib/member-area/server";
+import type { MemberHome } from "@/lib/member-area/settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Home" };
@@ -34,12 +36,13 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
   const viewer = await requireMember("/home");
   if (!viewer.profile.onboarded_at) redirect("/welcome");
   const { verified, verify } = await searchParams;
-  const data = await loadHome(viewer);
+  const [data, { settings }] = await Promise.all([loadHome(viewer), loadMemberArea(viewer.isStaff)]);
   const dog = dogName(viewer);
+  const home = settings.home;
   const notice = <EmailNotice viewer={viewer} justVerified={verified === "1"} expired={verify === "expired"} />;
 
-  if (!data.current) return <NoCourseHome viewer={viewer} notice={notice} chosen={await chosenCourse(viewer)} />;
-  if (data.dayOne) return <DayOneHome viewer={viewer} data={data} dog={dog} notice={notice} />;
+  if (!data.current) return <NoCourseHome viewer={viewer} home={home} notice={notice} chosen={await chosenCourse(viewer)} />;
+  if (data.dayOne) return <DayOneHome viewer={viewer} data={data} dog={dog} home={home} notice={notice} />;
 
   const href = lessonHref(data);
   const total = data.current.lessons.length;
@@ -53,7 +56,7 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
             {data.nextNumber > 0 ? ` · Lesson ${data.nextNumber} of ${total}` : ""}
           </span>
           <h1 className="display">
-            Welcome back,
+            {home.welcomeBack}
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
@@ -84,18 +87,25 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
         </div>
       </div>
 
-      <div className="grid-2" data-tour="week">
-        <WeekCard data={data} />
-        <RoniCard data={data} />
-      </div>
-
-      <SkillsStrip data={data} dog={dog} />
-      <LiveAndLibrary data={data} />
+      {home.sections
+        .filter((s) => s.visible)
+        .map((s) =>
+          s.key === "week" ? (
+            <div key={s.key} className="grid-2" data-tour="week">
+              <WeekCard data={data} />
+              <RoniCard data={data} />
+            </div>
+          ) : s.key === "skills" ? (
+            <SkillsStrip key={s.key} data={data} dog={dog} />
+          ) : (
+            <LiveAndLibrary key={s.key} data={data} />
+          ),
+        )}
     </>
   );
 }
 
-function DayOneHome({ viewer, data, dog, notice }: { viewer: MemberViewer; data: HomeData; dog: string; notice: React.ReactNode }) {
+function DayOneHome({ viewer, data, dog, home, notice }: { viewer: MemberViewer; data: HomeData; dog: string; home: MemberHome; notice: React.ReactNode }) {
   const href = lessonHref(data);
   const first = data.current!.lessons[0];
   const plannedDays = viewer.profile.practice_days;
@@ -106,7 +116,7 @@ function DayOneHome({ viewer, data, dog, notice }: { viewer: MemberViewer; data:
         <div className="hero-copy">
           <span className="eyebrow">Day 1 · {data.current!.course.title}</span>
           <h1 className="display">
-            Welcome to Bonded,
+            {home.welcomeNew}
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
@@ -211,7 +221,7 @@ async function chosenCourse(viewer: MemberViewer): Promise<CourseChoice | null> 
   return choices.find((c) => c.id === id) ?? null;
 }
 
-function NoCourseHome({ viewer, notice, chosen }: { viewer: MemberViewer; notice: React.ReactNode; chosen: CourseChoice | null }) {
+function NoCourseHome({ viewer, home, notice, chosen }: { viewer: MemberViewer; home: MemberHome; notice: React.ReactNode; chosen: CourseChoice | null }) {
   return (
     <>
       {notice}
@@ -219,15 +229,11 @@ function NoCourseHome({ viewer, notice, chosen }: { viewer: MemberViewer; notice
         <div className="hero-copy">
           <span className="eyebrow">{chosen ? `Your path · ${chosen.title}` : "Welcome"}</span>
           <h1 className="display">
-            Welcome to Bonded,
+            {home.welcomeNew}
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
-          <p className="lede">
-            {chosen
-              ? `You chose to begin with ${chosen.title}. ${unlockSentence(chosen.offer)}`
-              : "Three chapters, one partnership: Foundations, Moves and Let's Dance. Choose where to begin and your first lesson will be waiting here."}
-          </p>
+          <p className="lede">{chosen ? `You chose to begin with ${chosen.title}. ${unlockSentence(chosen.offer)}` : home.noChapterText}</p>
           <div className="row" style={{ gap: 20 }}>
             {chosen?.offer ? (
               <>

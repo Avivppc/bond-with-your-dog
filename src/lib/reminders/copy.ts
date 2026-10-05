@@ -1,11 +1,13 @@
 /**
- * Wording for reminder notifications and emails. Members' own free text (video titles, notes)
- * never goes into these; only course/session titles written by the team. Pure.
+ * Wording for reminder notifications and emails, from the team's templates (Admin → Member
+ * notifications). Members' own free text (video titles, notes) never goes into these; only
+ * course/session titles written by the team. Pure.
  */
+import { noticeText, type NotificationSettings } from "../notification-settings/topics";
 import type { PracticeTarget } from "./practice";
 import type { SessionKind } from "./members";
 import { clockTime, relativeDayWord } from "./zone";
-import { FEEDBACK_OVERDUE_DAYS, type QaStage } from "./windows";
+import type { QaStage } from "./windows";
 
 export interface Notice {
   title: string;
@@ -13,20 +15,22 @@ export interface Notice {
   href: string;
 }
 
-export function practiceNotice(target: PracticeTarget, sessionMinutes: number): Notice {
-  return {
-    title: target.when === "today" ? "Today is a practice day" : "Tomorrow is a practice day",
-    body: `${sessionMinutes} minutes with your dog is all it takes. Your plan is ready.`,
-    href: "/plan",
-  };
+export function practiceNotice(settings: NotificationSettings, target: PracticeTarget, member: { firstName: string | null; sessionMinutes: number }): Notice {
+  const text = noticeText(settings, "practice", {
+    first_name: member.firstName,
+    day: target.when === "today" ? "Today" : "Tomorrow",
+    minutes: String(member.sessionMinutes),
+  });
+  return { ...text, href: "/plan" };
 }
 
-export function lessonNotice(lesson: { lessonId: string; lessonTitle: string; courseId: string; courseTitle: string }): Notice {
-  return {
-    title: `A new lesson is open: ${lesson.lessonTitle}`,
-    body: lesson.courseTitle,
-    href: `/learn/${encodeURIComponent(lesson.courseId)}/${lesson.lessonId}`,
-  };
+export function lessonNotice(
+  settings: NotificationSettings,
+  lesson: { lessonId: string; lessonTitle: string; courseId: string; courseTitle: string },
+  firstName: string | null,
+): Notice {
+  const text = noticeText(settings, "lesson_unlocked", { first_name: firstName, lesson_title: lesson.lessonTitle, course_title: lesson.courseTitle });
+  return { ...text, href: `/learn/${encodeURIComponent(lesson.courseId)}/${lesson.lessonId}` };
 }
 
 export interface SessionInfo {
@@ -36,22 +40,18 @@ export interface SessionInfo {
   startsAt: Date;
 }
 
-export function sessionNotice(session: SessionInfo, stage: QaStage, now: Date, zone: string): Notice {
-  const when = `${relativeDayWord(session.startsAt, now, zone)} at ${clockTime(session.startsAt, zone)}`;
-  const name = session.kind === "live_qa" ? "Live Q&A with Roni" : session.title;
-  return {
-    title: `${name} ${when}`,
-    body: session.kind === "live_qa" ? (stage === "day_of" ? `${session.title}. Bring your questions!` : session.title) : "You said you're coming.",
-    href: `/community/meetups/${session.id}`,
-  };
+export function sessionNotice(settings: NotificationSettings, session: SessionInfo, stage: QaStage, now: Date, zone: string, firstName: string | null): Notice {
+  const text = noticeText(settings, "live_session", {
+    first_name: firstName,
+    session: session.kind === "live_qa" ? "Live Q&A with Roni" : session.title,
+    when: `${relativeDayWord(session.startsAt, now, zone)} at ${clockTime(session.startsAt, zone)}`,
+    topic: session.kind === "live_qa" ? (stage === "day_of" ? `${session.title}. Bring your questions!` : session.title) : "You said you're coming.",
+  });
+  return { ...text, href: `/community/meetups/${session.id}` };
 }
 
-export function overdueNotice(videoId: string, days: number): Notice {
-  return {
-    title: `A feedback video has waited ${days} days`,
-    body: "Open Roni's Studio to reply.",
-    href: `/studio?id=${videoId}`,
-  };
+export function overdueNotice(settings: NotificationSettings, videoId: string, days: number): Notice {
+  return { ...noticeText(settings, "feedback_overdue", { days: String(days) }), href: `/studio?id=${videoId}` };
 }
 
 /** A short plain-text email to a member about a reminder. */
@@ -74,12 +74,12 @@ export function memberReminderEmail(firstName: string | null, notice: Notice, si
 }
 
 /** One email to the team listing newly overdue feedback videos (links only, no member text). */
-export function overdueDigestEmail(videos: readonly { id: string; days: number }[], siteUrl: string): { subject: string; text: string } {
+export function overdueDigestEmail(videos: readonly { id: string; days: number }[], siteUrl: string, thresholdDays: number): { subject: string; text: string } {
   const count = videos.length;
   return {
     subject: count === 1 ? "A feedback video is waiting for a reply" : `${count} feedback videos are waiting for a reply`,
     text: [
-      `${count === 1 ? "This video has" : "These videos have"} waited more than ${FEEDBACK_OVERDUE_DAYS} days for feedback:`,
+      `${count === 1 ? "This video has" : "These videos have"} waited more than ${thresholdDays} days for feedback:`,
       "",
       ...videos.map((v) => `• ${v.days} days: ${siteUrl}/studio?id=${v.id}`),
       "",

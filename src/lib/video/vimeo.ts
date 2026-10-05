@@ -48,5 +48,6 @@ export function vimeoEmbedUrl(ref: VimeoRef): string {
   url.searchParams.set("title", "0");
   url.searchParams.set("byline", "0");
   url.searchParams.set("portrait", "0");
+  url.searchParams.set("color", "b36200"); // control accent in the Bonded cognac
   return url.toString();
 }

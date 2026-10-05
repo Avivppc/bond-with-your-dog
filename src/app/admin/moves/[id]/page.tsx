@@ -10,6 +10,8 @@ import { MOVE_FORM_ID, MoveForm } from "../MoveForm";
 import { MOVE_COLUMNS, loadPlacementOptions, type MoveRow } from "../data";
 import { deleteMove } from "../actions";
 
+export const metadata = { title: "Move" };
+
 export const dynamic = "force-dynamic";
 
 export default async function EditMovePage({

@@ -38,6 +38,10 @@ describe("vimeoEmbedUrl", () => {
     expect(url.searchParams.get("dnt")).toBe("1");
   });
 
+  it("paints the player controls in the Bonded accent", () => {
+    expect(new URL(vimeoEmbedUrl({ id: "1", hash: null })).searchParams.get("color")).toBe("b36200");
+  });
+
   it("omits h when the video is not unlisted", () => {
     expect(new URL(vimeoEmbedUrl({ id: "1", hash: null })).searchParams.has("h")).toBe(false);
   });

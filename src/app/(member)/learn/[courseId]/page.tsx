@@ -11,6 +11,13 @@ import { plural } from "@/lib/feedback/format";
 
 export const dynamic = "force-dynamic";
 
+/** The browser tab shows the chapter's name instead of the marketing site's title. */
+export async function generateMetadata({ params }: { params: Promise<{ courseId: string }> }) {
+  const { courseId } = await params;
+  const { data } = await (await createClient()).from("courses").select("title").eq("id", courseId).maybeSingle();
+  return { title: (data?.title as string | undefined) ?? "Chapter" };
+}
+
 type PublishedOffer = PricedOffer & { slug: string; title: string; status: string };
 
 export default async function CourseOverviewPage({ params, searchParams }: { params: Promise<{ courseId: string }>; searchParams: Promise<{ enroll?: string }> }) {

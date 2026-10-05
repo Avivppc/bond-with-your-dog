@@ -35,7 +35,7 @@ insert into public.enrollments (user_id, course_id, source, expires_at)
 -- ── 0. Function surface: nothing callable by anon except the public lookups ──
 select t.ok(not has_function_privilege('anon', 'public.enroll_free(text)', 'execute'), 'anon cannot execute enroll_free');
 select t.ok(not has_function_privilege('anon', 'public.complete_lesson(uuid)', 'execute'), 'anon cannot execute complete_lesson');
-select t.ok(not has_function_privilege('anon', 'public.record_lesson_progress(uuid,integer)', 'execute'), 'anon cannot execute record_lesson_progress');
+select t.ok(not has_function_privilege('anon', 'public.record_lesson_progress(uuid,integer,integer)', 'execute'), 'anon cannot execute record_lesson_progress');
 select t.ok(has_function_privilege('anon', 'public.verify_certificate(text)', 'execute'), 'anon can verify certificates');
 select t.ok(not has_function_privilege('authenticated', 'private.emit_event(text,uuid,text,text,jsonb)', 'execute'), 'clients cannot emit events');
 

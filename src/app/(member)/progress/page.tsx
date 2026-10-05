@@ -65,7 +65,7 @@ export default async function ProgressPage() {
     id: m.id,
     slug: m.slug,
     name: m.name,
-    subtitle: [m.courseId ? courseTitle.get(m.courseId) : null, m.lessonId && lessonNumber.get(m.lessonId) ? `Lesson ${lessonNumber.get(m.lessonId)}` : null].filter(Boolean).join(" · ") || "Moves Library",
+    subtitle: [m.courseId ? courseTitle.get(m.courseId) : null, m.lessonId && lessonNumber.get(m.lessonId) ? `Lesson ${lessonNumber.get(m.lessonId)}` : null].filter(Boolean).join(" · "),
     image: m.imageUrl ?? MOVE_FALLBACK_IMAGE,
     level: levels.get(m.id) ?? null,
     history: history.has(m.id) ? historyLine(history.get(m.id)!, today) : null,

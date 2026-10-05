@@ -1,37 +1,16 @@
 "use client";
 
 import { useId, useState, type Dispatch, type SetStateAction } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { Ms } from "@/components/app/ui";
-import { MAX_STORY_PHOTOS, STORY_MEDIA_BUCKET, STORY_PHOTO_ACCEPT, storyPhotoType, validateStoryPhoto } from "@/lib/community/story-media";
+import { MAX_STORY_PHOTOS, STORY_PHOTO_ACCEPT } from "@/lib/community/story-media";
+import { uploadStoryPhoto, type UploadedStoryPhoto } from "@/lib/community/upload-story-photo";
 import { startStoryPhotoUpload } from "./hub-actions";
 
-export interface StoryPhoto {
-  path: string;
-  /** Local object URL for the thumbnail; null when the browser can't show the format (HEIC). */
-  preview: string | null;
-  name: string;
-}
+export type StoryPhoto = UploadedStoryPhoto;
 
 const THUMB = 64;
 
-/** Uploads one photo straight to storage (signed URL from the server); returns it or an error message. */
-async function uploadPhoto(file: File): Promise<{ photo: StoryPhoto } | { error: string }> {
-  const invalid = validateStoryPhoto(file);
-  const contentType = storyPhotoType(file);
-  if (invalid || !contentType) return { error: invalid ?? "Use a JPG, PNG, WebP or HEIC photo." };
-  const started = await startStoryPhotoUpload({ fileName: file.name, size: file.size, contentType });
-  if (!started.ok) return { error: started.error };
-  const { error } = await createClient()
-    .storage.from(STORY_MEDIA_BUCKET)
-    .uploadToSignedUrl(started.data.path, started.data.token, file, { contentType: started.data.contentType });
-  if (error) {
-    console.error("story photo upload failed", { error: error.message });
-    return { error: "Upload failed. Please try again." };
-  }
-  const preview = contentType === "image/heic" ? null : URL.createObjectURL(file);
-  return { photo: { path: started.data.path, preview, name: file.name } };
-}
+const uploadPhoto = (file: File) => uploadStoryPhoto(file, startStoryPhotoUpload);
 
 interface StoryPhotosProps {
   photos: readonly StoryPhoto[];

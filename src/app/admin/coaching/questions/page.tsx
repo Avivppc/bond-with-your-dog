@@ -9,6 +9,8 @@ import { AnswerForm, EditableAnswer } from "./AnswerForm";
 import { setQuestionHidden } from "./actions";
 import { asQuestionTab, QUESTION_TABS, type QuestionTab } from "./tabs";
 
+export const metadata = { title: "Lesson questions" };
+
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 25;
@@ -113,6 +115,7 @@ export default async function LessonQuestionsPage({ searchParams }: { searchPara
 function QuestionItem({ question: q, members, tab, page }: { question: QuestionRow; members: Map<string, MemberInfo>; tab: QuestionTab; page: number }) {
   const lesson = q.lessons;
   const answeredBy = q.answered_by ? members.get(q.answered_by) : undefined;
+  const replyVars = { first_name: members.get(q.user_id)?.name?.split(/\s+/)[0], lesson_title: lesson?.title };
   return (
     <li className="grid gap-4 px-5 py-4 md:grid-cols-[14rem_minmax(0,1fr)]">
       <div className="min-w-0 space-y-1 text-sm">
@@ -137,7 +140,7 @@ function QuestionItem({ question: q, members, tab, page }: { question: QuestionR
         <div className="rounded-[12px] bg-[#fafaf9] p-3">
           {q.answer ? (
             <div className="space-y-1">
-              <EditableAnswer questionId={q.id} answer={q.answer} />
+              <EditableAnswer questionId={q.id} answer={q.answer} vars={replyVars} />
               <p className="text-xs text-[#6c6a69]">
                 Answered{answeredBy ? ` by ${answeredBy.name ?? answeredBy.email ?? "the team"}` : ""}
                 {q.answered_at && (
@@ -149,7 +152,7 @@ function QuestionItem({ question: q, members, tab, page }: { question: QuestionR
               </p>
             </div>
           ) : (
-            <AnswerForm questionId={q.id} initialAnswer="" editing={false} />
+            <AnswerForm questionId={q.id} initialAnswer="" editing={false} vars={replyVars} />
           )}
         </div>
         <form action={setQuestionHidden}>

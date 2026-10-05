@@ -87,7 +87,7 @@ export default async function ProfilePage() {
           <Ms name="card_membership" color="var(--teal)" />
           <b>Membership &amp; purchases</b>
           <span className="faint">
-            {courses ?? 0} {courses === 1 ? "course" : "courses"} · orders and subscriptions
+            {plural(courses ?? 0, "chapter")} · orders and subscriptions
           </span>
         </Link>
         <Link className="card tight" href="/my-courses">

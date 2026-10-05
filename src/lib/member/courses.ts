@@ -33,25 +33,29 @@ interface CourseRow {
   image: string | null;
   chapter_number: number | null;
   requires_course_id: string | null;
+  published: boolean;
 }
 
-/** Every published course in chapter order, with this member's status for each (My Courses). */
+/**
+ * Every published course in chapter order, with this member's status for each (My Courses). A course
+ * not published yet shows only to someone enrolled who may see it (the team previewing it before
+ * launch; RLS keeps unpublished courses from students).
+ */
 export async function loadMyCourses(userId: string): Promise<{ cards: CourseCardData[]; certificates: CertificateRow[] }> {
   const supabase = await createClient();
   const [coursesRes, enrolled, certsRes] = await Promise.all([
     supabase
       .from("courses")
-      .select("id, title, description, image, chapter_number, requires_course_id")
-      .eq("published", true)
+      .select("id, title, description, image, chapter_number, requires_course_id, published")
       .order("chapter_number", { ascending: true, nullsFirst: false })
       .order("created_at"),
     loadEnrolled(supabase),
     supabase.from("certificates").select("code, course_title, issued_at").eq("user_id", userId).order("issued_at", { ascending: false }),
   ]);
   if (coursesRes.error) console.error("[my-courses] courses load failed", coursesRes.error.message);
-  const rows = (coursesRes.data ?? []) as CourseRow[];
-  const ids = rows.map((r) => r.id);
   const enrolledIds = new Set(enrolled.map((e) => e.courseId));
+  const rows = ((coursesRes.data ?? []) as CourseRow[]).filter((r) => r.published || enrolledIds.has(r.id));
+  const ids = rows.map((r) => r.id);
 
   const [loaded, movesRes, offersRes] = await Promise.all([
     Promise.all(rows.map((r) => (enrolledIds.has(r.id) ? loadStudentCourse(supabase, r.id, userId) : Promise.resolve(null)))),

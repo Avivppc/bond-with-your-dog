@@ -1,10 +1,11 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import GoogleButton from "@/components/auth/GoogleButton";
 import TestimonialCard from "@/components/TestimonialCard";
 import { testimonialById } from "@/lib/testimonials";
 import { MARKETING_CONSENT_LABEL } from "@/lib/auth/marketing-consent";
+import { Turnstile } from "@/components/Turnstile";
 import TrackOnMount from "@/components/analytics/TrackOnMount";
 import { EVENTS } from "@/lib/analytics-events";
 import { signup } from "./actions";
@@ -38,7 +39,7 @@ export default async function SignupPage({
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-24 pb-20 min-h-screen px-5 md:px-8">
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-16 items-start pt-6 lg:pt-12">
 
@@ -129,6 +130,8 @@ export default async function SignupPage({
                   />
                   <span>{MARKETING_CONSENT_LABEL}</span>
                 </label>
+
+                <Turnstile />
 
                 <button
                   type="submit"

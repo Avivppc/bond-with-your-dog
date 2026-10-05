@@ -4,6 +4,8 @@ import { BTN_PRIMARY, BTN_SECONDARY, PageHeader } from "@/app/admin/_components/
 import { MOVE_FORM_ID, MoveForm, type MoveDefaults } from "../MoveForm";
 import { loadPlacementOptions } from "../data";
 
+export const metadata = { title: "New move" };
+
 export const dynamic = "force-dynamic";
 
 const EMPTY_MOVE: MoveDefaults = {

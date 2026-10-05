@@ -1,0 +1,89 @@
+/* "Install app": the top-bar button, the step-by-step guide (bottom sheet on phones, centred card
+   on wide screens), the "your turn" bar and the Home nudge. Ported from SkiFit, in Bonded's
+   member-app tokens. */
+
+.member-app .install-btn { display: inline-flex; align-items: center; gap: 4px; height: 36px; padding: 0 14px 0 10px; border-radius: 999px; background: var(--orange-soft); color: var(--cognac); font-weight: 600; font-size: 13.5px; white-space: nowrap; transition: background .2s, transform .2s; }
+.member-app .install-btn:hover { background: #ffe6c4; transform: translateY(-1px); }
+.member-app .install-btn .ms { font-size: 18px; }
+/* Small phones: "Install" keeps its word. Until the app is installed, the top-bar search (squeezed
+   to a sliver there) steps aside and the bar tightens; once installed the button is gone and the
+   search is back. */
+.member-app .topbar .brand-mini { flex-shrink: 0; }
+@media (max-width: 480px) {
+  .member-app .install-btn { height: 34px; padding: 0 12px 0 8px; font-size: 13px; flex-shrink: 0; }
+  .member-app .install-btn-more { display: none; }
+  .member-app .topbar:has(.install-btn) { padding-left: 12px; padding-right: 12px; gap: 8px; }
+  .member-app .topbar:has(.install-btn) form[role="search"] { display: none; }
+  .member-app .topbar:has(.install-btn) .top-right { gap: 8px; margin-left: auto; }
+  .member-app .topbar:has(.install-btn) .brand-mini img { width: 92px !important; }
+}
+
+.member-app .install-backdrop { position: fixed; inset: 0; z-index: 90; background: rgba(10, 20, 24, .38); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); animation: install-fade .2s ease-out; }
+.member-app .install-sheet { position: fixed; z-index: 91; left: 0; right: 0; bottom: 0; max-height: calc(100dvh - 24px); overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 22px calc(22px + env(safe-area-inset-bottom, 0px)); background: var(--card); border-radius: 26px 26px 0 0; box-shadow: var(--shadow-lift); text-align: center; animation: install-rise .32s cubic-bezier(.2, .9, .3, 1); }
+@media (min-width: 721px) {
+  .member-app .install-sheet { left: 50%; right: auto; bottom: auto; top: 50%; width: 420px; transform: translate(-50%, -50%); border-radius: var(--r-lg); animation: install-pop .26s cubic-bezier(.2, .9, .3, 1); }
+}
+.member-app .install-sheet-close { position: absolute; top: 12px; right: 12px; width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-3); }
+.member-app .install-sheet-close:hover { background: var(--tint); }
+.member-app .install-dots { display: flex; gap: 6px; }
+.member-app .install-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--tint-2); transition: width .25s, background .25s; }
+.member-app .install-dots i.on { width: 22px; border-radius: 4px; background: var(--cognac); }
+.member-app .install-stepnum { font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+.member-app .install-title { font-family: var(--display); font-size: 22px; line-height: 1.25; font-weight: 700; color: var(--ink); max-width: 320px; }
+.member-app .install-title strong { color: var(--cognac); }
+.member-app .install-video { width: 100%; max-width: 300px; aspect-ratio: 720 / 920; border-radius: 20px; overflow: hidden; background: var(--tint); }
+.member-app .install-video video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.member-app .install-reassure { font-size: 14px; line-height: 1.5; color: var(--ink-2); max-width: 340px; }
+.member-app .install-next { width: 100%; max-width: 340px; }
+.member-app .install-back { font-size: 13.5px; color: var(--ink-3); padding: 4px 8px; }
+.member-app .install-back:hover { color: var(--ink); }
+
+/* "Your turn": the sheet has stepped aside so the real Share / ⋮ is reachable. */
+.member-app .install-go { position: fixed; z-index: 91; left: 12px; right: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: none; animation: install-fade .25s ease-out; }
+.member-app .install-go--bottom, .member-app .install-go--none { bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
+.member-app .install-go--top { top: calc(12px + env(safe-area-inset-top, 0px)); flex-direction: column-reverse; align-items: flex-end; }
+.member-app .install-go--top.install-go--left { align-items: flex-start; }
+.member-app .install-go-banner { pointer-events: auto; width: 100%; max-width: 420px; display: flex; align-items: center; gap: 8px; padding: 12px 10px 12px 18px; border-radius: 18px; background: var(--ink); color: #fff; box-shadow: var(--shadow-lift); }
+.member-app .install-go-text { flex: 1; text-align: left; font-size: 15px; line-height: 1.35; color: inherit; }
+.member-app .install-go-text small { display: block; font-size: 12.5px; opacity: .72; margin-top: 2px; }
+.member-app .install-go-close { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: #fff; }
+.member-app .install-go-close:hover { background: rgba(255, 255, 255, .12); }
+.member-app .install-go-arrow.ms { font-size: 44px; color: var(--cognac); animation: install-bounce 1.1s ease-in-out infinite; }
+.member-app .install-go--top .install-go-arrow.ms { margin-right: 18px; }
+.member-app .install-go--top.install-go--left .install-go-arrow.ms { margin: 0 0 0 18px; }
+
+/* The nudge on Home, above the phone tab bar. */
+.member-app .install-nudge { position: fixed; z-index: 39; left: 12px; right: 12px; bottom: calc(78px + env(safe-area-inset-bottom, 0px)); display: flex; align-items: center; border-radius: 18px; background: var(--card); box-shadow: var(--shadow-lift); animation: install-rise .32s cubic-bezier(.2, .9, .3, 1); }
+.member-app .install-nudge-main { flex: 1; display: flex; align-items: center; gap: 12px; padding: 12px 6px 12px 12px; text-align: left; color: var(--ink); }
+.member-app .install-nudge-icon.ms { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 10px; background: var(--orange-soft); color: var(--cognac); font-size: 20px; }
+.member-app .install-nudge-text { flex: 1; font-weight: 600; font-size: 14.5px; }
+.member-app .install-nudge-text small { display: block; font-weight: 400; font-size: 12.5px; color: var(--ink-3); }
+.member-app .install-nudge-close { width: 40px; height: 40px; display: grid; place-items: center; color: var(--ink-3); border-radius: 50%; margin-right: 4px; }
+@media (min-width: 961px) {
+  .member-app .install-nudge { display: none; }
+}
+
+@keyframes install-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes install-rise { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes install-pop { from { opacity: 0; transform: translate(-50%, -46%) scale(.97); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+@keyframes install-bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(8px); } }
+.member-app .install-go--top .install-go-arrow.ms { animation-name: install-bounce-up; }
+@keyframes install-bounce-up { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .member-app .install-sheet, .member-app .install-backdrop, .member-app .install-go, .member-app .install-nudge, .member-app .install-go-arrow.ms { animation: none; }
+}
+
+/* Phone notifications: the card on the Notifications page and the ask after installing. */
+.member-app .push-banner { flex-direction: row; align-items: center; gap: 14px; flex-wrap: wrap; }
+.member-app .push-banner-icon.ms { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--orange-soft); color: var(--cognac); flex-shrink: 0; }
+.member-app .push-prompt { position: fixed; z-index: 85; left: 12px; right: 12px; bottom: calc(84px + env(safe-area-inset-bottom, 0px)); max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 22px 20px 14px; border-radius: var(--r-lg); background: var(--card); box-shadow: var(--shadow-lift); text-align: center; animation: install-rise .32s cubic-bezier(.2, .9, .3, 1); }
+.member-app .push-prompt .btn { width: 100%; }
+.member-app .push-prompt-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; font-size: 14px; color: var(--ink-2); }
+.member-app .push-prompt-list li::before { content: "✓  "; color: var(--teal); font-weight: 700; }
+@media (min-width: 961px) {
+  .member-app .push-prompt { bottom: 24px; right: 24px; left: auto; margin: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .member-app .push-prompt { animation: none; }
+}

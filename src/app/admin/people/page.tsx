@@ -2,11 +2,15 @@ import Link from "next/link";
 import { requireStaff } from "@/lib/admin";
 import { pageWindow, parsePage } from "@/lib/admin-helpers/pagination";
 import { formatAmounts } from "@/lib/admin-helpers/money";
-import { BTN_PRIMARY, Card, EmptyState, Notice, PageHeader, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
+import { BTN_PRIMARY, BTN_SECONDARY, Card, EmptyState, Notice, PageHeader, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
 import { Avatar, MENU_ITEM, OptionsMenu, Pagination, shortDate } from "../_components/list-kit";
 import { ContactsToolbar } from "./ContactsToolbar";
 import { PasswordResetButton } from "./PasswordResetButton";
+import { BULK_FORM_ID, BulkBar, SelectAllBox } from "./BulkBar";
+import { loadOfferOptions } from "./_lib/person-data";
 import { loadPeople, parseSegment, PEOPLE_PER_PAGE, SEGMENTS, type PeoplePage, type PersonRow, type Segment } from "./_lib/people-data";
+
+export const metadata = { title: "Contacts" };
 
 export const dynamic = "force-dynamic";
 
@@ -25,26 +29,39 @@ function ContactRow({ person }: { person: PersonRow }) {
   const href = `/admin/people/${person.userId}`;
   return (
     <tr className={TROW}>
+      <td className={`${TD} w-10 pr-0`}>
+        <input type="checkbox" name="ids" value={person.userId} form={BULK_FORM_ID} aria-label={`Select ${person.email}`} className="h-4 w-4 accent-[#343332]" />
+      </td>
       <td className={TD}>
         <Link href={href} className="flex items-center gap-3 font-medium hover:underline">
           <Avatar name={name} src={person.avatarUrl} />
           <span className="min-w-0">
             <span className="block truncate">{name}</span>
+            <span className="block truncate text-[12px] font-normal text-[#6c6a69] md:hidden">{person.email}</span>
             {person.staffRole && <span className="text-[12px] font-normal capitalize text-[#6c6a69]">{person.staffRole}</span>}
           </span>
         </Link>
       </td>
-      <td className={`${TD} text-[#3d3c3a]`}>{person.email}</td>
-      <td className={TD}>
+      <td className={`${TD} text-[#3d3c3a] max-md:hidden`}>{person.email}</td>
+      <td className={`${TD} max-md:hidden`}>
         {person.marketingOptIn ? (
           <span className="rounded-full bg-[#e3f5e8] px-2.5 py-0.5 text-[12px] font-medium text-[#1c6b35]">Subscribed</span>
         ) : (
           <span className="text-[#9b9997]">Not subscribed</span>
         )}
       </td>
-      <td className={`${TD} whitespace-nowrap tabular-nums`}>{formatAmounts(person.lifetimeValue)}</td>
-      <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{shortDate(person.createdAt)}</td>
-      <td className={`${TD} whitespace-nowrap text-[#6c6a69]`}>{person.lastSignInAt ? shortDate(person.lastSignInAt) : "Never signed in"}</td>
+      <td className={`${TD} whitespace-nowrap max-md:hidden`}>
+        {person.push.devices > 0 ? (
+          <span className="rounded-full bg-[#e3f5e8] px-2.5 py-0.5 text-[12px] font-medium text-[#1c6b35]" title={`Phone notifications on: ${person.push.label}`}>
+            On · {person.push.label}
+          </span>
+        ) : (
+          <span className="text-[#9b9997]">Off</span>
+        )}
+      </td>
+      <td className={`${TD} whitespace-nowrap tabular-nums max-md:hidden`}>{formatAmounts(person.lifetimeValue)}</td>
+      <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-lg:hidden`}>{shortDate(person.createdAt)}</td>
+      <td className={`${TD} whitespace-nowrap text-[#6c6a69] max-lg:hidden`}>{person.lastSignInAt ? shortDate(person.lastSignInAt) : "Never signed in"}</td>
       <td className={`${TD} text-right`}>
         <OptionsMenu label={`Options for ${person.email}`}>
           <Link href={href} className={MENU_ITEM}>
@@ -75,7 +92,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
   const q = typeof params.q === "string" ? params.q.trim().slice(0, MAX_SEARCH) : "";
   const segment = parseSegment(params.segment);
   const requested = parsePage(params.page);
-  const result = await loadPeopleClamped(q, segment, requested);
+  const [result, offers] = await Promise.all([loadPeopleClamped(q, segment, requested), loadOfferOptions()]);
   const win = pageWindow(result.total, requested, PEOPLE_PER_PAGE);
 
   const hrefFor = (page: number) => {
@@ -88,9 +105,23 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
       <PageHeader
         title="Contacts"
         actions={
-          <Link href="/admin/people/add" className={BTN_PRIMARY}>
-            Add contacts
-          </Link>
+          <>
+            <Link href="/admin/people/export" className={BTN_SECONDARY} prefetch={false}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                download
+              </span>
+              Export
+            </Link>
+            <Link href="/admin/people/import" className={BTN_SECONDARY}>
+              <span className="material-symbols-outlined text-[18px]" aria-hidden>
+                upload
+              </span>
+              Import
+            </Link>
+            <Link href="/admin/people/add" className={BTN_PRIMARY}>
+              Add contacts
+            </Link>
+          </>
         }
       />
       {typeof params.ok === "string" && <Notice tone="success">{params.ok}</Notice>}
@@ -109,6 +140,7 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
             <Pagination page={win.page} pages={win.pages} hrefFor={hrefFor} />
           </span>
         </div>
+        <BulkBar offers={offers} returnTo={hrefFor(win.page)} />
         {result.failed ? (
           <EmptyState title="Contacts couldn't be loaded.">Please refresh the page. If it keeps happening, check the server logs.</EmptyState>
         ) : result.rows.length === 0 ? (
@@ -120,12 +152,16 @@ export default async function ContactsPage({ searchParams }: { searchParams: Pro
             <table className={TABLE}>
               <thead className={THEAD}>
                 <tr>
+                  <th className={`${TH} w-10 pr-0`}>
+                    <SelectAllBox />
+                  </th>
                   <th className={TH}>Name</th>
-                  <th className={TH}>Email</th>
-                  <th className={TH}>Email marketing</th>
-                  <th className={TH}>Lifetime value</th>
-                  <th className={TH}>Added date</th>
-                  <th className={TH}>Last activity</th>
+                  <th className={`${TH} max-md:hidden`}>Email</th>
+                  <th className={`${TH} max-md:hidden`}>Email marketing</th>
+                  <th className={`${TH} max-md:hidden`}>Phone notifications</th>
+                  <th className={`${TH} max-md:hidden`}>Lifetime value</th>
+                  <th className={`${TH} max-lg:hidden`}>Added date</th>
+                  <th className={`${TH} max-lg:hidden`}>Last activity</th>
                   <th className={TH}>
                     <span className="sr-only">Options</span>
                   </th>

@@ -5,6 +5,8 @@ import data from "../../../../../data/kajabi/bonded-courses.json";
 import { countPlan, planImport, type KajabiExport } from "@/lib/kajabi-import/plan";
 import { ImportForm } from "./ImportForm";
 
+export const metadata = { title: "Import from Kajabi" };
+
 export const dynamic = "force-dynamic";
 // Copying ~60 images from Kajabi's CDN and the lesson PDFs takes a while.
 export const maxDuration = 300;

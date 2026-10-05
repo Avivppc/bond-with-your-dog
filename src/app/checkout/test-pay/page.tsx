@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import { createClient } from "@/lib/supabase/server";
 import { configuredProvider } from "@/lib/payments/provider";
 import { formatMoney, formatOfferPrice, type PricedOffer } from "@/lib/pricing";
@@ -27,7 +27,7 @@ export default async function TestPayPage({ searchParams }: { searchParams: Prom
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-32 pb-20 max-w-md mx-auto px-5 min-h-screen" style={{ backgroundColor: "#edf8ff" }}>
         <div className="bg-white rounded-2xl p-6 shadow-sm space-y-4 border-2 border-dashed border-amber-400">
           <p className="text-xs font-bold uppercase tracking-widest text-amber-700">Test payment — no real money</p>

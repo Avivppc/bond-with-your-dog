@@ -3,6 +3,8 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { accessGrantedEmail, sendEmail } from "@/lib/email";
 import type { BillingEvent } from "./types";
 import { validatePayment } from "./validate-payment";
+import { notifyTeamSafely } from "@/lib/notify-team";
+import { formatMoney } from "@/lib/pricing";
 
 /**
  * Applies provider-agnostic billing events to orders, subscriptions and access.
@@ -18,6 +20,7 @@ export class BillingIgnored extends Error {}
 
 interface OfferRow {
   id: string;
+  title: string;
   payment_type: "free" | "one_time" | "subscription";
   days_of_access: number | null;
   provider_price_id: string | null;
@@ -103,7 +106,7 @@ export async function notifyAccessGranted(userId: string, offerId: string): Prom
 async function loadOffer(sb: Sb, offerId: string): Promise<OfferRow> {
   const { data, error } = await sb
     .from("offers")
-    .select("id, payment_type, days_of_access, provider_price_id")
+    .select("id, title, payment_type, days_of_access, provider_price_id")
     .eq("id", offerId)
     .single();
   if (error || !data) throw new Error(`offer ${offerId} not found`);
@@ -146,11 +149,21 @@ async function recordPayment(sb: Sb, row: LedgerRow): Promise<void> {
  * paid order re-applies the (idempotent) grant; refunded/canceled/failed orders never
  * get access. The access email is sent only on the pending → paid transition.
  */
+/** Never throws: the order is already paid and fulfilled when this runs. */
+async function notifyTeamOfPurchase(sb: Sb, userId: string, offerTitle: string, cents: number, currency: string): Promise<void> {
+  await notifyTeamSafely("orders", async () => {
+    const { data } = await sb.auth.admin.getUserById(userId);
+    const who = data.user?.email ?? "A member";
+    const price = cents > 0 ? ` for ${formatMoney(cents, currency.toUpperCase())}` : " (free)";
+    return { subject: `New purchase: ${offerTitle}`, lines: [`${who} bought ${offerTitle}${price}.`], path: `/admin/people/${userId}` };
+  });
+}
+
 export async function fulfillOrder(orderId: string, payment: FulfillmentPayment): Promise<void> {
   const sb = createServiceClient();
   const { data: order } = await sb
     .from("orders")
-    .select("id, user_id, offer_id, status, amount_cents, currency")
+    .select("id, user_id, offer_id, status, amount_cents, currency, discount_code_id")
     .eq("id", orderId)
     .maybeSingle();
   if (!order) throw new Error(`order ${orderId} not found`);
@@ -210,12 +223,29 @@ export async function fulfillOrder(orderId: string, payment: FulfillmentPayment)
     currency: order.currency,
     payment_method: payment.paymentMethod,
   });
-  if ((transitioned ?? []).length > 0) await notifyAccessGranted(order.user_id, order.offer_id);
+  const firstTimePaid = (transitioned ?? []).length > 0;
+  if (firstTimePaid) await notifyAccessGranted(order.user_id, order.offer_id);
 
   // Referral: converts a referred friend's first purchase / consumes a used reward. Idempotent, so a
   // failure throws and the provider retries the webhook (otherwise a used reward would stay usable).
   const { error: referralError } = await sb.rpc("referral_order_paid", { p_order_id: order.id });
   if (referralError) throw new Error(`referral settlement failed for order ${order.id}: ${referralError.message}`);
+
+  // A personal code from an email flow works once: it now belongs to this order.
+  if (order.discount_code_id) {
+    const { data: redeemed, error: codeError } = await sb
+      .from("discount_codes")
+      .update({ redeemed_at: new Date().toISOString(), order_id: order.id })
+      .eq("id", order.discount_code_id)
+      .or(`redeemed_at.is.null,order_id.eq.${order.id}`)
+      .select("id");
+    if (codeError) throw new Error(`discount code redemption failed for order ${order.id}: ${codeError.message}`);
+    // Only one open/paid order can hold a code (orders_one_per_code), so this should never happen.
+    if (!redeemed?.length) console.error("[billing] discount code was already used by another order", { orderId: order.id, codeId: order.discount_code_id });
+  }
+
+  // Last, once everything that matters is done; it never throws.
+  if (firstTimePaid) await notifyTeamOfPurchase(sb, order.user_id, offer.title, payment.amountCents ?? order.amount_cents, order.currency);
 }
 
 export async function applyBillingEvent(provider: string, event: BillingEvent): Promise<void> {

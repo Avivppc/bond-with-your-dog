@@ -4,8 +4,11 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { pageWindow, parsePage } from "@/lib/admin-helpers/pagination";
 import { ilikePattern, parseSearch } from "@/lib/admin-helpers/search";
 import { leadTierLabel } from "@/lib/admin-helpers/display";
-import { BTN_SECONDARY, Card, EmptyState, INPUT, PageHeader, TABLE, TD, TH, THEAD, TROW } from "../_components/ui";
+import { BTN_SECONDARY, Card, EmptyState, INPUT, PageHeader, TABLE, TD, TH, THEAD, TROW, Tabs } from "../_components/ui";
 import { Pagination, shortDate } from "../_components/list-kit";
+import { EmailOnlyContacts } from "./EmailOnlyContacts";
+
+export const metadata = { title: "Leads" };
 
 export const dynamic = "force-dynamic";
 
@@ -45,11 +48,43 @@ async function loadLeads(search: string, page: number): Promise<LeadsPage> {
   return { rows: (data ?? []) as LeadRow[], total: count ?? 0, failed: false };
 }
 
-export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string }> }) {
+const TABS = [
+  { key: "quiz", label: "Quiz leads", href: "/admin/leads" },
+  { key: "imported", label: "Email-only contacts", href: "/admin/leads?tab=imported" },
+] as const;
+
+function SearchBox({ q, imported }: { q: string; imported: boolean }) {
+  return (
+    <form className="-mt-1 px-5 pt-4" role="search">
+      {imported && <input type="hidden" name="tab" value="imported" />}
+      <label className="relative block max-w-sm">
+        <span className="sr-only">Search</span>
+        <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9b9997]" aria-hidden>
+          search
+        </span>
+        <input name="q" type="search" defaultValue={q} placeholder="Search by name or email" className={`${INPUT} pl-9`} />
+      </label>
+    </form>
+  );
+}
+
+export default async function LeadsPage({ searchParams }: { searchParams: Promise<{ q?: string; page?: string; tab?: string }> }) {
   await requireStaff("sales");
   const params = await searchParams;
   const q = parseSearch(params.q);
   const requested = parsePage(params.page);
+  if (params.tab === "imported") {
+    return (
+      <div className="space-y-5">
+        <PageHeader title="Leads" description="People without an account: quiz takers and imported contacts. Campaigns reach them by their consent." />
+        <Tabs items={TABS} active="imported" />
+        <Card flush>
+          <SearchBox q={q} imported />
+          <EmailOnlyContacts q={q} page={requested} />
+        </Card>
+      </div>
+    );
+  }
   const first = await loadLeads(q, requested);
   // Past the last page (e.g. after a search narrowed the list): show the last real page.
   const win = pageWindow(first.total, requested, PER_PAGE);
@@ -60,7 +95,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
     <div className="space-y-5">
       <PageHeader
         title="Leads"
-        description="People who took the “Find your journey” quiz. They don't have an account until they sign up."
+        description="People without an account: quiz takers and imported contacts. Campaigns reach them by their consent."
         actions={
           <Link href="/admin/leads/export" className={BTN_SECONDARY} prefetch={false}>
             <span className="material-symbols-outlined text-[18px]" aria-hidden>
@@ -70,16 +105,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Promis
           </Link>
         }
       />
+      <Tabs items={TABS} active="quiz" />
       <Card flush>
-        <form className="-mt-1 px-5 pt-4" role="search">
-          <label className="relative block max-w-sm">
-            <span className="sr-only">Search leads</span>
-            <span className="material-symbols-outlined pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[18px] text-[#9b9997]" aria-hidden>
-              search
-            </span>
-            <input name="q" type="search" defaultValue={q} placeholder="Search by name or email" className={`${INPUT} pl-9`} />
-          </label>
-        </form>
+        <SearchBox q={q} imported={false} />
         <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-[14px] text-[#6c6a69]">
           <span>
             Displaying {win.first}–{win.last} of <b className="text-[#1a1a19]">{result.total.toLocaleString("en-US")}</b> leads
