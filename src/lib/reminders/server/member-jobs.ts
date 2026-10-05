@@ -51,7 +51,7 @@ async function deliverAll(ctx: JobContext, all: readonly Planned[]): Promise<Job
   const outcomes = await mapInChunks(planned, CONCURRENCY, (p) => deliver(ctx.sb, p.delivery));
   const emails = planned.flatMap((p, i) =>
     outcomes[i] === "sent" && p.email && p.member.email
-      ? [{ to: p.member.email, ...memberReminderEmail(p.member.firstName, p.notice, ctx.siteUrl) }]
+      ? [{ to: p.member.email, art: "photo" as const, ...memberReminderEmail(p.member.firstName, p.notice, ctx.siteUrl) }]
       : []
   );
   return { outcomes, emails };

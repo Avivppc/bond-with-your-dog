@@ -195,3 +195,25 @@ describe("renderEmailDoc blocks", () => {
     expect(out.text).toContain("https://www.bonded.dog");
   });
 });
+
+describe("renderEmailDoc top picture", () => {
+  const image: EmailBlock = { id: "i", type: "image", src: "https://cdn.example/own.jpg", alt: "Own", href: "", width: 100 };
+  const text: EmailBlock = { id: "t", type: "text", text: "Hello", align: "left" };
+
+  it("opens with one of Roni's photos by default, and keeps the plain-text part free of it", () => {
+    const out = renderEmailDoc(doc([text]), CTX);
+    expect(out.html).toMatch(/src="https:\/\/www\.bonded\.dog\/images\/email\/hero-\d{2}\.jpg"/);
+    expect(out.text).not.toContain("hero-");
+  });
+
+  it("leaves the picture to the email when its first block is an image", () => {
+    const out = renderEmailDoc(doc([image, text]), CTX);
+    expect(out.html).not.toContain("/images/email/hero-");
+    expect(out.html).toContain("https://cdn.example/own.jpg");
+  });
+
+  it("can be switched off or set to a sketch by the sender", () => {
+    expect(renderEmailDoc(doc([text]), { ...CTX, art: "none" }).html).not.toContain("hero-");
+    expect(renderEmailDoc(doc([text]), { ...CTX, art: "sketch" }).html).toContain("/sketches/");
+  });
+});

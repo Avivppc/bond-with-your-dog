@@ -7,6 +7,8 @@
  * becomes a button (a trailing "(…)" in the label turns into a small note under it).
  */
 
+import { emailCard, pickEmailArt, type EmailArtKind } from "./email-art";
+
 const COLORS = {
   page: "#eef6fb",
   card: "#ffffff",
@@ -60,6 +62,10 @@ function paragraph(block: string): string {
 export interface EmailExtras {
   preheader?: string;
   unsubscribeUrl?: string;
+  /** Picture at the top of the card; a small line-drawing unless the sender asks for a photo or none. */
+  art?: EmailArtKind;
+  /** The send time, which decides the day's picture (tests pass it; the default is now). */
+  now?: Date;
 }
 
 export function renderEmailHtml(email: { subject: string; text: string }, siteUrl: string, extras: EmailExtras = {}): string {
@@ -75,6 +81,7 @@ export function renderEmailHtml(email: { subject: string; text: string }, siteUr
     .split(/\n\s*\n/)
     .map((block) => paragraph(block.trim()))
     .join("\n");
+  const art = pickEmailArt(extras.art ?? "sketch", extras.now ?? new Date(), email.subject);
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -89,8 +96,8 @@ ${preheader}<table role="presentation" width="100%" cellspacing="0" cellpadding=
       <tr><td align="center" style="padding:0 0 20px">
         <a href="${escapeHtml(site)}" style="text-decoration:none"><img src="${escapeHtml(site)}/images/logo.png" width="150" height="60" alt="Bonded" style="display:block;border:0"></a>
       </td></tr>
-      <tr><td style="background:${COLORS.card};border:1px solid ${COLORS.line};border-radius:16px;padding:32px 28px">
-${body}
+      <tr><td style="background:${COLORS.card};border:1px solid ${COLORS.line};border-radius:16px">
+${emailCard(body, art, site, "")}
       </td></tr>
       <tr><td align="center" style="padding:20px 8px 0;font-size:12px;line-height:1.5;color:${COLORS.muted}">
         Bonded · Learn your dog's secret language<br>
