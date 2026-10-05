@@ -86,7 +86,7 @@ export async function POST(request: Request) {
 
   const emailed = await sendEmail({
     to: email,
-    art: "photo",
+    audience: "member",
     subject: `${firstName}, here's your BONDED journey: ${result.headline}`,
     text: [
       `Hi ${firstName},`,

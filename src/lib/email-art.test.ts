@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { EMAIL_PHOTO_COUNT, EMAIL_SKETCHES, emailCard, pickEmailArt } from "./email-art";
+import { DEFAULT_ART_SETTINGS, EMAIL_PHOTO_COUNT, EMAIL_SKETCHES, artForAudience, emailCard, pickEmailArt, readArtSettings } from "./email-art";
 
 const SITE = "https://www.bonded.dog";
 const DAY_MS = 86_400_000;
@@ -69,5 +69,27 @@ describe("emailCard", () => {
     const html = emailCard(body, null, SITE, style);
     expect(html).not.toContain("<img");
     expect(html).toContain("<p>Hello</p>");
+  });
+});
+
+describe("readArtSettings", () => {
+  it("falls back to the defaults for anything missing or unknown", () => {
+    expect(readArtSettings(null)).toEqual(DEFAULT_ART_SETTINGS);
+    expect(readArtSettings("nope")).toEqual(DEFAULT_ART_SETTINGS);
+    expect(readArtSettings({ member: "none", system: "banana", flows: 3 })).toEqual({ member: "none", system: DEFAULT_ART_SETTINGS.system, flows: DEFAULT_ART_SETTINGS.flows });
+  });
+});
+
+describe("artForAudience", () => {
+  const settings = { member: "none", system: "photo", flows: "sketch" } as const;
+
+  it("follows the setting for member and system emails, treating an unlabelled email as system", () => {
+    expect(artForAudience("member", settings)).toBe("none");
+    expect(artForAudience("system", settings)).toBe("photo");
+    expect(artForAudience(undefined, settings)).toBe("photo");
+  });
+
+  it("never puts a picture in mail to the team", () => {
+    expect(artForAudience("internal", { member: "photo", system: "photo", flows: "photo" })).toBe("none");
   });
 });

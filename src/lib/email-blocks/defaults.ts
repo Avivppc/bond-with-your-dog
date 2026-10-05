@@ -83,7 +83,8 @@ const blockSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string(), type: z.literal("spacer"), size: z.number() }),
 ]) satisfies z.ZodType<EmailBlock>;
 
-const docSchema = z.object({ subject: z.string(), preheader: z.string(), blocks: z.array(blockSchema) }) satisfies z.ZodType<EmailDoc>;
+const artSchema = z.enum(["photo", "sketch", "none"]);
+const docSchema = z.object({ subject: z.string(), preheader: z.string(), blocks: z.array(blockSchema), art: artSchema.optional() }) satisfies z.ZodType<EmailDoc>;
 
 export function isEmailBlock(x: unknown): x is EmailBlock {
   return blockSchema.safeParse(x).success;
@@ -125,7 +126,8 @@ export function emailDocFromNodeData(data: unknown): EmailDoc {
   if (isEmailDoc(data)) return data;
   const record = typeof data === "object" && data !== null ? (data as Record<string, unknown>) : {};
   if (Array.isArray(record.blocks)) {
-    return { subject: str(record.subject), preheader: str(record.preheader), blocks: record.blocks.filter(isEmailBlock) };
+    const art = artSchema.safeParse(record.art);
+    return { subject: str(record.subject), preheader: str(record.preheader), blocks: record.blocks.filter(isEmailBlock), ...(art.success ? { art: art.data } : {}) };
   }
   return legacyEmailToDoc({
     subject: str(record.subject),

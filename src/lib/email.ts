@@ -1,14 +1,26 @@
 import "server-only";
 import { Resend } from "resend";
 import { renderEmailHtml } from "./email-html";
-import type { EmailArtKind } from "./email-art";
+import { createServiceClient } from "@/lib/supabase/admin";
+import { DEFAULT_ART_SETTINGS, artForAudience, type EmailArtSettings, type EmailAudience } from "./email-art";
+import { loadEmailSettings } from "@/lib/flows/server/email-settings";
 
 export interface OutgoingEmail {
   to: string;
   subject: string;
   text: string;
-  /** Picture at the top: "sketch" (default) for one-off emails, "photo" for the ones members get often, "none" for internal mail. */
-  art?: EmailArtKind;
+  /** Who it is for, which decides the picture on top (Settings → Email). Default: "system", a one-off email. */
+  audience?: EmailAudience;
+}
+
+/** The picture settings; a failed lookup only means the defaults, never a missing email. */
+async function loadArtSettings(): Promise<EmailArtSettings> {
+  try {
+    return (await loadEmailSettings(createServiceClient())).emailArt;
+  } catch (error: unknown) {
+    console.error("[email] picture settings unavailable, using defaults", { error: error instanceof Error ? error.message : String(error) });
+    return DEFAULT_ART_SETTINGS;
+  }
 }
 
 /**
@@ -22,7 +34,7 @@ export async function sendEmail(email: OutgoingEmail): Promise<boolean> {
     console.warn("[email] Resend not configured; skipped", { to: email.to, subject: email.subject });
     return false;
   }
-  const { error } = await new Resend(apiKey).emails.send({ from, to: email.to, subject: email.subject, text: email.text, html: renderEmailHtml(email, siteUrl(), { art: email.art }) });
+  const { error } = await new Resend(apiKey).emails.send({ from, to: email.to, subject: email.subject, text: email.text, html: renderEmailHtml(email, siteUrl(), { art: artForAudience(email.audience, await loadArtSettings()) }) });
   if (error) {
     console.error("[email] send failed", { to: email.to, subject: email.subject, error: error.message });
     return false;
@@ -46,9 +58,10 @@ export async function sendEmailBatch(emails: readonly OutgoingEmail[]): Promise<
     return 0;
   }
   const resend = new Resend(apiKey);
+  const artSettings = await loadArtSettings();
   let sent = 0;
   for (let start = 0; start < emails.length; start += BATCH_LIMIT) {
-    const chunk = emails.slice(start, start + BATCH_LIMIT).map((e) => ({ from, to: e.to, subject: e.subject, text: e.text, html: renderEmailHtml(e, siteUrl(), { art: e.art }) }));
+    const chunk = emails.slice(start, start + BATCH_LIMIT).map((e) => ({ from, to: e.to, subject: e.subject, text: e.text, html: renderEmailHtml(e, siteUrl(), { art: artForAudience(e.audience, artSettings) }) }));
     try {
       const { error } = await resend.batch.send(chunk);
       if (error) {

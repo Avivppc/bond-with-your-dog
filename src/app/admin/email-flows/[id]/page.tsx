@@ -4,6 +4,7 @@ import { exitReasonLabel, exitsOf } from "@/lib/flows/exits";
 import { changeRun } from "../run-actions";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { loadFlow } from "@/lib/flows/server/admin";
+import { loadEmailSettings } from "@/lib/flows/server/email-settings";
 import { percent } from "@/lib/flows/stats";
 import { formatUsd } from "@/lib/flows/discount";
 import { findNode } from "@/lib/flows/graph";
@@ -49,7 +50,7 @@ export default async function EmailFlowPage({ params, searchParams }: { params: 
   await requireStaff("sales");
   const { id } = await params;
   const sb = createServiceClient();
-  const [detail, chaptersRes] = await Promise.all([loadFlow(sb, id, findEmail || null), sb.from("courses").select("id, title, chapter_number").not("chapter_number", "is", null).order("chapter_number")]);
+  const [detail, chaptersRes, emailSettings] = await Promise.all([loadFlow(sb, id, findEmail || null), sb.from("courses").select("id, title, chapter_number").not("chapter_number", "is", null).order("chapter_number"), loadEmailSettings(sb)]);
   if (!detail) notFound();
   const { flow, totals, steps, atStep, actionsDone, recent } = detail;
   const chapters = (chaptersRes.data ?? []).map((c) => ({ id: c.id as string, title: c.title as string }));
@@ -87,6 +88,7 @@ export default async function EmailFlowPage({ params, searchParams }: { params: 
           consent: flow.consent ?? "marketing",
         }}
         siteUrl={siteUrl()}
+        defaultArt={emailSettings.emailArt.flows}
         graph={flow.graph}
         chapters={chapters}
         stats={{ steps, atStep, actionsDone }}

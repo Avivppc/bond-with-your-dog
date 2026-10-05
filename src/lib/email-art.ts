@@ -7,6 +7,45 @@
 
 export type EmailArtKind = "photo" | "sketch" | "none";
 
+export const EMAIL_ART_KINDS: readonly EmailArtKind[] = ["photo", "sketch", "none"];
+
+export const EMAIL_ART_LABELS: Record<EmailArtKind, string> = {
+  photo: "Roni's photo (changes daily)",
+  sketch: "Line drawing",
+  none: "No picture",
+};
+
+export function isEmailArtKind(value: unknown): value is EmailArtKind {
+  return typeof value === "string" && (EMAIL_ART_KINDS as readonly string[]).includes(value);
+}
+
+/**
+ * Who an email is for. "member": reminders and updates people get often. "system": one-off emails
+ * (sign-in, receipts, invites). "internal": mail to the team, which never carries a picture.
+ */
+export type EmailAudience = "member" | "system" | "internal";
+
+/** Settings → Email: the picture for each kind of email; flows and campaigns can override it per email. */
+export interface EmailArtSettings {
+  member: EmailArtKind;
+  system: EmailArtKind;
+  flows: EmailArtKind;
+}
+
+export const DEFAULT_ART_SETTINGS: EmailArtSettings = { member: "photo", system: "sketch", flows: "photo" };
+
+/** The stored settings with anything missing or unknown replaced by its default. */
+export function readArtSettings(raw: unknown): EmailArtSettings {
+  const record = typeof raw === "object" && raw !== null ? (raw as Record<string, unknown>) : {};
+  const pick = (key: keyof EmailArtSettings): EmailArtKind => (isEmailArtKind(record[key]) ? record[key] : DEFAULT_ART_SETTINGS[key]);
+  return { member: pick("member"), system: pick("system"), flows: pick("flows") };
+}
+
+export function artForAudience(audience: EmailAudience | undefined, settings: EmailArtSettings): EmailArtKind {
+  if (audience === "internal") return "none";
+  return audience === "member" ? settings.member : settings.system;
+}
+
 export interface EmailArt {
   kind: "photo" | "sketch";
   /** Site-relative path of the image. */

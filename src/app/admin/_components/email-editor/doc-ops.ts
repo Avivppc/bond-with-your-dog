@@ -1,4 +1,5 @@
 import type { EmailBlock, EmailDoc } from "@/lib/email-blocks/types";
+import type { EmailArtKind } from "@/lib/email-art";
 
 /** Immutable edits to an EmailDoc, used by the block editor. Every function returns a new doc. Pure. */
 
@@ -12,6 +13,11 @@ export type BlockPatch<B extends EmailBlock = EmailBlock> = B extends EmailBlock
 
 function clampIndex(index: number, length: number): number {
   return Math.max(0, Math.min(length, index));
+}
+
+/** Sets the picture on top of the email; undefined goes back to the Settings → Email default. */
+export function setArt(doc: EmailDoc, art: EmailArtKind | undefined): EmailDoc {
+  return { subject: doc.subject, preheader: doc.preheader, blocks: doc.blocks, ...(art ? { art } : {}) };
 }
 
 export function insertBlock(doc: EmailDoc, index: number, block: EmailBlock): EmailDoc {

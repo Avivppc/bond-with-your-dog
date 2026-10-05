@@ -97,7 +97,7 @@ async function sendBatch(sb: ServiceClient, campaign: CampaignRow, queued: reado
     const name = m.user_id ? names.get(m.user_id) : undefined;
     const links = unsubscribeLinks({ userId: m.user_id, email: m.to_email });
     const appUrl = m.user_id ? `${site}/home` : `${site}/signup`;
-    const email = renderEmailDoc(doc, { siteUrl: site, vars: { first_name: name?.first ?? "", dog_name: name?.dog ?? "", app_url: appUrl, offer_url: appUrl }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress });
+    const email = renderEmailDoc(doc, { siteUrl: site, vars: { first_name: name?.first ?? "", dog_name: name?.dog ?? "", app_url: appUrl, offer_url: appUrl }, unsubscribeUrl: links.page, postalAddress: settings.postalAddress, art: settings.emailArt.flows });
     return { to: m.to_email, subject: email.subject, html: email.html, text: email.text, unsubscribe: links, sender: { name: settings.senderName, replyTo: settings.replyTo } };
   });
   const result = await sendMarketingBatch(rendered, batchKey(campaign.id, batch));

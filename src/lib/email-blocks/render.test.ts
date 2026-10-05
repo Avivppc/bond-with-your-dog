@@ -216,4 +216,14 @@ describe("renderEmailDoc top picture", () => {
     expect(renderEmailDoc(doc([text]), { ...CTX, art: "none" }).html).not.toContain("hero-");
     expect(renderEmailDoc(doc([text]), { ...CTX, art: "sketch" }).html).toContain("/sketches/");
   });
+
+  it("follows the Settings default, and the email's own choice wins over it", () => {
+    expect(renderEmailDoc(doc([text]), { ...CTX, art: "sketch" }).html).toContain("/sketches/");
+    expect(renderEmailDoc(doc([text], { art: "none" }), { ...CTX, art: "photo" }).html).not.toContain("hero-");
+    expect(renderEmailDoc(doc([text], { art: "photo" }), { ...CTX, art: "none" }).html).toContain("/images/email/hero-");
+  });
+
+  it("lets an email choose a picture even when it opens with its own image", () => {
+    expect(renderEmailDoc(doc([image, text], { art: "sketch" }), CTX).html).toContain("/sketches/");
+  });
 });

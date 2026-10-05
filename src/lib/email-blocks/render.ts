@@ -231,8 +231,9 @@ export function renderEmailDoc(doc: EmailDoc, ctx: RenderContext): RenderedEmail
     .join("\n");
   const blocks = doc.blocks.map((b) => renderBlock(b, ctx, fill)).filter((b): b is BlockOutput => b !== null);
   const body = blocks.map((b) => b.html).join("\n");
-  // A flow or campaign that opens with its own image keeps that image as the picture.
-  const art = pickEmailArt(ctx.art ?? (doc.blocks[0]?.type === "image" ? "none" : "photo"), ctx.now ?? new Date(), subject);
+  // The email's own choice wins; otherwise the Settings default, except that an email opening with its own image keeps that image as the picture.
+  const defaultKind = doc.blocks[0]?.type === "image" ? "none" : (ctx.art ?? "photo");
+  const art = pickEmailArt(doc.art ?? defaultKind, ctx.now ?? new Date(), subject);
   return {
     subject,
     html: frame({ subject, preheader, body, site, unsubscribeUrl, postalAddress, art }),

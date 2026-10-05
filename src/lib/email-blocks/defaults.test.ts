@@ -97,3 +97,12 @@ describe("isEmailDoc / emailDocFromNodeData", () => {
     expect(emailDocFromNodeData(42)).toEqual({ subject: "", preheader: "", blocks: [] });
   });
 });
+
+describe("emailDocFromNodeData picture", () => {
+  it("keeps a valid per-email picture and drops an unknown one", () => {
+    const base = { subject: "S", preheader: "", blocks: [] };
+    expect(emailDocFromNodeData({ ...base, art: "sketch" }).art).toBe("sketch");
+    expect(emailDocFromNodeData({ ...base, art: "banana" }).art).toBeUndefined();
+    expect(emailDocFromNodeData({ subject: "S", preheader: "", blocks: [{ id: "a", type: "divider" }, "junk"], art: "none" }).art).toBe("none");
+  });
+});

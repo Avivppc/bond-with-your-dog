@@ -19,6 +19,7 @@ import {
 } from "@xyflow/react";
 import { emailDocFromNodeData } from "@/lib/email-blocks/defaults";
 import type { EmailDoc } from "@/lib/email-blocks/types";
+import type { EmailArtKind } from "@/lib/email-art";
 import { BRANCHES, type FlowEdge, type FlowGraph, type FlowNode, type FlowNodeType } from "@/lib/flows/graph";
 import { insertOnEdge as insertOnEdgeGraph, tidyLayout } from "@/lib/flows/layout";
 import type { FlowSettings } from "@/lib/flows/schema";
@@ -43,6 +44,8 @@ interface FlowBuilderProps {
   chapters: readonly ChapterOption[];
   stats: Pick<FlowMeta, "steps" | "atStep" | "actionsDone">;
   siteUrl: string;
+  /** The picture Settings → Email gives flow emails. */
+  defaultArt: EmailArtKind;
 }
 
 /** A stable object: the email preview memoizes on it. */
@@ -96,7 +99,7 @@ function Palette({ onAdd }: { onAdd: (type: AddableType) => void }) {
   );
 }
 
-function Builder({ flowId, status: initialStatus, settings: initialSettings, graph, chapters, stats, siteUrl }: FlowBuilderProps) {
+function Builder({ flowId, status: initialStatus, settings: initialSettings, graph, chapters, stats, siteUrl, defaultArt }: FlowBuilderProps) {
   const flow = useReactFlow();
   const [nodes, setNodes] = useState<Node[]>(() => toRfNodes(graph));
   const [edges, setEdges] = useState<Edge[]>(() => graph.edges.map(toRfEdge));
@@ -358,6 +361,7 @@ function Builder({ flowId, status: initialStatus, settings: initialSettings, gra
           tags={FLOW_TAGS}
           exampleVars={EXAMPLE}
           siteUrl={siteUrl}
+          defaultArt={defaultArt}
           uploadImage={uploadImage}
           onClose={() => setEditingEmail(null)}
           onSave={(doc: EmailDoc) => {

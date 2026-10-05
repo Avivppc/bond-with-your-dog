@@ -75,6 +75,8 @@ export interface EmailDoc {
   /** Inbox preview line. */
   preheader: string;
   blocks: EmailBlock[];
+  /** Picture at the top of this email. Unset = use the default from Settings → Email. */
+  art?: EmailArtKind;
 }
 
 /** Values the renderer needs besides the tags: links for the frame and the code box. */
