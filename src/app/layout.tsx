@@ -2,6 +2,9 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans, Be_Vietnam_Pro } from "next/font/google";
 import "./globals.css";
 import AnalyticsIdentity from "@/components/analytics/AnalyticsIdentity";
+import { loadLiveTheme } from "@/lib/site/server";
+import { themeCss, themeFontsHref } from "@/lib/site/theme";
+import { StandaloneGuard } from "@/components/app/StandaloneGuard";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -45,21 +48,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Website → Theme: colors and fonts override the design tokens (nothing when unchanged).
+  const theme = await loadLiveTheme();
+  const css = themeCss(theme);
+  const fontsHref = themeFontsHref(theme);
   return (
     <html lang="en" className={`${plusJakartaSans.variable} ${beVietnamPro.variable} scroll-smooth`}>
       <head>
+        {/* eslint-disable-next-line @next/next/no-page-custom-font -- App Router root layout: applies to every page */}
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
         />
+        {fontsHref && <link rel="stylesheet" href={fontsHref} />}
+        {/* Built only from validated hex colors and a fixed font list. */}
+        {css && <style id="site-theme" dangerouslySetInnerHTML={{ __html: css }} />}
       </head>
       <body className="antialiased min-h-screen flex flex-col">
         <AnalyticsIdentity />
+        <StandaloneGuard />
         {children}
       </body>
     </html>

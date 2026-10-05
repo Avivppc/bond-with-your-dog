@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { BTN_PRIMARY, BTN_SECONDARY, INPUT } from "@/app/admin/_components/ui";
+import { SavedReplies } from "@/app/admin/_components/SavedReplies";
+import { isFilledIn, type ReplyVars } from "@/lib/saved-replies/replies";
 import { answerQuestion } from "./actions";
 
 interface AnswerFormProps {
@@ -10,12 +12,15 @@ interface AnswerFormProps {
   initialAnswer: string;
   /** Editing an existing answer (vs. answering for the first time, which notifies the member). */
   editing: boolean;
+  /** The member and lesson, for saved replies. */
+  vars?: ReplyVars;
   onDone?: () => void;
 }
 
 /** Inline answer box: keeps the text on errors and refreshes the list when saved. */
-export function AnswerForm({ questionId, initialAnswer, editing, onDone }: AnswerFormProps) {
+export function AnswerForm({ questionId, initialAnswer, editing, vars = {}, onDone }: AnswerFormProps) {
   const router = useRouter();
+  const box = useRef<HTMLTextAreaElement>(null);
   const [answer, setAnswer] = useState(initialAnswer);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -37,6 +42,7 @@ export function AnswerForm({ questionId, initialAnswer, editing, onDone }: Answe
   return (
     <form onSubmit={submit} className="flex flex-col gap-2">
       <textarea
+        ref={box}
         value={answer}
         onChange={(e) => setAnswer(e.target.value)}
         rows={3}
@@ -46,13 +52,14 @@ export function AnswerForm({ questionId, initialAnswer, editing, onDone }: Answe
         aria-label="Answer"
         className={`${INPUT} resize-y`}
       />
+      <SavedReplies textareaRef={box} value={answer} onChange={setAnswer} vars={vars} />
       {error && (
         <p role="alert" className="text-sm text-red-700">
           {error}
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
-        <button type="submit" disabled={pending || !answer.trim()} className={BTN_PRIMARY}>
+        <button type="submit" disabled={pending || !answer.trim() || !isFilledIn(answer)} className={BTN_PRIMARY}>
           {pending ? "Saving…" : editing ? "Save answer" : "Send answer"}
         </button>
         {onDone && (
@@ -67,9 +74,9 @@ export function AnswerForm({ questionId, initialAnswer, editing, onDone }: Answe
 }
 
 /** Shows an answer with an "Edit answer" toggle. */
-export function EditableAnswer({ questionId, answer }: { questionId: string; answer: string }) {
+export function EditableAnswer({ questionId, answer, vars }: { questionId: string; answer: string; vars?: ReplyVars }) {
   const [editing, setEditing] = useState(false);
-  if (editing) return <AnswerForm questionId={questionId} initialAnswer={answer} editing onDone={() => setEditing(false)} />;
+  if (editing) return <AnswerForm questionId={questionId} initialAnswer={answer} editing vars={vars} onDone={() => setEditing(false)} />;
   return (
     <div className="flex flex-col items-start gap-1">
       <p className="whitespace-pre-wrap text-sm text-[#1a1a19]">{answer}</p>

@@ -8,10 +8,13 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { getPaymentProvider, configuredProvider } from "@/lib/payments/provider";
 import { fulfillOrder, recordBillingEvent, markBillingEvent } from "@/lib/payments/billing";
 import { siteUrl } from "@/lib/email";
-import { ownsEverything, type AccessLevel } from "@/lib/offer-ownership";
 import { cookies } from "next/headers";
 import { REFERRAL_COOKIE } from "@/lib/referrals";
-import { claimReferralCode, referralQuote } from "@/lib/referrals-server";
+import { AFFILIATE_COOKIE } from "@/lib/affiliates/rules";
+import { affiliateForCheckout } from "@/lib/affiliates/server";
+import { claimReferralCode } from "@/lib/referrals-server";
+import { planCheckout } from "@/lib/sales/checkout-plan";
+import { OFFER_FOR_SALE_COLUMNS, ownsOffer, type OfferForSale } from "@/lib/sales/server";
 
 const Slug = z.string().regex(/^[a-z0-9-]{2,80}$/);
 
@@ -23,72 +26,110 @@ async function signedInUser() {
   return user;
 }
 
-/** True when the user already has live access to every course in the offer (avoid double charging). */
-async function alreadyOwnsOffer(userId: string, offerId: string): Promise<boolean> {
-  const sb = createServiceClient();
-  const { data: courses } = await sb.from("offer_courses").select("course_id, access_level").eq("offer_id", offerId);
-  const offerCourses = (courses ?? []) as { course_id: string; access_level: AccessLevel }[];
-  if (offerCourses.length === 0) return false;
-  const nowIso = new Date().toISOString();
-  const { data: active } = await sb
-    .from("enrollments")
-    .select("course_id, access_level")
-    .eq("user_id", userId)
-    .in(
-      "course_id",
-      offerCourses.map((c) => c.course_id)
-    )
-    .or(`expires_at.is.null,expires_at.gt.${nowIso}`);
-  return ownsEverything(offerCourses, (active ?? []) as { course_id: string; access_level: AccessLevel }[]);
+/** Fields a checkout form may send besides the slug. */
+function checkoutChoices(formData: FormData) {
+  const text = (name: string, max: number) => String(formData.get(name) ?? "").slice(0, max);
+  const giftOn = formData.get("gift") === "on";
+  return {
+    code: text("code", 60),
+    wantBump: formData.get("bump") === "on",
+    after: text("after", 40) || null,
+    gift: giftOn ? { recipientEmail: text("recipient_email", 254), recipientName: text("recipient_name", 60), message: text("gift_message", 500) } : null,
+  };
 }
 
-/** Creates a pending order and sends the buyer to the provider (free offers are fulfilled at once). */
+/**
+ * Creates a pending order and sends the buyer to the provider (free orders are fulfilled at once).
+ * The amount comes from planCheckout, the same calculation the checkout page showed.
+ */
 export async function startCheckout(formData: FormData): Promise<void> {
   const slug = Slug.safeParse(formData.get("slug"));
   if (!slug.success) redirect("/courses");
   const user = await signedInUser();
   if (!user?.email) redirect(`/login?next=/checkout/${slug.data}`);
+  const choices = checkoutChoices(formData);
+  // Annotated so TypeScript knows control stops after it (redirect throws).
+  const back: (params: Record<string, string | null>) => never = (params) => {
+    const query = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => Boolean(e[1])));
+    redirect(`/checkout/${slug.data}${query.size ? `?${query.toString()}` : ""}`);
+  };
 
   const sb = createServiceClient();
-  const { data: offer } = await sb
+  const { data: offerRow } = await sb
     .from("offers")
-    .select("id, payment_type, price_cents, currency, provider_price_id, status")
+    .select(`${OFFER_FOR_SALE_COLUMNS}, provider_price_id`)
     .eq("slug", slug.data)
     .eq("status", "published")
     .maybeSingle();
-  if (!offer) redirect(`/checkout/${slug.data}?error=unavailable`);
-  if (await alreadyOwnsOffer(user.id, offer.id)) redirect(`/checkout/${slug.data}?error=owned`);
+  if (!offerRow) back({ error: "unavailable" });
+  const offer = offerRow as unknown as OfferForSale & { provider_price_id: string | null };
+  // A gift goes to someone else, so the buyer may already own it.
+  if (!choices.gift && (await ownsOffer(user.id, offer.id))) back({ error: "owned" });
 
   const provider = offer.payment_type === "free" ? null : getPaymentProvider();
-  if (offer.payment_type !== "free" && !provider) redirect(`/checkout/${slug.data}?error=not-configured`);
+  if (offer.payment_type !== "free" && !provider) back({ error: "not-configured" });
 
   // A friend who arrived through a referral link is attributed before the discount is worked out.
   const jar = await cookies();
   const referralCode = jar.get(REFERRAL_COOKIE)?.value;
   if (referralCode && (await claimReferralCode(await createClient(), referralCode))) jar.delete(REFERRAL_COOKIE);
-  const quote = offer.payment_type === "free" ? null : await referralQuote({ userId: user.id, offerId: offer.id, priceCents: offer.price_cents, provider: provider?.name ?? null });
+  // An affiliate's link visited in the last 30 days earns them a commission on this purchase.
+  const affiliateId = await affiliateForCheckout(jar.get(AFFILIATE_COOKIE)?.value, { id: user.id, email: user.email });
 
+  const plan = await planCheckout({
+    userId: user.id,
+    userEmail: user.email,
+    offer,
+    provider,
+    code: choices.code,
+    wantBump: choices.wantBump,
+    gift: choices.gift,
+    afterOrderId: choices.after,
+  });
+  // The page shows what's wrong with a code or a gift; nothing is charged meanwhile.
+  if (plan.codeProblem) back({ code: choices.code, after: choices.after });
+  if (choices.gift && !plan.gift) back({ error: "gift", code: choices.code });
+
+  // A code (or an after-purchase offer) sits on one open order: starting again replaces the earlier unpaid one.
+  const d = plan.discount;
+  if (d?.codeId) await sb.from("orders").update({ status: "canceled" }).eq("user_id", user.id).eq("discount_code_id", d.codeId).eq("status", "pending");
+  if (d?.couponId) await sb.from("orders").update({ status: "canceled" }).eq("user_id", user.id).eq("coupon_id", d.couponId).eq("status", "pending");
+  if (d?.parentOrderId) await sb.from("orders").update({ status: "canceled" }).eq("user_id", user.id).eq("upsell_of_order_id", d.parentOrderId).eq("status", "pending");
+
+  const free = offer.payment_type === "free" || plan.totalCents === 0;
   const { data: order, error } = await sb
     .from("orders")
     .insert({
       user_id: user.id,
       offer_id: offer.id,
       status: "pending",
-      amount_cents: quote?.amountCents ?? offer.price_cents,
+      amount_cents: plan.totalCents,
       currency: offer.currency,
-      provider: provider?.name ?? "free",
-      discount_kind: quote?.discount?.kind ?? null,
-      discount_percent: quote?.discount?.percent ?? null,
-      referral_reward_id: quote?.discount?.rewardId ?? null,
+      provider: free ? "free" : provider!.name,
+      discount_kind: d?.kind ?? null,
+      discount_percent: d?.percent ?? null,
+      referral_reward_id: d?.rewardId ?? null,
+      discount_code_id: d?.codeId ?? null,
+      coupon_id: d?.couponId ?? null,
+      upsell_of_order_id: d?.parentOrderId ?? null,
+      bump_offer_id: plan.bumpAccepted && plan.bump ? plan.bump.offer.id : null,
+      bump_amount_cents: plan.bumpAccepted && plan.bump ? plan.bump.priceCents : null,
+      gift_recipient_email: plan.gift?.recipientEmail ?? null,
+      gift_recipient_name: plan.gift?.recipientName ?? null,
+      gift_message: plan.gift?.message || null,
+      // A typed affiliate code wins over a link visited earlier.
+      affiliate_id: plan.codeAffiliateId ?? affiliateId,
     })
     .select("id")
     .single();
+  if (error?.code === "23505") back({ error: "code-used" });
+  if (error?.code === "54000") back({ error: "code-limit" });
   if (error || !order) {
     console.error("[checkout] order insert failed", { slug: slug.data, error: error?.message });
-    redirect(`/checkout/${slug.data}?error=failed`);
+    back({ error: "failed" });
   }
 
-  if (offer.payment_type === "free") {
+  if (free) {
     await fulfillOrder(order.id, { provider: "free", providerRef: null, subscriptionRef: null, periodEnd: null, amountCents: 0, taxCents: 0, paymentMethod: "free" });
     redirect(`/checkout/success?order=${order.id}`);
   }
@@ -102,7 +143,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
       customerEmail: user.email,
       providerPriceId: offer.provider_price_id,
       successUrl: `${siteUrl()}/checkout/success?order=${order.id}`,
-      discountId: quote?.paddleDiscountId ?? null,
+      discountId: d?.paddleDiscountId ?? null,
     });
     // Webhooks are matched on this server-created transaction id, never on buyer-supplied data.
     if (session.providerRef) {
@@ -113,7 +154,7 @@ export async function startCheckout(formData: FormData): Promise<void> {
   } catch (e: unknown) {
     console.error("[checkout] provider checkout failed", { orderId: order.id, error: e instanceof Error ? e.message : e });
     await sb.from("orders").update({ status: "failed" }).eq("id", order.id);
-    redirect(`/checkout/${slug.data}?error=provider`);
+    back({ error: "provider" });
   }
   redirect(destination);
 }

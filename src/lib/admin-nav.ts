@@ -45,16 +45,39 @@ const MAIN: NavDef[] = [
       { href: "/admin/products", label: "All Products", needs: "content" },
       { href: "/admin/courses", label: "Courses", needs: "content" },
       { href: "/admin/moves", label: "Moves Library", needs: "content" },
+      { href: "/admin/assessments", label: "Assessments", needs: "content" },
       { href: "/admin/community", label: "Community", needs: "content" },
+    ],
+  },
+  {
+    label: "Website",
+    icon: "language",
+    children: [
+      { href: "/admin/website", label: "Pages", needs: "content" },
+      { href: "/site-editor/theme", label: "Theme", needs: "content" },
+      { href: "/site-editor/member", label: "Member area", needs: "content" },
+      { href: "/admin/media", label: "Media library", needs: "content" },
     ],
   },
   {
     label: "Sales",
     icon: "sell",
     children: [
+      { href: "/admin/pricing", label: "Chapter prices", needs: "sales" },
       { href: "/admin/offers", label: "Offers", needs: "sales" },
       { href: "/admin/orders", label: "Orders", needs: "sales" },
       { href: "/admin/referrals", label: "Referrals", needs: "sales" },
+      { href: "/admin/affiliates", label: "Affiliates", needs: "sales" },
+    ],
+  },
+  {
+    label: "Marketing",
+    icon: "campaign",
+    children: [
+      { href: "/admin/email-flows", label: "Email flows", needs: "sales" },
+      { href: "/admin/campaigns", label: "Campaigns", needs: "sales" },
+      { href: "/admin/coupons", label: "Coupons", needs: "sales" },
+      { href: "/admin/discount-codes", label: "Discount codes", needs: "sales" },
     ],
   },
   {
@@ -64,6 +87,9 @@ const MAIN: NavDef[] = [
       { href: "/studio", label: "Roni's Studio", needs: "content" },
       { href: "/admin/coaching/questions", label: "Lesson questions", needs: "content" },
       { href: "/admin/coaching/live-qa", label: "Live Q&A", needs: "content" },
+      { href: "/admin/coaching/sessions", label: "1:1 sessions", needs: "content" },
+      { href: "/admin/coaching/replies", label: "Saved replies", needs: "content" },
+      { href: "/admin/assistant", label: "AI assistant", needs: "content" },
     ],
   },
   {
@@ -71,6 +97,7 @@ const MAIN: NavDef[] = [
     icon: "group",
     children: [
       { href: "/admin/people", label: "All Contacts", needs: "sales" },
+      { href: "/admin/insights", label: "Insights", needs: "sales" },
       { href: "/admin/leads", label: "Leads", needs: "sales" },
       { href: "/admin/inbox", label: "Inbox", needs: "sales" },
     ],
@@ -86,7 +113,19 @@ const MAIN: NavDef[] = [
 ];
 
 const BOTTOM: NavDef[] = [
-  { label: "Settings", icon: "settings", children: [{ href: "/admin/team", label: "Users & access", needs: "staff" }] },
+  {
+    label: "Settings",
+    icon: "settings",
+    children: [
+      { href: "/admin/settings/general", label: "General", needs: "settings" },
+      { href: "/admin/settings/member-notifications", label: "Member notifications", needs: "content" },
+      { href: "/admin/settings/certificate", label: "Certificate", needs: "content" },
+      { href: "/admin/settings/notifications", label: "Team notifications", needs: "sales" },
+      { href: "/admin/settings/email", label: "Email", needs: "sales" },
+      { href: "/admin/settings/payments", label: "Payments", needs: "settings" },
+      { href: "/admin/team", label: "Users & access", needs: "staff" },
+    ],
+  },
   { label: "View member app", icon: "open_in_new", href: "/home", needs: "content" },
 ];
 

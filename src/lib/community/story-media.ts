@@ -1,5 +1,6 @@
 /**
- * Photos on "Bonded Stories": private bucket "community-media", under `<user_id>/stories/`.
+ * Photos on "Bonded Stories": private bucket "community-media", under `<user_id>/stories/` (members)
+ * or `guest/<upload session>/stories/` (visitors on the public form).
  * Up to 3 per story; the database checks the same path rule (private.support_media_paths_valid).
  * Pure — shared by the upload form, the server actions and the admin inbox.
  */
@@ -33,6 +34,18 @@ export function validateStoryPhoto(file: { name: string; size: number; type: str
 
 export function storyPhotoPath(userId: string, contentType: string, id: string): string {
   return `${userId}/stories/${id}.${EXTENSION[contentType] ?? "jpg"}`;
+}
+
+/**
+ * Visitors' photos (the public "Share your story" form): `guest/<upload session>/stories/`. The
+ * session id sits in an httpOnly cookie, so a story can only carry photos its own browser uploaded.
+ */
+export function guestStoryPhotoPath(session: string, contentType: string, id: string): string {
+  return `guest/${session}/stories/${id}.${EXTENSION[contentType] ?? "jpg"}`;
+}
+
+export function isGuestStoryPhotoPath(path: string, session: string): boolean {
+  return path.startsWith(`guest/${session}/stories/`) && /^guest\/[0-9a-f-]{36}\/stories\/[A-Za-z0-9_-]{1,80}\.(jpg|png|webp|heic)$/.test(path);
 }
 
 /** True for a story photo path in this member's own folder (the only paths a story may carry). */

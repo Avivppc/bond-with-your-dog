@@ -8,6 +8,8 @@ import { analyticsContext, type AnalyticsSearchParams } from "@/app/admin/_compo
 import { StatCard } from "@/app/admin/_components/list-kit";
 import { buildReport } from "../report-data";
 
+export const metadata = { title: "Report" };
+
 export const dynamic = "force-dynamic";
 
 export default async function ReportPage({

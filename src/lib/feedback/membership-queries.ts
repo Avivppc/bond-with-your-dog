@@ -31,6 +31,10 @@ export interface SubscriptionItem {
   canceled_at: string | null;
   offerTitle: string;
   interval: string | null;
+  /** The offer to stay when cancelling (set on the offer), or null. */
+  retention: { percent: number; cycles: number } | null;
+  /** Accepted already: the discount on the next payments. */
+  retentionAccepted: { percent: number; cyclesLeft: number } | null;
 }
 
 export interface AvailableOffer {
@@ -58,7 +62,9 @@ export async function loadMembership(supabase: ServerSupabase, userId: string, n
   const [enrollRes, ordersRes, subsRes, offersRes] = await Promise.all([
     supabase.from("enrollments").select("course_id, expires_at, access_level, enrolled_at, courses(title, image, image_alt)").eq("user_id", userId).order("enrolled_at"),
     supabase.from("orders").select("id, status, amount_cents, currency, paid_at, created_at, offers(title)").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("subscriptions").select("id, status, current_period_end, canceled_at, offers(title, interval)").eq("user_id", userId).order("created_at", { ascending: false }),
+    supabase
+      .from("subscriptions")
+      .select("id, status, current_period_end, canceled_at, retention_percent, retention_cycles_left, retention_accepted_at, offers(title, interval, retention_percent, retention_cycles)").eq("user_id", userId).order("created_at", { ascending: false }),
     supabase
       .from("offers")
       .select("id, slug, title, payment_type, price_cents, currency, interval, offer_courses(course_id, access_level, courses(image))")
@@ -92,7 +98,7 @@ export async function loadMembership(supabase: ServerSupabase, userId: string, n
     offerTitle: ((o.offers ?? {}) as { title?: string }).title ?? "Bonded",
   }));
   const subscriptions: SubscriptionItem[] = ((subsRes.data ?? []) as Embedded<Record<string, unknown>>[]).map((s) => {
-    const offer = (s.offers ?? {}) as { title?: string; interval?: string | null };
+    const offer = (s.offers ?? {}) as { title?: string; interval?: string | null; retention_percent?: number | null; retention_cycles?: number | null };
     return {
       id: s.id as string,
       status: s.status as SubscriptionStatus,
@@ -100,6 +106,10 @@ export async function loadMembership(supabase: ServerSupabase, userId: string, n
       canceled_at: (s.canceled_at as string | null) ?? null,
       offerTitle: offer.title ?? "Subscription",
       interval: offer.interval ?? null,
+      retention: offer.retention_percent && offer.retention_cycles ? { percent: offer.retention_percent, cycles: offer.retention_cycles } : null,
+      retentionAccepted: s.retention_accepted_at
+        ? { percent: Number(s.retention_percent ?? 0), cyclesLeft: Number(s.retention_cycles_left ?? 0) }
+        : null,
     };
   });
   const offers: AvailableOffer[] = ((offersRes.data ?? []) as unknown as OfferRow[]).map(({ offer_courses, ...o }) => ({

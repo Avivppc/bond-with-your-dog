@@ -1,20 +1,16 @@
 /**
- * Time windows for the once-a-day reminder jobs. Each window is at least a day wide so a daily run
- * never misses anything; the delivery log makes overlaps (or extra runs) harmless. Pure.
+ * Time windows for the reminder jobs, which run every hour. The delivery log makes overlapping or
+ * extra runs harmless; timing choices come from Admin → Member notifications. Pure.
  */
+import { addDays, isoDateInZone } from "../practice/dates";
+import { localNow } from "./zone";
 
 const HOUR_MS = 3_600_000;
 const DAY_MS = 24 * HOUR_MS;
 
 /** Drip lessons that opened this long ago still get their "new lesson" notice (covers missed runs). */
 export const UNLOCK_LOOKBACK_HOURS = 72;
-/** Feedback videos waiting longer than this are flagged to the team. */
-export const FEEDBACK_OVERDUE_DAYS = 5;
-/**
- * Live-session reminder bands. Vercel Hobby crons fire somewhere within the scheduled hour, so runs
- * are 23–25 hours apart; two hours of slack keeps every session inside one run's band.
- */
-export const QA_DAY_OF_HOURS = 26;
+/** Sessions this far ahead are loaded; the day-before reminder needs up to two days. */
 export const QA_LOOKAHEAD_HOURS = 50;
 
 export interface TimeWindow {
@@ -34,25 +30,41 @@ export function qaWindow(now: Date): TimeWindow {
 
 export type QaStage = "day_before" | "day_of";
 
+export interface LiveTiming {
+  dayBefore: boolean;
+  /** 0–23, in the member's zone */
+  dayBeforeHour: number;
+  dayOf: boolean;
+  /** the day-of reminder goes this many hours before the start */
+  hoursBefore: number;
+}
+
 /**
- * Which reminder a session is due for: "day_of" when it starts within QA_DAY_OF_HOURS, "day_before"
- * up to QA_LOOKAHEAD_HOURS ahead, otherwise none. Bands are by hours, not calendar days, so a daily
- * run reaches each band once wherever the member lives; the wording names the member's local day.
+ * Which reminder a session is due for, for a member in `zone`: "day_of" within `hoursBefore` of
+ * the start; "day_before" when it starts tomorrow (their calendar) and it's past the chosen hour.
  */
-export function qaStage(startsAt: Date, now: Date): QaStage | null {
+export function liveStage(startsAt: Date, now: Date, zone: string, timing: LiveTiming): QaStage | null {
   const until = startsAt.getTime() - now.getTime();
   if (until <= 0) return null;
-  if (until <= QA_DAY_OF_HOURS * HOUR_MS) return "day_of";
-  if (until <= QA_LOOKAHEAD_HOURS * HOUR_MS) return "day_before";
-  return null;
+  if (timing.dayOf && until <= timing.hoursBefore * HOUR_MS) return "day_of";
+  if (!timing.dayBefore) return null;
+  // An early-morning session with a long day-of lead: the day-of reminder is due within the hour.
+  if (timing.dayOf && until <= (timing.hoursBefore + 1) * HOUR_MS) return null;
+  const local = localNow(now, zone);
+  return isoDateInZone(startsAt, local.zone) === addDays(local.date, 1) && local.hour >= timing.dayBeforeHour ? "day_before" : null;
 }
 
 /** Videos created before this instant have waited too long. */
-export function feedbackOverdueCutoff(now: Date): Date {
-  return new Date(now.getTime() - FEEDBACK_OVERDUE_DAYS * DAY_MS);
+export function feedbackOverdueCutoff(now: Date, days: number): Date {
+  return new Date(now.getTime() - days * DAY_MS);
 }
 
 /** Whole days a video has been waiting. */
 export function daysWaiting(createdAt: Date, now: Date): number {
   return Math.max(0, Math.floor((now.getTime() - createdAt.getTime()) / DAY_MS));
+}
+
+/** Local hour gate for "from this hour" notices (new lessons). */
+export function pastLocalHour(now: Date, timezone: string | null, hour: number): boolean {
+  return localNow(now, timezone).hour >= hour;
 }

@@ -2,9 +2,13 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { isAuthorizedCron } from "@/lib/reminders/cron-auth";
 import { runReminderJobs } from "@/lib/reminders/server/run";
+import { recordJobRun } from "@/lib/job-runs";
+import { sendPendingPush } from "@/lib/push/server";
+import { cleanStaleStoryUploads } from "@/lib/stories/cleanup";
 
 // Vercel caps Hobby functions at 60 seconds.
 export const maxDuration = 60;
+const PUSH_DEADLINE_MS = 20_000;
 
 /**
  * Daily reminders (vercel.json schedules it). Vercel Cron sends `Authorization: Bearer $CRON_SECRET`;
@@ -25,5 +29,17 @@ export async function GET(req: NextRequest) {
   }
 
   const summary = await runReminderJobs(sb);
-  return NextResponse.json(summary, { status: summary.ok ? 200 : 500 });
+  await recordJobRun(sb, "reminders", summary.ok);
+  // Housekeeping: photos visitors uploaded on "Share your story" but never sent.
+  const staleStoryPhotos = await cleanStaleStoryUploads(sb);
+  // Today's reminders (and anything else notified in the last half hour) to members' phones,
+  // within what's left of the function's time.
+  const pushes = await Promise.race([
+    sendPendingPush(null).catch((error: unknown) => {
+      console.error("[cron reminders] push failed", { error: error instanceof Error ? error.message : error });
+      return 0;
+    }),
+    new Promise<"timed out">((resolve) => setTimeout(() => resolve("timed out"), PUSH_DEADLINE_MS)),
+  ]);
+  return NextResponse.json({ ...summary, pushes, staleStoryPhotos }, { status: summary.ok ? 200 : 500 });
 }

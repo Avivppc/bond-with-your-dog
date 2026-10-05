@@ -1,22 +1,21 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
-import type { Tier } from "@/lib/quiz/data";
-import { TIER_RESULTS } from "@/lib/quiz/data";
+import type { Tier, TierResultContent } from "@/lib/quiz/data";
 import TrackOnMount from "@/components/analytics/TrackOnMount";
 import TrackedLink from "@/components/analytics/TrackedLink";
 import { EVENTS } from "@/lib/analytics-events";
 
 interface ChapterPlaceholderProps {
   tier: Tier;
+  /** The quiz result copy for this chapter (editable in Admin → Lead quiz). */
+  result: TierResultContent;
 }
 
-export default function ChapterPlaceholder({ tier }: ChapterPlaceholderProps) {
-  const result = TIER_RESULTS[tier];
-
+export default function ChapterPlaceholder({ tier, result }: ChapterPlaceholderProps) {
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <TrackOnMount event={EVENTS.chapterPageViewed} props={{ plan: tier }} />
       <main className="pt-32 pb-24 px-6 md:px-8 min-h-screen">
         <div className="max-w-3xl mx-auto text-center">

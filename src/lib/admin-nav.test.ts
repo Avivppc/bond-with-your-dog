@@ -9,26 +9,34 @@ const hrefsOf = (role: "owner" | "editor") => {
 describe("adminNavFor", () => {
   it("lays out Kajabi's top-level entries with expandable groups", () => {
     const nav = adminNavFor("owner");
-    expect(nav.main.map((e) => e.label)).toEqual(["Dashboard", "Products", "Sales", "Coaching", "Contacts", "Analytics"]);
+    expect(nav.main.map((e) => e.label)).toEqual(["Dashboard", "Products", "Website", "Sales", "Marketing", "Coaching", "Contacts", "Analytics"]);
+    expect(nav.main.find((e) => e.label === "Website")?.children?.map((c) => c.href)).toEqual(["/admin/website", "/site-editor/theme", "/site-editor/member", "/admin/media"]);
+    expect(nav.main.find((e) => e.label === "Marketing")?.children?.map((c) => c.href)).toEqual(["/admin/email-flows", "/admin/campaigns", "/admin/coupons", "/admin/discount-codes"]);
     expect(nav.main[0]).toEqual({ label: "Dashboard", icon: "home", href: "/admin" });
     expect(nav.main.find((e) => e.label === "Products")?.children?.map((c) => c.label)).toEqual([
       "All Products",
       "Courses",
       "Moves Library",
+      "Assessments",
       "Community",
     ]);
-    expect(nav.main.find((e) => e.label === "Contacts")?.children?.map((c) => c.href)).toEqual(["/admin/people", "/admin/leads", "/admin/inbox"]);
+    expect(nav.main.find((e) => e.label === "Contacts")?.children?.map((c) => c.href)).toEqual(["/admin/people", "/admin/insights", "/admin/leads", "/admin/inbox"]);
     expect(nav.bottom.map((e) => e.label)).toEqual(["Settings", "View member app"]);
   });
 
   it("links the coaching tools, including Roni's Studio outside the admin", () => {
-    expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/home"]));
+    expect(hrefsOf("owner")).toEqual(expect.arrayContaining(["/studio", "/admin/coaching/questions", "/admin/coaching/live-qa", "/admin/coaching/replies", "/home"]));
   });
 
-  it("hides Team from editors and drops the Settings group left empty", () => {
+  it("hides Team, General and Payments from editors but keeps the settings they send with", () => {
     const nav = adminNavFor("editor");
     expect(hrefsOf("editor")).not.toContain("/admin/team");
-    expect(nav.bottom.map((e) => e.label)).toEqual(["View member app"]);
+    expect(nav.bottom.find((e) => e.label === "Settings")?.children?.map((c) => c.href)).toEqual([
+      "/admin/settings/member-notifications",
+      "/admin/settings/certificate",
+      "/admin/settings/notifications",
+      "/admin/settings/email",
+    ]);
     expect([...nav.main, ...nav.bottom].every((e) => (e.children ? e.children.length > 0 : Boolean(e.href)))).toBe(true);
   });
 });

@@ -6,6 +6,9 @@ import { createServiceClient } from "@/lib/supabase/admin";
 import { priceText, type AccessLevel, type OfferFormState, type OfferFormValues } from "@/lib/admin-helpers/offer-form";
 import { Notice, PageHeader } from "@/app/admin/_components/ui";
 import { OfferForm, type OfferCourseOption } from "./OfferForm";
+import { SellingToolsCard } from "./SellingToolsCard";
+
+export const metadata = { title: "Offer" };
 
 export const dynamic = "force-dynamic";
 
@@ -97,7 +100,7 @@ export default async function EditOfferPage({
   return (
     <div className="max-w-3xl space-y-5">
       <PageHeader title={title} crumbs={[{ label: "Offers", href: "/admin/offers" }, { label: title }]} />
-      {saved && <Notice tone="success">Offer saved.</Notice>}
+      {saved && <Notice tone="success">{saved === "tools" ? "Selling tools saved." : "Offer saved."}</Notice>}
       {typeof error === "string" && <Notice tone="error">{error}</Notice>}
       {offer && (
         <p className="text-[14px] text-[#6c6a69]">
@@ -110,6 +113,7 @@ export default async function EditOfferPage({
       )}
       {/* Keyed by the saved values, so the form starts fresh from the database after each save. */}
       <OfferForm key={`${id}:${JSON.stringify(initial.values)}`} id={offer?.id ?? "new"} courses={courses} initial={initial} />
+      {offer && <SellingToolsCard offerId={offer.id} />}
     </div>
   );
 }

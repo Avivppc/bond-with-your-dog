@@ -12,6 +12,8 @@ import { MeetupForm, type MeetupRecord } from "./MeetupForm";
 import { MembersTab } from "./MembersTab";
 import { ModerationTab } from "./ModerationTab";
 
+export const metadata = { title: "Community" };
+
 export const dynamic = "force-dynamic";
 
 const TABS = ["settings", "channels", "challenges", "meetups", "members", "moderation"] as const;

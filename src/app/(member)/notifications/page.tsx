@@ -3,6 +3,8 @@ import { requireMember } from "@/lib/member/viewer";
 import { createClient } from "@/lib/supabase/server";
 import { StateCard } from "@/components/app/ui";
 import { NotificationInbox, type InboxItem } from "./NotificationInbox";
+import { PushBanner } from "@/components/app/push/PushBanner";
+import { pushConfig } from "@/lib/push/server";
 
 export const metadata = { title: "Notifications" };
 
@@ -18,6 +20,7 @@ export default async function NotificationsPage() {
     .limit(LIMIT);
   if (error) console.error("[notifications] load failed", error.message);
   const items = (data ?? []) as InboxItem[];
+  const banner = <PushBanner publicKey={pushConfig()?.publicKey ?? null} />;
 
   if (items.length === 0) {
     return (
@@ -26,6 +29,7 @@ export default async function NotificationsPage() {
           <span className="eyebrow">Inbox</span>
           <h1 className="h1">Notifications</h1>
         </div>
+        {banner}
         <StateCard
           icon="notifications"
           tone="teal"
@@ -43,5 +47,10 @@ export default async function NotificationsPage() {
     );
   }
 
-  return <NotificationInbox items={items} nowIso={new Date().toISOString()} />;
+  return (
+    <>
+      {banner}
+      <NotificationInbox items={items} nowIso={new Date().toISOString()} />
+    </>
+  );
 }

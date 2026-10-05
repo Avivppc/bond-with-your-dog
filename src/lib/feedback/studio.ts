@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import type { SkillLevel } from "@/lib/member/viewer";
 import { settleUploads, type UploadingRow } from "./upload-server";
-import { hasUnansweredMessage, videosAwaitingReply, type FeedbackStatus, type VideoMessage } from "./status";
+import { hasUnansweredMessage, UNNAMED_MEMBER, videosAwaitingReply, type FeedbackStatus, type VideoMessage } from "./status";
 
 /** Roni's Studio data. Callers must have passed requireStaff() first (service role, no RLS). */
 
@@ -98,7 +98,7 @@ async function memberNames(sb: Service, userIds: string[]): Promise<Map<string, 
   if (userIds.length === 0) return new Map();
   const { data, error } = await sb.from("profiles").select("id, full_name").in("id", userIds);
   if (error) console.error("[studio] profiles load failed", error.message);
-  return new Map((data ?? []).map((p) => [p.id as string, ((p.full_name as string | null) ?? "").trim() || "Member"]));
+  return new Map((data ?? []).map((p) => [p.id as string, ((p.full_name as string | null) ?? "").trim() || UNNAMED_MEMBER]));
 }
 
 async function unansweredVideos(sb: Service, videoIds: string[]): Promise<Set<string>> {
@@ -140,7 +140,7 @@ export async function loadQueue(sb: Service, tab: StudioTab): Promise<QueueVideo
   return rows.map(({ dogs, moves, ...r }) => ({
     ...r,
     duration_seconds: r.duration_seconds === null ? null : Number(r.duration_seconds),
-    memberName: names.get(r.user_id) ?? "Member",
+    memberName: names.get(r.user_id) ?? UNNAMED_MEMBER,
     dogName: dogs?.name ?? null,
     dogPhoto: dogs?.photo_url ?? null,
     moveName: moves?.name ?? null,

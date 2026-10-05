@@ -6,6 +6,8 @@ import { loadHome, type HomeData } from "@/lib/member/home";
 import { ArrowLink, Days, Ms } from "@/components/app/ui";
 import { WEEKDAYS } from "@/components/app/ui";
 import { CourseProgressLine, LiveAndLibrary, RoniCard, SkillsStrip, WeekCard, lessonHref, lessonLength, mediaFor } from "./sections";
+import { loadMemberArea } from "@/lib/member-area/server";
+import type { MemberHome } from "@/lib/member-area/settings";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Home" };
@@ -30,11 +32,12 @@ function returningLede(data: HomeData, dog: string): string {
 export default async function HomePage() {
   const viewer = await requireMember("/home");
   if (!viewer.profile.onboarded_at) redirect("/welcome");
-  const data = await loadHome(viewer);
+  const [data, { settings }] = await Promise.all([loadHome(viewer), loadMemberArea(viewer.isStaff)]);
   const dog = dogName(viewer);
+  const home = settings.home;
 
-  if (!data.current) return <NoCourseHome viewer={viewer} />;
-  if (data.dayOne) return <DayOneHome viewer={viewer} data={data} dog={dog} />;
+  if (!data.current) return <NoCourseHome viewer={viewer} home={home} />;
+  if (data.dayOne) return <DayOneHome viewer={viewer} data={data} dog={dog} home={home} />;
 
   const href = lessonHref(data);
   const total = data.current.lessons.length;
@@ -47,7 +50,7 @@ export default async function HomePage() {
             {data.nextNumber > 0 ? ` · Lesson ${data.nextNumber} of ${total}` : ""}
           </span>
           <h1 className="display">
-            Welcome back,
+            {home.welcomeBack}
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
@@ -78,18 +81,25 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="grid-2" data-tour="week">
-        <WeekCard data={data} />
-        <RoniCard data={data} />
-      </div>
-
-      <SkillsStrip data={data} dog={dog} />
-      <LiveAndLibrary data={data} />
+      {home.sections
+        .filter((s) => s.visible)
+        .map((s) =>
+          s.key === "week" ? (
+            <div key={s.key} className="grid-2" data-tour="week">
+              <WeekCard data={data} />
+              <RoniCard data={data} />
+            </div>
+          ) : s.key === "skills" ? (
+            <SkillsStrip key={s.key} data={data} dog={dog} />
+          ) : (
+            <LiveAndLibrary key={s.key} data={data} />
+          ),
+        )}
     </>
   );
 }
 
-function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeData; dog: string }) {
+function DayOneHome({ viewer, data, dog, home }: { viewer: MemberViewer; data: HomeData; dog: string; home: MemberHome }) {
   const href = lessonHref(data);
   const first = data.current!.lessons[0];
   const plannedDays = viewer.profile.practice_days;
@@ -99,7 +109,7 @@ function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeDat
         <div className="hero-copy">
           <span className="eyebrow">Day 1 · {data.current!.course.title}</span>
           <h1 className="display">
-            Welcome to Bonded,
+            {home.welcomeNew}
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
@@ -183,18 +193,18 @@ function DayOneHome({ viewer, data, dog }: { viewer: MemberViewer; data: HomeDat
   );
 }
 
-function NoCourseHome({ viewer }: { viewer: MemberViewer }) {
+function NoCourseHome({ viewer, home }: { viewer: MemberViewer; home: MemberHome }) {
   return (
     <>
       <div className="hero">
         <div className="hero-copy">
           <span className="eyebrow">Welcome</span>
           <h1 className="display">
-            Welcome to Bonded,
+            {home.welcomeNew}
             <br />
             <em>{greetingName(viewer)}</em>
           </h1>
-          <p className="lede">Three chapters, one partnership: Foundations, Moves and Let&apos;s Dance. Choose where to begin and your first lesson will be waiting here.</p>
+          <p className="lede">{home.noChapterText}</p>
           <div className="row" style={{ gap: 20 }}>
             <Link className="btn btn-primary" href="/my-courses">
               <Ms name="school" />

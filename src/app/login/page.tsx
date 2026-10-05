@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import GoogleButton from "@/components/auth/GoogleButton";
 import { login } from "./actions";
@@ -15,7 +15,7 @@ export default async function LoginPage({
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main
         className="pt-28 pb-20 min-h-screen px-5 md:px-8"
         style={{ backgroundColor: "#edf8ff" }}

@@ -6,6 +6,8 @@ import { MeetupForm, type MeetupRecord } from "@/app/admin/community/MeetupForm"
 import { loadMembers, MemberLink, type MemberInfo } from "../members";
 import { setQaQuestionAnswered } from "./actions";
 
+export const metadata = { title: "Live Q&A" };
+
 export const dynamic = "force-dynamic";
 
 const SESSIONS_SHOWN = 100;

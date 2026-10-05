@@ -57,13 +57,13 @@ export function VideoPanel({ courseId, lessonId, video }: VideoPanelProps) {
           <div className="flex flex-wrap items-center gap-4 rounded-[8px] border border-[#efeeed] p-3">
             {current.thumbnailUrl ? (
               // eslint-disable-next-line @next/next/no-img-element -- remote Vimeo thumbnail, admin-only preview
-              <img src={current.thumbnailUrl} alt="" className="aspect-video w-44 rounded-[6px] bg-[#f3f3f2] object-cover" />
+              <img src={current.thumbnailUrl} alt="" className="aspect-video w-full rounded-[6px] bg-[#f3f3f2] object-cover sm:w-44" />
             ) : (
-              <div className="flex aspect-video w-44 items-center justify-center rounded-[6px] bg-[#f3f3f2] text-xs text-[#6c6a69]">
+              <div className="flex aspect-video w-full items-center sm:w-44 justify-center rounded-[6px] bg-[#f3f3f2] text-xs text-[#6c6a69]">
                 {current.provider === "mux" ? "Mux video" : "Vimeo video"}
               </div>
             )}
-            <div className="min-w-0 flex-1 space-y-1 text-sm">
+            <div className="min-w-[10rem] flex-1 space-y-1 text-sm">
               <p className="font-medium">
                 {current.provider === "vimeo" ? "Vimeo" : "Mux (legacy)"}
                 {formatDuration(current.durationSeconds) && (

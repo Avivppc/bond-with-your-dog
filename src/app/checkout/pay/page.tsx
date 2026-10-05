@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import { siteUrl } from "@/lib/email";
 import { PaddleCheckout } from "./PaddleCheckout";
 
@@ -14,7 +14,7 @@ export default async function PayPage({ searchParams }: { searchParams: Promise<
   const successUrl = order ? `${siteUrl()}/checkout/success?order=${encodeURIComponent(order)}` : `${siteUrl()}/home`;
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-40 pb-20 max-w-xl mx-auto px-5 min-h-screen" style={{ backgroundColor: "#edf8ff" }}>
         <PaddleCheckout
           clientToken={token}

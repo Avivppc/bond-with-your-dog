@@ -5,12 +5,15 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { pushSoon } from "@/lib/push/server";
+import { loadNotificationSettings } from "@/lib/notification-settings/server";
 import { sendEmail, siteUrl } from "@/lib/email";
 import { parsePage } from "@/lib/admin-helpers/pagination";
 import { inboxHref, parseInboxStatus, parseInboxTab } from "@/lib/admin-helpers/inbox";
+import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 
 const Id = z.string().uuid();
-const Answer = z.string().trim().min(1, "Write an answer first.").max(5000, "Keep the answer under 5,000 characters.");
+const Answer = z.string().trim().min(1, "Write an answer first.").max(5000, "Keep the answer under 5,000 characters.").refine(isFilledIn, UNFILLED_TAGS_ERROR);
 const ApprovalNote = z.string().trim().max(5000).optional();
 
 function back(formData: FormData, params: Record<string, string>): never {
@@ -55,6 +58,13 @@ export async function answerRequest(formData: FormData): Promise<void> {
     back(formData, { error: "Could not save the answer." });
   }
 
+  pushSoon(request.user_id);
+  // Admin → Member notifications: the bell follows it in the database, the email here.
+  const topic = (await loadNotificationSettings()).topics.support_answered;
+  if (!topic.enabled || !topic.email) {
+    done();
+    back(formData, { ok: "Answer saved. No email was sent (turned off in Member notifications)." });
+  }
   const to = await memberEmail(request.user_id);
   const emailed =
     to !== null &&
@@ -84,7 +94,21 @@ export async function setRequestStatus(formData: FormData): Promise<void> {
   back(formData, { ok: status.data === "closed" ? "Closed." : "Reopened." });
 }
 
-/** Stories: record that the team approved it (closes it with a note to the member). Publishing is manual. */
+/** A website visitor's story was approved: they have no account, so the note goes by email. */
+async function emailVisitor(story: { contact_name: string | null; contact_email: string | null }, note: string): Promise<boolean> {
+  if (!story.contact_email) return false;
+  const firstName = story.contact_name?.split(/\s+/)[0] ?? "";
+  return sendEmail({
+    to: story.contact_email,
+    subject: "Your BONDED story",
+    text: [`Hi ${firstName},`.replace(" ,", ","), "", note, "", "—", "Roni's team", siteUrl()].join("\n"),
+  });
+}
+
+/**
+ * Stories: record that the team approved it (closes it with a note to the sender: in the app for
+ * members, by email for website visitors). Publishing is manual.
+ */
 export async function approveStory(formData: FormData): Promise<void> {
   const { user } = await requireStaff("sales");
   const id = Id.safeParse(formData.get("id"));
@@ -97,11 +121,14 @@ export async function approveStory(formData: FormData): Promise<void> {
     .eq("id", id.data)
     .eq("kind", "story")
     .eq("consent_public", true)
-    .select("id");
+    .select("id, user_id, contact_name, contact_email");
   if (error || !data?.length) {
     console.error("[inbox] approve story failed", { id: id.data, error: error?.message ?? "not a shareable story" });
-    back(formData, { error: error ? "Could not approve the story." : "Only stories the member agreed to share can be approved." });
+    back(formData, { error: error ? "Could not approve the story." : "Only stories the sender agreed to share can be approved." });
   }
+  const story = data[0];
+  if (story.user_id) pushSoon(story.user_id);
+  const emailed = story.user_id ? false : await emailVisitor(story, answer);
   done();
-  back(formData, { ok: "Story marked approved." });
+  back(formData, { ok: story.contact_email && !emailed ? "Story marked approved. No email was sent (email isn't set up)." : "Story marked approved." });
 }

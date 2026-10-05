@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 720px; height: 920px; overflow: hidden; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif; }
+
+  #canvas { position: relative; width: 720px; height: 920px;
+    background: linear-gradient(160deg, #dfecf7 0%, #f2f8fd 55%, #e6f0f9 100%); overflow: hidden; }
+  #camera { position: absolute; left: 0; top: 0; width: 720px; height: 920px; transform-origin: 0 0; }
+
+  /* ---------- phone ---------- */
+  #phone { position: absolute; left: 160.5px; top: 42px; width: 399px; height: 836px;
+    background: #10151c; border-radius: 60px;
+    box-shadow: 0 30px 60px rgba(13,43,69,.28), 0 4px 14px rgba(13,43,69,.18),
+      inset 0 0 0 2px #3a4552; }
+  #screen { position: absolute; left: 12px; top: 12px; width: 375px; height: 812px;
+    border-radius: 48px; overflow: hidden; background: #fff; }
+  .island { position: absolute; left: 50%; top: 12px; transform: translateX(-50%);
+    width: 110px; height: 30px; border-radius: 16px; background: #10151c; z-index: 40; }
+
+  .layer { position: absolute; inset: 0; }
+
+  /* ---------- status bar ---------- */
+  .statusbar { position: absolute; top: 0; left: 0; right: 0; height: 52px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 30px 0; font-size: 15px; font-weight: 600; z-index: 30; }
+  .statusbar .sicons { display: flex; gap: 6px; align-items: center; }
+
+  /* ---------- Bonded member app mock ---------- */
+  #app { background: #edf8ff; color: #243036; }
+  .app-head { display: flex; align-items: center; justify-content: space-between;
+    padding: 64px 20px 10px; }
+  .app-logo { font-weight: 800; font-size: 22px; letter-spacing: -0.3px; }
+  .app-logo span { color: #8b4b00; }
+  .install-pill { display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600;
+    color: #8b4b00; border: 1.5px solid #8b4b0040; background: #8b4b0014;
+    border-radius: 999px; padding: 6px 12px; }
+  .hero { margin: 8px 16px; height: 150px; border-radius: 18px; overflow: hidden; position: relative; }
+  .hero img { width: 100%; height: 100%; object-fit: cover; }
+  .hero .cap { position: absolute; left: 14px; bottom: 12px; color: #fff; font-weight: 700;
+    font-size: 15px; text-shadow: 0 1px 8px rgba(0,0,0,.45); }
+  .hero .cap small { display: block; font-size: 11px; font-weight: 600; opacity: .9; }
+  .card { margin: 12px 16px; background: #fff; border-radius: 16px; padding: 14px 16px;
+    box-shadow: 0 2px 10px rgba(13,43,69,.06); }
+  .card h3 { font-size: 15px; margin-bottom: 4px; }
+  .card p { font-size: 12px; color: #637178; margin-bottom: 10px; }
+  .bar { height: 7px; background: #e4f3fc; border-radius: 4px; overflow: hidden; }
+  .bar i { display: block; height: 100%; width: 62%; background: #8b4b00; border-radius: 4px; }
+  .startbtn { margin-top: 12px; background: #243036; color: #fff; text-align: center;
+    border-radius: 12px; padding: 11px; font-size: 14px; font-weight: 700; }
+  .statrow { display: flex; gap: 12px; margin: 0 16px; }
+  .statrow .card { flex: 1; margin: 0; text-align: center; padding: 12px 8px; }
+  .statrow b { font-size: 18px; } .statrow small { font-size: 10.5px; color: #637178; }
+  .apptabs { position: absolute; left: 0; right: 0; bottom: 104px; height: 58px;
+    display: flex; background: #ffffffee; border-top: 1px solid #e2ebf3; }
+  .apptabs div { flex: 1; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 3px; font-size: 9.5px; color: #637178; font-weight: 600; }
+  .apptabs div.on { color: #8b4b00; }
+
+  /* ---------- Chrome-on-iOS chrome: omnibox + Share up top, toolbar below */
+  #chrometop { position: absolute; left: 0; right: 0; top: 0; height: 102px;
+    background: #f7f7f8; border-bottom: 0.5px solid #d5d5da; z-index: 20; }
+  .omnirow { display: flex; align-items: center; gap: 10px; padding: 56px 12px 0 14px; }
+  .omnibox { flex: 1; height: 38px; background: #e9e9eb; border-radius: 19px;
+    display: flex; align-items: center; gap: 8px; padding: 0 14px; font-size: 15px;
+    color: #111; }
+  #shareBtn { position: relative; padding: 2px 5px; border-radius: 8px; }
+  #shareBtn svg { display: block; }
+  #chromebottom { position: absolute; left: 0; right: 0; bottom: 0; height: 78px;
+    background: #f7f7f8; border-top: 0.5px solid #d5d5da; z-index: 20; }
+  .toolrow { display: flex; align-items: center; justify-content: space-around;
+    padding: 12px 26px 0; }
+  .toolrow svg { display: block; }
+  .homedash { position: absolute; bottom: 7px; left: 50%; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 3px; background: #111; opacity: .9; z-index: 35; }
+  .homedash.light { background: #fff; }
+
+  /* ---------- dim ---------- */
+  #dim { background: #000; opacity: 0; z-index: 24; }
+
+  /* ---------- share sheet ---------- */
+  #sheet { position: absolute; left: 0; right: 0; bottom: 0; height: 500px;
+    background: #f2f2f7; border-radius: 14px 14px 0 0; z-index: 25; overflow: hidden;
+    box-shadow: 0 -6px 30px rgba(0,0,0,.18); }
+  .sheet-head { position: absolute; top: 0; left: 0; right: 0; height: 62px; z-index: 5;
+    background: #f2f2f7; border-bottom: 0.5px solid #d6d6da;
+    display: flex; align-items: center; padding: 0 16px; gap: 11px; }
+  .sheet-head img { width: 34px; height: 34px; border-radius: 8px; }
+  .sheet-head .tt { flex: 1; }
+  .sheet-head .tt b { display: block; font-size: 14.5px; color: #111; }
+  .sheet-head .tt span { font-size: 12px; color: #8a8a8e; }
+  .sheet-x { width: 26px; height: 26px; border-radius: 50%; background: #dedee3;
+    display: grid; place-items: center; color: #7a7a80; font-size: 14px; font-weight: 700; }
+  #sheetScroll { position: absolute; top: 62px; left: 0; right: 0; }
+  .apps { display: flex; gap: 22px; padding: 14px 20px 16px; }
+  .apps .ap { display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-size: 10.5px; color: #333; width: 62px; }
+  .apps .ap i { width: 58px; height: 58px; border-radius: 14px; display: grid;
+    place-items: center; color: #fff; font-style: normal; font-size: 24px; }
+  .group { margin: 0 16px 18px; background: #fff; border-radius: 12px; overflow: hidden; }
+  .row { height: 54px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 16px; font-size: 16.5px; color: #111; position: relative; }
+  .row + .row { border-top: 0.5px solid #e3e3e7; }
+  .row svg { color: #4a4a4f; }
+  #rowATHS { z-index: 2; }
+  #rowATHS .flash { position: absolute; inset: 0; background: #d9d9de; opacity: 0; }
+  #rowATHS .halo { position: absolute; inset: -3px; border: 3px solid #8b4b00;
+    border-radius: 10px; opacity: 0; }
+  .row .lbl { position: relative; z-index: 2; } .row svg { position: relative; z-index: 2; }
+
+  /* ---------- Add to Home Screen modal ---------- */
+  #modal { position: absolute; inset: 0; background: #f2f2f7; z-index: 26;
+    border-radius: 14px 14px 0 0; }
+  .mnav { display: flex; align-items: center; justify-content: space-between;
+    padding: 74px 18px 14px; border-bottom: 0.5px solid #d6d6da; background: #f9f9fb;
+    border-radius: 14px 14px 0 0; }
+  .mnav .c { color: #007aff; font-size: 16.5px; }
+  .mnav .t { font-size: 16.5px; font-weight: 650; color: #111; }
+  .mnav .a { color: #007aff; font-size: 16.5px; font-weight: 700; position: relative;
+    padding: 6px 10px; border-radius: 9px; }
+  .mnav .a .halo { position: absolute; inset: -4px; border: 3px solid #8b4b00;
+    border-radius: 12px; opacity: 0; }
+  .mrow { margin: 22px 16px; background: #fff; border-radius: 12px; padding: 13px 14px;
+    display: flex; gap: 12px; align-items: center; }
+  .mrow img { width: 58px; height: 58px; border-radius: 13px; }
+  .mrow b { display: block; font-size: 16.5px; color: #111; }
+  .mrow span { font-size: 13px; color: #8a8a8e; word-break: break-all; }
+  .mhint { margin: 0 26px; font-size: 12.5px; color: #8a8a8e; line-height: 1.45; }
+
+  /* ---------- home screen ---------- */
+  #home { z-index: 27; }
+  #home .wall { position: absolute; inset: 0; }
+  #home .wall img { width: 100%; height: 100%; object-fit: cover; }
+  #home .wall::after { content: ''; position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(10,25,40,.35), rgba(10,25,40,0) 30%,
+      rgba(10,25,40,0) 70%, rgba(10,25,40,.35)); }
+  .grid { position: absolute; top: 84px; left: 0; right: 0; display: grid;
+    grid-template-columns: repeat(4, 1fr); row-gap: 24px; padding: 0 20px; }
+  .icon { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .icon i { width: 62px; height: 62px; border-radius: 15px; display: grid;
+    place-items: center; font-style: normal; font-size: 26px; color: #ffffffd9;
+    box-shadow: 0 3px 8px rgba(0,0,0,.22); }
+  .icon span { font-size: 11px; color: #fff; font-weight: 500;
+    text-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  #appIcon { position: relative; }
+  #appIcon .ic { position: relative; z-index: 2; transform-origin: 50% 50%; }
+  #appIcon .ic img { width: 62px; height: 62px; border-radius: 15px; display: block;
+    box-shadow: 0 3px 10px rgba(0,0,0,.3); margin: 0 auto 5px; }
+  #appIcon .glow { position: absolute; left: 50%; top: 31px; width: 96px; height: 96px;
+    margin: -48px 0 0 -48px; border: 4px solid #ffffff; border-radius: 26px; opacity: 0; }
+  .dock { position: absolute; left: 12px; right: 12px; bottom: 16px; height: 86px;
+    border-radius: 26px; background: rgba(255,255,255,.28); backdrop-filter: blur(6px);
+    display: flex; align-items: center; justify-content: space-around; padding: 0 8px; }
+  .dock i { width: 58px; height: 58px; border-radius: 14px; display: grid;
+    place-items: center; font-style: normal; font-size: 24px; color: #ffffffd9;
+    box-shadow: 0 3px 8px rgba(0,0,0,.22); }
+
+  /* ---------- finger + ripples ---------- */
+  #finger { position: absolute; left: 0; top: 0; width: 130px; z-index: 60;
+    transform-origin: 26px 6px; filter: drop-shadow(0 10px 14px rgba(13,43,69,.35));
+    pointer-events: none; }
+  .rip { position: absolute; z-index: 55; border: 4px solid #fff; border-radius: 50%;
+    box-shadow: 0 0 12px rgba(255,255,255,.8), inset 0 0 10px rgba(255,255,255,.5);
+    transform: translate(-50%, -50%); pointer-events: none; }
+
+  #fade { position: absolute; inset: 0; z-index: 90;
+    background: linear-gradient(160deg, #dfecf7, #f2f8fd); opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="canvas">
+  <div id="camera">
+    <div id="phone">
+      <div id="screen">
+
+        <!-- Bonded in the browser -->
+        <div class="layer" id="app">
+          <div class="app-head" style="padding-top: 116px">
+            <div class="app-logo"><img src="logo.png" alt="" style="height:24px;display:block" /></div>
+            <div class="install-pill">＋ Install app</div>
+          </div>
+          <div class="hero"><img src="app-home-1.jpeg" alt="" />
+            <div class="cap"><small>CHAPTER 1 · FOUNDATIONS</small>Luna is 62% there</div>
+          </div>
+          <div class="card">
+            <h3>Today's practice</h3>
+            <p>Spin &amp; Twist · 10 min · With Luna</p>
+            <div class="bar"><i></i></div>
+            <div class="startbtn">Start practice</div>
+          </div>
+          <div class="statrow">
+            <div class="card"><b>12</b><br /><small>PRACTICES</small></div>
+            <div class="card"><b>5</b><br /><small>DAY STREAK</small></div>
+          </div>
+          <div class="card">
+            <h3>Next up</h3>
+            <p>Hand Target · Thursday</p>
+            <div class="bar"><i style="width:20%"></i></div>
+          </div>
+          <div class="apptabs">
+            <div class="on">●<br/>Home</div><div>▤<br/>Practice</div>
+            <div>▲<br/>Progress</div><div>◦<br/>Profile</div>
+          </div>
+        </div>
+
+        <!-- Chrome-on-iOS chrome -->
+        <div id="chrometop">
+          <div class="statusbar"><span>9:41</span>
+            <span class="sicons">
+              <svg width="18" height="12" viewBox="0 0 18 12"><g fill="#243036"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></g></svg>
+              <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 12 L2 5.5 A9 9 0 0 1 15 5.5 Z" fill="#243036"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#243036" opacity=".5"/><rect x="2" y="2" width="15" height="8" rx="1.6" fill="#243036"/><rect x="22.7" y="4" width="2" height="4" rx="1" fill="#243036" opacity=".5"/></svg>
+            </span>
+          </div>
+          <div class="omnirow">
+            <div class="omnibox">
+              <svg width="13" height="16" viewBox="0 0 13 16"><path d="M2 7V5a4.5 4.5 0 0 1 9 0v2h.5A1.5 1.5 0 0 1 13 8.5v5A1.5 1.5 0 0 1 11.5 15h-10A1.5 1.5 0 0 1 0 13.5v-5A1.5 1.5 0 0 1 1.5 7Zm2 0h5V5a2.5 2.5 0 0 0-5 0Z" fill="#5f6368"/></svg>
+              bonded.dog
+            </div>
+            <span id="shareBtn">
+              <svg width="24" height="30" viewBox="0 0 24 30"><g fill="none" stroke="#007aff" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v15"/><path d="M7 6.5 12 2l5 4.5"/><path d="M7 11H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V13a2 2 0 0 0-2-2h-2"/></g></svg>
+            </span>
+          </div>
+        </div>
+        <div id="chromebottom">
+          <div class="toolrow">
+            <svg width="12" height="20" viewBox="0 0 12 20"><path d="M10 2 3 10l7 8" fill="none" stroke="#5f6368" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="12" height="20" viewBox="0 0 12 20"><path d="M2 2l7 8-7 8" fill="none" stroke="#bdbdc2" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <svg width="22" height="22" viewBox="0 0 22 22"><g fill="none" stroke="#5f6368" stroke-width="1.9" stroke-linecap="round"><circle cx="11" cy="11" r="9"/><path d="M11 6.5v9M6.5 11h9"/></g></svg>
+            <span style="width: 24px; height: 24px; border: 2px solid #5f6368; border-radius: 7px; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #5f6368;">3</span>
+            <svg width="24" height="8" viewBox="0 0 24 8"><g fill="#5f6368"><circle cx="4" cy="4" r="2.4"/><circle cx="12" cy="4" r="2.4"/><circle cx="20" cy="4" r="2.4"/></g></svg>
+          </div>
+          <div class="homedash"></div>
+        </div>
+
+        <div class="layer" id="dim"></div>
+
+        <!-- iOS share sheet -->
+        <div id="sheet">
+          <div class="sheet-head">
+            <img src="icon-192.png" alt="" />
+            <div class="tt"><b>Bonded — Dance with your dog</b><span>bonded.dog · Options</span></div>
+            <div class="sheet-x">✕</div>
+          </div>
+          <div id="sheetScroll">
+            <div class="apps">
+              <div class="ap"><i style="background:linear-gradient(180deg,#4da2f7,#1470de)">◉</i>AirDrop</div>
+              <div class="ap"><i style="background:linear-gradient(180deg,#67d449,#2fae1d)">💬</i>Messages</div>
+              <div class="ap"><i style="background:linear-gradient(180deg,#57b6f8,#1a83f0)">✉</i>Mail</div>
+              <div class="ap"><i style="background:linear-gradient(180deg,#34cd5a,#1faa3e)">✆</i>WhatsApp</div>
+            </div>
+            <div class="group">
+              <div class="row"><span class="lbl">Copy</span>
+                <svg width="19" height="21" viewBox="0 0 19 21"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="1" y="5" width="12" height="15" rx="2.5"/><path d="M6 5V3.5A2.5 2.5 0 0 1 8.5 1H15a3 3 0 0 1 3 3v9.5a2.5 2.5 0 0 1-2.5 2.5H14"/></g></svg>
+              </div>
+              <div class="row"><span class="lbl">Add to Reading List</span>
+                <svg width="22" height="18" viewBox="0 0 22 18"><g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="6" cy="6" r="4.4"/><circle cx="16" cy="6" r="4.4"/><path d="M10.4 6h1.2"/></g></svg>
+              </div>
+              <div class="row"><span class="lbl">Add Bookmark</span>
+                <svg width="16" height="20" viewBox="0 0 16 20"><path d="M2 2.5A1.5 1.5 0 0 1 3.5 1h9A1.5 1.5 0 0 1 14 2.5V19l-6-4.5L2 19Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="row"><span class="lbl">Add to Favourites</span>
+                <svg width="20" height="19" viewBox="0 0 20 19"><path d="M10 1.5 12.6 7l6 .6-4.5 4 1.3 5.9L10 14.4 4.6 17.5 5.9 11.6 1.4 7.6l6-.6Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="row"><span class="lbl">Find on Page</span>
+                <svg width="19" height="19" viewBox="0 0 19 19"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="8" cy="8" r="6"/><path d="m13 13 4.5 4.5"/></g></svg>
+              </div>
+              <div class="row" id="rowATHS">
+                <div class="flash"></div><div class="halo"></div>
+                <span class="lbl"><b>Add to Home Screen</b></span>
+                <svg width="20" height="20" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="1" y="1" width="18" height="18" rx="4.5"/><path d="M10 6v8M6 10h8"/></g></svg>
+              </div>
+              <div class="row"><span class="lbl">Markup</span>
+                <svg width="20" height="20" viewBox="0 0 20 20"><path d="M13 2.5 17.5 7 7 17.5 2 18l.5-5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+              </div>
+              <div class="row"><span class="lbl">Print</span>
+                <svg width="20" height="20" viewBox="0 0 20 20"><g fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="1" width="12" height="5"/><rect x="1" y="6" width="18" height="8" rx="2"/><rect x="4" y="12" width="12" height="7"/></g></svg>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add to Home Screen modal -->
+        <div id="modal">
+          <div class="mnav">
+            <span class="c">Cancel</span>
+            <span class="t">Add to Home Screen</span>
+            <span class="a" id="addBtn"><span class="halo"></span>Add</span>
+          </div>
+          <div class="mrow">
+            <img src="icon-192.png" alt="" />
+            <div><b>Bonded</b><span>https://bonded.dog/home</span></div>
+          </div>
+          <p class="mhint">An icon will be added to your Home Screen so you can quickly
+            access this website.</p>
+        </div>
+
+        <!-- Home screen -->
+        <div class="layer" id="home">
+          <div class="wall"><img src="app-home-1.jpeg" alt="" /></div>
+          <div class="statusbar" style="color:#fff"><span>9:41</span>
+            <span class="sicons">
+              <svg width="18" height="12" viewBox="0 0 18 12"><g fill="#fff"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></g></svg>
+              <svg width="17" height="12" viewBox="0 0 17 12"><path d="M8.5 12 L2 5.5 A9 9 0 0 1 15 5.5 Z" fill="#fff"/></svg>
+              <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0.5" y="0.5" width="21" height="11" rx="3" fill="none" stroke="#fff" opacity=".6"/><rect x="2" y="2" width="15" height="8" rx="1.6" fill="#fff"/><rect x="22.7" y="4" width="2" height="4" rx="1" fill="#fff" opacity=".6"/></svg>
+            </span>
+          </div>
+          <div class="grid">
+            <div class="icon"><i style="background:linear-gradient(150deg,#8e9aab,#5d6b7e)">✉</i><span>Mail</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#ffd465,#f5a623)">☀</i><span>Weather</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#69d76c,#2ba946)">✆</i><span>Phone</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#c48ef2,#8e46d8)">♪</i><span>Music</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#5fc6f5,#1f8fe8)">✈</i><span>Travel</span></div>
+            <div class="icon" id="appIcon">
+              <div class="glow"></div>
+              <div class="ic"><img src="icon-192.png" alt="" /><span style="font-size:11px;color:#fff;font-weight:500;text-shadow:0 1px 4px rgba(0,0,0,.5)">Bonded</span></div>
+            </div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#ff8f8f,#e5484d)">♥</i><span>Health</span></div>
+            <div class="icon"><i style="background:linear-gradient(150deg,#4b5563,#1f2937)">⚙</i><span>Settings</span></div>
+          </div>
+          <div class="dock">
+            <i style="background:linear-gradient(150deg,#5fc6f5,#1f8fe8)">🌐</i>
+            <i style="background:linear-gradient(150deg,#67d449,#2fae1d)">💬</i>
+            <i style="background:linear-gradient(150deg,#ffd465,#f5a623)">📷</i>
+            <i style="background:linear-gradient(150deg,#c48ef2,#8e46d8)">♪</i>
+          </div>
+          <div class="homedash light"></div>
+        </div>
+
+        <div class="island"></div>
+      </div>
+    </div>
+
+    <!-- finger: tip anchor at (26, 6) of this SVG -->
+    <svg id="finger" viewBox="0 0 130 170" width="130">
+      <g>
+        <path d="M18 14 Q18 4 26 4 Q34 4 34 14 L34 78 L18 78 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M34 62 Q36 50 44 52 Q52 54 50 66 L48 80 L34 80 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M50 66 Q52 56 60 58 Q68 60 66 72 L64 84 L50 84 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M66 72 Q68 62 75 65 Q82 68 80 78 L78 90 L66 90 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M14 84 Q10 70 18 66 Q26 63 30 74 L32 84 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M14 82 Q12 74 18 72 L80 76 Q86 78 86 92 L86 120 Q86 150 60 150 L40 150 Q16 150 14 122 Z" fill="#f2c49b" stroke="#d89b6a" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M22 74 L30 74 L30 78 L22 78 Z" fill="#e5ad82" opacity=".6"/>
+      </g>
+    </svg>
+
+  </div><!-- /camera -->
+  <div id="fade"></div>
+</div>
+
+<script src="engine.js"></script>
+<script>
+const { track, ripple, press } = window.__engine
+const $ = (id) => document.getElementById(id)
+
+/* Aviv (1 Sep 2026): a touch slower, for people who need time to map the
+ * video onto their own screen. Uniform stretch: the scene is authored at the
+ * original pace and every incoming t is divided by SLOW. */
+const SLOW = 1.25
+const DUR = 8400
+window.__duration = DUR * SLOW
+
+/* ---- camera: up to the Share button first, then down to the sheet ---- */
+const camPos = track([
+  [500, [360, 460]], [1200, [360, 300]],
+  [1500, [360, 300]], [2100, [360, 630]],
+  [3600, [360, 630]], [4250, [360, 330]],
+  [4850, [360, 330]], [5550, [360, 460]],
+])
+const camScale = track([
+  [500, 1], [1200, 1.45], [1500, 1.45], [2100, 1.5],
+  [3600, 1.5], [4250, 1.45], [4850, 1.45], [5550, 1],
+])
+
+/* ---- finger tip position (canvas coords) ---- */
+const fingerPos = track([
+  [0, [630, 990]], [350, [560, 560], 'out'], [800, [518.5, 137], 'inOut'],
+  [1100, [518.5, 137]], [1700, [560, 480], 'inOut'],
+  [2250, [395, 768], 'inOut'],                       /* onto sheet          */
+  [2350, [395, 768]], [3000, [395, 556], 'inOut'],   /* drag up = scroll    */
+  [3300, [368, 600], 'inOut'],                       /* to Add to Home row  */
+  [3800, [368, 600]], [4150, [452, 705], 'inOut'],   /* out of the way      */
+  [4650, [524, 126], 'inOut'],                       /* up to Add button    */
+  [5000, [524, 126]], [5450, [595, 300], 'inOut'],   /* drift out           */
+])
+const fingerOpacity = track([
+  [0, 0], [280, 1], [5150, 1], [5500, 0],
+])
+/* finger dips when pressing */
+const fingerPress = (t) =>
+  Math.max(press(t, 850, 1000), press(t, 2350, 3000), press(t, 3450, 3620), press(t, 4720, 4880))
+
+/* ---- screen layers ---- */
+const sheetY = track([[1250, 520], [1720, -12, 'out'], [1880, 0, 'inOut'], [3750, 0], [4150, 140, 'in']])
+const sheetOpacity = track([[1250, 1], [3750, 1], [4100, 0]])
+const dimOpacity = track([[1200, 0], [1700, 0.35], [4900, 0.35], [5350, 0]])
+const scrollY = track([[2350, 0], [3000, -224, 'inOut'], [3200, -212, 'out']])
+const rowFlash = track([[3450, 0], [3530, 1], [3620, 1], [3850, 0]])
+const rowHalo = track([[3050, 0], [3250, 1], [3450, 1], [3600, 0]])
+const modalY = track([[3750, 320], [4180, 0, 'out']])
+const modalOpacity = track([[3750, 0], [4050, 1], [4950, 1], [5350, 0]])
+const addHalo = track([[4400, 0], [4580, 1], [4720, 1], [4880, 0]])
+const homeOpacity = track([[4980, 0], [5450, 1]])
+const iconScale = track([[5650, 0], [6000, 1.16, 'out'], [6200, 0.94], [6400, 1]])
+const iconOpacity = track([[5650, 0], [5850, 1]])
+const glowScale = track([[5850, 0.55], [6700, 1.6, 'out']])
+const glowOpacity = track([[5850, 0], [6000, 0.9], [6800, 0]])
+const endFade = track([[0, 1], [300, 0, 'out'], [8050, 0], [8400, 1, 'in']])
+
+const TAPS = [860, 3460, 4730]  /* ripple spawn times (canvas coords via fingerPos) */
+const ripEls = TAPS.map(() => {
+  const el = document.createElement('div')
+  el.className = 'rip'
+  $('camera').appendChild(el)
+  return el
+})
+
+window.setT = (raw) => {
+  const t = raw / SLOW
+  const [fx, fy] = camPos(t)
+  const s = camScale(t)
+  $('camera').style.transform =
+    `translate(${360 - fx * s}px, ${460 - fy * s}px) scale(${s})`
+
+  const [px, py] = fingerPos(t)
+  const pr = fingerPress(t)
+  const fs = 1 - 0.07 * pr
+  $('finger').style.transform =
+    `translate(${px - 26}px, ${py - 6}px) rotate(-14deg) scale(${fs})`
+  $('finger').style.opacity = fingerOpacity(t)
+
+  TAPS.forEach((t0, i) => {
+    const { r, o } = ripple(t, t0)
+    const [rx, ry] = fingerPos(t0 - 10)
+    ripEls[i].style.left = rx + 'px'
+    ripEls[i].style.top = ry + 'px'
+    ripEls[i].style.width = ripEls[i].style.height = r * 2 + 'px'
+    ripEls[i].style.opacity = o
+  })
+
+  $('sheet').style.transform = `translateY(${sheetY(t)}px)`
+  $('sheet').style.opacity = sheetOpacity(t)
+  $('sheet').style.display = t < 1050 ? 'none' : 'block'
+  $('sheetScroll').style.transform = `translateY(${scrollY(t)}px)`
+  $('dim').style.opacity = dimOpacity(t)
+  document.querySelector('#rowATHS .flash').style.opacity = rowFlash(t)
+  document.querySelector('#rowATHS .halo').style.opacity = rowHalo(t)
+  $('modal').style.transform = `translateY(${modalY(t)}px)`
+  $('modal').style.opacity = modalOpacity(t)
+  $('modal').style.display = t < 3550 ? 'none' : 'block'
+  document.querySelector('#addBtn .halo').style.opacity = addHalo(t)
+  $('home').style.opacity = homeOpacity(t)
+  $('home').style.display = t < 4780 ? 'none' : 'block'
+  const icEl = document.querySelector('#appIcon .ic')
+  icEl.style.transform = `scale(${iconScale(t)})`
+  icEl.style.opacity = iconOpacity(t)
+  const glow = document.querySelector('#appIcon .glow')
+  glow.style.transform = `scale(${glowScale(t)})`
+  glow.style.opacity = glowOpacity(t)
+  $('fade').style.opacity = endFade(t)
+}
+window.setT(0)
+</script>
+</body>
+</html>

@@ -7,6 +7,8 @@ import { loadAdminCourses } from "../_components/course-stats";
 import { dashboardCounts } from "../_components/dashboard-data";
 import { shortDate } from "../_components/list-kit";
 
+export const metadata = { title: "All Products" };
+
 export const dynamic = "force-dynamic";
 
 interface ProductRow {

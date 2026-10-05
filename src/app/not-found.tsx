@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 
 export const metadata = { title: "Page not found" };
@@ -7,7 +7,7 @@ export const metadata = { title: "Page not found" };
 export default function NotFound() {
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-32 pb-24 px-6 min-h-[70vh] flex items-center">
         <div className="max-w-xl mx-auto text-center">
           <p className="font-label text-sm font-semibold text-secondary uppercase tracking-widest mb-4">

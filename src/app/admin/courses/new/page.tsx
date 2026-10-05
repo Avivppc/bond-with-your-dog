@@ -3,6 +3,8 @@ import { requireStaff } from "@/lib/admin";
 import { Card, Notice, PageHeader } from "@/app/admin/_components/ui";
 import { CourseForm } from "@/app/admin/_components/CourseForm";
 
+export const metadata = { title: "New course" };
+
 export default async function NewCoursePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   await requireStaff("content");
   const { error } = await searchParams;

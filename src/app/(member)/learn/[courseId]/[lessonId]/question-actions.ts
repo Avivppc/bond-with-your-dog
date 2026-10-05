@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { fail, ok, type ActionResult } from "@/lib/member/result";
+import { notifyTeam } from "@/lib/notify-team";
 
 const Ask = z.object({ lessonId: z.string().uuid(), courseId: z.string().min(1).max(100), body: z.string().trim().min(3, "Write a little more.").max(2000) });
 
@@ -22,6 +23,13 @@ export async function askLessonQuestion(input: z.input<typeof Ask>): Promise<Act
     console.error("[questions] ask failed", { lessonId: parsed.data.lessonId, error: error.message });
     return fail(MESSAGES[error.code ?? ""] ?? "Could not send your question. Please try again.");
   }
+  const { data } = await supabase.auth.getUser();
+  await notifyTeam("questions", {
+    subject: "New lesson question",
+    lines: [`From: ${data.user?.email ?? "a member"}`],
+    quoted: parsed.data.body,
+    path: "/admin/coaching/questions",
+  });
   revalidatePath(`/learn/${parsed.data.courseId}/${parsed.data.lessonId}`);
   return ok(undefined);
 }

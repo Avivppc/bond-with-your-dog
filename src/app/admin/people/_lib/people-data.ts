@@ -1,6 +1,7 @@
 import "server-only";
 import { createServiceClient } from "@/lib/supabase/admin";
 import { toAmounts, type CurrencyAmount } from "@/lib/admin-helpers/money";
+import { PUSH_OFF, pushStatusByUser, type PushDeviceRow, type PushStatus } from "@/lib/push/devices";
 
 export const PEOPLE_PER_PAGE = 25;
 
@@ -40,6 +41,8 @@ export interface PersonRow {
   enrollments: EnrollmentSummary[];
   marketingOptIn: boolean;
   lifetimeValue: CurrencyAmount[];
+  /** Phone notifications: the devices that have them on. */
+  push: PushStatus;
 }
 
 interface PeopleRpcRow {
@@ -76,6 +79,14 @@ async function loadExtras(userIds: string[]): Promise<Map<string, ExtrasRow>> {
   return new Map(((data ?? []) as ExtrasRow[]).map((r) => [r.user_id, r]));
 }
 
+/** Who has phone notifications on, from their devices (a failed read shows everyone as off). */
+async function loadPushStatus(userIds: string[]): Promise<Map<string, PushStatus>> {
+  if (userIds.length === 0) return new Map();
+  const { data, error } = await createServiceClient().from("push_subscriptions").select("user_id, user_agent, last_seen_at").in("user_id", userIds);
+  if (error) console.error("[people] push devices failed", error.message);
+  return pushStatusByUser((data ?? []) as PushDeviceRow[]);
+}
+
 /** One page of contacts plus their marketing consent and lifetime value. */
 export async function loadPeople(search: string, segment: Segment, offset: number): Promise<PeoplePage> {
   const { data, error } = await createServiceClient().rpc("admin_list_people", {
@@ -89,7 +100,8 @@ export async function loadPeople(search: string, segment: Segment, offset: numbe
     return { rows: [], total: 0, failed: true };
   }
   const raw = (data ?? []) as PeopleRpcRow[];
-  const extras = await loadExtras(raw.map((r) => r.user_id));
+  const ids = raw.map((r) => r.user_id);
+  const [extras, push] = await Promise.all([loadExtras(ids), loadPushStatus(ids)]);
   return {
     total: Number(raw[0]?.total_count ?? 0),
     failed: false,
@@ -109,13 +121,15 @@ export async function loadPeople(search: string, segment: Segment, offset: numbe
         enrollments: r.enrollments ?? [],
         marketingOptIn: extra?.marketing_opt_in ?? false,
         lifetimeValue: toAmounts(extra?.lifetime_value),
+        push: push.get(r.user_id) ?? PUSH_OFF,
       };
     }),
   };
 }
 
-/** Lifetime value and consent for one person (the contact page). */
-export async function loadPersonExtras(userId: string): Promise<{ marketingOptIn: boolean; lifetimeValue: CurrencyAmount[] }> {
-  const extra = (await loadExtras([userId])).get(userId);
-  return { marketingOptIn: extra?.marketing_opt_in ?? false, lifetimeValue: toAmounts(extra?.lifetime_value) };
+/** Lifetime value, consent and phone notifications for one person (the contact page). */
+export async function loadPersonExtras(userId: string): Promise<{ marketingOptIn: boolean; lifetimeValue: CurrencyAmount[]; push: PushStatus }> {
+  const [extras, push] = await Promise.all([loadExtras([userId]), loadPushStatus([userId])]);
+  const extra = extras.get(userId);
+  return { marketingOptIn: extra?.marketing_opt_in ?? false, lifetimeValue: toAmounts(extra?.lifetime_value), push: push.get(userId) ?? PUSH_OFF };
 }

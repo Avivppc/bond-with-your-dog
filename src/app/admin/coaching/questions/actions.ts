@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireStaff } from "@/lib/admin";
 import { createServiceClient } from "@/lib/supabase/admin";
+import { pushSoon } from "@/lib/push/server";
+import { isFilledIn, UNFILLED_TAGS_ERROR } from "@/lib/saved-replies/replies";
 import { QUESTION_TABS } from "./tabs";
 
 /** Coaching → Lesson questions: answer (the DB trigger notifies the member), edit, hide / unhide. */
@@ -12,7 +14,7 @@ export type AnswerResult = { ok: true } | { ok: false; error: string };
 
 const Answer = z.object({
   id: z.string().uuid(),
-  answer: z.string().trim().min(1, "Write an answer first.").max(4000, "Answers can be up to 4,000 characters."),
+  answer: z.string().trim().min(1, "Write an answer first.").max(4000, "Answers can be up to 4,000 characters.").refine(isFilledIn, UNFILLED_TAGS_ERROR),
 });
 
 async function lessonPathOf(lessonId: string): Promise<string | null> {
@@ -27,7 +29,7 @@ export async function answerQuestion(input: z.input<typeof Answer>): Promise<Ans
   const { id, answer } = parsed.data;
 
   const sb = createServiceClient();
-  const { data: current, error: loadError } = await sb.from("lesson_questions").select("answered_at, lesson_id").eq("id", id).maybeSingle();
+  const { data: current, error: loadError } = await sb.from("lesson_questions").select("answered_at, lesson_id, user_id").eq("id", id).maybeSingle();
   if (loadError) console.error("[admin/coaching] question load failed", { id, error: loadError.message });
   if (!current) return { ok: false, error: "This question no longer exists." };
 
@@ -40,6 +42,8 @@ export async function answerQuestion(input: z.input<typeof Answer>): Promise<Ans
     console.error("[admin/coaching] answer failed", { id, error: error.message });
     return { ok: false, error: "Could not save the answer." };
   }
+  // Only the first answer notifies the member (the DB trigger), so only it is pushed.
+  if (!current.answered_at) pushSoon(current.user_id as string);
   revalidatePath("/admin/coaching/questions");
   const lessonPath = await lessonPathOf(current.lesson_id as string);
   if (lessonPath) revalidatePath(lessonPath);

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { createClient } from "@/lib/supabase/server";
 import { AutoRefresh } from "./AutoRefresh";
+import { UpsellCard } from "./UpsellCard";
 
 export const dynamic = "force-dynamic";
 
@@ -18,7 +19,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
 
   const { data: order } = await supabase
     .from("orders")
-    .select("id, status, offers(title, offer_courses(courses(id, title)))")
+    .select("id, status, gift_recipient_name, gift_recipient_email, offers(title, offer_courses(courses(id, title)))")
     .eq("id", orderId ?? "")
     .maybeSingle();
   if (!order) notFound();
@@ -28,9 +29,26 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="pt-32 pb-20 max-w-xl mx-auto px-5 min-h-screen text-center" style={{ backgroundColor: "#edf8ff" }}>
-        {order.status === "paid" && (
+        {order.status === "paid" && order.gift_recipient_email && (
+          <>
+            <span className="material-symbols-outlined text-6xl" style={{ color: "#0e666a" }}>
+              redeem
+            </span>
+            <h1 className="text-4xl font-extrabold tracking-tighter my-3" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>
+              Your gift is on its way
+            </h1>
+            <p className="mb-8" style={{ color: "#515d64" }}>
+              We emailed {order.gift_recipient_name ?? "them"} ({order.gift_recipient_email}) that you gave them {offer?.title}. They start with their own
+              account.
+            </p>
+            <Link href="/home" className="font-semibold underline-offset-4 hover:underline" style={{ color: "#8b4b00" }}>
+              Back to Bonded
+            </Link>
+          </>
+        )}
+        {order.status === "paid" && !order.gift_recipient_email && (
           <>
             <span className="material-symbols-outlined text-6xl" style={{ color: "#0e666a" }}>
               celebration
@@ -48,6 +66,7 @@ export default async function CheckoutSuccessPage({ searchParams }: { searchPara
                 </Link>
               ))}
             </div>
+            <UpsellCard orderId={order.id} userId={user.id} />
           </>
         )}
         {order.status === "pending" && (

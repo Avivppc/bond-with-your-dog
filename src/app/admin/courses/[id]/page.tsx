@@ -12,10 +12,13 @@ import { CourseOutlineEditor } from "./outline/CourseOutlineEditor";
 import { CourseImageUpload } from "./CourseImageUpload";
 import { ChapterDetailsCard, type ChapterDefaults } from "./ChapterDetailsCard";
 import { CourseOffersTab, CourseSettingsTab, CourseStudentsTab } from "./CourseTabs";
+import { CourseEngagementTab } from "./EngagementTab";
+
+export const metadata = { title: "Course" };
 
 export const dynamic = "force-dynamic";
 
-const TAB_KEYS = ["outline", "details", "offers", "students", "settings"] as const;
+const TAB_KEYS = ["outline", "details", "engagement", "offers", "students", "settings"] as const;
 type TabKey = (typeof TAB_KEYS)[number];
 
 function asTab(value: string | undefined): TabKey {
@@ -42,6 +45,7 @@ export default async function EditCoursePage({
   const tabs: TabItem[] = [
     { key: "outline", label: "Outline", href: base },
     { key: "details", label: "Details", href: `${base}?tab=details` },
+    { key: "engagement", label: "Engagement", href: `${base}?tab=engagement` },
     ...(canSell
       ? [
           { key: "offers", label: "Offers", href: `${base}?tab=offers` },
@@ -59,10 +63,10 @@ export default async function EditCoursePage({
         <Breadcrumbs items={[{ label: "Courses", href: "/admin/courses" }, { label: course.title }]} />
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-4">
-            <CourseThumb src={course.image || null} className="h-14 w-24" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-2">
-                <h1 className="truncate text-2xl font-semibold tracking-tight">{course.title}</h1>
+            <CourseThumb src={course.image || null} className="h-14 w-24 max-sm:hidden" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-2xl font-semibold tracking-tight sm:truncate">{course.title}</h1>
                 <StatusPill tone={course.published ? "published" : "draft"}>{course.published ? "Published" : "Draft"}</StatusPill>
               </div>
               <div className="mt-3">
@@ -81,7 +85,11 @@ export default async function EditCoursePage({
         </div>
       </div>
 
-      {saved && <Notice tone="success">{saved === "created" ? "Course created. Add your first module below." : "Course details saved."}</Notice>}
+      {saved && <Notice tone="success">{saved === "created"
+            ? "Course created. Add your first module below."
+            : saved === "duplicated"
+              ? "Course duplicated. This is the draft copy: rename it in Details and publish it when it's ready."
+              : "Course details saved."}</Notice>}
       {deleted === "lesson" && <Notice tone="success">Lesson deleted.</Notice>}
       {error && <Notice tone="error">{error}</Notice>}
 
@@ -107,6 +115,7 @@ export default async function EditCoursePage({
         </div>
       )}
 
+      {activeTab === "engagement" && <CourseEngagementTab courseId={id} />}
       {activeTab === "offers" && <CourseOffersTab courseId={id} />}
       {activeTab === "students" && <CourseStudentsTab courseId={id} />}
       {activeTab === "settings" && <CourseSettingsTab courseId={id} />}

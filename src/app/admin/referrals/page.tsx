@@ -7,6 +7,8 @@ import { BTN_PRIMARY, Card, EmptyState, INPUT, LABEL, Notice, PageHeader, Status
 import { StatCard, shortDate } from "@/app/admin/_components/list-kit";
 import { saveReferralSettings } from "./actions";
 
+export const metadata = { title: "Referrals" };
+
 export const dynamic = "force-dynamic";
 
 const SHOWN = 100;

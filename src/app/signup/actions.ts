@@ -7,6 +7,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { safeNext } from "@/lib/auth/safe-next";
 import { sendStaffConfirmLink } from "@/lib/auth/staff-invite-proof";
+import { clientIp, TURNSTILE_FIELD, verifyTurnstile } from "@/lib/turnstile";
 
 const Schema = z.object({
   full_name: z.string().min(2),
@@ -32,8 +33,12 @@ export async function signup(formData: FormData) {
     );
   }
 
-  const supabase = await createClient();
   const h = await headers();
+  if (!(await verifyTurnstile(String(formData.get(TURNSTILE_FIELD) ?? ""), clientIp(h)))) {
+    redirect(`/signup?${nextParam}&error=` + encodeURIComponent("Please confirm you're not a robot and try again."));
+  }
+
+  const supabase = await createClient();
   const origin = h.get("origin") ?? "";
 
   const { data, error } = await supabase.auth.signUp({

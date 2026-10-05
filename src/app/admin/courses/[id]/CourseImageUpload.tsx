@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/client";
 import { COURSE_IMAGES_BUCKET, validateCourseImage } from "@/lib/lesson-files";
 import { finishCourseImageUpload, saveCourseImageAlt, startCourseImageUpload } from "./image-actions";
 import { BTN_SECONDARY, Card, INPUT } from "@/app/admin/_components/ui";
+import { MediaPicker } from "@/app/admin/media/MediaPicker";
+import { setCourseImageFromLibrary } from "@/app/admin/media/actions";
 
 interface CourseImageUploadProps {
   courseId: string;
@@ -92,20 +94,32 @@ export function CourseImageUpload({ courseId, currentUrl, currentAlt }: CourseIm
             </button>
           )}
         </div>
-        <label className={`${BTN_SECONDARY} cursor-pointer ${busy ? "opacity-50" : ""}`}>
-          {busy ? "Uploading…" : url ? "Replace image" : "Upload image"}
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="sr-only"
+        <div className="flex flex-wrap gap-2">
+          <label className={`${BTN_SECONDARY} cursor-pointer ${busy ? "opacity-50" : ""}`}>
+            {busy ? "Uploading…" : url ? "Replace image" : "Upload image"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="sr-only"
+              disabled={busy}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void upload(file);
+                e.target.value = "";
+              }}
+            />
+          </label>
+          <MediaPicker
             disabled={busy}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void upload(file);
-              e.target.value = "";
+            onPick={async (picked) => {
+              const res = await setCourseImageFromLibrary({ courseId, url: picked });
+              if (!res.ok) return res.error;
+              setUrl(res.data.url);
+              setStatus("Cover image updated.");
+              return null;
             }}
           />
-        </label>
+        </div>
         {status && (
           <p role="status" className="text-xs text-[#6c6a69]">
             {status}

@@ -47,4 +47,12 @@ describe("renderEmailHtml", () => {
   it("only links http(s) addresses", () => {
     expect(renderEmailHtml({ subject: "s", text: "javascript:alert(1)" }, SITE)).not.toContain('href="javascript');
   });
+
+  it("adds a hidden inbox preview and an unsubscribe link for marketing emails", () => {
+    const html = renderEmailHtml({ subject: "s", text: "Hi" }, SITE, { preheader: "Your code <inside>", unsubscribeUrl: `${SITE}/unsubscribe?t=abc` });
+    expect(html).toContain("display:none");
+    expect(html).toContain("Your code &lt;inside&gt;");
+    expect(html).toContain(`href="${SITE}/unsubscribe?t=abc"`);
+    expect(renderEmailHtml({ subject: "s", text: "Hi" }, SITE)).not.toContain("Unsubscribe");
+  });
 });

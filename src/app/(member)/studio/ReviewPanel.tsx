@@ -2,8 +2,10 @@
 
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { SavedReplies } from "@/app/admin/_components/SavedReplies";
 import { formatClock } from "@/lib/feedback/format";
-import { COACH_LEVELS, type CoachLevel } from "@/lib/feedback/status";
+import { COACH_LEVELS, UNNAMED_MEMBER, type CoachLevel } from "@/lib/feedback/status";
+import { isFilledIn } from "@/lib/saved-replies/replies";
 import type { QueueVideo, ReviewDetail } from "@/lib/feedback/studio";
 import { NotedPlayer, type PlayerHandle } from "../feedback/_components/NotedPlayer";
 import { Conversation } from "../feedback/_components/Conversation";
@@ -15,6 +17,7 @@ import { pinNote, sendFeedback, setCoachLevel } from "./actions";
 /** The Studio's right-hand card: watch, pin notes at the playhead, set the level, send. */
 export function ReviewPanel({ video, detail }: { video: QueueVideo; detail: ReviewDetail }) {
   const player = useRef<PlayerHandle>(null);
+  const summaryRef = useRef<HTMLTextAreaElement>(null);
   const [time, setTime] = useState(0);
   const [note, setNote] = useState("");
   const [summary, setSummary] = useState(video.summary ?? "");
@@ -25,6 +28,8 @@ export function ReviewPanel({ video, detail }: { video: QueueVideo; detail: Revi
   const first = video.memberName.split(/\s+/)[0];
   const who = video.dogName ? `${first} & ${video.dogName}` : video.memberName;
   const canLevel = Boolean(video.dog_id && video.move_id);
+  // No profile name: leave {{first_name}} unfilled so the team notices, rather than "Hi Member".
+  const replyVars = { first_name: video.memberName === UNNAMED_MEMBER ? null : first, dog_name: video.dogName, move_name: video.moveName };
 
   function pin() {
     const at = player.current?.currentTime() ?? time;
@@ -104,6 +109,7 @@ export function ReviewPanel({ video, detail }: { video: QueueVideo; detail: Revi
         Summary for {first}
       </label>
       <textarea
+        ref={summaryRef}
         className="input"
         id="summaryInput"
         maxLength={4000}
@@ -111,6 +117,7 @@ export function ReviewPanel({ video, detail }: { video: QueueVideo; detail: Revi
         onChange={(e) => setSummary(e.target.value)}
         placeholder={`Summary for ${first}. The first sentence becomes the headline.`}
       />
+      <SavedReplies textareaRef={summaryRef} value={summary} onChange={setSummary} vars={replyVars} />
       <div className="row">
         <span className="label" id="levelLabel">
           Set level
@@ -132,7 +139,7 @@ export function ReviewPanel({ video, detail }: { video: QueueVideo; detail: Revi
         </div>
       </div>
       {!canLevel && <span className="faint">This video isn&apos;t linked to a dog and a move, so there&apos;s no level to set.</span>}
-      <button className="btn btn-primary" type="button" onClick={send} disabled={pending || !summary.trim()}>
+      <button className="btn btn-primary" type="button" onClick={send} disabled={pending || !summary.trim() || !isFilledIn(summary)}>
         {video.status === "replied" ? "Update summary" : "Send feedback"}
       </button>
 
@@ -142,7 +149,7 @@ export function ReviewPanel({ video, detail }: { video: QueueVideo; detail: Revi
           <Conversation messages={detail.messages} staffView memberName={first} />
         </div>
       )}
-      {(video.status === "replied" || detail.messages.length > 0) && <StaffReply videoId={video.id} memberName={first} onDone={showToast} />}
+      {(video.status === "replied" || detail.messages.length > 0) && <StaffReply videoId={video.id} memberName={first} vars={replyVars} onDone={showToast} />}
       {toast}
     </div>
   );

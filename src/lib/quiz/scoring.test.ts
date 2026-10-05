@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { resolveTier, scoreAnswers, type QuizAnswers } from "./scoring";
+import { resolveTier, scoreAnswers, type QuizAnswers, type ScoredQuestion } from "./scoring";
 import type { OptionId } from "./data";
 
 // Question ids: 1 relationship, 2 goal, 3 experience, 4 excites, 5 independence, 6 worthIt
@@ -85,5 +85,46 @@ describe("scoreAnswers – vote counts for analytics", () => {
 
   test("ignores unanswered questions", () => {
     expect(scoreAnswers({ 1: "A" })).toEqual({ foundations: 1, moves: 0, letsDance: 0 });
+  });
+});
+
+describe("scoring an edited quiz (Admin → Lead quiz)", () => {
+  // Same six questions (ids 1–6) as the original, as the admin passes them in.
+  const original: ScoredQuestion[] = [
+    { id: 1, key: "relationship" },
+    { id: 2, key: "goal" },
+    { id: 3, key: "experience" },
+    { id: 4, key: "excites" },
+    { id: 5, key: "independence" },
+    { id: 6, key: "worthIt" },
+  ];
+
+  test("gives the same result as the original when the questions are only reworded or reordered", () => {
+    const input = answers("B", "C", "C", "C", "C", "C");
+    const reordered = [...original].reverse();
+
+    expect(resolveTier(input, reordered)).toBe(resolveTier(input));
+  });
+
+  test("a removed readiness question no longer caps the result", () => {
+    // Without the independence question, sequences (experience C) + wanting dance => Let's Dance.
+    const withoutIndependence = original.filter((q) => q.key !== "independence");
+    const input: QuizAnswers = { 1: "B", 2: "C", 3: "C", 4: "C", 6: "C" };
+
+    expect(resolveTier(input, withoutIndependence)).toBe("letsDance");
+    expect(resolveTier(input)).toBe("moves");
+  });
+
+  test("an added question counts as a preference", () => {
+    // Ready for anything, but the preference questions don't ask for dance; the added one does.
+    const withExtra: ScoredQuestion[] = [...original, { id: 7 }];
+    const input: QuizAnswers = { ...answers("B", "B", "C", "B", "C", "B"), 7: "C" };
+
+    expect(resolveTier(input, original)).toBe("moves");
+    expect(resolveTier(input, withExtra)).toBe("letsDance");
+  });
+
+  test("vote counts include added questions", () => {
+    expect(scoreAnswers({ 1: "A", 7: "C" }, [...original, { id: 7 }])).toEqual({ foundations: 1, moves: 0, letsDance: 1 });
   });
 });

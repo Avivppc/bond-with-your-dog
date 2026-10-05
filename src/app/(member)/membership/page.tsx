@@ -6,14 +6,15 @@ import { LocalTime } from "@/components/ui/LocalTime";
 import { accessKind, canCancelSubscription, formatMoney, orderStatusPill, subscriptionPhase } from "@/lib/feedback/membership";
 import { loadMembership, type AvailableOffer, type OwnedCourse, type SubscriptionItem } from "@/lib/feedback/membership-queries";
 import { CancelSubscription } from "./CancelSubscription";
+import { retentionLabel } from "@/lib/sales/pricing";
 
 export const metadata = { title: "Membership & purchases" };
 
 function CourseMedia({ src, alt }: { src: string | null; alt: string }) {
   return (
     <div className="media" style={{ aspectRatio: "16/9" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element -- course artwork */}
       {src ? (
+        // eslint-disable-next-line @next/next/no-img-element -- course artwork
         <img src={src} alt={alt} />
       ) : (
         <span className="media-ph" aria-hidden>
@@ -96,8 +97,21 @@ function SubscriptionRow({ sub }: { sub: SubscriptionItem }) {
       <div className="grow">
         <div className="title">{sub.offerTitle}</div>
         <div className="faint">{line[phase]}</div>
+        {sub.retentionAccepted && sub.retentionAccepted.cyclesLeft > 0 && (
+          <div className="faint" style={{ color: "var(--teal)" }}>
+            {retentionLabel(sub.retentionAccepted.percent, sub.retentionAccepted.cyclesLeft, sub.interval === "year" ? "year" : "month")}
+          </div>
+        )}
       </div>
-      {canCancelSubscription(sub) && <CancelSubscription subscriptionId={sub.id} title={sub.offerTitle} />}
+      {canCancelSubscription(sub) && (
+        <CancelSubscription
+          subscriptionId={sub.id}
+          title={sub.offerTitle}
+          offerToStay={
+            sub.retention && !sub.retentionAccepted ? retentionLabel(sub.retention.percent, sub.retention.cycles, sub.interval === "year" ? "year" : "month") : null
+          }
+        />
+      )}
     </div>
   );
 }

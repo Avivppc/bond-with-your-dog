@@ -17,6 +17,8 @@ import { readPracticeSteps } from "@/lib/content/practice-steps";
 import type { LessonVideoSummary } from "./content-actions";
 import { updateLesson, deleteLesson, deleteQuestion, duplicateLesson } from "../actions";
 
+export const metadata = { title: "Lesson" };
+
 const SAVED_MESSAGES: Record<string, string> = {
   "1": "Lesson saved.",
   duplicated: "Lesson duplicated. This is the copy — it starts as a draft.",

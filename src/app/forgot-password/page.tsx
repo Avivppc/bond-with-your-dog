@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Navbar from "@/components/Navbar";
+import SiteHeader from "@/components/SiteHeader";
 import Footer from "@/components/Footer";
 import { requestPasswordReset } from "./actions";
 
@@ -10,7 +10,7 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
 
   return (
     <>
-      <Navbar />
+      <SiteHeader />
       <main className="min-h-screen px-5 pb-20 pt-28 md:px-8" style={{ backgroundColor: "#edf8ff" }}>
         <div className="mx-auto max-w-md rounded-2xl bg-white p-8 shadow-lg md:p-10">
           <h1 className="mb-2 text-4xl font-extrabold tracking-tighter" style={{ fontFamily: "var(--font-headline)", color: "#243036" }}>

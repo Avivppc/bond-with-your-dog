@@ -58,6 +58,11 @@ export interface CheckoutSession {
 
 export interface PaymentProvider {
   name: ProviderName;
+  /**
+   * Whether the checkout charges the order's own amount (so our discounts, like personal flow codes,
+   * are really applied). Paddle charges its catalog price; PayPlus will charge the amount we send.
+   */
+  chargesOrderAmount: boolean;
   createCheckout(request: CheckoutRequest): Promise<CheckoutSession>;
   /**
    * Stops renewal at the end of the paid period (the member keeps access until then).

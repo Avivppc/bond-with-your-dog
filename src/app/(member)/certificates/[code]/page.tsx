@@ -1,9 +1,12 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { requireMember } from "@/lib/member/viewer";
+import { NextChapterOffer } from "@/components/app/NextChapterOffer";
 import { CopyButton } from "@/components/app/CopyButton";
 import { Ms } from "@/components/app/ui";
 import { LocalTime } from "@/components/ui/LocalTime";
+import { certificateLessonCount, loadCertificateDesign } from "@/lib/certificates/server";
+import { certificateText } from "@/lib/certificates/design";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your certificate" };
@@ -27,7 +30,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
   ]);
   if (!cert) notFound();
   const pdf = `/api/certificates/${encodeURIComponent(cert.code)}`;
-  const lessons = own ? (await supabase.from("lessons").select("id", { count: "exact", head: true }).eq("course_id", own.course_id)).count : null;
+  const [lessons, design] = await Promise.all([certificateLessonCount(cert.code), loadCertificateDesign()]);
+  const text = certificateText(design, { studentName: cert.student_name, dogName: cert.dog_name, lessons });
 
   return (
     <>
@@ -52,25 +56,25 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
             {/* eslint-disable-next-line @next/next/no-img-element -- illustration */}
             <img src="/app/img/give-a-hug.jpg" alt="" style={{ width: 110 }} />
           </div>
-          <span className="eyebrow" style={{ color: "#9a7a1a" }}>
-            Certificate of Completion
+          <span className="eyebrow" style={{ color: design.accentColor }}>
+            {design.title}
           </span>
-          <p className="faint" style={{ fontSize: 14 }}>
-            This certifies that
-          </p>
+          {design.intro && (
+            <p className="faint" style={{ fontSize: 14 }}>
+              {design.intro}
+            </p>
+          )}
           <h2 className="display" style={{ fontSize: 40 }}>
-            {cert.student_name}
-            {cert.dog_name ? ` & ${cert.dog_name}` : ""}
+            {text.recipient}
           </h2>
           <p className="muted" style={{ maxWidth: "48ch" }}>
-            {cert.dog_name ? "have" : "has"} completed {lessons ? `all ${lessons} lessons of ` : ""}
-            <b>{cert.course_title}</b>.
+            {text.line} <b>{cert.course_title}</b>.
           </p>
           <div className="cert-meta">
             <div>
-              <span className="sig">Roni Sagi</span>
+              <span className="sig">{design.signerName}</span>
               <hr />
-              <span>Roni Sagi · Founder</span>
+              <span>{[design.signerName, design.signerTitle].filter(Boolean).join(" · ")}</span>
             </div>
             <div>
               <span style={{ fontFamily: "var(--display)", fontSize: 18, color: "var(--ink)", textTransform: "none", fontWeight: 700, lineHeight: "46px" }}>
@@ -87,6 +91,8 @@ export default async function CertificatePage({ params }: { params: Promise<{ co
           </div>
         </div>
       </div>
+      {/* Your own certificate: the next chapter, with your personal code when a flow offers one. */}
+      {own && <NextChapterOffer userId={viewer.userId} courseId={own.course_id} percentDone={100} />}
     </>
   );
 }

@@ -5,6 +5,8 @@ import type { Tier } from "@/lib/quiz/data";
 import type { TierScores } from "@/lib/quiz/scoring";
 import type { QuizAnswers } from "@/lib/quiz/scoring";
 import { EVENTS, identifyByEmail, track } from "@/lib/analytics";
+import { MARKETING_CONSENT_LABEL } from "@/lib/auth/marketing-consent";
+import { Turnstile, turnstileOn } from "@/components/Turnstile";
 
 interface LeadCaptureFormProps {
   tier: Tier;
@@ -26,6 +28,8 @@ const inputClass =
 export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadCaptureFormProps) {
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
+  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [captcha, setCaptcha] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>("idle");
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -36,7 +40,7 @@ export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadC
       const response = await fetch("/api/quiz-leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, email, tier, scores, answers }),
+        body: JSON.stringify({ firstName, email, tier, scores, answers, marketingOptIn, captcha }),
       });
       if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
       identifyByEmail(email, { name: firstName, quiz_tier: tier });
@@ -91,6 +95,16 @@ export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadC
             className={inputClass}
           />
         </label>
+        <label className="flex items-start gap-3 text-left text-sm text-on-surface-variant cursor-pointer">
+          <input
+            type="checkbox"
+            checked={marketingOptIn}
+            onChange={(event) => setMarketingOptIn(event.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 rounded border-outline-variant accent-[#8b4b00]"
+          />
+          <span>{MARKETING_CONSENT_LABEL}</span>
+        </label>
+        <Turnstile onToken={setCaptcha} className="flex justify-center" />
         {status === "error" && (
           <p className="text-sm text-error">
             Something went wrong. Please try again in a moment.
@@ -98,7 +112,7 @@ export default function LeadCaptureForm({ tier, scores, answers, onDone }: LeadC
         )}
         <button
           type="submit"
-          disabled={status === "submitting"}
+          disabled={status === "submitting" || (turnstileOn && !captcha)}
           className="mt-2 bg-gradient-to-r from-primary to-primary-container text-on-primary font-label text-base font-semibold px-8 py-4 rounded-full shadow-lg shadow-primary/20 hover:scale-105 transition-transform disabled:opacity-60 disabled:hover:scale-100"
         >
           {status === "submitting" ? "One moment…" : "Show My Journey"}
